@@ -54,8 +54,16 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasModuleAccess(string $module): bool
     {
-        if ($this->isSuperadmin() || ! $this->designation_id) {
+        if ($this->isSuperadmin() || $this->role === 'admin') {
             return true;
+        }
+
+        if (in_array($this->role, ['student', 'parent'], true)) {
+            return true;
+        }
+
+        if (! $this->designation_id) {
+            return false;
         }
 
         return in_array($module, $this->designation?->permissions ?? [], true);

@@ -37,7 +37,7 @@ class Attendance extends Component
     {
         $term = Auth::user()->school->currentTerm();
         if (! $term) return;
-        $this->statuses = AttendanceRecord::where('school_id', Auth::user()->school_id)->where('term_id', $term->id)->whereDate('attendance_date', $this->attendanceDate)->pluck('status', 'student_id')->all();
+        $this->statuses = AttendanceRecord::where('school_id', Auth::user()->school_id)->where('term_id', $term->id)->where('session_key', 'daily')->whereDate('attendance_date', $this->attendanceDate)->pluck('status', 'student_id')->all();
     }
 
     public function save(): void
@@ -48,7 +48,7 @@ class Attendance extends Component
         $this->validate(['attendanceDate' => ['required', 'date'], 'statuses.*' => ['nullable', 'in:present,absent,late,excused']]);
         $students = $this->studentsQuery()->get();
         DB::transaction(function () use ($students, $school, $term) {
-            foreach ($students as $student) AttendanceRecord::updateOrCreate(['student_id' => $student->id, 'attendance_date' => $this->attendanceDate], ['school_id' => $school->id, 'term_id' => $term->id, 'status' => $this->statuses[$student->id] ?? 'present', 'recorded_by' => Auth::id()]);
+            foreach ($students as $student) AttendanceRecord::updateOrCreate(['student_id' => $student->id, 'attendance_date' => $this->attendanceDate, 'session_key' => 'daily'], ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $student->school_class_id, 'stream_id' => $student->stream_id, 'status' => $this->statuses[$student->id] ?? 'present', 'recorded_by' => Auth::id()]);
         });
         session()->flash('status', 'Attendance saved for '.$students->count().' active learners.');
     }
@@ -72,7 +72,7 @@ class Attendance extends Component
     private function performanceRows()
     {
         $school = Auth::user()->school; $term = $school->currentTerm();
-        $records = AttendanceRecord::where('school_id', $school->id)->when($term, fn ($query) => $query->where('term_id', $term->id))->when($this->reportFrom, fn ($query) => $query->whereDate('attendance_date', '>=', $this->reportFrom))->when($this->reportTo, fn ($query) => $query->whereDate('attendance_date', '<=', $this->reportTo))->get()->groupBy('student_id');
+        $records = AttendanceRecord::where('school_id', $school->id)->where('session_key', 'daily')->when($term, fn ($query) => $query->where('term_id', $term->id))->when($this->reportFrom, fn ($query) => $query->whereDate('attendance_date', '>=', $this->reportFrom))->when($this->reportTo, fn ($query) => $query->whereDate('attendance_date', '<=', $this->reportTo))->get()->groupBy('student_id');
         return $this->studentsQuery()->get()->map(function ($student) use ($records) {
             $items = $records->get($student->id, collect()); $total = $items->count(); $present = $items->whereIn('status', ['present', 'late'])->count();
             return ['name' => $student->name, 'admission_no' => $student->admission_no, 'class' => $student->schoolClass?->name ?? '—', 'total' => $total, 'present' => $present, 'absent' => $items->where('status', 'absent')->count(), 'late' => $items->where('status', 'late')->count(), 'excused' => $items->where('status', 'excused')->count(), 'rate' => $total ? round($present / $total * 100, 1) : 0];
@@ -82,7 +82,7 @@ class Attendance extends Component
     public function render()
     {
         $school = Auth::user()->school; $term = $school->currentTerm(); $students = $this->studentsQuery()->get();
-        $selectedDay = AttendanceRecord::where('school_id', $school->id)->when($term, fn ($query) => $query->where('term_id', $term->id))->whereDate('attendance_date', $this->attendanceDate)->when($this->schoolClassId, fn ($query) => $query->whereHas('student', fn ($q) => $q->where('school_class_id', $this->schoolClassId)))->when($this->streamId, fn ($query) => $query->whereHas('student', fn ($q) => $q->where('stream_id', $this->streamId)))->get();
+        $selectedDay = AttendanceRecord::where('school_id', $school->id)->where('session_key', 'daily')->when($term, fn ($query) => $query->where('term_id', $term->id))->whereDate('attendance_date', $this->attendanceDate)->when($this->schoolClassId, fn ($query) => $query->whereHas('student', fn ($q) => $q->where('school_class_id', $this->schoolClassId)))->when($this->streamId, fn ($query) => $query->whereHas('student', fn ($q) => $q->where('stream_id', $this->streamId)))->get();
         $performance = $this->performanceRows();
         return view('livewire.attendance', ['term' => $term, 'classes' => SchoolClass::where('school_id', $school->id)->orderBy('name')->get(), 'streams' => Stream::where('school_id', $school->id)->when($this->schoolClassId, fn ($query) => $query->where('school_class_id', $this->schoolClassId))->orderBy('name')->get(), 'students' => $students, 'selectedDay' => $selectedDay, 'performance' => $performance, 'pageTitle' => 'Attendance']);
     }

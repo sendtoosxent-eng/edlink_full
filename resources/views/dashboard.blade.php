@@ -148,6 +148,7 @@
                                     'Leave Requests' => 'leaves.index',
                                     'Designations & Access' => 'designations.index',
                                     'Mark Attendance' => 'attendance.index',
+                                    'Attendance Reports' => 'attendance.reports',
                                     'Timetable' => 'timetable.index',
                                     'Events' => 'events.index',
                                     'All Staff' => 'staff.index',
