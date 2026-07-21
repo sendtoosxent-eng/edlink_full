@@ -1,1 +1,252 @@
-<div class="mx-auto max-w-6xl"><div class="mb-8 print:hidden"><h1 class="text-2xl font-bold">Student term report</h1><p class="text-slate-500">One printable term summary for learner progress, attendance, and finance.</p></div><div class="mb-6 grid gap-4 rounded-2xl border bg-white p-5 md:grid-cols-2 print:hidden"><label>Term<select wire:model.live="termId" class="mt-1 w-full rounded-xl border-slate-200">@foreach($terms as $item)<option value="{{$item->id}}">{{$item->name}}, {{$item->year}}</option>@endforeach</select></label><label>Learner<select wire:model.live="studentId" class="mt-1 w-full rounded-xl border-slate-200"><option value="">Select learner</option>@foreach($students as $item)<option value="{{$item->id}}">{{$item->name}} · {{$item->admission_no}}</option>@endforeach</select></label></div>@if($student&&$term)<section class="rounded-2xl border bg-white p-8 shadow-sm"><header class="border-b pb-5 text-center"><h2 class="text-2xl font-bold">{{auth()->user()->school->name}}</h2><p class="text-slate-500">{{auth()->user()->school->motto}}</p><h3 class="mt-4 font-bold uppercase tracking-wider">Student term report</h3><p class="text-sm text-slate-500">{{$term->name}}, {{$term->year}}</p></header><div class="mt-6 grid gap-4 text-sm md:grid-cols-2"><div><strong>Learner:</strong> {{$student->name}}<br><strong>Admission no:</strong> {{$student->admission_no}}<br><strong>Class:</strong> {{$student->schoolClass?->name}} {{$student->stream?->name}}</div><div><strong>Guardian:</strong> {{$student->guardians->first()?->name ?? '—'}}<br><strong>Contact:</strong> {{$student->guardians->first()?->phone ?? '—'}}<br><strong>Status:</strong> {{ucfirst($student->status)}}</div></div><div class="mt-7 grid gap-4 md:grid-cols-3"><div class="rounded-xl bg-emerald-50 p-4"><p class="text-xs text-emerald-700">Attendance</p><p class="mt-1 text-2xl font-bold">{{$attendance->count()?round($attendance->whereIn('status',['present','late'])->count()/$attendance->count()*100,1):0}}%</p><p class="text-sm">{{$attendance->whereIn('status',['present','late'])->count()}} present · {{$attendance->where('status','absent')->count()}} absent</p></div><div class="rounded-xl bg-yellow-50 p-4"><p class="text-xs text-yellow-700">Fees expected</p><p class="mt-1 text-2xl font-bold">UGX {{number_format($student->totalDue($term))}}</p><p class="text-sm">Paid: UGX {{number_format($student->totalPaid($term))}}</p></div><div class="rounded-xl bg-rose-50 p-4"><p class="text-xs text-rose-700">Term balance</p><p class="mt-1 text-2xl font-bold">UGX {{number_format($student->balance($term))}}</p><p class="text-sm">Contact bursar for account support.</p></div></div><section class="mt-7"><h3 class="mb-3 font-bold">Academic summary</h3><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">Assessment</th><th class="p-3 text-right">Average</th></tr></thead><tbody>@forelse($examResults as $result)<tr class="border-t"><td class="p-3">{{$result->name}}</td><td class="p-3 text-right font-bold">{{$result->average}}%</td></tr>@empty<tr><td colspan="2" class="p-5 text-center text-slate-500">No approved assessment results for this term.</td></tr>@endforelse</tbody></table></section><footer class="mt-10 border-t pt-6 text-sm">Class teacher signature: ____________________ <span class="float-right">Head teacher signature: ____________________</span></footer></section><button onclick="window.print()" class="mt-5 rounded-xl bg-slate-900 px-5 py-3 font-bold text-white print:hidden">Print term report</button>@endif</div>
+<div>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            .report-container,
+            .report-container * {
+                visibility: visible !important;
+            }
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            .report-container {
+                position: absolute !important;
+                inset: 0 auto auto 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <section class="no-print mx-auto mb-5 max-w-[210mm] rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="mb-4"><h2 class="font-bold">Build student report</h2><p class="text-xs text-slate-500">Choose the term, learner and examination.</p></div>
+        <div class="grid gap-4 md:grid-cols-3">
+            <label class="text-sm font-semibold">Term<select wire:model.live="termId" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm"><option value="">Choose term</option>@foreach($terms as $item)<option value="{{ $item->id }}">{{ $item->name }}, {{ $item->year }}</option>@endforeach</select></label>
+            <label class="text-sm font-semibold">Student<select wire:model.live="studentId" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm"><option value="">Choose student</option>@foreach($students as $item)<option value="{{ $item->id }}">{{ $item->name }}{{ $item->admission_no ? ' · '.$item->admission_no : '' }}</option>@endforeach</select></label>
+            <label class="text-sm font-semibold">Examination<select wire:model.live="examId" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm"><option value="">Choose examination</option>@foreach($exams as $item)<option value="{{ $item->id }}">{{ $item->name }}{{ $item->stream ? ' · '.$item->stream->name : '' }}</option>@endforeach</select></label>
+        </div>
+        @if($termId && $studentId && $exams->isEmpty())<p class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">No examination is available for this learner in the selected term.</p>@endif
+    </section>
+    @if($student && $term && $exam)
+
+    <!-- PRINT CONTROL BUTTONS -->
+    <div class="max-w-[210mm] mx-auto mb-4 flex items-center justify-between no-print pt-4">
+        <button onclick="window.history.back()" class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-2xs transition">
+            <i class="fa fa-arrow-left"></i>
+            <span>Back</span>
+        </button>
+        <button onclick="window.print()" class="inline-flex items-center gap-2 text-xs font-bold text-slate-950 bg-yellow-400 hover:bg-yellow-300 px-4 py-2 rounded-xl shadow-xs transition">
+            <i class="fa fa-print"></i>
+            <span>Print Report Card</span>
+        </button>
+    </div>
+
+    <!-- MAIN REPORT CONTAINER -->
+    <main class="report-container max-w-[210mm] mx-auto bg-white p-4 sm:p-6 shadow-xl relative min-h-[297mm]">
+
+        <!-- DOUBLE BORDER WRAPPER -->
+        <div class="border-4 border-slate-900 p-1.5 h-full">
+            <div class="border-2 border-slate-900 p-6 sm:p-8 h-full flex flex-col justify-between">
+
+                <div>
+                    <!-- 1. HEADER SECTION -->
+                    <header class="relative flex items-center justify-between gap-4 mb-6">
+                        <!-- School Logo -->
+                        <div class="w-20 h-20 rounded-full border-2 border-yellow-400 p-1 flex items-center justify-center flex-shrink-0 bg-white">
+                            @if($school->logo_url ?? false)
+                                <img src="{{ asset($school->logo_url) }}" class="w-full h-full object-cover rounded-full">
+                            @else
+                                <i class="fa fa-graduation-cap text-slate-800 text-3xl"></i>
+                            @endif
+                        </div>
+
+                        <!-- School Info & Title -->
+                        <div class="text-center flex-1">
+                            <h1 class="text-2xl sm:text-3xl font-black uppercase text-slate-900 tracking-tight leading-none">
+                                {{ $school->name ?? 'SAMEED HIGH SCHOOL' }}
+                            </h1>
+                            <p class="text-[11px] font-semibold text-slate-600 uppercase tracking-wider mt-1">
+                                {{ $school->address ?? 'CAMPUS ADDRESS, CITY, COUNTRY' }}
+                            </p>
+                            <p class="text-xs font-bold text-slate-900 uppercase tracking-widest mt-2">
+                                {{ $exam->name }} · {{ $term->name }}, {{ $term->year }} · {{ ucfirst($settings['level']) }}
+                            </p>
+
+                            <!-- MARKSHEET Banner -->
+                            <div class="inline-block bg-yellow-400 text-slate-950 font-black uppercase tracking-widest px-8 py-1 mt-2 text-sm shadow-2xs">
+                                {{ $exam->name }} MARKSHEET
+                            </div>
+                        </div>
+
+                        <!-- Student Passport Photo Box -->
+                        <div class="w-20 h-24 border-2 border-slate-900 flex items-center justify-center flex-shrink-0 bg-slate-50 text-slate-300">
+                            @if($report->student->photo_url ?? $student->photo_url ?? false)
+                                <img src="{{ asset($report->student->photo_url ?? $student->photo_url) }}" class="w-full h-full object-cover">
+                            @else
+                                <span class="text-[10px] font-bold text-center text-slate-400 uppercase leading-tight px-1">Affix Photo</span>
+                            @endif
+                        </div>
+                    </header>
+
+                    <!-- 2. STUDENT DETAILS META -->
+                    <section class="mt-8 mb-6 text-xs font-semibold text-slate-900 space-y-4">
+                        <div class="flex items-end gap-2 border-b border-slate-900 pb-1">
+                            <span class="font-extrabold text-slate-900 uppercase">Student Name:</span>
+                            <span class="font-bold text-slate-900 uppercase flex-1">{{ $student->name ?? ($report->student->name ?? 'N/A') }}</span>
+                        </div>
+
+                        <div class="grid grid-cols-12 gap-4">
+                            <div class="col-span-4 flex items-end gap-2 border-b border-slate-900 pb-1">
+                                <span class="font-extrabold text-slate-900 uppercase">Class:</span>
+                                <span class="font-bold text-slate-900 uppercase flex-1">{{ $student->schoolClass->name ?? ($report->student->schoolClass->name ?? 'N/A') }}</span>
+                            </div>
+                            <div class="col-span-4 flex items-end gap-2 border-b border-slate-900 pb-1">
+                                <span class="font-extrabold text-slate-900 uppercase">Roll No:</span>
+                                <span class="font-mono font-bold text-slate-900 flex-1">{{ $student->admission_no ?? ($report->student->admission_no ?? 'N/A') }}</span>
+                            </div>
+                            <div class="col-span-4 flex items-end gap-2 border-b border-slate-900 pb-1">
+                                <span class="font-extrabold text-slate-900 uppercase">Section:</span>
+                                <span class="font-bold text-slate-900 uppercase flex-1">{{ $student->section ?? ($report->student->section ?? 'A') }}</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 3. MARKS & MARKSHEET TABLE -->
+                    <div class="mt-6">
+                        <table class="w-full text-left text-xs border-2 border-slate-900 border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900 text-white font-extrabold uppercase border-b-2 border-slate-900 text-[11px]">
+                                    <th class="p-2.5 border-r-2 border-slate-900 w-12 text-center">S.NO</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900">SUBJECT</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">CREDIT HOUR</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE OBTAINED</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">GRADE POINT</th>
+                                    <th class="p-2.5 text-center w-32">REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y-2 divide-slate-900 font-semibold text-slate-900 uppercase">
+                                @forelse($grades ?? ($report->grades ?? []) as $index => $grade)
+                                <tr>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 font-bold">{{ $grade->subject->name ?? ($grade['subject_name'] ?? 'SUBJECT') }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">{{ number_format($grade->credit_hours ?? ($grade['credit_hours'] ?? 2.0), 2) }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? 'A+') }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ number_format($grade->grade_point ?? ($grade['grade_point'] ?? 4.0), 2) }}</td>
+                                    <td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'EXCELLENT') }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">01</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 font-bold">NO GRADES RECORDED</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">0.00</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-black">—</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">0.00</td>
+                                    <td class="p-2.5 text-center font-medium text-slate-700">—</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 4. ATTENDANCE & GPA SUMMARY BLOCK -->
+                    <div class="mt-4 border-2 border-slate-900 grid {{ $settings['show_attendance'] ? 'grid-cols-2' : 'grid-cols-1' }} text-center">
+                        @if($settings['show_attendance'])
+                        <div class="p-2 border-r-2 border-slate-900">
+                            <span class="block text-xs font-black uppercase text-slate-900 tracking-wider">ATTENDANCE</span>
+                            <span class="block text-lg font-black text-slate-900 font-mono mt-1">
+                                {{ $attendance_present ?? ($report->attendance_present ?? '70') }}/{{ $attendance_total ?? ($report->attendance_total ?? '105') }}
+                            </span>
+                        </div>
+                        @endif
+                        <div class="p-2 bg-yellow-50">
+                            <span class="block text-xs font-black uppercase text-slate-900 tracking-wider">GPA</span>
+                            <span class="block text-xl font-black text-slate-950 font-mono mt-1">
+                                {{ number_format($gpa ?? ($report->gpa ?? 4.00), 2) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    @if($settings['show_position'] || $settings['show_fees'] || $settings['show_promotion'])
+                    <div class="mt-3 grid gap-2 text-center text-xs sm:grid-cols-3">
+                        @if($settings['show_position'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Position</b><span class="font-mono text-base font-black">{{ $position ?? '—' }}</span></div>@endif
+                        @if($settings['show_fees'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Fees balance</b><span class="font-mono text-base font-black">{{ number_format($fees['balance'], 0) }}</span><small class="block text-slate-500">Paid {{ number_format($fees['paid'], 0) }} / Due {{ number_format($fees['due'], 0) }}</small></div>@endif
+                        @if($settings['show_promotion'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Promotion</b><span class="text-base font-black uppercase">{{ $promotion ?: 'Pending' }}</span></div>@endif
+                    </div>
+                    @endif
+
+                    <!-- 5. REMARKS BOX -->
+                    <div class="mt-5 border-2 border-slate-900">
+                        <div class="bg-slate-900 text-white font-extrabold text-xs uppercase p-2">
+                            REMARKS:
+                        </div>
+                        <div class="p-3 text-xs font-semibold text-slate-800 min-h-[50px]">
+                            {{ $teacher_remarks ?? ($report->teacher_remarks ?? 'An outstanding performance throughout the academic term. Demonstrates great focus and high aptitude in all subject areas.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. BOTTOM SIGNATURES & GRADING SCALE -->
+                <div class="mt-8">
+                    <!-- Issue Date & Signatures -->
+                    <div class="grid grid-cols-4 gap-4 text-center text-xs font-bold text-slate-900 mb-6">
+                        <div class="text-left">
+                            <span class="block font-black">ISSUE ON:</span>
+                            <span class="font-mono text-slate-700">
+                                @if(isset($report) && is_object($report) && !empty($report->issue_date))
+                                    {{ \Carbon\Carbon::parse($report->issue_date)->format('d/m/Y') }}
+                                @elseif(isset($issue_date))
+                                    {{ \Carbon\Carbon::parse($issue_date)->format('d/m/Y') }}
+                                @else
+                                    {{ now()->format('d/m/Y') }}
+                                @endif
+                            </span>
+                        </div>
+                        <div>
+                            <div class="border-b-2 border-slate-900 mb-1 h-6"></div>
+                            <span>Teacher Sign</span>
+                        </div>
+                        <div>
+                            <div class="border-b-2 border-slate-900 mb-1 h-6"></div>
+                            <span>Parents Sign</span>
+                        </div>
+                        <div>
+                            <div class="border-b-2 border-slate-900 mb-1 h-6"></div>
+                            <span>Principal Sign</span>
+                        </div>
+                    </div>
+
+                    <!-- Grading Key Legend -->
+                    <div class="border-2 border-slate-900 p-3 bg-slate-50 text-[11px] font-semibold text-slate-800 italic">
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-1">
+                            @forelse($gradingScales as $scale)
+                                <div><strong class="not-italic text-slate-900">{{ number_format($scale->minimum_percentage, 0) }}-{{ number_format($scale->maximum_percentage, 0) }}%:</strong> {{ $scale->grade }} · {{ $scale->remark }}</div>
+                            @empty
+                                <div class="col-span-2">No grading scale has been configured.</div>
+                            @endforelse
+                        </div>
+                        @if($settings['footer'])<p class="mt-3 border-t border-slate-300 pt-2 text-center not-italic">{{ $settings['footer'] }}</p>@endif
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    @else
+        <div class="no-print mx-auto max-w-[210mm] rounded-2xl border border-dashed bg-white p-12 text-center text-sm text-slate-500">Select a term, student and examination to generate the report.</div>
+    @endif
+</div>
