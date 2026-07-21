@@ -1,0 +1,5 @@
+// Add this inside routes/console.php (Laravel 11 uses this file for scheduling by default):
+
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('edlink:expire-demos')->daily();

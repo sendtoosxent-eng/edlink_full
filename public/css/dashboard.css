@@ -1,0 +1,198 @@
+/* ==========================================================================
+   Edlink Dashboard — custom styling layer
+   Loads alongside Tailwind; adds polish that's easier in real CSS than
+   utility classes (custom scrollbar, refined shadows/motion, chart theming).
+   ========================================================================== */
+
+:root {
+  --edlink-navy: #252641;
+  --edlink-navy-light: #3a3d6b;
+  --edlink-yellow: #eab308;
+  --edlink-teal: #0d9488;
+  --edlink-red: #ef4444;
+
+  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-hover: 0 8px 24px -6px rgba(37, 38, 65, 0.18), 0 2px 8px -2px rgba(37, 38, 65, 0.08);
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.05);
+}
+
+/* ---- Global feel ---------------------------------------------------- */
+
+body {
+    
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Smooth every color/shadow/transform change rather than relying only on
+   Tailwind's transition-* utilities catching every element. */
+a, button, input, select, .transition-all, .transition-colors, .transition-shadow {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Sidebar ---------------------------------------------------------- */
+
+aside {
+  box-shadow: 4px 0 24px -8px rgba(0, 0, 0, 0.25);
+}
+
+/* Custom slim scrollbar for the sidebar's nav list */
+aside::-webkit-scrollbar {
+  width: 6px;
+}
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+aside::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+aside {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Active/expanded accordion item gets a left accent bar */
+aside nav > div > button[class*="bg-white/10"],
+aside nav a.bg-white\/10 {
+  position: relative;
+}
+aside nav > div > button:has(+ div[style*="display: block"])::before {
+  content: "";
+}
+
+/* Sidebar link hover: subtle slide-in feel */
+aside nav a,
+aside nav button {
+  transition: background-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+aside nav a:hover,
+aside nav button:hover {
+  transform: translateX(2px);
+}
+aside nav a.bg-white\/10 {
+  transform: none;
+}
+
+/* ---- Cards -------------------------------------------------------------- */
+
+.bg-white.rounded-2xl.shadow-sm {
+  box-shadow: var(--shadow-card);
+}
+.bg-white.rounded-2xl.shadow-sm:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* ---- Greeting card -------------------------------------------------- */
+
+main > div[style*="linear-gradient"] {
+  position: relative;
+}
+main > div[style*="linear-gradient"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06), transparent 40%);
+  pointer-events: none;
+}
+
+/* ---- Stat card icon badges: soft glow on hover ------------------------- */
+
+.rounded-2xl.shadow-sm:hover [class*="rounded-xl"][class*="flex items-center justify-center"] {
+  transform: scale(1.06);
+  transition: transform 0.2s ease;
+}
+
+/* ---- Charts ------------------------------------------------------------- */
+
+canvas {
+  border-radius: 8px;
+}
+
+/* ---- Filter inputs (select/date/month) ---------------------------------- */
+
+select, input[type="date"], input[type="month"] {
+  background-color: #fff;
+  cursor: pointer;
+}
+select:hover, input[type="date"]:hover, input[type="month"]:hover {
+  border-color: #d1d5db;
+}
+select:focus, input[type="date"]:focus, input[type="month"]:focus {
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.18);
+}
+
+/* ---- Calendar ------------------------------------------------------------ */
+
+#calendarGrid span {
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: default;
+}
+#calendarGrid span:not(:empty):hover {
+  background-color: #f3f4f6;
+}
+
+/* ---- Timetable ------------------------------------------------------------ */
+
+#timetableBody tr:hover td {
+  background-color: #fafafa;
+}
+#timetableBody td {
+  transition: background-color 0.15s ease;
+}
+
+/* ---- Notifications -------------------------------------------------------- */
+
+#notificationsList > div {
+  transition: background-color 0.15s ease;
+  border-radius: 8px;
+  margin: 0 -0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+#notificationsList > div:hover {
+  background-color: #fafafa;
+}
+
+/* ---- User dropdown ---------------------------------------------------------- */
+
+.group:hover .group-hover\:visible {
+  animation: dropdown-in 0.15s ease forwards;
+}
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Notification bell dot pulse ------------------------------------------- */
+
+header button .bg-red-500 {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+
+/* ---- Responsive tweaks not easily done with Tailwind CDN utility combos --- */
+
+@media (max-width: 640px) {
+  main {
+    padding: 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
