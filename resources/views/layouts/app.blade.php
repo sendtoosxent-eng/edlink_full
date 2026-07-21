@@ -134,8 +134,9 @@
                     ['label' => 'Events', 'route' => 'events.index'],
                     ['label' => 'Grading Scales', 'route' => 'grading-scales.index'],
                 ]],
-                'attendance' => ['label' => 'Attendance', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['attendance.index', 'attendance.reports'], 'items' => [
+                'attendance' => ['label' => 'Attendance', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['attendance.index', 'attendance.subject', 'attendance.reports'], 'items' => [
                     ['label' => 'Mark Attendance', 'route' => 'attendance.index'],
+                    ['label' => 'Subject Attendance', 'route' => 'attendance.subject'],
                     ['label' => 'Attendance Reports', 'route' => 'attendance.reports'],
                 ]],
                 'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['fee-structures.index', 'fee-payments.index', 'expenses.index', 'terms.index'], 'items' => [
@@ -184,6 +185,9 @@
                     
                     <div x-cloak x-show="open === '{{ $key }}' && !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1">
                         @foreach($group['items'] as $item)
+                            @continue($item['route'] === 'attendance.subject' && auth()->user()->role !== 'teacher')
+                            @continue($item['route'] === 'attendance.reports' && ! in_array(auth()->user()->role, ['admin', 'academic_admin'], true))
+                            @continue($item['route'] === 'attendance.index' && auth()->user()->role === 'teacher')
                             @if($item['route'])
                                 <a href="{{ route($item['route']) }}" wire:navigate class="nav-sub-link {{ request()->routeIs($item['route']) ? 'active' : '' }} block py-1.5 text-sm">{{ $item['label'] }}</a>
                             @else

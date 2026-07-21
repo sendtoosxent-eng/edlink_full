@@ -4,6 +4,7 @@ use App\Livewire\FeePayments;
 use App\Livewire\Expenses;
 use App\Livewire\Attendance;
 use App\Livewire\AttendanceReport;
+use App\Livewire\SubjectAttendance;
 use App\Livewire\ClassesAndStreams;
 use App\Livewire\StaffManagement;
 use App\Livewire\SchoolSettings;
@@ -135,6 +136,7 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
     Route::get('finance/expenses', Expenses::class)->name('expenses.index');
     Route::get('attendance', Attendance::class)->name('attendance.index');
     Route::get('attendance/reports', AttendanceReport::class)->name('attendance.reports');
+    Route::get('attendance/subject', SubjectAttendance::class)->name('attendance.subject');
     Route::get('academics/classes', ClassesAndStreams::class)->name('classes.index');
     Route::get('staff', StaffManagement::class)->name('staff.index');
     Route::get('staff/register', StaffRegister::class)->name('staff.register');
