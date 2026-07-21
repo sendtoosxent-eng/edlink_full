@@ -160,7 +160,13 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
     Route::get('settings/result-access', ResultAccessSettings::class)->name('settings.result-access');
     Route::get('exams/{exam}/students/{student}/report-card', function (\App\Models\Exam $exam, \App\Models\Student $student) {
         $user = auth()->user();
-        abort_unless($exam->school_id === $user->school_id && $student->school_id === $exam->school_id && $student->school_class_id === $exam->school_class_id, 404);
+        abort_unless(
+            $exam->school_id === $user->school_id
+            && $student->school_id === $exam->school_id
+            && $student->school_class_id === $exam->school_class_id
+            && (! $exam->stream_id || $student->stream_id === $exam->stream_id),
+            404,
+        );
         $isStaff = in_array($user->role, ['admin', 'academic_admin', 'teacher', 'registrar', 'bursar'], true);
         $isLinked = $user->portalStudents()->whereKey($student->id)->exists() || ($user->role === 'parent' && $student->guardians()->where('email', $user->email)->exists());
         abort_unless($isStaff || ($isLinked && $exam->isPublished()), 404);
