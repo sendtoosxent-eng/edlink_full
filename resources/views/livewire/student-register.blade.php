@@ -1,9 +1,10 @@
 <div class="w-full max-w-none mx-auto">
 
     {{-- Form Header --}}
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold tracking-tight text-darken">Register Student</h1>
+     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
+        <h1 class="text-2xl font-bold tracking-tight text-amber-300">Register Student</h1>
         <p class="text-gray-500 text-sm mt-1">Bio data, class assignment, parents, and social data — in four short steps.</p>
+    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
     </div>
 
     {{-- Step progress wizard layout --}}

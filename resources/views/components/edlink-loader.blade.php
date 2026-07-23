@@ -1,54 +1,63 @@
-{{--
-    Edlink branded loader — a spinning navy ring with a yellow sweep and a
-    pencil mark in the center, matching the logo.
+@props([
+    'size' => 18,
+    'fullscreen' => false,
+    'title' => 'Edlink',
+    'subtitle' => 'Processing request...',
+])
 
-    Supports inline, sized, and full-page overlay variants.
---}}
-@props(['size' => '40', 'overlay' => false])
-
-@php
-    $navy = '#1B0B4D';
-    $yellow = '#FDBB11';
-@endphp
-
-@if($overlay)
-    <div {{ $attributes->merge(['class' => 'fixed inset-0 bg-white/85 backdrop-blur-sm z-[9999] flex items-center justify-center']) }}>
-        <div class="flex flex-col items-center">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Base ring -->
-                <circle cx="32" cy="32" r="27" stroke="{{ $navy }}" stroke-width="5" opacity="0.15"/>
-                <!-- Spinning yellow sweep -->
-                <circle cx="32" cy="32" r="27" stroke="{{ $yellow }}" stroke-width="5"
-                        stroke-linecap="round" stroke-dasharray="42 127"
-                        transform-origin="32 32">
-                    <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="0.9s" repeatCount="indefinite"/>
-                </circle>
-                <!-- Pencil nib mark, center -->
-                <g>
-                    <path d="M26 20 L26 34 L32 42 L38 34 L38 20" stroke="{{ $navy }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M32 20 L32 34" stroke="{{ $navy }}" stroke-width="3" stroke-linecap="round"/>
-                </g>
-            </svg>
-
-            <div class="mt-5 flex items-baseline space-x-0.5">
-                <span class="text-lg font-bold tracking-tight" style="color:{{ $navy }};">
-                    <span class="inline-block animate-pulse" style="animation-delay:0ms">E</span><span class="inline-block animate-pulse" style="animation-delay:80ms">d</span><span class="inline-block animate-pulse" style="animation-delay:160ms">l</span><span class="inline-block animate-pulse" style="animation-delay:240ms">i</span><span class="inline-block animate-pulse" style="animation-delay:320ms">n</span><span class="inline-block animate-pulse" style="animation-delay:400ms">k</span>
-                </span>
-                <span class="text-lg font-bold animate-pulse" style="color:{{ $yellow }}; animation-delay:480ms">.</span>
-            </div>
+@if($fullscreen)
+<div id="global-loader" aria-live="polite" aria-label="Edlink is loading"
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/70 backdrop-blur-md transition-opacity duration-200">
+    <div class="flex flex-col items-center rounded-3xl border border-white/10 bg-slate-900/95 px-10 py-8 text-center shadow-2xl">
+        <div class="relative flex h-24 w-24 items-center justify-center">
+            <span class="absolute inset-0 animate-spin rounded-full border-[3px] border-white/10 border-t-yellow-400 border-r-yellow-400"></span>
+            <span class="absolute inset-2 animate-pulse rounded-full bg-yellow-400/10"></span>
+            <img src="{{ asset('img/webfav.png') }}" alt="Edlink" class="relative h-16 w-16 object-contain drop-shadow-xl">
         </div>
+        <p class="mt-5 text-xs font-black uppercase tracking-[.24em] text-white">{{ $title }}</p>
+        <p class="mt-1 text-[11px] font-medium text-slate-300">{{ $subtitle }}</p>
+        <div class="mt-4 flex gap-1.5"><span class="h-1.5 w-1.5 animate-bounce rounded-full bg-yellow-400"></span><span class="h-1.5 w-1.5 animate-bounce rounded-full bg-yellow-400" style="animation-delay:120ms"></span><span class="h-1.5 w-1.5 animate-bounce rounded-full bg-yellow-400" style="animation-delay:240ms"></span></div>
     </div>
+</div>
+
+@once
+<script>
+(() => {
+    const findLoader = () => document.getElementById('global-loader');
+    let safetyTimer;
+    const showLoader = () => {
+        const loader = findLoader(); if (!loader) return;
+        clearTimeout(safetyTimer);
+        loader.classList.remove('opacity-0', 'pointer-events-none');
+        loader.classList.add('opacity-100', 'pointer-events-auto');
+        safetyTimer = setTimeout(hideLoader, 15000);
+    };
+    const hideLoader = () => {
+        const loader = findLoader(); if (!loader) return;
+        clearTimeout(safetyTimer);
+        loader.classList.remove('opacity-100', 'pointer-events-auto');
+        loader.classList.add('opacity-0', 'pointer-events-none');
+    };
+    window.EdlinkLoader = { show: showLoader, hide: hideLoader };
+    window.addEventListener('load', hideLoader);
+    window.addEventListener('pageshow', hideLoader);
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(hideLoader));
+    document.addEventListener('livewire:navigate', showLoader);
+    document.addEventListener('livewire:navigated', hideLoader);
+    document.addEventListener('livewire:init', () => {
+        Livewire.hook('request', ({ respond, fail }) => {
+            showLoader(); respond(hideLoader); fail(hideLoader);
+        });
+    });
+    document.addEventListener('submit', event => {
+        if (!event.defaultPrevented && event.target.matches('form:not([data-no-loader])')) showLoader();
+    });
+})();
+</script>
+@endonce
 @else
-    <svg width="{{ $size }}" height="{{ $size }}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}>
-        <circle cx="32" cy="32" r="27" stroke="{{ $navy }}" stroke-width="5" opacity="0.15"/>
-        <circle cx="32" cy="32" r="27" stroke="{{ $yellow }}" stroke-width="5"
-                stroke-linecap="round" stroke-dasharray="42 127"
-                transform-origin="32 32">
-            <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="0.9s" repeatCount="indefinite"/>
-        </circle>
-        <g>
-            <path d="M26 20 L26 34 L32 42 L38 34 L38 20" stroke="{{ $navy }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <path d="M32 20 L32 34" stroke="{{ $navy }}" stroke-width="3" stroke-linecap="round"/>
-        </g>
-    </svg>
+<span {{ $attributes->class('relative inline-flex shrink-0 items-center justify-center align-middle') }} style="width:{{ (int)$size }}px;height:{{ (int)$size }}px" role="status" aria-label="Loading">
+    <span class="absolute inset-0 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80"></span>
+    <img src="{{ asset('img/webfav.png') }}" alt="" class="relative object-contain" style="width:{{ max(8,(int)$size-7) }}px;height:{{ max(8,(int)$size-7) }}px">
+</span>
 @endif

@@ -10,10 +10,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "bacon/bacon-qr-code": "3.0",
+        "barryvdh/laravel-dompdf": "*",
         "blade-ui-kit/blade-heroicons": "*",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
         "livewire/volt": "*",
+        "pragmarx/google2fa": "8.0",
         "spatie/laravel-permission": "*"
     },
     "require-dev": {

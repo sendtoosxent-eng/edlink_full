@@ -22,7 +22,7 @@ class StudentRegister extends Component
 
     public int $step = 1;
 
-    // Step 1 — Bio data
+    // Step 1 â€” Bio data
     public string $name = '';
     public string $admission_no = '';
     public string $date_of_birth = '';
@@ -30,19 +30,19 @@ class StudentRegister extends Component
     public string $admission_date = '';
     public $photo = null;
 
-    // Step 2 — Class data
+    // Step 2 â€” Class data
     public string $school_class_id = '';
     public string $stream_id = '';
     public string $student_category_id = '';
 
-    // Step 3 — Parents data
+    // Step 3 â€” Parents data
     public string $guardian_name = '';
     public string $guardian_relationship = 'Parent';
     public string $guardian_phone = '';
     public string $guardian_email = '';
     public string $guardian_address = '';
 
-    // Step 4 — Social data
+    // Step 4 â€” Social data
     public string $nationality = '';
     public string $religion = '';
     public string $blood_group = '';
@@ -132,6 +132,15 @@ class StudentRegister extends Component
 
         $school = Auth::user()->school;
         $term = $school->currentTerm();
+        if (! $school->isLicenceUsable()) {
+            $this->addError('school_class_id', 'Student registration is unavailable because the school licence is not active.');
+            return;
+        }
+
+        if (! $school->hasStudentCapacity()) {
+            $this->addError('school_class_id', 'This school has reached its '.number_format((int) $school->license_student_limit).'-student subscription limit. Ask Edlink to upgrade the package.');
+            return;
+        }
 
         if (! $term || ! $term->isOpen()) {
             $this->addError('school_class_id', 'Students can only be enrolled during an open current term.');
@@ -187,6 +196,20 @@ class StudentRegister extends Component
                 'status' => 'active',
                 'enrolled_at' => $student->admission_date,
             ]);
+
+            $houseId = DB::table('student_houses as h')
+                ->leftJoin('student_house_memberships as m', 'm.student_house_id', '=', 'h.id')
+                ->where('h.school_id', $school->id)
+                ->groupBy('h.id')
+                ->orderByRaw('COUNT(m.id) ASC')
+                ->orderBy('h.id')
+                ->value('h.id');
+            if ($houseId) {
+                DB::table('student_house_memberships')->insert([
+                    'school_id' => $school->id, 'student_house_id' => $houseId, 'student_id' => $student->id,
+                    'allocation_method' => 'automatic', 'assigned_by' => Auth::id(), 'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
 
             return $student;
         });

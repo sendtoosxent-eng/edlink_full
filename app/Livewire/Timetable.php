@@ -1,4 +1,118 @@
 <?php
+
 namespace App\Livewire;
-use App\Models\SchoolClass;use App\Models\Stream;use App\Models\Subject;use App\Models\Term;use App\Models\User;use Illuminate\Support\Facades\Auth;use Illuminate\Support\Facades\DB;use Livewire\Attributes\Layout;use Livewire\Component;
-#[Layout('layouts.app')] class Timetable extends Component {public string $classId='',$streamId='',$day='Monday',$startsAt='08:00',$endsAt='08:40',$subjectId='',$teacherId='',$label='';public function mount():void{$this->classId=(string)SchoolClass::where('school_id',Auth::user()->school_id)->value('id');}public function saveSlot():void{$school=Auth::user()->school;$term=$school->currentTerm();if(!$term||!$term->isOpen()){session()->flash('error','Timetables can only be edited in an open term.');return;}$this->validate(['classId'=>'required|exists:school_classes,id','streamId'=>'nullable|exists:streams,id','day'=>'required|in:Monday,Tuesday,Wednesday,Thursday,Friday','startsAt'=>'required|date_format:H:i','endsAt'=>'required|date_format:H:i|after:startsAt','subjectId'=>'nullable|exists:subjects,id','teacherId'=>'nullable|exists:users,id','label'=>'nullable|string|max:100']);if(!SchoolClass::where('school_id',$school->id)->whereKey($this->classId)->exists()){abort(403);}if($this->teacherId&&DB::table('timetable_slots')->where(['school_id'=>$school->id,'term_id'=>$term->id,'day_of_week'=>$this->day,'starts_at'=>$this->startsAt,'user_id'=>$this->teacherId])->exists()){ $this->addError('teacherId','This teacher is already assigned at that time.');return;}DB::table('timetable_slots')->updateOrInsert(['school_id'=>$school->id,'term_id'=>$term->id,'school_class_id'=>$this->classId,'stream_id'=>$this->streamId?:null,'day_of_week'=>$this->day,'starts_at'=>$this->startsAt],['ends_at'=>$this->endsAt,'subject_id'=>$this->subjectId?:null,'user_id'=>$this->teacherId?:null,'label'=>$this->label?:null,'updated_at'=>now(),'created_at'=>now()]);$this->reset(['subjectId','teacherId','label']);session()->flash('status','Timetable slot saved.');}public function deleteSlot(int $id):void{$term=Auth::user()->school->currentTerm();if(!$term?->isOpen())return;DB::table('timetable_slots')->where(['id'=>$id,'school_id'=>Auth::user()->school_id,'term_id'=>$term->id])->delete();session()->flash('status','Timetable slot removed.');}public function render(){$school=Auth::user()->school;$term=$school->currentTerm();$timetableSlots=DB::table('timetable_slots')->leftJoin('subjects','subjects.id','=','timetable_slots.subject_id')->leftJoin('users','users.id','=','timetable_slots.user_id')->where('timetable_slots.school_id',$school->id)->when($term,fn($q)=>$q->where('timetable_slots.term_id',$term->id))->when($this->classId,fn($q)=>$q->where('timetable_slots.school_class_id',$this->classId))->orderBy('starts_at')->get(['timetable_slots.*','subjects.name as subject','users.name as teacher']);return view('livewire.timetable',['term'=>$term,'classes'=>SchoolClass::where('school_id',$school->id)->orderBy('name')->get(),'streams'=>$this->classId?Stream::where('school_class_id',$this->classId)->get():collect(),'subjects'=>Subject::where('school_id',$school->id)->orderBy('name')->get(),'teachers'=>User::where('school_id',$school->id)->where('employment_status','active')->whereIn('role',['teacher','admin'])->orderBy('name')->get(),'timetableSlots'=>$timetableSlots,'pageTitle'=>'Timetable']);}}
+
+use App\Models\AuditLog;
+use App\Models\SchoolClass;
+use App\Models\Stream;
+use App\Models\Subject;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+#[Layout('layouts.app')]
+class Timetable extends Component
+{
+    public string $classId = '';
+    public string $streamId = '';
+    public string $day = 'Monday';
+    public string $startsAt = '08:00';
+    public string $endsAt = '08:40';
+    public string $subjectId = '';
+    public string $teacherId = '';
+    public string $label = '';
+    public ?int $editingId = null;
+
+    public array $days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    public function mount(): void
+    {
+        $this->authorizeTimetable();
+        $this->classId = (string) SchoolClass::where('school_id', Auth::user()->school_id)->orderBy('sort_order')->orderBy('name')->value('id');
+    }
+
+    public function updatedClassId(): void { $this->streamId = ''; }
+
+    public function saveSlot(): void
+    {
+        $this->authorizeTimetable();
+        $school = Auth::user()->school;
+        $term = $school->currentTerm();
+        if (! $term || ! $term->isOpen()) { session()->flash('error', 'Timetable slots can only be changed during an open current term.'); return; }
+
+        $data = $this->validate([
+            'classId' => ['required','integer'], 'streamId' => ['nullable','integer'],
+            'day' => ['required','in:'.implode(',', $this->days)],
+            'startsAt' => ['required','date_format:H:i'], 'endsAt' => ['required','date_format:H:i','after:startsAt'],
+            'subjectId' => ['nullable','integer'], 'teacherId' => ['nullable','integer'], 'label' => ['nullable','string','max:100'],
+        ]);
+
+        $class = SchoolClass::where('school_id',$school->id)->find($data['classId']);
+        if (! $class) throw ValidationException::withMessages(['classId'=>'Select a class belonging to this school.']);
+        if ($data['streamId'] && ! Stream::where('school_id',$school->id)->where('school_class_id',$class->id)->whereKey($data['streamId'])->exists()) throw ValidationException::withMessages(['streamId'=>'Select a stream belonging to this class.']);
+        if ($data['subjectId'] && ! Subject::where('school_id',$school->id)->whereKey($data['subjectId'])->exists()) throw ValidationException::withMessages(['subjectId'=>'Select a subject belonging to this school.']);
+        if ($data['teacherId'] && ! User::where('school_id',$school->id)->where('employment_status','active')->whereKey($data['teacherId'])->exists()) throw ValidationException::withMessages(['teacherId'=>'Select an active staff member from this school.']);
+        if (! $data['subjectId'] && blank($data['label'])) throw ValidationException::withMessages(['label'=>'Choose a subject or enter a label such as Break or Assembly.']);
+
+        $overlap = fn ($query) => $query->where('starts_at','<',$data['endsAt'])->where('ends_at','>',$data['startsAt'])->when($this->editingId,fn($q)=>$q->where('id','!=',$this->editingId));
+        $base = DB::table('timetable_slots')->where('school_id',$school->id)->where('term_id',$term->id)->where('day_of_week',$data['day']);
+        $classSchedule = $overlap(clone $base)->where('school_class_id', $class->id);
+        if ($data['streamId']) {
+            $classSchedule->where(fn ($query) => $query->whereNull('stream_id')->orWhere('stream_id', $data['streamId']));
+        }
+        $classConflict = $classSchedule->exists();
+        if ($classConflict) throw ValidationException::withMessages(['startsAt'=>'This class or stream already has an activity during that time.']);
+        if ($data['teacherId'] && $overlap(clone $base)->where('user_id',$data['teacherId'])->exists()) throw ValidationException::withMessages(['teacherId'=>'This staff member is already assigned during that time.']);
+
+        $values = ['school_id'=>$school->id,'term_id'=>$term->id,'school_class_id'=>$class->id,'stream_id'=>$data['streamId'] ?: null,'subject_id'=>$data['subjectId'] ?: null,'user_id'=>$data['teacherId'] ?: null,'day_of_week'=>$data['day'],'starts_at'=>$data['startsAt'],'ends_at'=>$data['endsAt'],'label'=>filled($data['label']) ? trim($data['label']) : null,'updated_at'=>now()];
+        if ($this->editingId) {
+            $changed = DB::table('timetable_slots')->where('id',$this->editingId)->where('school_id',$school->id)->where('term_id',$term->id)->update($values);
+            abort_unless($changed !== false, 404); $event = 'timetable.slot.updated';
+        } else {
+            $values['created_at'] = now(); $this->editingId = (int) DB::table('timetable_slots')->insertGetId($values); $event = 'timetable.slot.created';
+        }
+        AuditLog::record($school->id,$event,null,['slot_id'=>$this->editingId,'class'=>$class->name,'day'=>$data['day'],'starts_at'=>$data['startsAt']]);
+        session()->flash('status','Timetable slot saved successfully.');
+        $this->resetForm(false);
+    }
+
+    public function editSlot(int $id): void
+    {
+        $this->authorizeTimetable();
+        $term = Auth::user()->school->currentTerm();
+        $slot = DB::table('timetable_slots')->where('id',$id)->where('school_id',Auth::user()->school_id)->when($term,fn($q)=>$q->where('term_id',$term->id))->first();
+        abort_unless($slot,404);
+        $this->editingId=$slot->id; $this->classId=(string)$slot->school_class_id; $this->streamId=(string)($slot->stream_id ?? ''); $this->day=$slot->day_of_week; $this->startsAt=substr($slot->starts_at,0,5); $this->endsAt=substr($slot->ends_at,0,5); $this->subjectId=(string)($slot->subject_id ?? ''); $this->teacherId=(string)($slot->user_id ?? ''); $this->label=(string)($slot->label ?? '');
+    }
+
+    public function cancelEdit(): void { $this->resetForm(); }
+
+    public function deleteSlot(int $id): void
+    {
+        $this->authorizeTimetable();
+        $school=Auth::user()->school; $term=$school->currentTerm();
+        if(!$term?->isOpen()){session()->flash('error','Only an open current term can be edited.');return;}
+        $deleted=DB::table('timetable_slots')->where('id',$id)->where('school_id',$school->id)->where('term_id',$term->id)->delete();
+        if($deleted){AuditLog::record($school->id,'timetable.slot.deleted',null,['slot_id'=>$id]);session()->flash('status','Timetable slot removed.');}
+        if($this->editingId===$id)$this->resetForm();
+    }
+
+    private function resetForm(bool $keepClass=true): void
+    {
+        $class=$this->classId; $this->reset(['streamId','subjectId','teacherId','label','editingId']);
+        if($keepClass)$this->classId=$class; $this->day='Monday'; $this->startsAt='08:00'; $this->endsAt='08:40';
+    }
+
+    private function authorizeTimetable(): void { abort_unless(Auth::user()?->hasPermission('academics.timetable'),403); }
+
+    public function render()
+    {
+        $school=Auth::user()->school; $term=$school->currentTerm();
+        $classes=SchoolClass::where('school_id',$school->id)->with('streams')->orderBy('sort_order')->orderBy('name')->get();
+        $slots=DB::table('timetable_slots')->leftJoin('subjects','subjects.id','=','timetable_slots.subject_id')->leftJoin('users','users.id','=','timetable_slots.user_id')->leftJoin('streams','streams.id','=','timetable_slots.stream_id')->where('timetable_slots.school_id',$school->id)->when($term,fn($q)=>$q->where('timetable_slots.term_id',$term->id))->when($this->classId,fn($q)=>$q->where('timetable_slots.school_class_id',$this->classId))->orderByRaw("CASE day_of_week WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END")->orderBy('starts_at')->get(['timetable_slots.*','subjects.name as subject','users.name as teacher','streams.name as stream']);
+        return view('livewire.timetable',['term'=>$term,'classes'=>$classes,'streams'=>$this->classId?Stream::where('school_id',$school->id)->where('school_class_id',$this->classId)->orderBy('name')->get():collect(),'subjects'=>Subject::where('school_id',$school->id)->orderBy('name')->get(),'teachers'=>User::where('school_id',$school->id)->where('employment_status','active')->whereNotIn('role',['student','parent'])->orderBy('name')->get(),'timetableSlots'=>$slots,'slotsByDay'=>$slots->groupBy('day_of_week'),'pageTitle'=>'Timetable']);
+    }
+}

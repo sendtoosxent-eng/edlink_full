@@ -52,7 +52,7 @@ class ExamResults extends Component
         $submissions = DB::table('exam_paper_submissions')->whereIn('exam_paper_id', $paperIds)->pluck('status', 'exam_paper_id');
         $approvedPapers = $papers->filter(fn ($paper) => ($submissions[$paper->id] ?? null) === 'approved')->values();
         $students = $this->studentsFor($exam);
-        $scales = GradingScale::where('school_id', $exam->school_id)->orderByDesc('minimum_percentage')->get();
+        $scales = GradingScale::where('school_id', $exam->school_id)->where('education_stage', $exam->schoolClass->education_stage)->orderByDesc('minimum_percentage')->get();
         $marks = DB::table('exam_marks')->whereIn('exam_paper_id', $paperIds)->get()->keyBy(fn ($mark) => $mark->exam_paper_id.':'.$mark->student_id);
         $missingMarks = 0;
         $rows = collect();
@@ -123,7 +123,7 @@ class ExamResults extends Component
 
     protected function canManage(): bool
     {
-        return in_array(Auth::user()->role, ['admin', 'academic_admin'], true);
+        return Auth::user()->hasPermission('exams.results');
     }
 
     public function render()

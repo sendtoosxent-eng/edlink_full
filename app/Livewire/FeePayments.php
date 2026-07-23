@@ -122,7 +122,7 @@ class FeePayments extends Component
         });
 
         $this->payingStudentId = null;
-        session()->flash('status', 'Payment of UGX '.number_format((float) $this->amount).' recorded for '.$student->name.'.');
+        session()->flash('status', 'Payment of UGX '.number_format((float) $this->amount).' recorded for '.$student->name.'. A thank-you email with the PDF receipt will be sent to the registered parent or guardian email.');
         $this->dispatch('payment-recorded', receiptUrl: route('fee-payments.receipt', $payment));
     }
 

@@ -72,10 +72,17 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Receipt / voucher number</label>
+                            <input type="text" wire:model="reference_number" placeholder="e.g. PV-2026-001" autocomplete="off" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 uppercase focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                            @error('reference_number') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Amount (UGX)</label>
                         <input type="number" step="0.01" min="0" wire:model="amount" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400">
                         @error('amount') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
                     </div>
 
                     <div>
@@ -102,6 +109,7 @@
                 <thead>
                     <tr class="text-left text-gray-400 text-xs uppercase tracking-wide border-b border-gray-100">
                         <th class="px-5 py-3">Date</th>
+                        <th class="px-5 py-3">Receipt / voucher</th>
                         <th class="px-5 py-3">Category</th>
                         <th class="px-5 py-3">Description</th>
                         <th class="px-5 py-3">Amount</th>
@@ -112,6 +120,7 @@
                     @forelse($expenses as $expense)
                         <tr class="border-b border-gray-50 hover:bg-gray-50/60">
                             <td class="px-5 py-3 text-gray-500">{{ $expense->expense_date->format('d M Y') }}</td>
+                            <td class="px-5 py-3 font-mono text-xs font-semibold text-gray-700">{{ $expense->reference_number ?: '-' }}</td>
                             <td class="px-5 py-3">
                                 <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">{{ $expense->category }}</span>
                             </td>
@@ -132,7 +141,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-5 py-10 text-center text-gray-400 text-sm">No expenses recorded for this term.</td></tr>
+                        <tr><td colspan="6" class="px-5 py-10 text-center text-gray-400 text-sm">No expenses recorded for this term.</td></tr>
                     @endforelse
                 </tbody>
             </table>

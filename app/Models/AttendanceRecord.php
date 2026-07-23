@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+
 class AttendanceRecord extends Model
 {
     public const STATUSES = ['present', 'absent', 'late', 'excused'];

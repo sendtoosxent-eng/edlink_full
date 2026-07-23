@@ -18,10 +18,13 @@ class GradingScales extends Component
     public string $maximum = '';
     public string $grade = '';
     public string $remark = '';
+    public string $stage = '';
+    public string $points = '';
 
     public function mount(): void
     {
         abort_unless($this->canManage(), 403);
+        $this->stage = \App\Services\SchoolAcademicSetup::stagesFor(Auth::user()->school)[0];
     }
 
     public function save(): void
@@ -32,11 +35,13 @@ class GradingScales extends Component
         $validated = $this->validate([
             'minimum' => ['required', 'numeric', 'min:0', 'max:100'],
             'maximum' => ['required', 'numeric', 'min:0', 'max:100', 'gte:minimum'],
-            'grade' => ['required', 'string', 'max:10', Rule::unique('grading_scales', 'grade')->where('school_id', $schoolId)->ignore($this->editingId)],
+            'grade' => ['required', 'string', 'max:10', Rule::unique('grading_scales', 'grade')->where(fn ($query) => $query->where('school_id', $schoolId)->where('education_stage', $this->stage))->ignore($this->editingId)],
+            'points' => ['nullable', 'integer', 'min:0', 'max:20'],
             'remark' => ['nullable', 'string', 'max:255'],
         ]);
 
         $overlaps = GradingScale::where('school_id', $schoolId)
+            ->where('education_stage', $this->stage)
             ->when($this->editingId, fn (Builder $query) => $query->whereKeyNot($this->editingId))
             ->where('minimum_percentage', '<=', (float) $validated['maximum'])
             ->where('maximum_percentage', '>=', (float) $validated['minimum'])
@@ -53,6 +58,8 @@ class GradingScales extends Component
             ['id' => $this->editingId, 'school_id' => $schoolId],
             [
                 'minimum_percentage' => $validated['minimum'],
+                'education_stage' => $this->stage,
+                'aggregate_points' => $validated['points'] !== '' ? $validated['points'] : null,
                 'maximum_percentage' => $validated['maximum'],
                 'grade' => $validated['grade'],
                 'remark' => trim($validated['remark'] ?? '') ?: null,
@@ -72,12 +79,13 @@ class GradingScales extends Component
         $this->maximum = (string) (float) $scale->maximum_percentage;
         $this->grade = $scale->grade;
         $this->remark = $scale->remark ?? '';
+        $this->points = (string) ($scale->aggregate_points ?? '');
         $this->resetValidation();
     }
 
     public function cancelEditing(): void
     {
-        $this->reset(['editingId', 'minimum', 'maximum', 'grade', 'remark']);
+        $this->reset(['editingId', 'minimum', 'maximum', 'grade', 'remark', 'points']);
         $this->resetValidation();
     }
 
@@ -97,34 +105,18 @@ class GradingScales extends Component
             return;
         }
 
-        $defaults = [
-            ['A', 80, 100, 'Excellent'],
-            ['B', 70, 79.99, 'Very good'],
-            ['C', 60, 69.99, 'Good'],
-            ['D', 50, 59.99, 'Satisfactory'],
-            ['E', 40, 49.99, 'Needs improvement'],
-            ['F', 0, 39.99, 'Below standard'],
-        ];
-
-        foreach ($defaults as [$grade, $minimum, $maximum, $remark]) {
-            GradingScale::create(compact('grade', 'remark') + [
-                'school_id' => Auth::user()->school_id,
-                'minimum_percentage' => $minimum,
-                'maximum_percentage' => $maximum,
-            ]);
-        }
-
-        session()->flash('status', 'Default A-F grading scale installed. You can edit each band.');
+        \App\Services\SchoolAcademicSetup::installDefaultScale(Auth::user()->school, $this->stage);
+        session()->flash('status', 'Default scale installed for this education stage. You can edit each band.');
     }
 
     protected function schoolScales(): Builder
     {
-        return GradingScale::where('school_id', Auth::user()->school_id);
+        return GradingScale::where('school_id', Auth::user()->school_id)->where('education_stage', $this->stage);
     }
 
     protected function canManage(): bool
     {
-        return in_array(Auth::user()->role, ['admin', 'academic_admin'], true);
+        return Auth::user()->hasPermission('exams.setup');
     }
 
     public function render()
@@ -135,6 +127,7 @@ class GradingScales extends Component
         return view('livewire.grading-scales', [
             'scales' => $scales,
             'coverageComplete' => $scales->isNotEmpty() && $covered >= 100.01,
+            'stages' => \App\Services\SchoolAcademicSetup::stagesFor(Auth::user()->school),
             'pageTitle' => 'Grading Scales',
         ]);
     }

@@ -31,7 +31,7 @@
             #app-main { margin-left: var(--sidebar-w); }
         }
 
-        /* Sidebar nav — hover and active states in Edlink yellow */
+        /* Sidebar nav â€” hover and active states in Edlink yellow */
         .nav-link, .nav-group-btn {
             color: #d1d5db;
             transition: background-color .15s ease, color .15s ease;
@@ -78,7 +78,7 @@
             <img src="{{ asset('img/logo.png') }}" alt="Edlink logo" class="w-[180px] h-auto">
             </a>
         </div>
-        <button @click="mobileNavOpen = !mobileNavOpen" class="text-xl">☰</button>
+        <button @click="mobileNavOpen = !mobileNavOpen" class="text-xl">â˜°</button>
     </div>
 
     <!-- Sidebar -->
@@ -218,10 +218,27 @@
             </div>
 
             <div class="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
-                @if(isset($school) && $school?->is_demo)
-                    <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full font-medium hidden sm:inline-block">
-                        Demo — expires {{ $school->demo_expires_at?->diffForHumans() }}
-                    </span>
+                @if(isset($school))
+                    @php
+                        $licenceExpiry = $school->license_expires_at?->copy()->startOfDay();
+                        $licenceDaysRemaining = $licenceExpiry ? (int) now()->startOfDay()->diffInDays($licenceExpiry, false) : null;
+                        $licenceIsExpired = $school->license_status === 'expired' || ($licenceDaysRemaining !== null && $licenceDaysRemaining < 0);
+                        $licenceIsUrgent = ! $licenceIsExpired && $licenceDaysRemaining !== null && $licenceDaysRemaining <= 30;
+                    @endphp
+                    <a href="{{ route('licence.index') }}" wire:navigate
+                       class="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold {{ $licenceIsExpired ? 'bg-red-100 text-red-700' : ($licenceIsUrgent ? 'bg-amber-100 text-amber-800' : 'bg-yellow-100 text-yellow-800') }}">
+                        <span class="h-2 w-2 rounded-full {{ $licenceIsExpired ? 'bg-red-500' : ($licenceIsUrgent ? 'bg-amber-500' : 'bg-yellow-500') }}"></span>
+                        {{ ucfirst($school->license_plan) }}:
+                        @if($licenceIsExpired)
+                            expired {{ $licenceExpiry?->format('d M Y') }}
+                        @elseif($licenceDaysRemaining === 0)
+                            expires today
+                        @elseif($licenceDaysRemaining !== null)
+                            {{ number_format($licenceDaysRemaining) }} {{ Str::plural('day', $licenceDaysRemaining) }} remaining
+                        @else
+                            no expiry date
+                        @endif
+                    </a>
                 @endif
 
                 <!-- Search box -->
@@ -272,7 +289,7 @@
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                             <span>Change password</span>
                         </button>
-                        <a href="#" class="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
+                        <a href="{{ route('settings.backup') }}" data-no-navigate download class="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M7 10l5 5 5-5M12 15V3" /></svg>
                             <span>Take backup</span>
                         </a>
@@ -299,7 +316,7 @@
             <!-- Greeting card -->
             <div class="rounded-2xl p-6 lg:p-8 mb-8 relative overflow-hidden shadow-lg ring-2 ring-yellow-400/20" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
                 <div class="relative z-10">
-                    <h2 class="text-white text-2xl font-semibold mb-1">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} 👋</h2>
+                    <h2 class="text-white text-2xl font-semibold mb-1">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} ðŸ‘‹</h2>
                     <p class="text-gray-300 text-sm">Here's what's happening at {{ $school->name ?? 'your school' }} today.</p>
                     <p class="text-yellow-400 text-xs font-medium mt-3" id="greetingDateTime">Loading...</p>
                 </div>
@@ -327,7 +344,7 @@
             <p class="text-gray-500 text-sm mt-1">{{ $stat['label'] }}</p>
             @if($stat['added'] > 0)
                 <p class="text-xs text-green-600 mt-2 flex items-center space-x-1">
-                    <span>↑</span><span>{{ $stat['added'] }} added this month</span>
+                    <span>â†‘</span><span>{{ $stat['added'] }} added this month</span>
                 </p>
             @else
                 <p class="text-xs text-gray-300 mt-2">No new {{ strtolower($stat['label']) }} this month</p>
@@ -336,7 +353,7 @@
     @endforeach
 </div>
 
-<div class="mb-8 grid gap-4 sm:grid-cols-3"><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Attendance today</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ $attendanceRateToday }}%</p><p class="mt-1 text-sm text-slate-500">{{ $presentToday }} present / {{ $activeLearners }} active learners</p></div><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Absent today</p><p class="mt-2 text-2xl font-bold text-rose-600">{{ $absentToday }}</p><a href="{{ route('attendance.index') }}" class="mt-2 inline-block text-sm font-bold text-yellow-700">Mark attendance →</a></div><div class="rounded-2xl bg-slate-900 p-5 text-white"><p class="text-xs font-bold uppercase text-slate-400">Current term</p><p class="mt-2 text-lg font-bold">{{ $term ? $term->name.', '.$term->year : 'No open term' }}</p><p class="mt-1 text-sm text-slate-300">Attendance and finance are shown in this context.</p></div></div>
+<div class="mb-8 grid gap-4 sm:grid-cols-3"><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Attendance today</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ $attendanceRateToday }}%</p><p class="mt-1 text-sm text-slate-500">{{ $presentToday }} present / {{ $activeLearners }} active learners</p></div><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Absent today</p><p class="mt-2 text-2xl font-bold text-rose-600">{{ $absentToday }}</p><a href="{{ route('attendance.index') }}" class="mt-2 inline-block text-sm font-bold text-yellow-700">Mark attendance â†’</a></div><div class="rounded-2xl bg-slate-900 p-5 text-white"><p class="text-xs font-bold uppercase text-slate-400">Current term</p><p class="mt-2 text-lg font-bold">{{ $term ? $term->name.', '.$term->year : 'No open term' }}</p><p class="mt-1 text-sm text-slate-300">Attendance and finance are shown in this context.</p></div></div>
 <!-- Live financial position for the current term -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
     @php
@@ -603,7 +620,7 @@
             <div class="space-y-1">
                 <h3 class="font-bold text-gray-900 text-base tracking-tight">Attendance this week</h3>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-100/70">
-                    Sample data — connects when Attendance module is live
+                    Sample data â€” connects when Attendance module is live
                 </span>
             </div>
             
@@ -986,14 +1003,14 @@
             }
         });
         document.getElementById('attendanceClassFilter').addEventListener('change', function () {
-            // Sample re-render — swaps to slightly different mock numbers per "class" selected.
+            // Sample re-render â€” swaps to slightly different mock numbers per "class" selected.
             const key = this.value;
             attendanceChart.data.datasets[0].data = attendanceDatasets[key].present;
             attendanceChart.data.datasets[1].data = attendanceDatasets[key].absent;
             attendanceChart.update();
         });
         document.getElementById('attendanceDateFilter').addEventListener('change', function () {
-            // Placeholder until the Attendance module exists — filtering by a single day
+            // Placeholder until the Attendance module exists â€” filtering by a single day
             // will show that day's actual present/absent split once real records exist.
             attendanceChart.update();
         });
@@ -1004,6 +1021,20 @@
     <script>
       try {
         // ---- Cash pool flow for the active term ----
+        window.formatChartAmount = (rawValue) => {
+            const value = Number(rawValue) || 0;
+            const absolute = Math.abs(value);
+            const compact = (divisor, suffix) => {
+                const scaled = value / divisor;
+                const decimals = Math.abs(scaled) >= 10 ? 0 : 1;
+                return `${Number(scaled.toFixed(decimals))}${suffix}`;
+            };
+            if (absolute >= 1_000_000_000_000) return compact(1_000_000_000_000, 'T');
+            if (absolute >= 1_000_000_000) return compact(1_000_000_000, 'B');
+            if (absolute >= 1_000_000) return compact(1_000_000, 'M');
+            if (absolute >= 1_000) return compact(1_000, 'K');
+            return Math.round(value).toLocaleString('en-UG');
+        };
         const revenueLabels = @json($cashFlowLabels);
         const revenueIncome = @json($cashFlowIncome);
         const revenueExpenditure = @json($cashFlowExpenditure);
@@ -1022,9 +1053,9 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
-                    tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': UGX ' + ctx.raw.toLocaleString() } }
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: UGX ${Number(ctx.raw).toLocaleString('en-UG')}` } }
                 },
-                scales: { y: { ticks: { callback: (v) => (v/1000000) + 'M' } } }
+                scales: { y: { beginAtZero: true, ticks: { callback: (value) => window.formatChartAmount(value) } } }
             }
         });
         document.getElementById('revenueTypeFilter').addEventListener('change', function () {
@@ -1089,7 +1120,7 @@
         const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
         const timetable = [...new Set(slotRecords.map(slot => `${slot.starts_at}-${slot.ends_at}`))].map(time => {
             const [start,end] = time.split('-');
-            return [`${start.slice(0,5)} - ${end.slice(0,5)}`, ...days.map(day => { const slot = slotRecords.find(item => `${item.starts_at}-${item.ends_at}` === time && item.day_of_week === day); return slot ? (slot.subject || slot.label || 'Lesson') : '—'; })];
+            return [`${start.slice(0,5)} - ${end.slice(0,5)}`, ...days.map(day => { const slot = slotRecords.find(item => `${item.starts_at}-${item.ends_at}` === time && item.day_of_week === day); return slot ? (slot.subject || slot.label || 'Lesson') : 'â€”'; })];
         });
         document.getElementById('timetableBody').innerHTML = timetable.map(row => `
             <tr class="border-t border-gray-100">
@@ -1105,10 +1136,10 @@
       try {
         // ---- Notifications (sample) ----
         const notifications = [
-            { icon: '✉', text: 'New message from a parent regarding fee balance.', time: '2h ago' },
-            { icon: '✓', text: 'Attendance was marked for all classes today.', time: '5h ago' },
-            { icon: '◫', text: 'Term 1 fee deadline is in 3 days.', time: '1d ago' },
-            { icon: '◈', text: 'A new staff account was added.', time: '2d ago' },
+            { icon: 'âœ‰', text: 'New message from a parent regarding fee balance.', time: '2h ago' },
+            { icon: 'âœ“', text: 'Attendance was marked for all classes today.', time: '5h ago' },
+            { icon: 'â—«', text: 'Term 1 fee deadline is in 3 days.', time: '1d ago' },
+            { icon: 'â—ˆ', text: 'A new staff account was added.', time: '2d ago' },
         ];
         const liveNotifications = @json($dashboardNotifications).map(notification => ({ icon: notification.type === 'warning' ? '!' : 'i', text: notification.title + ': ' + notification.message, time: new Date(notification.created_at).toLocaleDateString() }));
         if (liveNotifications.length) notifications.splice(0, notifications.length, ...liveNotifications);
@@ -1130,9 +1161,17 @@
       try {
         // ---- Reminders (sample) ----
         const reminders = [
-            { icon: '◷', text: 'Submit termly report to the education office.', due: 'Due in 4 days' },
-            { icon: '↻', text: 'Renew school license before it expires.', due: 'Due in 6 days' },
-            { icon: '☎', text: 'Parent-teacher meeting scheduled for Friday.', due: 'This week' },
+            { icon: 'R', text: 'Submit termly report to the education office.', due: 'Due in 4 days' },
+            @if(isset($school) && $school->license_expires_at)
+            {
+                icon: 'L',
+                text: @json($licenceIsExpired ? 'The school licence has expired. Contact Edlink to renew it.' : 'Renew the '.ucfirst($school->license_plan).' school licence before it expires.'),
+                due: @json($licenceIsExpired ? 'Expired '.$licenceExpiry->diffForHumans() : ($licenceDaysRemaining === 0 ? 'Expires today' : $licenceDaysRemaining.' '.Str::plural('day', $licenceDaysRemaining).' remaining'))
+            },
+            @elseif(isset($school))
+            { icon: 'L', text: @json(ucfirst($school->license_plan).' licence is active.'), due: 'No expiry date' },
+            @endif
+            { icon: 'M', text: 'Parent-teacher meeting scheduled for Friday.', due: 'This week' },
         ];
         document.getElementById('remindersList').innerHTML = reminders.map(r => `
             <div class="flex items-start space-x-3 py-3 border-b border-gray-50 last:border-0">
@@ -1227,7 +1266,11 @@ new Chart(paymentCtx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } }
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => `Collections: UGX ${Number(ctx.raw).toLocaleString('en-UG')}` } }
+        },
+        scales: { y: { beginAtZero: true, ticks: { callback: (value) => window.formatChartAmount(value) } } }
     }
 });
 
@@ -1264,7 +1307,7 @@ new Chart(performanceCtx, {
         const currencySymbol = @json($currencySymbol);
         function refreshDebtorsSpotlight() {
             const grid = document.getElementById('debtorsSpotlightGrid');
-            grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${debtor.name}</p><p class="text-xs text-gray-400">${debtor.class}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${currencySymbol} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" onclick="return confirm('Open an email reminder for this learner’s parent/guardian?')" href="mailto:${debtor.guardian_email}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for ${debtor.name}.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
+            grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${debtor.name}</p><p class="text-xs text-gray-400">${debtor.class}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${currencySymbol} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" onclick="return confirm('Open an email reminder for this learnerâ€™s parent/guardian?')" href="mailto:${debtor.guardian_email}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for ${debtor.name}.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
         }
         refreshDebtorsSpotlight();
     </script>

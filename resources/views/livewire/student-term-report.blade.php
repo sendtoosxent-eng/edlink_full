@@ -33,6 +33,7 @@
         }
     </style>
 
+    @unless(in_array(auth()->user()->role, ['parent', 'student'], true))
     <section class="no-print mx-auto mb-5 max-w-[210mm] rounded-2xl border bg-white p-5 shadow-sm">
         <div class="mb-4"><h2 class="font-bold">Build student report</h2><p class="text-xs text-slate-500">Choose the term, learner and examination.</p></div>
         <div class="grid gap-4 md:grid-cols-3">
@@ -42,6 +43,7 @@
         </div>
         @if($termId && $studentId && $exams->isEmpty())<p class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">No examination is available for this learner in the selected term.</p>@endif
     </section>
+    @endunless
     @if($student && $term && $exam)
 
     <!-- PRINT CONTROL BUTTONS -->
@@ -83,8 +85,11 @@
                             <p class="text-[11px] font-semibold text-slate-600 uppercase tracking-wider mt-1">
                                 {{ $school->address ?? 'CAMPUS ADDRESS, CITY, COUNTRY' }}
                             </p>
+                            <p class="mt-1 text-[10px] font-semibold text-slate-600">
+                                {{ collect([$school->phone, $school->email, $school->website])->filter()->join(' · ') }}
+                            </p>
                             <p class="text-xs font-bold text-slate-900 uppercase tracking-widest mt-2">
-                                {{ $exam->name }} · {{ $term->name }}, {{ $term->year }} · {{ ucfirst($settings['level']) }}
+                                {{ $exam->name }} · {{ $term->name }}, {{ $term->year }} · {{ str($settings['stage'])->replace('_', ' ')->title() }}
                             </p>
 
                             <!-- MARKSHEET Banner -->
@@ -135,7 +140,7 @@
                                     <th class="p-2.5 border-r-2 border-slate-900">SUBJECT</th>
                                     <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">CREDIT HOUR</th>
                                     <th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE OBTAINED</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">GRADE POINT</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">POINTS</th>
                                     <th class="p-2.5 text-center w-32">REMARKS</th>
                                 </tr>
                             </thead>
@@ -144,10 +149,10 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">{{ $grade->subject->name ?? ($grade['subject_name'] ?? 'SUBJECT') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">{{ number_format($grade->credit_hours ?? ($grade['credit_hours'] ?? 2.0), 2) }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? 'A+') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ number_format($grade->grade_point ?? ($grade['grade_point'] ?? 4.0), 2) }}</td>
-                                    <td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'EXCELLENT') }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">{{ number_format($grade->credit_hours ?? ($grade['credit_hours'] ?? 0), 2) }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? '—') }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ $grade->aggregate_points ?? '—' }}</td>
+                                    <td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'Grade not configured') }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -174,9 +179,9 @@
                         </div>
                         @endif
                         <div class="p-2 bg-yellow-50">
-                            <span class="block text-xs font-black uppercase text-slate-900 tracking-wider">GPA</span>
+                            <span class="block text-xs font-black uppercase text-slate-900 tracking-wider">AGGREGATE / AVERAGE</span>
                             <span class="block text-xl font-black text-slate-950 font-mono mt-1">
-                                {{ number_format($gpa ?? ($report->gpa ?? 4.00), 2) }}
+                                {{ $aggregate }} / {{ number_format((float) $average, 1) }}%
                             </span>
                         </div>
                     </div>

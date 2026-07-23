@@ -23,7 +23,7 @@ class PortalAccess extends Component
 
     public function mount(): void
     {
-        abort_unless(in_array(Auth::user()->role, ['admin', 'registrar'], true), 403);
+        abort_unless(Auth::user()->hasPermission('students.manage'), 403);
     }
 
     public function linkExisting(): void

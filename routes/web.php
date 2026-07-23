@@ -7,7 +7,8 @@ use App\Livewire\AttendanceReport;
 use App\Livewire\SubjectAttendance;
 use App\Livewire\ClassesAndStreams;
 use App\Livewire\StaffManagement;
-use App\Livewire\SchoolSettings;
+use App\Livewire\StaffAttendance;
+use App\Livewire\SchoolSettingsV2 as SchoolSettings;
 use App\Livewire\StaffRegister;
 use App\Livewire\Payroll;
 use App\Livewire\Leaves;
@@ -27,18 +28,26 @@ use App\Livewire\PortalAccess;
 use App\Livewire\ParentRegister;
 use App\Livewire\ParentsIndex;
 use App\Livewire\Timetable;
-use App\Livewire\Events;
+use App\Livewire\EventsV2 as Events;
 use App\Livewire\Communications;
 use App\Livewire\StudentTermReport;
 use App\Livewire\ReportSettings;
-use App\Livewire\BulkTermReports;
-use App\Livewire\Promotions;
+use App\Livewire\BulkTermReportsV3 as BulkTermReports;
+use App\Livewire\PromotionsV2 as Promotions;
 use App\Livewire\FeeStructures;
 use App\Livewire\StudentCategories;
+use App\Livewire\StudentActivities;
+use App\Livewire\AuditTrail;
 use App\Livewire\StudentRegister;
 use App\Livewire\StudentsIndex;
 use App\Livewire\TermManagement;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DatabaseBackupController;
+use App\Http\Controllers\PlatformAuthController;
+use App\Http\Controllers\PlatformSchoolController;
+use App\Http\Controllers\PlatformLandingPageController;
+use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\PlatformSupportController;
 use Illuminate\Support\Facades\DB;
 use App\Models\Arrears;
 use App\Models\CashPoolEntry;
@@ -49,12 +58,37 @@ use App\Models\ContactMessage;
 use App\Models\AttendanceRecord;
 use Livewire\Volt\Volt;
 
-Route::get('/', function () {
-    return view('welcome');
+
+Route::prefix('platform')->name('platform.')->group(function () {
+    Route::middleware('guest:platform')->group(function () {
+        Route::get('login', [PlatformAuthController::class, 'showLogin'])->name('login');
+        Route::post('login', [PlatformAuthController::class, 'login'])->middleware('throttle:10,1')->name('login.store');
+    });
+    Route::middleware('auth:platform')->group(function () {
+        Route::get('setup', [PlatformAuthController::class, 'showSetup'])->name('setup');
+        Route::post('setup', [PlatformAuthController::class, 'confirmSetup'])->middleware('throttle:10,1')->name('setup.confirm');
+        Route::get('challenge', [PlatformAuthController::class, 'showChallenge'])->name('challenge');
+        Route::post('challenge', [PlatformAuthController::class, 'challenge'])->middleware('throttle:10,1')->name('challenge.verify');
+        Route::post('logout', [PlatformAuthController::class, 'logout'])->name('logout');
+    });
+    Route::middleware('platform.mfa')->group(function () {
+        Route::get('/', [PlatformAuthController::class, 'dashboard'])->name('dashboard');
+        Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools');
+        Route::get('licences', [PlatformSchoolController::class, 'licences'])->name('licences');
+        Route::patch('licences/{school}', [PlatformSchoolController::class, 'updateLicence'])->name('licences.update');
+        Route::get('website', [PlatformLandingPageController::class, 'edit'])->name('website.edit');
+        Route::put('website', [PlatformLandingPageController::class, 'update'])->name('website.update');
+        Route::get('support', [PlatformSupportController::class, 'index'])->name('support.index');
+        Route::get('support/{contactMessage}', [PlatformSupportController::class, 'show'])->name('support.show');
+        Route::post('support/{contactMessage}/reply', [PlatformSupportController::class, 'reply'])->name('support.reply');
+        Route::patch('support/{contactMessage}/status', [PlatformSupportController::class, 'toggleStatus'])->name('support.status');
+    });
 });
+Route::get('/', LandingPageController::class)->name('home');
 Route::post('contact', function (\Illuminate\Http\Request $request) { $data=$request->validate(['name'=>'required|string|max:255','email'=>'required|email|max:255','subject'=>'required|string|max:255','message'=>'required|string|max:5000','type'=>'nullable|in:contact,issue']); ContactMessage::create($data); return back()->with('contact_status','Thank you. The Edlink team will get back to you shortly.'); })->name('contact.store');
 
 Route::get('dashboard', function () {
+    if (! auth()->user()->isSuperadmin() && auth()->user()->role !== 'admin') return redirect()->route('workbench.home');
     $school = auth()->user()->school()->with(['classes.streams', 'classes.students', 'terms', 'users'])->first();
     $monthStart = now()->startOfMonth();
     $term = $school?->currentTerm();
@@ -70,7 +104,7 @@ Route::get('dashboard', function () {
     $presentToday = $attendanceToday->whereIn('status', ['present', 'late'])->count();
     $currencyCode = \App\Models\SchoolSetting::where(['school_id'=>$school->id,'key'=>'currency'])->value('value') ?: 'UGX';
     $currencySymbol = ['UGX'=>'UGX','USD'=>'$','KES'=>'KSh','TZS'=>'TSh','RWF'=>'FRw'][$currencyCode] ?? $currencyCode;
-    $debtors = $term ? $school->students()->with(['schoolClass','guardians'])->where('status','active')->get()->map(fn($student)=>['id'=>$student->id,'name'=>$student->name,'class'=>$student->schoolClass?->name ?? '—','balance'=>max(0,$student->balance($term)),'guardian_email'=>$student->guardians->first()?->email])->filter(fn($student)=>$student['balance']>0)->sortByDesc('balance')->take(6)->values() : collect();
+    $debtors = $term ? $school->students()->with(['schoolClass','guardians'])->where('status','active')->get()->map(fn($student)=>['id'=>$student->id,'name'=>$student->name,'class'=>$student->schoolClass?->name ?? 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â','balance'=>max(0,$student->balance($term)),'guardian_email'=>$student->guardians->first()?->email])->filter(fn($student)=>$student['balance']>0)->sortByDesc('balance')->take(6)->values() : collect();
     $weekDays = collect(range(4, 0))->map(fn ($offset) => now()->subDays($offset)->startOfDay());
     $attendanceRecords = $term ? AttendanceRecord::where('school_id',$school->id)->where('term_id',$term->id)->whereDate('attendance_date','>=',$weekDays->first())->get() : collect();
     $attendanceSeries = ['all' => ['present'=>[], 'absent'=>[]]];
@@ -126,11 +160,17 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
     Route::get('students/register', StudentRegister::class)->name('students.register');
     Route::get('students', StudentsIndex::class)->name('students.index');
     Route::get('students/categories', StudentCategories::class)->name('student-categories.index');
+    Route::get('students/activities', StudentActivities::class)->name('students.activities');
     Route::get('finance/terms', TermManagement::class)->name('terms.index');
     Route::get('finance/fee-structure', FeeStructures::class)->name('fee-structures.index');
     Route::get('finance/payments', FeePayments::class)->name('fee-payments.index');
     Route::get('finance/payments/{payment}/receipt', function (FeePayment $payment) {
-        abort_unless($payment->school_id === auth()->user()->school_id, 404);
+        $user = auth()->user();
+        $isFinanceStaff = in_array($user->role, ['admin', 'superadmin'], true) || $user->hasPermission('finance.payments');
+        $isLinkedPortalUser = in_array($user->role, ['parent', 'student'], true)
+            && ($user->portalStudents()->whereKey($payment->student_id)->exists()
+                || ($user->role === 'parent' && $payment->student->guardians()->where('email', $user->email)->exists()));
+        abort_unless($payment->school_id === $user->school_id && ($isFinanceStaff || $isLinkedPortalUser), 404);
         return view('finance.payment-receipt', ['payment' => $payment->load(['student.schoolClass', 'term', 'recordedBy']), 'school' => auth()->user()->school]);
     })->name('fee-payments.receipt');
     Route::get('finance/expenses', Expenses::class)->name('expenses.index');
@@ -140,6 +180,7 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
     Route::get('academics/classes', ClassesAndStreams::class)->name('classes.index');
     Route::get('staff', StaffManagement::class)->name('staff.index');
     Route::get('staff/register', StaffRegister::class)->name('staff.register');
+    Route::get('staff/attendance', StaffAttendance::class)->name('staff.attendance');
     Route::get('staff/payroll', Payroll::class)->name('payroll.index');
     Route::get('staff/leaves', Leaves::class)->name('leaves.index');
     Route::get('staff/designations', Designations::class)->name('designations.index');
@@ -157,6 +198,7 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
     Route::get('academics/timetable', Timetable::class)->name('timetable.index');
     Route::get('academics/events', Events::class)->name('events.index');
     Route::get('parents/communications', Communications::class)->name('communications.index');
+    Route::get('reports/student-term-report/{student}/{exam}', StudentTermReport::class)->name('reports.student-term-report.show');
     Route::get('reports/student-term-report', StudentTermReport::class)->name('reports.student-term-report');
     Route::get('reports/settings', ReportSettings::class)->name('reports.settings');
     Route::get('reports/bulk-term-reports', BulkTermReports::class)->name('reports.bulk-term-reports');
@@ -178,8 +220,10 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
         $blocked = \App\Models\SchoolSetting::where(['school_id' => $school->id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled' && $student->balance($exam->term) > 0;
         $scales = \App\Models\GradingScale::where('school_id', $school->id)->get();
         $subjects = $exam->papers->filter(fn ($paper) => \Illuminate\Support\Facades\DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->value('status') === 'approved')->map(function ($paper) use ($student, $scales) { $score = (float) (\Illuminate\Support\Facades\DB::table('exam_marks')->where(['exam_paper_id' => $paper->id, 'student_id' => $student->id])->value('score') ?? 0); $percentage = $paper->maximum_score ? round($score / $paper->maximum_score * 100, 2) : 0; $grade = $scales->first(fn ($scale) => $percentage >= $scale->minimum_percentage && $percentage <= $scale->maximum_percentage); return compact('paper', 'score', 'percentage', 'grade'); });
-        return view('exams.report-card', compact('school', 'exam', 'student', 'subjects', 'blocked'));
+        return redirect()->route('reports.student-term-report.show', [$student, $exam]);
     })->name('exams.report-card');
+    Route::get('settings/audit-trail', AuditTrail::class)->name('settings.audit-trail');
+    Route::get('settings/backup', DatabaseBackupController::class)->name('settings.backup');
     Route::get('settings', SchoolSettings::class)->name('settings.index');
 });
 

@@ -1,1 +1,252 @@
-<div class="mx-auto max-w-7xl"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><h1 class="text-2xl font-bold text-slate-900">Attendance</h1><p class="mt-1 text-sm text-slate-500">Daily register and learner attendance performance{{ $term ? ' · '.$term->name.', '.$term->year : '' }}.</p></div><div class="flex rounded-xl border bg-white p-1"><button wire:click="$set('activeTab','mark')" class="rounded-lg px-4 py-2 text-sm font-bold {{ $activeTab==='mark'?'bg-yellow-400 text-slate-900':'text-slate-500' }}">Daily register</button><button wire:click="$set('activeTab','performance')" class="rounded-lg px-4 py-2 text-sm font-bold {{ $activeTab==='performance'?'bg-yellow-400 text-slate-900':'text-slate-500' }}">Performance report</button></div></div>@if(session('status'))<div class="mb-5 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-700">{{session('status')}}</div>@endif@if(session('error'))<div class="mb-5 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">{{session('error')}}</div>@endif<div class="mb-6 grid gap-4 rounded-2xl border bg-white p-5 shadow-sm md:grid-cols-4"><label class="text-sm font-medium">{{ $activeTab==='mark'?'Attendance date':'From' }}<input wire:model.live="{{ $activeTab==='mark'?'attendanceDate':'reportFrom' }}" type="date" class="mt-1 w-full rounded-xl border-slate-200"></label>@if($activeTab==='performance')<label class="text-sm font-medium">To<input wire:model.live="reportTo" type="date" class="mt-1 w-full rounded-xl border-slate-200"></label>@endif<label class="text-sm font-medium">Class<select wire:model.live="schoolClassId" class="mt-1 w-full rounded-xl border-slate-200"><option value="">All classes</option>@foreach($classes as $class)<option value="{{$class->id}}">{{$class->name}}</option>@endforeach</select></label><label class="text-sm font-medium">Stream<select wire:model.live="streamId" class="mt-1 w-full rounded-xl border-slate-200"><option value="">All streams</option>@foreach($streams as $stream)<option value="{{$stream->id}}">{{$stream->name}}</option>@endforeach</select></label></div>@if($activeTab==='mark')<div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4"><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">PRESENT</p><p class="mt-1 text-2xl font-bold text-emerald-600">{{$selectedDay->where('status','present')->count()}}</p></div><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">LATE</p><p class="mt-1 text-2xl font-bold text-amber-600">{{$selectedDay->where('status','late')->count()}}</p></div><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">ABSENT</p><p class="mt-1 text-2xl font-bold text-rose-600">{{$selectedDay->where('status','absent')->count()}}</p></div><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">EXCUSED</p><p class="mt-1 text-2xl font-bold text-slate-600">{{$selectedDay->where('status','excused')->count()}}</p></div></div><form wire:submit="save" class="overflow-hidden rounded-2xl border bg-white shadow-sm"><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">Learner</th><th class="p-4">Class / stream</th><th class="p-4">Attendance</th></tr></thead><tbody class="divide-y">@forelse($students as $student)<tr><td class="p-4 font-semibold">{{$student->name}}<span class="ml-2 text-xs font-normal text-slate-400">{{$student->admission_no}}</span></td><td class="p-4 text-slate-500">{{$student->schoolClass?->name}} {{$student->stream?'· '.$student->stream->name:''}}</td><td class="p-4"><select wire:model="statuses.{{$student->id}}" class="rounded-lg border-slate-200 text-sm"><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></td></tr>@empty<tr><td colspan="3" class="p-10 text-center text-slate-500">No active learners found.</td></tr>@endforelse</tbody></table></div>@if($term?->isOpen())<div class="border-t bg-slate-50 p-4 text-right"><button class="rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold">Save attendance</button></div>@endif</form>@else<div class="mb-5 grid gap-4 sm:grid-cols-4"><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">LEARNERS</p><p class="mt-1 text-2xl font-bold">{{$performance->count()}}</p></div><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">AVERAGE RATE</p><p class="mt-1 text-2xl font-bold text-emerald-600">{{number_format($performance->avg('rate') ?? 0,1)}}%</p></div><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">AT RISK (&lt;80%)</p><p class="mt-1 text-2xl font-bold text-rose-600">{{$performance->where('rate','<',80)->count()}}</p></div><div class="rounded-2xl border bg-white p-4"><p class="text-xs font-bold text-slate-400">ABSENCES</p><p class="mt-1 text-2xl font-bold text-amber-600">{{$performance->sum('absent')}}</p></div></div><section class="overflow-hidden rounded-2xl border bg-white shadow-sm"><header class="flex flex-wrap items-center justify-between gap-3 border-b p-5"><div><h2 class="font-bold">Learner attendance performance</h2><p class="text-sm text-slate-500">Present and late are counted as attendance.</p></div><button wire:click="exportPerformance" class="rounded-xl border border-emerald-600 px-4 py-2 text-sm font-bold text-emerald-700">Export Excel (.csv)</button></header><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-4">Learner</th><th class="p-4">Recorded</th><th class="p-4">Present / late</th><th class="p-4">Absent</th><th class="p-4">Excused</th><th class="min-w-48 p-4">Rate</th></tr></thead><tbody class="divide-y">@forelse($performance as $row)<tr><td class="p-4"><b>{{$row['name']}}</b><span class="block text-xs text-slate-400">{{$row['admission_no']}} · {{$row['class']}}</span></td><td class="p-4">{{$row['total']}}</td><td class="p-4 text-emerald-700">{{$row['present']}} <span class="text-xs text-slate-400">({{$row['late']}} late)</span></td><td class="p-4 text-rose-600">{{$row['absent']}}</td><td class="p-4">{{$row['excused']}}</td><td class="p-4"><div class="flex items-center gap-3"><div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{$row['rate']>=80?'bg-emerald-500':($row['rate']>=60?'bg-amber-400':'bg-rose-500')}}" style="width:{{$row['rate']}}%"></div></div><b class="w-12 text-right">{{$row['rate']}}%</b></div></td></tr>@empty<tr><td colspan="6" class="p-10 text-center text-slate-500">No attendance records found in this period.</td></tr>@endforelse</tbody></table></div></section>@endif</div>
+<div class="mx-auto max-w-7xl space-y-6 [font-family:'Poppins',sans-serif]">
+
+    <!-- HEADER BLOCK (DARK SLATE WITH YELLOW RING & TABS) -->
+    <div class="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-sm border border-slate-800 ring-2 ring-yellow-400">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-bold tracking-wide bg-yellow-400/10 text-yellow-400 border border-yellow-400/20">
+                        ATTENDANCE
+                    </span>
+                    @if($term)
+                        <span class="text-xs font-medium text-slate-400">
+                            • {{ $term->name }}, {{ $term->year }}
+                        </span>
+                    @endif
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-2">
+                    Attendance Register
+                </h1>
+                <p class="text-xs sm:text-sm font-normal text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                    Daily register and learner attendance performance.
+                </p>
+            </div>
+
+            <!-- TAB SWITCHER -->
+            <div class="inline-flex p-1.5 bg-slate-800/90 rounded-xl border border-slate-700 shrink-0">
+                <button wire:click="$set('activeTab','mark')" 
+                        class="px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer {{ $activeTab === 'mark' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white' }}">
+                    Daily register
+                </button>
+                <button wire:click="$set('activeTab','performance')" 
+                        class="px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer {{ $activeTab === 'performance' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white' }}">
+                    Performance report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALERTS -->
+    @if(session('status'))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <!-- FILTERS -->
+    <section class="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 tracking-wide mb-1.5">
+                    {{ $activeTab === 'mark' ? 'Attendance date' : 'From' }}
+                </label>
+                <input wire:model.live="{{ $activeTab === 'mark' ? 'attendanceDate' : 'reportFrom' }}" 
+                       type="date" 
+                       class="w-full text-xs font-medium bg-slate-50/50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition">
+            </div>
+
+            @if($activeTab === 'performance')
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 tracking-wide mb-1.5">To</label>
+                    <input wire:model.live="reportTo" 
+                           type="date" 
+                           class="w-full text-xs font-medium bg-slate-50/50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition">
+                </div>
+            @endif
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 tracking-wide mb-1.5">Class</label>
+                <select wire:model.live="schoolClassId" 
+                        class="w-full text-xs font-medium bg-slate-50/50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition">
+                    <option value="">All classes</option>
+                    @foreach($classes as $class)
+                        <option value="{{ $class->id }}">{{ $class->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 tracking-wide mb-1.5">Stream</label>
+                <select wire:model.live="streamId" 
+                        class="w-full text-xs font-medium bg-slate-50/50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition">
+                    <option value="">All streams</option>
+                    @foreach($streams as $stream)
+                        <option value="{{ $stream->id }}">{{ $stream->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- TAB 1: MARK REGISTER -->
+    @if($activeTab === 'mark')
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">PRESENT</p>
+                <p class="mt-1 text-2xl font-extrabold text-emerald-600">{{ $selectedDay->where('status', 'present')->count() }}</p>
+            </div>
+
+            <div class="rounded-2xl border border-amber-100 bg-amber-50/40 p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">LATE</p>
+                <p class="mt-1 text-2xl font-extrabold text-amber-600">{{ $selectedDay->where('status', 'late')->count() }}</p>
+            </div>
+
+            <div class="rounded-2xl border border-rose-100 bg-rose-50/40 p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-rose-700 uppercase tracking-wider">ABSENT</p>
+                <p class="mt-1 text-2xl font-extrabold text-rose-600">{{ $selectedDay->where('status', 'absent')->count() }}</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">EXCUSED</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-700">{{ $selectedDay->where('status', 'excused')->count() }}</p>
+            </div>
+        </div>
+
+        <form wire:submit="save" class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-100">
+                        <tr>
+                            <th class="p-4">Learner</th>
+                            <th class="p-4">Class / stream</th>
+                            <th class="p-4">Attendance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($students as $student)
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="p-4 whitespace-nowrap">
+                                    <span class="font-bold text-slate-800">{{ $student->name }}</span>
+                                    <span class="ml-2 text-[11px] font-normal text-slate-400">{{ $student->admission_no }}</span>
+                                </td>
+                                <td class="p-4 whitespace-nowrap text-slate-500 font-medium">
+                                    {{ $student->schoolClass?->name }} {{ $student->stream ? '· '.$student->stream->name : '' }}
+                                </td>
+                                <td class="p-4 whitespace-nowrap">
+                                    <select wire:model="statuses.{{ $student->id }}" 
+                                            class="text-xs font-semibold bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition">
+                                        <option value="present">Present</option>
+                                        <option value="absent">Absent</option>
+                                        <option value="late">Late</option>
+                                        <option value="excused">Excused</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="p-10 text-center text-slate-400 font-medium">No active learners found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if($term?->isOpen())
+                <div class="border-t border-slate-100 bg-slate-50/50 p-4 text-right">
+                    <button type="submit" 
+                            class="rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 px-5 py-2.5 text-xs font-extrabold transition active:scale-95 shadow-xs cursor-pointer">
+                        Save attendance
+                    </button>
+                </div>
+            @endif
+        </form>
+
+    <!-- TAB 2: PERFORMANCE REPORT -->
+    @else
+        <div class="grid gap-3 sm:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LEARNERS</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-900">{{ $performance->count() }}</p>
+            </div>
+
+            <div class="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">AVERAGE RATE</p>
+                <p class="mt-1 text-2xl font-extrabold text-emerald-600">{{ number_format($performance->avg('rate') ?? 0, 1) }}%</p>
+            </div>
+
+            <div class="rounded-2xl border border-rose-100 bg-rose-50/40 p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-rose-700 uppercase tracking-wider">AT RISK (&lt;80%)</p>
+                <p class="mt-1 text-2xl font-extrabold text-rose-600">{{ $performance->where('rate', '<', 80)->count() }}</p>
+            </div>
+
+            <div class="rounded-2xl border border-amber-100 bg-amber-50/40 p-4 shadow-xs">
+                <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">ABSENCES</p>
+                <p class="mt-1 text-2xl font-extrabold text-amber-600">{{ $performance->sum('absent') }}</p>
+            </div>
+        </div>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
+                <div>
+                    <h2 class="font-bold text-slate-900 text-sm">Learner Attendance Performance</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Present and late are counted as attendance.</p>
+                </div>
+                <button wire:click="exportPerformance" 
+                        class="rounded-xl border border-emerald-600 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition cursor-pointer">
+                    Export Excel (.csv)
+                </button>
+            </header>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-100">
+                        <tr>
+                            <th class="p-4">Learner</th>
+                            <th class="p-4">Recorded</th>
+                            <th class="p-4">Present / late</th>
+                            <th class="p-4">Absent</th>
+                            <th class="p-4">Excused</th>
+                            <th class="min-w-48 p-4">Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($performance as $row)
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="p-4 whitespace-nowrap">
+                                    <span class="font-bold text-slate-800">{{ $row['name'] }}</span>
+                                    <span class="block text-[11px] text-slate-400 mt-0.5">{{ $row['admission_no'] }} · {{ $row['class'] }}</span>
+                                </td>
+                                <td class="p-4 whitespace-nowrap font-bold text-slate-700">{{ $row['total'] }}</td>
+                                <td class="p-4 whitespace-nowrap font-bold text-emerald-600">
+                                    {{ $row['present'] }} <span class="text-[11px] font-normal text-slate-400">({{ $row['late'] }} late)</span>
+                                </td>
+                                <td class="p-4 whitespace-nowrap font-bold text-rose-600">{{ $row['absent'] }}</td>
+                                <td class="p-4 whitespace-nowrap font-medium text-slate-600">{{ $row['excused'] }}</td>
+                                <td class="p-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full {{ $row['rate'] >= 80 ? 'bg-emerald-500' : ($row['rate'] >= 60 ? 'bg-amber-400' : 'bg-rose-500') }}" 
+                                                 style="width: {{ $row['rate'] }}%"></div>
+                                        </div>
+                                        <span class="w-12 text-right font-bold text-xs text-slate-800">{{ $row['rate'] }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="p-10 text-center text-slate-400 font-medium">No attendance records found in this period.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
+</div>

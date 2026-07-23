@@ -12,7 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class]);
+        $middleware->appendToGroup('web', \App\Http\Middleware\CaptureStaffActivity::class);
+        $middleware->alias(['designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class, 'platform.mfa' => \App\Http\Middleware\EnsurePlatformMfa::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

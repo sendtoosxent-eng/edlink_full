@@ -36,6 +36,7 @@ class Designations extends Component
     public function delete(int $id): void
     {
         $designation = Designation::where('school_id', Auth::user()->school_id)->findOrFail($id);
+        if ($designation->users()->exists()) { session()->flash('error', 'Reassign staff before deleting this designation.'); return; }
         AuditLog::record($designation->school_id, 'designation.deleted', $designation, ['name' => $designation->name]);
         $designation->delete();
         session()->flash('status', 'Designation removed. Assigned staff keep their accounts but no longer have designation restrictions.');
@@ -45,6 +46,6 @@ class Designations extends Component
 
     public function render()
     {
-        return view('livewire.designations', ['modules' => ['students' => 'Students & admissions', 'finance' => 'Finance', 'attendance' => 'Attendance', 'academics' => 'Academics', 'exams' => 'Exams & results', 'staff' => 'Staff & payroll', 'parents' => 'Parents & communication', 'reports' => 'Reports', 'settings' => 'System settings'], 'designations' => Designation::withCount('users')->where('school_id', Auth::user()->school_id)->orderBy('name')->get(), 'pageTitle' => 'Designations']);
+        return view('livewire.designations', ['accessGroups' => \App\Support\DesignationPermissions::groups(), 'designations' => Designation::withCount('users')->where('school_id', Auth::user()->school_id)->orderBy('name')->get(), 'pageTitle' => 'Designations']);
     }
 }

@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Services\PaymentReceiptSender;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class FeePayment extends Model
 {
@@ -16,7 +19,28 @@ class FeePayment extends Model
 
     protected static function booted(): void
     {
-        static::created(fn (self $payment) => AuditLog::record($payment->school_id, 'payment.recorded', $payment, ['amount'=>$payment->amount, 'method'=>$payment->method, 'student_id'=>$payment->student_id, 'term_id'=>$payment->term_id]));
+        static::created(function (self $payment): void {
+            AuditLog::record($payment->school_id, 'payment.recorded', $payment, ['amount' => $payment->amount, 'method' => $payment->method, 'student_id' => $payment->student_id, 'term_id' => $payment->term_id]);
+
+            $student = $payment->student;
+            $portalUserIds = DB::table('portal_user_students')->where('student_id', $payment->student_id)->pluck('user_id');
+            $guardianEmails = $student?->guardians()->whereNotNull('email')->pluck('email') ?? collect();
+            $guardianUserIds = User::where('school_id', $payment->school_id)->whereIn('email', $guardianEmails)->pluck('id');
+
+            foreach ($portalUserIds->merge($guardianUserIds)->unique() as $userId) {
+                DB::table('school_notifications')->insert([
+                    'school_id' => $payment->school_id,
+                    'user_id' => $userId,
+                    'title' => 'Payment received',
+                    'message' => 'UGX '.number_format((float) $payment->amount, 0).' was recorded for '.($student?->name ?? 'your learner').'.' ,
+                    'type' => 'success',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            $paymentId = $payment->id;
+            DB::afterCommit(fn () => app(PaymentReceiptSender::class)->send($paymentId));
+        });
         static::deleted(fn (self $payment) => AuditLog::record($payment->school_id, 'payment.deleted', $payment, ['amount'=>$payment->amount, 'student_id'=>$payment->student_id, 'term_id'=>$payment->term_id]));
     }
 

@@ -54,19 +54,26 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasModuleAccess(string $module): bool
     {
-        if ($this->isSuperadmin() || $this->role === 'admin') {
-            return true;
-        }
+        if ($this->isSuperadmin() || $this->role === 'admin') return true;
+        if (in_array($this->role, ['student', 'parent'], true)) return true;
+        if (! $this->designation_id) return false;
 
-        if (in_array($this->role, ['student', 'parent'], true)) {
-            return true;
-        }
+        return collect($this->designation?->permissions ?? [])
+            ->contains(fn (string $permission) => $permission === $module || str_starts_with($permission, $module.'.'));
+    }
 
-        if (! $this->designation_id) {
-            return false;
-        }
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->isSuperadmin() || $this->role === 'admin') return true;
+        if (! $this->designation_id) return false;
 
-        return in_array($module, $this->designation?->permissions ?? [], true);
+        $permissions = collect($this->designation?->permissions ?? []);
+        if ($permissions->contains($permission)) return true;
+
+        $module = str($permission)->before('.')->toString();
+        $hasGranularRights = $permissions->contains(fn (string $item) => str_starts_with($item, $module.'.'));
+
+        return ! $hasGranularRights && $permissions->contains($module);
     }
 
     public function portalHomeRoute(): string

@@ -109,8 +109,8 @@
                     <i class="fa fa-briefcase text-[10px]"></i>
                 </div>
                 <div>
-                    <h2 class="text-xs font-bold text-slate-900">Employment role</h2>
-                    <p class="text-[9px] text-slate-400">Assign permissions and designation tracking.</p>
+                    <h2 class="text-xs font-bold text-slate-900">Account type & designation</h2>
+                    <p class="text-[9px] text-slate-400">The designation controls modules and access rights.</p>
                 </div>
             </div>
 
@@ -121,7 +121,7 @@
                 </div>
                 
                 <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">System role</label>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Account type</label>
                     <select wire:model="role" class="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 text-slate-800 font-semibold transition shadow-sm">
                         <option value="teacher">Teacher</option>
                         <option value="bursar">Bursar</option>
@@ -131,7 +131,7 @@
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Designation</label>
                     <select wire:model="designation_id" class="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 text-slate-800 font-semibold transition shadow-sm">
-                        <option value="">No designation / existing role access</option>
+                        <option value="">Select an access designation</option>
                         @foreach($designations as $designation)<option value="{{ $designation->id }}">{{ $designation->name }}</option>@endforeach
                     </select>
                 </div>
@@ -175,8 +175,8 @@
                     <div></div>
                 @endif
 
-                <button type="submit" class="inline-flex items-center justify-center gap-1 {{ $step === 3 ? 'bg-slate-900 hover:bg-slate-800 text-white' : 'bg-yellow-500 hover:bg-yellow-400 text-slate-950' }} font-bold text-[11px] px-4.5 py-2 rounded-lg transition shadow-sm focus:outline-none">
-                    <span>{{ $step === 3 ? 'Register staff' : 'Continue' }}</span>
+                <button type="submit" wire:loading.attr="disabled" wire:target="next,register" class="inline-flex items-center justify-center gap-1 {{ $step === 3 ? 'bg-slate-900 hover:bg-slate-800 text-white' : 'bg-yellow-500 hover:bg-yellow-400 text-slate-950' }} font-bold text-[11px] px-4.5 py-2 rounded-lg transition shadow-sm focus:outline-none disabled:cursor-wait disabled:opacity-60">
+                    <span wire:loading.remove wire:target="next,register">{{ $step === 3 ? 'Register staff' : 'Continue' }}</span><span wire:loading wire:target="next,register">Processing...</span>
                     <i class="fa {{ $step === 3 ? 'fa-check' : 'fa-arrow-right' }} text-[9px]"></i>
                 </button>
             </div>

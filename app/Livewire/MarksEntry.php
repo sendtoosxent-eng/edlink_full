@@ -197,7 +197,7 @@ class MarksEntry extends Component
 
     protected function canManage(): bool
     {
-        return in_array(Auth::user()->role, ['admin', 'academic_admin'], true);
+        return Auth::user()->hasPermission('exams.setup') || Auth::user()->hasPermission('exams.results');
     }
 
     protected function canEnter(ExamPaper $paper): bool
@@ -212,7 +212,7 @@ class MarksEntry extends Component
             return true;
         }
 
-        return $user->role === 'teacher' && DB::table('staff_subjects')->where([
+        return $user->hasPermission('exams.marks') && DB::table('staff_subjects')->where([
             'school_id' => $paper->exam->school_id,
             'term_id' => $paper->exam->term_id,
             'user_id' => $user->id,

@@ -19,7 +19,7 @@ class SubjectAttendance extends Component
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->role === 'teacher', 403);
+        abort_unless(Auth::user()->hasPermission('attendance.subject'), 403);
     }
 
     public function updatedSlotId(): void
@@ -51,6 +51,7 @@ class SubjectAttendance extends Component
 
     public function save(): void
     {
+        abort_unless(Auth::user()->hasPermission('attendance.subject'), 403);
         $school = Auth::user()->school;
         $term = $school->currentTerm();
         $slot = $this->selectedSlotOrFail();

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -37,7 +38,7 @@ class StaffRegister extends Component
         $this->joined_at = now()->toDateString();
     }
 
-    private function schoolEmailRule(): Rule
+    private function schoolEmailRule(): Unique
     {
         return Rule::unique('users', 'email')->where('school_id', Auth::user()->school_id);
     }
@@ -58,7 +59,7 @@ class StaffRegister extends Component
             $this->validate([
                 'job_title' => 'required|string|max:100',
                 'role' => 'required|in:teacher,bursar,admin',
-                'designation_id' => 'nullable|integer',
+                'designation_id' => 'required_unless:role,admin|nullable|integer',
                 'joined_at' => 'required|date',
             ]);
         }
@@ -83,7 +84,7 @@ class StaffRegister extends Component
             'password' => 'required|string|min:8|confirmed',
             'job_title' => 'required|string|max:100',
             'role' => 'required|in:teacher,bursar,admin',
-            'designation_id' => 'nullable|integer',
+            'designation_id' => 'required_unless:role,admin|nullable|integer',
             'joined_at' => 'required|date',
             'base_salary' => 'required|numeric|min:0',
             'employment_status' => 'required|in:active,inactive',

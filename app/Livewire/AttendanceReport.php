@@ -27,7 +27,7 @@ class AttendanceReport extends Component
 
     public function mount(): void
     {
-        abort_unless(in_array(Auth::user()->role, ['admin', 'academic_admin'], true), 403);
+        abort_unless(Auth::user()->hasPermission('attendance.reports'), 403);
         $this->fromDate = now()->startOfMonth()->toDateString();
         $this->toDate = now()->toDateString();
     }

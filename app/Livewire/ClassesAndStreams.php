@@ -13,6 +13,7 @@ use Livewire\Component;
 class ClassesAndStreams extends Component
 {
     public string $class_name = '';
+    public string $education_stage = '';
     public string $school_class_id = '';
     public string $stream_name = '';
     public ?int $deletingClassId = null;
@@ -24,9 +25,13 @@ class ClassesAndStreams extends Component
 
     public function addClass(): void
     {
-        $schoolId = Auth::user()->school_id;
+        $school = Auth::user()->school;
+        $schoolId = $school->id;
+        $stages = \App\Services\SchoolAcademicSetup::stagesFor($school);
+        $this->education_stage = $this->education_stage ?: $stages[0];
         $this->validate(['class_name' => ['required', 'string', 'max:255', Rule::unique('school_classes', 'name')->where('school_id', $schoolId)]]);
-        SchoolClass::create(['school_id' => $schoolId, 'name' => $this->class_name]);
+        $this->validate(['education_stage' => ['required', Rule::in($stages)]]);
+        SchoolClass::create(['school_id' => $schoolId, 'name' => $this->class_name, 'education_stage' => $this->education_stage]);
         $this->reset('class_name'); session()->flash('status', 'Class created.');
     }
 
@@ -42,6 +47,7 @@ class ClassesAndStreams extends Component
     public function saveClass(): void
     {
         $class = SchoolClass::where('school_id', Auth::user()->school_id)->findOrFail($this->editingClassId);
+        if ($class->is_system) { session()->flash('error', 'Seeded standard classes cannot be renamed.'); return; }
         $this->validate(['editingClassName' => ['required', 'string', 'max:255', Rule::unique('school_classes', 'name')->where('school_id', $class->school_id)->ignore($class->id)]]);
         $class->update(['name' => $this->editingClassName]); $this->editingClassId = null; session()->flash('status', 'Class updated.');
     }
@@ -54,6 +60,7 @@ class ClassesAndStreams extends Component
     public function deleteClass(int $id): void
     {
         $class = SchoolClass::where('school_id', Auth::user()->school_id)->findOrFail($id);
+        if ($class->is_system) { session()->flash('error', 'Seeded standard classes cannot be deleted.'); return; }
         if ($class->students()->exists() || $class->enrolments()->exists()) { session()->flash('error', 'This class has learner records and cannot be deleted.'); return; }
         $class->delete(); $this->deletingClassId = null; session()->flash('status', 'Class deleted.');
     }
@@ -63,5 +70,5 @@ class ClassesAndStreams extends Component
         if ($stream->students()->exists() || $stream->enrolments()->exists()) { session()->flash('error', 'This stream has learner records and cannot be deleted.'); return; }
         $stream->delete(); $this->deletingStreamId = null; session()->flash('status', 'Stream deleted.');
     }
-    public function render() { return view('livewire.create-class', ['classes' => SchoolClass::with('streams')->where('school_id', Auth::user()->school_id)->orderBy('name')->get(), 'pageTitle' => 'Classes & Streams']); }
+    public function render() { $school = Auth::user()->school; return view('livewire.create-class', ['classes' => SchoolClass::with('streams')->where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'educationStages' => \App\Services\SchoolAcademicSetup::stagesFor($school), 'pageTitle' => 'Classes & Streams']); }
 }

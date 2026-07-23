@@ -12,7 +12,7 @@ class School extends Model
 
     protected $fillable = [
         'school_number',
-        'name',
+        'name', 'school_type',
         'slug',
         'status',
         'is_demo',
@@ -93,6 +93,21 @@ class School extends Model
         return Term::currentFor($this);
     }
 
+    public function activeStudentCount(): int
+    {
+        return (int) $this->students()->where('status', 'active')->count();
+    }
+
+    public function hasStudentCapacity(): bool
+    {
+        return $this->license_student_limit === null || $this->activeStudentCount() < $this->license_student_limit;
+    }
+
+    public function isLicenceUsable(): bool
+    {
+        return in_array($this->license_status, ['active', 'trial'], true)
+            && (! $this->license_expires_at || $this->license_expires_at->isFuture());
+    }
     public function isExpiredDemo(): bool
     {
         return $this->is_demo && $this->demo_expires_at && $this->demo_expires_at->isPast();

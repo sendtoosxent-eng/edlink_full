@@ -7,6 +7,7 @@ use App\Models\Stream;
 use App\Models\Student;
 use App\Models\Term;
 use App\Models\User;
+use App\Services\SchoolAcademicSetup;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
 
     // Step 1 — school + admin
     public string $school_name = '';
+    public string $school_type = 'primary';
     public string $name = '';
     public string $email = '';
     public string $password = '';
@@ -40,6 +42,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
     {
         $this->validate([
             'school_name' => ['required', 'string', 'max:255'],
+            'school_type' => ['required', 'in:primary,secondary,kindergarten'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -56,7 +59,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
     public function goToStep3(): void
     {
         $this->validate([
-            'class_name' => ['required', 'string', 'max:255'],
+            'class_name' => [$this->school_type === 'kindergarten' ? 'required' : 'nullable', 'string', 'max:255'],
             'stream_name' => ['required', 'string', 'max:255'],
         ]);
 
@@ -90,6 +93,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
         $user = DB::transaction(function () {
             $school = School::create([
                 'name' => $this->school_name,
+                'school_type' => $this->school_type,
                 'slug' => Str::slug($this->school_name).'-'.Str::lower(Str::random(5)),
                 'status' => 'demo',
                 'is_demo' => true,
@@ -116,10 +120,10 @@ new #[Layout('layouts.guest-blank')] class extends Component
                 'is_current' => true,
             ]);
 
-            $class = SchoolClass::create([
-                'school_id' => $school->id,
-                'name' => $this->class_name,
-            ]);
+            SchoolAcademicSetup::provision($school);
+            $class = $this->school_type === 'kindergarten'
+                ? SchoolClass::create(['school_id' => $school->id, 'name' => $this->class_name, 'education_stage' => 'kindergarten'])
+                : $school->classes()->orderBy('sort_order')->firstOrFail();
 
             $stream = Stream::create([
                 'school_id' => $school->id,
@@ -244,6 +248,17 @@ new #[Layout('layouts.guest-blank')] class extends Component
                     </div>
 
                     <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">School Type</label>
+                        <select wire:model.live="school_type" required class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
+                            <option value="primary">Primary school</option>
+                            <option value="secondary">Secondary school</option>
+                            <option value="kindergarten">Kindergarten</option>
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">This is selected once and determines standard classes, grading profiles, and reports.</p>
+                        @error('school_type') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Your Full Name</label>
                         <input type="text" wire:model="name" required placeholder="Musis osxent"
                             class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
@@ -291,12 +306,16 @@ new #[Layout('layouts.guest-blank')] class extends Component
                 </div>
 
                 <form wire:submit="goToStep3" class="space-y-6">
+                    @if ($school_type === 'kindergarten')
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Class Name</label>
                         <input type="text" wire:model="class_name" required autofocus placeholder="e.g. Primary 5, or Senior 1"
                             class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
                         @error('class_name') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
+                    @else
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ $school_type === 'primary' ? 'Primary 1–7' : 'Senior 1–6' }} will be created automatically and protected from deletion.</div>
+                    @endif
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Stream Name</label>
@@ -375,10 +394,10 @@ new #[Layout('layouts.guest-blank')] class extends Component
             &copy; {{ now()->year }} Edlink Systems &bull; Spotnet Technologies.
         </div>
         <!-- Mobile Layout Footer Area -->
-        <div class="border-t border-slate-100 pt-6 text-[11px] text-slate-400 flex items-center justify-between lg:hidden">
+        {{-- <div class="border-t border-slate-100 pt-6 text-[11px] text-slate-400 flex items-center justify-between lg:hidden">
             <span>&copy; {{ now()->year }} Edlink Systems.</span>
             <span>Powered by Spotnet Technologies.</span>
-        </div>
+        </div> --}}
 
     </div>
 </div>

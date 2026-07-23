@@ -24,7 +24,7 @@ class Attendance extends Component
 
     public function mount(): void
     {
-        abort_unless(in_array(Auth::user()->role, ['admin', 'academic_admin'], true), 403);
+        abort_unless(Auth::user()->hasPermission('attendance.daily'), 403);
         $this->attendanceDate = now()->toDateString();
         $this->reportFrom = now()->startOfMonth()->toDateString();
         $this->reportTo = now()->toDateString();
@@ -43,6 +43,7 @@ class Attendance extends Component
 
     public function save(): void
     {
+        abort_unless(Auth::user()->hasPermission('attendance.daily'), 403);
         $school = Auth::user()->school;
         $term = $school->currentTerm();
         if (! $term || ! $term->isOpen()) { session()->flash('error', 'Attendance can only be recorded in an open term.'); return; }
