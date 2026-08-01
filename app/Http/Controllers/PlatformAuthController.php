@@ -86,6 +86,45 @@ class PlatformAuthController extends Controller
         return redirect()->intended(route('platform.dashboard'));
     }
 
+    public function showMfaReset(): View
+    {
+        return view('platform.auth.reset-mfa');
+    }
+
+    public function resetMfa(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string', 'max:255'],
+            'confirmation' => ['required', 'in:RESET MFA'],
+        ], [
+            'confirmation.in' => 'Type RESET MFA exactly to confirm.',
+        ]);
+        $admin = Auth::guard('platform')->user();
+        $key = 'platform-mfa-reset|'.$admin->id.'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return back()->withErrors(['password' => 'Too many reset attempts. Try again in '.RateLimiter::availableIn($key).' seconds.']);
+        }
+        if (! Hash::check($data['password'], $admin->password)) {
+            RateLimiter::hit($key, 60);
+            $this->audit($request, 'platform.mfa.reset_failed', $admin->id);
+            return back()->withErrors(['password' => 'The platform password is incorrect.']);
+        }
+
+        RateLimiter::clear($key);
+        $admin->update([
+            'totp_secret' => null,
+            'totp_confirmed_at' => null,
+            'recovery_codes' => [],
+            'last_totp_hash' => null,
+        ]);
+        $request->session()->forget(['platform_mfa_passed', 'platform_last_activity']);
+        $request->session()->regenerate();
+        $this->audit($request, 'platform.mfa.reset', $admin->id);
+
+        return redirect()->route('platform.setup')->with('status', 'MFA was reset. Connect your authenticator again to continue.');
+    }
+
     public function dashboard(): View
     {
         $schools = School::withCount(['students','users'])->latest()->get();

@@ -3,10 +3,7 @@
     <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-xs">
         <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <span class="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-300">
-                    <span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                    Academic Planning
-                </span>
+                
                 <h1 class="mt-3 text-2xl font-black sm:text-3xl text-amber-300 tracking-tight">Create the School Timetable</h1>
                 <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-400">
                     Build class lessons, breaks, and activities for {{ $term ? $term->name.', '.$term->year : 'the current term' }}. Teacher and class conflicts are checked automatically.

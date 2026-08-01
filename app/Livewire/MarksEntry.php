@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Models\ExamPaper;
 use App\Models\Student;
+use App\Services\StudentSubjectSelectionService;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -182,12 +184,18 @@ class MarksEntry extends Component
 
     protected function studentsFor(ExamPaper $paper): Collection
     {
-        return Student::where('school_id', $paper->exam->school_id)
+        $query = Student::where('school_id', $paper->exam->school_id)
             ->where('school_class_id', $paper->exam->school_class_id)
             ->when($paper->exam->stream_id, fn (Builder $query, int $streamId) => $query->where('stream_id', $streamId))
             ->where('status', 'active')
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        return StudentSubjectSelectionService::constrainStudentsForSubject(
+            $query,
+            $paper->exam->schoolClass,
+            $paper->exam->term_id,
+            $paper->subject_id,
+        )->get();
     }
 
     protected function submissionFor(ExamPaper $paper): ?object
@@ -197,7 +205,9 @@ class MarksEntry extends Component
 
     protected function canManage(): bool
     {
-        return Auth::user()->hasPermission('exams.setup') || Auth::user()->hasPermission('exams.results');
+        $user = Auth::user();
+        return ! TeacherAcademicScope::isTeacher($user)
+            && ($user->hasPermission('exams.setup') || $user->hasPermission('exams.results'));
     }
 
     protected function canEnter(ExamPaper $paper): bool
@@ -208,17 +218,9 @@ class MarksEntry extends Component
             return false;
         }
 
-        if ($this->canManage()) {
-            return true;
-        }
-
-        return $user->hasPermission('exams.marks') && DB::table('staff_subjects')->where([
-            'school_id' => $paper->exam->school_id,
-            'term_id' => $paper->exam->term_id,
-            'user_id' => $user->id,
-            'subject_id' => $paper->subject_id,
-            'school_class_id' => $paper->exam->school_class_id,
-        ])->exists();
+        return $this->canManage() || TeacherAcademicScope::canEnterPaper(
+            $user, $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id
+        );
     }
 
     public function render()

@@ -1,5 +1,20 @@
-<!-- REMOVED max-w-5xl TO LET IT ACCEPTE MORE HORIZONTAL SPACE -->
-<div class="mx-auto w-full space-y-4">
+<div class="mx-auto w-full space-y-6">
+    <header class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 p-6 text-white shadow-sm sm:p-8">
+        <div class="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div class="max-w-2xl">
+                <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-amber-300 sm:text-3xl">Add Staff Member</h1>
+                <p class="mt-2 text-sm leading-relaxed text-slate-300">Create a secure staff account, assign its employment role and prepare the member for payroll.</p>
+            </div>
+            <a href="{{ route('staff.index') }}" wire:navigate class="inline-flex w-fit items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-xs font-bold text-amber-200 transition hover:bg-amber-400/20">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Staff directory
+            </a>
+        </div>
+        <div class="pointer-events-none absolute -right-16 -bottom-20 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl"></div>
+    </header>
+
     @if ($errors->any())
         <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
             <p class="font-bold">The staff record has not been saved yet.</p>
@@ -11,17 +26,8 @@
     @if (session('status'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('status') }}</div>
     @endif
-    <!-- TOP NAVIGATION & DIRECTORY LINK -->
-    <div>
-        <a href="{{ route('staff.index') }}" wire:navigate class="inline-flex items-center gap-1 text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition">
-            <i class="fa fa-arrow-left text-[9px]"></i> 
-            <span>Staff directory</span>
-        </a>
-        <h1 class="mt-1 text-lg font-bold tracking-tight text-slate-900">Register staff member</h1>
-    </div>
- 
     <!-- PROGRESSIVE TRACKING STEP TIMELINE -->
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 bg-slate-100/60 border border-slate-200/40 p-2.5 rounded-xl text-[11px] font-bold shadow-xs">
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-slate-200 bg-white p-4 text-[11px] font-bold shadow-sm">
         <div class="flex items-center gap-1.5 {{ $step >= 1 ? 'text-yellow-600' : 'text-slate-400' }}">
             <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] {{ $step >= 1 ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'bg-slate-200 text-slate-500' }}">1</span>
             <span>Personal account</span>

@@ -26,12 +26,20 @@
 
         #app-sidebar { width: var(--sidebar-w); transition: width .2s ease; }
 
-        #app-main { transition: margin-left .2s ease; }
+        #app-main {
+            width: 100%;
+            min-width: 0;
+            transition: margin-left .2s ease, width .2s ease;
+        }
         @media (min-width: 1024px) {
-            #app-main { margin-left: var(--sidebar-w); }
+            #app-main {
+                flex: 0 0 auto;
+                width: calc(100% - var(--sidebar-w));
+                margin-left: var(--sidebar-w);
+            }
         }
 
-        /* Sidebar nav â€” hover and active states in Edlink yellow */
+        /* Sidebar nav — hover and active states in Edlink yellow */
         .nav-link, .nav-group-btn {
             color: #d1d5db;
             transition: background-color .15s ease, color .15s ease;
@@ -78,7 +86,7 @@
             <img src="{{ asset('img/logo.png') }}" alt="Edlink logo" class="w-[180px] h-auto">
             </a>
         </div>
-        <button @click="mobileNavOpen = !mobileNavOpen" class="text-xl">â˜°</button>
+        <button @click="mobileNavOpen = !mobileNavOpen" class="text-xl">☰</button>
     </div>
 
     <!-- Sidebar -->
@@ -111,10 +119,10 @@
             </a>
 
             @foreach([
-                'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'items' => ['Registration', 'All Students', 'Promotions', 'ID Cards']],
-                'academics' => ['label' => 'Academics', 'icon' => 'M4 6h16M4 12h16M4 18h7', 'items' => ['Classes & Streams', 'Subjects', 'Timetable', 'Events']],
+                'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'items' => ['Registration', 'All Students', 'Houses & Clubs', 'Promotions', 'ID Cards']],
+                'academics' => ['label' => 'Academics', 'icon' => 'M4 6h16M4 12h16M4 18h7', 'items' => ['Classes & Streams', 'Subjects', 'Grading Scales', 'Timetable', 'Homework', 'Events']],
                 'attendance' => ['label' => 'Attendance', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Mark Attendance', 'Attendance Reports']],
-                'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Terms', 'Fee Structure', 'Payments', 'Expenses']],
+                'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Terms', 'Fee Structure', 'Payments', 'Expenses', 'Ledger & Reconciliation']],
                 'exams' => ['label' => 'Exams', 'icon' => 'M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2h-2', 'items' => ['Create Exam', 'Enter Marks', 'Report Cards']],
                 'staff' => ['label' => 'Staff', 'icon' => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-2.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-.001-8.001A4 4 0 0017 8z', 'items' => ['All Staff', 'Add Staff', 'Payroll', 'Leave Requests', 'Designations & Access']],
                 'parents' => ['label' => 'Parents', 'icon' => 'M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l1.586-1.586z', 'items' => ['Register Parent', 'All Parents', 'Communications']],
@@ -134,13 +142,16 @@
                                     'Registration' => 'students.register',
                                     'Classes & Streams' => 'classes.index',
                                     'Subjects' => 'subjects.index',
+                                    'Grading Scales' => 'grading-scales.index',
                                     'Promotions' => 'promotions.index',
                                     'All Students' => 'students.index',
+                                    'Houses & Clubs' => 'students.activities',
                                     'Categories' => 'student-categories.index',
                                     'Terms' => 'terms.index',
                                     'Fee Structure' => 'fee-structures.index',
                                     'Payments' => 'fee-payments.index',
                                     'Expenses' => 'expenses.index',
+                                    'Ledger & Reconciliation' => 'finance.ledger',
                                     'Create Exam' => 'exams.setup',
                                     'Enter Marks' => 'exams.marks',
                                     'Report Cards' => 'exams.results',
@@ -150,6 +161,7 @@
                                     'Mark Attendance' => 'attendance.index',
                                     'Attendance Reports' => 'attendance.reports',
                                     'Timetable' => 'timetable.index',
+                                    'Homework' => 'homework.index',
                                     'Events' => 'events.index',
                                     'All Staff' => 'staff.index',
                                     'Add Staff' => 'staff.register',
@@ -200,7 +212,7 @@
     <div x-cloak x-show="mobileNavOpen" @click="mobileNavOpen = false" class="fixed inset-0 bg-black/40 z-30 lg:hidden"></div>
 
     <!-- Main content -->
-    <div id="app-main" class="flex-1 pt-14 lg:pt-0">
+    <div id="app-main" class="min-w-0 pt-14 lg:pt-0">
 
         <!-- Topbar -->
         <header class="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-sm">
@@ -316,7 +328,7 @@
             <!-- Greeting card -->
             <div class="rounded-2xl p-6 lg:p-8 mb-8 relative overflow-hidden shadow-lg ring-2 ring-yellow-400/20" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
                 <div class="relative z-10">
-                    <h2 class="text-white text-2xl font-semibold mb-1">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} ðŸ‘‹</h2>
+                    <h2 class="text-white text-2xl font-semibold mb-1">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} 👋</h2>
                     <p class="text-gray-300 text-sm">Here's what's happening at {{ $school->name ?? 'your school' }} today.</p>
                     <p class="text-yellow-400 text-xs font-medium mt-3" id="greetingDateTime">Loading...</p>
                 </div>
@@ -344,7 +356,7 @@
             <p class="text-gray-500 text-sm mt-1">{{ $stat['label'] }}</p>
             @if($stat['added'] > 0)
                 <p class="text-xs text-green-600 mt-2 flex items-center space-x-1">
-                    <span>â†‘</span><span>{{ $stat['added'] }} added this month</span>
+                    <span>↑</span><span>{{ $stat['added'] }} added this month</span>
                 </p>
             @else
                 <p class="text-xs text-gray-300 mt-2">No new {{ strtolower($stat['label']) }} this month</p>
@@ -353,7 +365,7 @@
     @endforeach
 </div>
 
-<div class="mb-8 grid gap-4 sm:grid-cols-3"><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Attendance today</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ $attendanceRateToday }}%</p><p class="mt-1 text-sm text-slate-500">{{ $presentToday }} present / {{ $activeLearners }} active learners</p></div><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Absent today</p><p class="mt-2 text-2xl font-bold text-rose-600">{{ $absentToday }}</p><a href="{{ route('attendance.index') }}" class="mt-2 inline-block text-sm font-bold text-yellow-700">Mark attendance â†’</a></div><div class="rounded-2xl bg-slate-900 p-5 text-white"><p class="text-xs font-bold uppercase text-slate-400">Current term</p><p class="mt-2 text-lg font-bold">{{ $term ? $term->name.', '.$term->year : 'No open term' }}</p><p class="mt-1 text-sm text-slate-300">Attendance and finance are shown in this context.</p></div></div>
+<div class="mb-8 grid gap-4 sm:grid-cols-3"><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Attendance today</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ $attendanceRateToday }}%</p><p class="mt-1 text-sm text-slate-500">{{ $presentToday }} present / {{ $activeLearners }} active learners</p></div><div class="rounded-2xl bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase text-slate-400">Absent today</p><p class="mt-2 text-2xl font-bold text-rose-600">{{ $absentToday }}</p><a href="{{ route('attendance.index') }}" class="mt-2 inline-block text-sm font-bold text-yellow-700">Mark attendance →</a></div><div class="rounded-2xl bg-slate-800 p-5 text-white"><p class="text-xs font-bold uppercase text-slate-400">Current term</p><p class="mt-2 text-lg font-bold">{{ $term ? $term->name.', '.$term->year : 'No open term' }}</p><p class="mt-1 text-sm text-slate-300">Attendance and finance are shown in this context.</p></div></div>
 <!-- Live financial position for the current term -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
     @php
@@ -610,6 +622,14 @@
 </div>
        
 <!-- Attendance & Demographics -->
+<form method='GET' action='/dashboard' class='mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm'>
+    <label for='dashboardTermFilter' class='text-xs font-bold uppercase text-gray-500'>Dashboard term</label>
+    <select id='dashboardTermFilter' name='dashboard_term' class='rounded-xl border-gray-200 text-sm'>
+        @foreach($school->terms->sortByDesc('year') as $availableTerm)<option value='{{ $availableTerm->id }}' @selected($term?->id === $availableTerm->id)>{{ $availableTerm->name }}, {{ $availableTerm->year }}</option>@endforeach
+    </select>
+    @foreach(['attendance_date','attendance_class','revenue_type','payment_year','performance_class'] as $filter) @if(request()->filled($filter))<input type='hidden' name='{{ $filter }}' value='{{ request($filter) }}'>@endif @endforeach
+    <button class='rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white'>Apply term</button>
+</form>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     
     <!-- Attendance Card (Takes 2 columns on desktop) -->
@@ -620,7 +640,7 @@
             <div class="space-y-1">
                 <h3 class="font-bold text-gray-900 text-base tracking-tight">Attendance this week</h3>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-100/70">
-                    Sample data â€” connects when Attendance module is live
+                    Sample data — connects when Attendance module is live
                 </span>
             </div>
             
@@ -709,8 +729,9 @@
             <div class="flex items-center gap-2 w-full sm:w-auto">
                 <select id="paymentYearFilter" 
                     class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none shadow-sm">
-                    <option value="2026">2026 Academic Year</option>
-                    <option value="2025">2025 Academic Year</option>
+                    @foreach($paymentYears as $year)
+                        <option value="{{ $year }}">{{ $year }} Academic Year</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -734,7 +755,7 @@
                     class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none min-w-[120px] shadow-sm">
                     <option value="all">All Classes</option>
                     @foreach($school->classes ?? [] as $class)
-                        <option value="{{ $class->name }}">{{ $class->name }}</option>
+                        <option value="{{ $class->id }}">{{ $class->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -849,9 +870,15 @@
     <div class="flex items-center justify-between mb-5">
         <div class="flex items-center space-x-2">
             <h3 class="font-bold text-gray-900 text-base tracking-tight">Timetable</h3>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                {{ $dashboardTimetableClass ?? 'No class selected' }}
-            </span>
+            <form method="GET" action="{{ route('dashboard') }}">
+                <select name="timetable_class" onchange="this.form.submit()" class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-semibold text-gray-700">
+                    @forelse($dashboardTimetableClasses as $class)
+                        <option value="{{ $class->id }}" @selected($class->id===$dashboardTimetableClassId)>{{ $class->name }}</option>
+                    @empty
+                        <option value="">No classes</option>
+                    @endforelse
+                </select>
+            </form>
         </div>
         <a href="{{ route('timetable.index') }}" class="text-[11px] font-semibold uppercase tracking-wider text-yellow-700 hover:underline">Manage timetable</a>
     </div>
@@ -979,6 +1006,11 @@
     <script>
         // Shared palette, available to every block below.
         const colors = { yellow: '#eab308', navy: '#252641', teal: '#0d9488', red: '#ef4444', gray: '#e5e7eb' };
+        Chart.register({ id: 'emptyState', afterDraw(chart) {
+            const hasData = chart.data.datasets.some(dataset => !dataset.hidden && (dataset.data ?? []).some(value => Number(value) !== 0));
+            if (hasData) return;
+            const { ctx, chartArea } = chart; if (!chartArea) return; ctx.save(); ctx.fillStyle = '#64748b'; ctx.textAlign = 'center'; ctx.font = '600 13px sans-serif'; ctx.fillText('No records for this selection', (chartArea.left + chartArea.right) / 2, (chartArea.top + chartArea.bottom) / 2); ctx.restore();
+        }});
     </script>
 
     <script>
@@ -986,13 +1018,16 @@
         // ---- Attendance chart (sample, filterable) ----
         const attendanceDatasets = @json($attendanceSeries);
         const attendanceCtx = document.getElementById('attendanceChart');
+        document.getElementById('attendanceDateFilter').value = @json($attendanceDate);
+        document.getElementById('attendanceClassFilter').value = @json((string) request('attendance_class', 'all'));
+        const initialAttendanceSeries = attendanceDatasets[document.getElementById('attendanceClassFilter').value] ?? attendanceDatasets.all;
         let attendanceChart = new Chart(attendanceCtx, {
             type: 'bar',
             data: {
                 labels: @json($attendanceLabels),
                 datasets: [
-                    { label: 'Present', data: attendanceDatasets.all.present, backgroundColor: colors.yellow, borderRadius: 5, maxBarThickness: 32 },
-                    { label: 'Absent', data: attendanceDatasets.all.absent, backgroundColor: colors.navy, borderRadius: 5, maxBarThickness: 32 },
+                    { label: 'Present', data: initialAttendanceSeries.present, backgroundColor: colors.yellow, borderRadius: 5, maxBarThickness: 32 },
+                    { label: 'Absent', data: initialAttendanceSeries.absent, backgroundColor: colors.navy, borderRadius: 5, maxBarThickness: 32 },
                 ]
             },
             options: {
@@ -1003,14 +1038,20 @@
             }
         });
         document.getElementById('attendanceClassFilter').addEventListener('change', function () {
-            // Sample re-render â€” swaps to slightly different mock numbers per "class" selected.
+            // Sample re-render — swaps to slightly different mock numbers per "class" selected.
             const key = this.value;
+            const url = new URL(window.location);
+            url.searchParams.set('attendance_class', key);
+            history.replaceState({}, '', url);
             attendanceChart.data.datasets[0].data = attendanceDatasets[key].present;
             attendanceChart.data.datasets[1].data = attendanceDatasets[key].absent;
             attendanceChart.update();
         });
         document.getElementById('attendanceDateFilter').addEventListener('change', function () {
-            // Placeholder until the Attendance module exists â€” filtering by a single day
+            const url = new URL(window.location);
+            url.searchParams.set('attendance_date', this.value);
+            window.location.assign(url);
+            // Placeholder until the Attendance module exists — filtering by a single day
             // will show that day's actual present/absent split once real records exist.
             attendanceChart.update();
         });
@@ -1039,13 +1080,15 @@
         const revenueIncome = @json($cashFlowIncome);
         const revenueExpenditure = @json($cashFlowExpenditure);
         const revenueCtx = document.getElementById('revenueChart');
+        document.getElementById('revenueTypeFilter').value = @json(request('revenue_type', 'both'));
+        const initialRevenueType = document.getElementById('revenueTypeFilter').value;
         let revenueChart = new Chart(revenueCtx, {
             type: 'bar',
             data: {
                 labels: revenueLabels,
                 datasets: [
-                    { label: 'Income', data: revenueIncome, backgroundColor: '#facc15', borderRadius: 5, maxBarThickness: 28 },
-                    { label: 'Expenditure', data: revenueExpenditure, backgroundColor: '#252641', borderRadius: 5, maxBarThickness: 28 },
+                    { label: 'Income', data: revenueIncome, hidden: initialRevenueType === 'expenditure', backgroundColor: '#facc15', borderRadius: 5, maxBarThickness: 28 },
+                    { label: 'Expenditure', data: revenueExpenditure, hidden: initialRevenueType === 'income', backgroundColor: '#252641', borderRadius: 5, maxBarThickness: 28 },
                 ]
             },
             options: {
@@ -1060,6 +1103,7 @@
         });
         document.getElementById('revenueTypeFilter').addEventListener('change', function () {
             const val = this.value;
+            const url = new URL(window.location); url.searchParams.set('revenue_type', val); history.replaceState({}, '', url);
             revenueChart.data.datasets[0].hidden = val === 'expenditure';
             revenueChart.data.datasets[1].hidden = val === 'income';
             revenueChart.update();
@@ -1120,7 +1164,7 @@
         const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
         const timetable = [...new Set(slotRecords.map(slot => `${slot.starts_at}-${slot.ends_at}`))].map(time => {
             const [start,end] = time.split('-');
-            return [`${start.slice(0,5)} - ${end.slice(0,5)}`, ...days.map(day => { const slot = slotRecords.find(item => `${item.starts_at}-${item.ends_at}` === time && item.day_of_week === day); return slot ? (slot.subject || slot.label || 'Lesson') : 'â€”'; })];
+            return [`${start.slice(0,5)} - ${end.slice(0,5)}`, ...days.map(day => { const slot = slotRecords.find(item => `${item.starts_at}-${item.ends_at}` === time && item.day_of_week === day); return slot ? (slot.subject || slot.label || 'Lesson') : '—'; })];
         });
         document.getElementById('timetableBody').innerHTML = timetable.map(row => `
             <tr class="border-t border-gray-100">
@@ -1136,10 +1180,10 @@
       try {
         // ---- Notifications (sample) ----
         const notifications = [
-            { icon: 'âœ‰', text: 'New message from a parent regarding fee balance.', time: '2h ago' },
-            { icon: 'âœ“', text: 'Attendance was marked for all classes today.', time: '5h ago' },
-            { icon: 'â—«', text: 'Term 1 fee deadline is in 3 days.', time: '1d ago' },
-            { icon: 'â—ˆ', text: 'A new staff account was added.', time: '2d ago' },
+            { icon: '✉', text: 'New message from a parent regarding fee balance.', time: '2h ago' },
+            { icon: '✓', text: 'Attendance was marked for all classes today.', time: '5h ago' },
+            { icon: '◫', text: 'Term 1 fee deadline is in 3 days.', time: '1d ago' },
+            { icon: '◈', text: 'A new staff account was added.', time: '2d ago' },
         ];
         const liveNotifications = @json($dashboardNotifications).map(notification => ({ icon: notification.type === 'warning' ? '!' : 'i', text: notification.title + ': ' + notification.message, time: new Date(notification.created_at).toLocaleDateString() }));
         if (liveNotifications.length) notifications.splice(0, notifications.length, ...liveNotifications);
@@ -1159,21 +1203,9 @@
 
     <script>
       try {
-        // ---- Reminders (sample) ----
-        const reminders = [
-            { icon: 'R', text: 'Submit termly report to the education office.', due: 'Due in 4 days' },
-            @if(isset($school) && $school->license_expires_at)
-            {
-                icon: 'L',
-                text: @json($licenceIsExpired ? 'The school licence has expired. Contact Edlink to renew it.' : 'Renew the '.ucfirst($school->license_plan).' school licence before it expires.'),
-                due: @json($licenceIsExpired ? 'Expired '.$licenceExpiry->diffForHumans() : ($licenceDaysRemaining === 0 ? 'Expires today' : $licenceDaysRemaining.' '.Str::plural('day', $licenceDaysRemaining).' remaining'))
-            },
-            @elseif(isset($school))
-            { icon: 'L', text: @json(ucfirst($school->license_plan).' licence is active.'), due: 'No expiry date' },
-            @endif
-            { icon: 'M', text: 'Parent-teacher meeting scheduled for Friday.', due: 'This week' },
-        ];
-        document.getElementById('remindersList').innerHTML = reminders.map(r => `
+        // ---- Live reminders ----
+        const reminders = @json($dashboardReminders);
+        document.getElementById('remindersList').innerHTML = reminders.length ? reminders.map(r => `
             <div class="flex items-start space-x-3 py-3 border-b border-gray-50 last:border-0">
                 <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">${r.icon}</span>
                 <div class="flex-1">
@@ -1181,7 +1213,7 @@
                     <p class="text-xs text-orange-500 font-medium mt-0.5">${r.due}</p>
                 </div>
             </div>
-        `).join('');
+        `).join('') : '<p class="py-6 text-center text-xs text-gray-400">No upcoming events or deadlines.</p>';
       } catch (e) { console.error('Reminders failed to load:', e); }
     </script>
 
@@ -1246,13 +1278,18 @@ new Chart(genderCtx, {
     <script>
         // 1. Payment Trend Line Chart
 const paymentCtx = document.getElementById('paymentTrendChart').getContext('2d');
-new Chart(paymentCtx, {
+const paymentTrendDatasets = @json($paymentTrendByYear);
+const paymentYearFilter = document.getElementById('paymentYearFilter');
+paymentYearFilter.querySelectorAll('option').forEach(option => option.textContent = option.textContent.replace('Academic Year', 'Calendar Year'));
+if (@json(request()->filled('payment_year'))) paymentYearFilter.value = @json((string) request('payment_year'));
+const initialPaymentYear = paymentYearFilter.value;
+const paymentTrendChart = new Chart(paymentCtx, {
     type: 'line',
     data: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         datasets: [{
             label: 'Collections',
-            data: @json($paymentTrend),
+            data: paymentTrendDatasets[initialPaymentYear] ?? [],
             borderColor: '#252641', // Dark primary
             backgroundColor: 'rgba(37, 38, 65, 0.05)',
             borderWidth: 3,
@@ -1273,16 +1310,25 @@ new Chart(paymentCtx, {
         scales: { y: { beginAtZero: true, ticks: { callback: (value) => window.formatChartAmount(value) } } }
     }
 });
+paymentYearFilter.addEventListener('change', function () {
+    const url = new URL(window.location); url.searchParams.set('payment_year', this.value); history.replaceState({}, '', url);
+    paymentTrendChart.data.datasets[0].data = paymentTrendDatasets[this.value] ?? [];
+    paymentTrendChart.update();
+});
 
 // 2. Class Performance Line Chart
 const performanceCtx = document.getElementById('classPerformanceChart').getContext('2d');
-new Chart(performanceCtx, {
+const performanceDatasets = @json($performanceSeries);
+const performanceClassFilter = document.getElementById('performanceClassFilter');
+performanceClassFilter.value = @json((string) request('performance_class', 'all'));
+const initialPerformanceSeries = performanceDatasets[performanceClassFilter.value] ?? performanceDatasets.all;
+const classPerformanceChart = new Chart(performanceCtx, {
     type: 'line',
     data: {
-        labels: @json($performanceLabels),
+        labels: initialPerformanceSeries.labels,
         datasets: [{
             label: 'Class Average',
-            data: @json($performanceData),
+            data: initialPerformanceSeries.data,
             borderColor: '#facc15', // Yellow primary
             backgroundColor: 'rgba(250, 204, 21, 0.05)',
             borderWidth: 3,
@@ -1296,8 +1342,16 @@ new Chart(performanceCtx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } }
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 100 } }
     }
+});
+performanceClassFilter.addEventListener('change', function () {
+    const url = new URL(window.location); url.searchParams.set('performance_class', this.value); history.replaceState({}, '', url);
+    const series = performanceDatasets[this.value] ?? { labels: [], data: [] };
+    classPerformanceChart.data.labels = series.labels;
+    classPerformanceChart.data.datasets[0].data = series.data;
+    classPerformanceChart.update();
 });
     </script>
 
@@ -1307,7 +1361,7 @@ new Chart(performanceCtx, {
         const currencySymbol = @json($currencySymbol);
         function refreshDebtorsSpotlight() {
             const grid = document.getElementById('debtorsSpotlightGrid');
-            grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${debtor.name}</p><p class="text-xs text-gray-400">${debtor.class}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${currencySymbol} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" onclick="return confirm('Open an email reminder for this learnerâ€™s parent/guardian?')" href="mailto:${debtor.guardian_email}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for ${debtor.name}.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
+            grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${debtor.name}</p><p class="text-xs text-gray-400">${debtor.class}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${currencySymbol} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" onclick="return confirm('Open an email reminder for this learner’s parent/guardian?')" href="mailto:${debtor.guardian_email}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for ${debtor.name}.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
         }
         refreshDebtorsSpotlight();
     </script>
@@ -1317,7 +1371,7 @@ new Chart(performanceCtx, {
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-center z-20 shadow-sm">
     <p class="text-xs text #252641 text-center">
         Copyright &copy; {{ date('Y') }} <span class="font-semibold text-yellow-400">{{ config('app.name', 'Edlink') }}</span>. All rights reserved. 
-        <a href="http://edlink.test" target="_blank" class="text-yellow-400 hover:underline">
+        <a href="{{ url('/') }}" class="text-yellow-400 hover:underline">
             Spotnet Technologies
         </a>
     </p>

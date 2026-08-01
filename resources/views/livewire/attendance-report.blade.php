@@ -1,23 +1,21 @@
-<div class="mx-auto max-w-7xl space-y-6 [font-family:'Poppins',sans-serif]">
+<div class="space-y-6">
 
     <!-- HEADER BLOCK (DARK SLATE WITH YELLOW RING) -->
-    <div class="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-sm border border-slate-800 ring-2 ring-yellow-400">
+    <div class="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-sm border border-slate-800">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-bold tracking-wide bg-yellow-400/10 text-yellow-400 border border-yellow-400/20">
-                        ATTENDANCE
-                    </span>
+                    
                     @if($term)
                         <span class="text-xs font-medium text-slate-400">
                             • {{ $term->name }}, {{ $term->year }}
                         </span>
                     @endif
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-2">
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-300 mt-2">
                     Attendance Reports
                 </h1>
-                <p class="text-xs sm:text-sm font-normal text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                <p class="text-xs sm:text-sm font-normal text-slate-500 mt-1 max-w-2xl leading-relaxed">
                     Review daily and subject attendance records across classes and streams.
                 </p>
             </div>

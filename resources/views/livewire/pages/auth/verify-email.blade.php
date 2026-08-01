@@ -9,7 +9,7 @@ new #[Layout('layouts.guest')] class extends Component
     public function resend(): void
     {
         if (Auth::user()->hasVerifiedEmail()) {
-            $this->redirect(route('dashboard', absolute: false), navigate: true);
+            $this->redirect(route('dashboard', absolute: false), navigate: false);
             return;
         }
 

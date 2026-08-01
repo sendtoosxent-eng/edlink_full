@@ -3,7 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\AttendanceRecord;
+use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Services\StudentSubjectSelectionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -136,10 +138,18 @@ class SubjectAttendance extends Component
 
     protected function studentsFor(object $slot): Collection
     {
-        return Student::where('school_id', Auth::user()->school_id)
+        $class = SchoolClass::where('school_id', Auth::user()->school_id)->findOrFail($slot->school_class_id);
+        $query = Student::where('school_id', Auth::user()->school_id)
             ->where('school_class_id', $slot->school_class_id)
             ->when($slot->stream_id, fn (Builder $query, int $streamId) => $query->where('stream_id', $streamId))
-            ->where('status', 'active')->orderBy('name')->get();
+            ->where('status', 'active')->orderBy('name');
+
+        return StudentSubjectSelectionService::constrainStudentsForSubject(
+            $query,
+            $class,
+            (int) $slot->term_id,
+            (int) $slot->subject_id,
+        )->get();
     }
 
     protected function sessionKey(object $slot): string

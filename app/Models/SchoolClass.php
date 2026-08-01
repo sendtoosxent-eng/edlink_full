@@ -13,13 +13,18 @@ class SchoolClass extends Model
 
     protected $table = 'school_classes';
 
-    protected $fillable = ['school_id', 'name', 'education_stage', 'is_system', 'sort_order'];
+    protected $fillable = ['school_id', 'class_teacher_user_id', 'name', 'education_stage', 'is_system', 'sort_order'];
 
     protected $casts = ['is_system' => 'boolean'];
 
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function classTeacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'class_teacher_user_id');
     }
 
     public function students(): HasMany

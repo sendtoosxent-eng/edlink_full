@@ -28,7 +28,7 @@
                     <svg class="w-4 h-4 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span>Add School</span>
+                    <a href='/platform/schools/create'>Add School</a>
                 </button>
             </div>
         </div>

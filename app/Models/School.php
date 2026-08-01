@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class School extends Model
 {
@@ -36,6 +37,9 @@ class School extends Model
             if (empty($school->school_number)) {
                 $school->school_number = static::generateUniqueSchoolNumber();
             }
+        });
+        static::created(function (School $school): void {
+            if (Schema::hasTable('financial_accounts')) FinancialAccount::ensureDefaults($school);
         });
     }
 

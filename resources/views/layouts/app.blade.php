@@ -126,6 +126,7 @@
                 <a href="{{ route('portal.home') }}#performance" class="nav-link flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13h4v8H3v-8zm7-5h4v13h-4V8zm7-5h4v18h-4V3z" /></svg><span x-show="!$store.ui.collapsed" x-cloak>{{ auth()->user()->role === 'parent' ? 'Learner Performance' : 'My Performance' }}</span></a>
                 @if(auth()->user()->role === 'parent')<a href="{{ route('portal.home') }}#payments" class="nav-link flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10v2m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span x-show="!$store.ui.collapsed" x-cloak>Fees & Payments</span></a>@endif
                 <a href="{{ route('portal.home') }}#timetable" class="nav-link flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M5 11h14M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" /></svg><span x-show="!$store.ui.collapsed" x-cloak>Timetable & Events</span></a>
+                @if(auth()->user()->role === 'student')<a href="{{ route('homework.index') }}" wire:navigate class="nav-link {{ request()->routeIs('homework.*') ? 'active' : '' }} flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6M7 3h7l5 5v13H7a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg><span x-show="!$store.ui.collapsed" x-cloak>Homework</span></a>@endif
             @endif
 
             @if(in_array(auth()->user()->role, ['teacher', 'bursar', 'registrar', 'academic_admin'], true) && ! auth()->user()->hasPermission('staff.leaves'))
@@ -135,6 +136,9 @@
             @if(in_array(auth()->user()->role, ['teacher', 'academic_admin'], true) && \Illuminate\Support\Facades\Schema::hasTable('student_clubs') && (\Illuminate\Support\Facades\DB::table('student_clubs')->where('school_id', auth()->user()->school_id)->where('patron_user_id', auth()->id())->exists() || \Illuminate\Support\Facades\DB::table('student_houses')->where('school_id', auth()->user()->school_id)->where('patron_user_id', auth()->id())->exists()) && ! auth()->user()->hasPermission('students.activities'))
                 <a href="{{ route('students.activities') }}" wire:navigate class="nav-link {{ request()->routeIs('students.activities') ? 'active' : '' }} flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4-9 4-9-4zm2 4v6l7 4 7-4v-6" /></svg><span x-show="!$store.ui.collapsed" x-cloak>My Clubs & House</span></a>
             @endif
+            @if(\App\Support\TeacherAcademicScope::isTeacher(auth()->user()) && \Illuminate\Support\Facades\Schema::hasColumn('school_classes','class_teacher_user_id') && \App\Support\TeacherAcademicScope::classIds(auth()->user())->isNotEmpty() && !auth()->user()->hasPermission('students.view'))
+                <a href="{{ route('students.index') }}" wire:navigate class="nav-link {{ request()->routeIs('students.index') ? 'active' : '' }} flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v7" /></svg><span x-show="!$store.ui.collapsed" x-cloak>My Class Students</span></a>
+            @endif
             @foreach([
                 'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'routes' => ['students.register', 'students.index', 'student-categories.index', 'students.activities', 'students.portal-access', 'promotions.index'], 'items' => [
                     ['label' => 'Registration', 'route' => 'students.register'],
@@ -143,25 +147,28 @@
                     ['label' => 'Houses & Clubs', 'route' => 'students.activities'],
                     ['label' => 'Portal Access', 'route' => 'students.portal-access'],
                     ['label' => 'Promotions', 'route' => 'promotions.index'],
-                    ['label' => 'ID Cards', 'route' => null],
+                    ['label' => 'ID Cards', 'route' => 'students.id-cards'],
                 ]],
-                'academics' => ['label' => 'Academics', 'icon' => 'M4 6h16M4 12h16M4 18h7', 'routes' => ['classes.index', 'subjects.index', 'grading-scales.index', 'timetable.index', 'events.index'], 'items' => [
+                'academics' => ['label' => 'Academics', 'icon' => 'M4 6h16M4 12h16M4 18h7', 'routes' => ['classes.index', 'subjects.index', 'subject-selections.index', 'grading-scales.index', 'timetable.index', 'homework.index', 'events.index'], 'items' => [
                     ['label' => 'Classes & Streams', 'route' => 'classes.index'],
                     ['label' => 'Subjects', 'route' => 'subjects.index'],
-                    ['label' => 'Timetable', 'route' => 'timetable.index'],
-                    ['label' => 'Events', 'route' => 'events.index'],
                     ['label' => 'Grading Scales', 'route' => 'grading-scales.index'],
+                    ['label' => 'Student Subject Selection', 'route' => 'subject-selections.index'],
+                    ['label' => 'Timetable', 'route' => 'timetable.index'],
+                    ['label' => 'Homework', 'route' => 'homework.index'],
+                    ['label' => 'Events', 'route' => 'events.index'],
                 ]],
                 'attendance' => ['label' => 'Attendance', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['attendance.index', 'attendance.subject', 'attendance.reports'], 'items' => [
                     ['label' => 'Mark Attendance', 'route' => 'attendance.index'],
                     ['label' => 'Subject Attendance', 'route' => 'attendance.subject'],
                     ['label' => 'Attendance Reports', 'route' => 'attendance.reports'],
                 ]],
-                'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['fee-structures.index', 'fee-payments.index', 'expenses.index', 'terms.index'], 'items' => [
+                'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['fee-structures.index', 'fee-payments.index', 'expenses.index', 'terms.index', 'finance.ledger'], 'items' => [
                     ['label' => 'Terms', 'route' => 'terms.index'],
                     ['label' => 'Fee Structure', 'route' => 'fee-structures.index'],
                     ['label' => 'Payments', 'route' => 'fee-payments.index'],
                     ['label' => 'Expenses', 'route' => 'expenses.index'],
+                    ['label' => 'Ledger & Reconciliation', 'route' => 'finance.ledger'],
                 ]],
                 'exams' => ['label' => 'Exams', 'icon' => 'M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2h-2', 'routes' => ['exams.setup', 'exams.marks', 'exams.results'], 'items' => [
                     ['label' => 'Create Exam', 'route' => 'exams.setup'],
@@ -205,11 +212,12 @@
                     
                     <div x-cloak x-show="open === '{{ $key }}' && !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1">
                         @foreach($group['items'] as $item)
+                            @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
                             @php($requiredPermission = match($item['route']) {
                                 'students.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
-                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses',
+                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger',
                                 'attendance.index' => 'attendance.daily', 'attendance.subject' => 'attendance.subject', 'attendance.reports' => 'attendance.reports',
-                                'classes.index' => 'academics.classes', 'subjects.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
+                                'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
                                 'exams.setup' => 'exams.setup', 'exams.marks' => 'exams.marks', 'exams.results' => 'exams.results',
                                 'staff.index' => 'staff.directory', 'staff.register' => 'staff.manage', 'staff.attendance' => 'staff.attendance', 'payroll.index' => 'staff.payroll', 'leaves.index' => 'staff.leaves', 'designations.index' => 'staff.designations',
                                 'parents.index', 'parents.register' => 'parents.manage', 'communications.index' => 'parents.communications',
@@ -385,7 +393,7 @@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-center z-20 shadow-sm">
     <p class="text-xs text #252641 text-center">
         Copyright &copy; {{ date('Y') }} <span class="font-semibold text-yellow-400">{{ config('app.name', 'Edlink') }}</span>. All rights reserved. 
-        <a href="http://edlink.test" target="_blank" class="text-yellow-400 hover:underline">
+        <a href="{{ url('/') }}" class="text-yellow-400 hover:underline">
             Spotnet Technologies
         </a>
     </p>

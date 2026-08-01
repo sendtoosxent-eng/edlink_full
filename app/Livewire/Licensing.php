@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\AuditLog;
 use App\Models\School;
+use App\Support\SubscriptionPlans;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -12,7 +13,7 @@ use Livewire\Component;
 class Licensing extends Component
 {
     public string $schoolId = '';
-    public string $license_plan = 'standard';
+    public string $license_plan = 'basic';
     public string $license_status = 'active';
     public string $license_started_at = '';
     public string $license_expires_at = '';
@@ -30,7 +31,7 @@ class Licensing extends Component
     public function loadSchool(): void
     {
         $school = $this->selectedSchool();
-        $this->license_plan = $school->license_plan ?: 'standard';
+        $this->license_plan = SubscriptionPlans::valid((string) $school->license_plan) ? $school->license_plan : 'basic';
         $this->license_status = $school->license_status ?: ($school->is_demo ? 'trial' : 'active');
         $this->license_started_at = $school->license_started_at?->toDateString() ?? '';
         $this->license_expires_at = $school->license_expires_at?->toDateString() ?? '';
@@ -41,7 +42,7 @@ class Licensing extends Component
     public function save(): void
     {
         abort_unless(Auth::user()->isSuperadmin(), 403);
-        $this->validate(['license_plan' => 'required|in:starter,standard,premium,enterprise', 'license_status' => 'required|in:active,trial,suspended,expired', 'license_started_at' => 'nullable|date', 'license_expires_at' => 'nullable|date|after_or_equal:license_started_at', 'license_student_limit' => 'nullable|integer|min:1']);
+        $this->validate(['license_plan' => 'required|in:basic,premium,enterprise', 'license_status' => 'required|in:active,trial,suspended,expired', 'license_started_at' => 'nullable|date', 'license_expires_at' => 'nullable|date|after_or_equal:license_started_at', 'license_student_limit' => 'nullable|integer|min:1']);
         $school = $this->selectedSchool();
         $school->update(['license_plan' => $this->license_plan, 'license_status' => $this->license_status, 'license_started_at' => $this->license_started_at ?: null, 'license_expires_at' => $this->license_expires_at ?: null, 'license_student_limit' => $this->license_student_limit ?: null, 'is_demo' => $this->is_demo]);
         AuditLog::record($school->id, 'licence.updated', $school, ['plan' => $school->license_plan, 'status' => $school->license_status]);

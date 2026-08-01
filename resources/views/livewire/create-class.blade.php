@@ -162,6 +162,10 @@
                                             <p class="text-[11px] text-slate-400 font-medium mt-0.5">
                                                 {{ $class->streams->count() }} {{ Str::plural('stream', $class->streams->count()) }} attached
                                             </p>
+                                            <select wire:change="assignClassTeacher({{ $class->id }}, $event.target.value)" class="mt-2 max-w-xs rounded-lg border-slate-200 bg-slate-50 py-1 text-[11px] font-semibold text-slate-700">
+                                                <option value="">No class teacher</option>
+                                                @foreach($teachers as $teacher)<option value="{{ $teacher->id }}" @selected($class->class_teacher_user_id===$teacher->id)>{{ $teacher->name }}</option>@endforeach
+                                            </select>
                                         @endif
                                     </div>
                                 </div>

@@ -1,4 +1,4 @@
-<div class="mx-auto w-full max-w-6xl space-y-6" x-data="{tab:'profile'}">
+<div class="space-y-6" x-data="{tab:'profile'}">
     <!-- HEADER -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div>

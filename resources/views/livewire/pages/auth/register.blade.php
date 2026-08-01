@@ -40,6 +40,8 @@ new #[Layout('layouts.guest-blank')] class extends Component
 
     public function goToStep2(): void
     {
+        $this->email = Str::lower(trim($this->email));
+
         $this->validate([
             'school_name' => ['required', 'string', 'max:255'],
             'school_type' => ['required', 'in:primary,secondary,kindergarten'],
@@ -48,7 +50,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        if (DemoRegistration::where('email', $this->email)->exists()) {
+        if ($this->emailHasActiveDemoClaim()) {
             $this->addError('email', 'This email has already used a free demo. Please log in, or contact us to upgrade.');
             return;
         }
@@ -81,6 +83,25 @@ new #[Layout('layouts.guest-blank')] class extends Component
 
     public function finish(): void
     {
+        $this->email = Str::lower(trim($this->email));
+        $this->staff_email = Str::lower(trim($this->staff_email));
+
+        $this->validate([
+            'school_name' => ['required', 'string', 'max:255'],
+            'school_type' => ['required', 'in:primary,secondary,kindergarten'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'class_name' => [$this->school_type === 'kindergarten' ? 'required' : 'nullable', 'string', 'max:255'],
+            'stream_name' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($this->emailHasActiveDemoClaim()) {
+            $this->step = 1;
+            $this->addError('email', 'This email has already used a free demo. Please log in, or contact us to upgrade.');
+            return;
+        }
+
         if ($this->staff_name || $this->staff_email || $this->staff_password) {
             $this->validate([
                 'staff_name' => ['required', 'string', 'max:255'],
@@ -97,7 +118,12 @@ new #[Layout('layouts.guest-blank')] class extends Component
                 'slug' => Str::slug($this->school_name).'-'.Str::lower(Str::random(5)),
                 'status' => 'demo',
                 'is_demo' => true,
-                'demo_expires_at' => now()->addDays(7),
+                'demo_expires_at' => now()->addDays(10),
+                'license_plan' => 'basic',
+                'license_status' => 'trial',
+                'license_started_at' => now(),
+                'license_expires_at' => now()->addDays(10),
+                'license_student_limit' => \App\Support\SubscriptionPlans::limit('basic'),
             ]);
 
             $admin = User::create([
@@ -108,10 +134,10 @@ new #[Layout('layouts.guest-blank')] class extends Component
                 'role' => 'admin',
             ]);
 
-            DemoRegistration::create([
-                'email' => $this->email,
-                'used_at' => now(),
-            ]);
+            DemoRegistration::updateOrCreate(
+                ['email' => $this->email],
+                ['used_at' => now()],
+            );
 
             Term::create([
                 'school_id' => $school->id,
@@ -170,6 +196,12 @@ new #[Layout('layouts.guest-blank')] class extends Component
             3 => 'discussion.png',
             default => 'teacher-explaining.png',
         };
+    }
+
+    private function emailHasActiveDemoClaim(): bool
+    {
+        return DemoRegistration::where('email', $this->email)->exists()
+            && User::where('email', $this->email)->exists();
     }
 }; ?>
 

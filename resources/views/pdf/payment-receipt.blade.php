@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><link rel="icon" type="image/png" href="{{ asset('img/fav.png') }}"><link rel="apple-touch-icon" href="{{ asset('img/fav.png') }}">
 <meta charset="utf-8">
 <title>Fee Receipt {{ $payment->id }} - {{ $school->name }}</title>
 <style>

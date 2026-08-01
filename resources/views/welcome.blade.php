@@ -2,7 +2,7 @@
 <html lang="en" x-data="{ dark: localStorage.getItem('edlink_theme') === 'dark' || (!localStorage.getItem('edlink_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) }"
       x-init="$watch('dark', v => { localStorage.setItem('edlink_theme', v ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', v); }); document.documentElement.classList.toggle('dark', dark);"
       :class="{ 'dark': dark }">
-<head>
+<head><link rel="icon" type="image/png" href="{{ asset('img/fav.png') }}"><link rel="apple-touch-icon" href="{{ asset('img/fav.png') }}">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{{ $landing['site_title'] }}</title>
@@ -72,6 +72,17 @@
 		.chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
 		.dark .chat-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
 	</style>
+	<script>
+	(function () {
+		const stored = localStorage.getItem('theme');
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		if (stored === 'dark' || (!stored && prefersDark)) {
+			document.documentElement.classList.add('dark');
+		}
+	})();
+</script>
+
+	
 </head>
 <body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300">
 
@@ -94,13 +105,26 @@
 
 			<div class="flex items-center space-x-3">
 				<!-- Theme toggle -->
-				<button @click="dark = !dark" class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-white/10 hover:border-yellow-400 transition-colors">
-					<svg x-show="!dark" class="w-4 h-4 text-darken" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-					<svg x-show="dark" x-cloak class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 008.998-5.998z"/></svg>
-				</button>
+				<button
+	x-data="{ dark: document.documentElement.classList.contains('dark') }"
+	x-init="$watch('dark', value => {
+		document.documentElement.classList.toggle('dark', value);
+		localStorage.setItem('theme', value ? 'dark' : 'light');
+	})"
+	@click="dark = !dark"
+	class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+	aria-label="Toggle dark mode"
+>
+	<svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+		<path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+	</svg>
+	<svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+		<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+	</svg>
+</button>
 
 				<a href="{{ route('login') }}" wire:navigate class="hidden sm:inline-block px-5 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-white/15 hover:border-yellow-400 transition-colors">Login</a>
-				<a href="{{ route('register') }}" wire:navigate class="px-5 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all">Try free demo</a>
+				<a href="{{ route('register') }}" wire:navigate class="px-5 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all">{{ $landing['primary_cta'] }}</a>
 
 				<button @click="open = !open" class="md:hidden w-9 h-9 flex items-center justify-center">
 					<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path x-show="!open" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /><path x-show="open" x-cloak stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -190,6 +214,7 @@
 		<p class="text-center text-xs uppercase tracking-widest text-gray-400 font-semibold">{{ $landing['trust_text'] }}</p>
 	</section>
 
+
 	<!-- ============ BENTO FEATURES ============ -->
 	<section id="features" class="py-28 max-w-7xl mx-auto px-6">
 		<div class="text-center max-w-2xl mx-auto mb-16" data-aos="fade-up">
@@ -205,7 +230,7 @@
 					<svg class="w-5 h-5 text-darken" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5" /></svg>
 				</span>
 				<h3 class="text-2xl font-bold mb-3">Students, classes &amp; streams</h3>
-				<p class="text-gray-300 max-w-md">Admissions, class streams, categories, and full academic history in one profile per learner ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â with fees auto-mapped the moment a student is assigned.</p>
+				<p class="text-gray-300 max-w-md">Admissions, class streams, categories, and full academic history in one profile per learner &mdash; with fees auto-mapped the moment a student is assigned.</p>
 				<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'feature_image') }}" class="mt-8 rounded-xl w-full max-w-md relative z-10" alt="">
 			</div>
 
@@ -244,7 +269,8 @@
 		</div>
 	</section>
 
-	<!-- ============ ABOUT ============ -->
+
+<!-- ============ ABOUT ============ -->
 	<section id="about" class="py-24 relative overflow-hidden">
 		<div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-14 items-center">
 			<div data-aos="fade-right" class="relative">
@@ -256,6 +282,34 @@
 				<h2 class="mt-3 text-3xl font-extrabold text-darken dark:text-white">{{ $landing['about_heading'] }}</h2>
 				<p class="mt-5 text-gray-500 dark:text-gray-400">{{ $landing['about_text'] }}</p>
 				<p class="mt-4 text-gray-500 dark:text-gray-400">{{ $landing['about_text_two'] }}</p>
+
+				<div class="mt-8 grid gap-4 sm:grid-cols-2">
+					<div class="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 shadow-sm">
+						<h3 class="font-bold text-darken dark:text-white mb-2">Built for real school work</h3>
+						<p class="text-sm text-gray-500 dark:text-gray-400">Edlink is not a generic dashboard. It is designed around the way schools actually manage students, classes, teachers, results, fees, homework, and communication.</p>
+					</div>
+					<div class="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 shadow-sm">
+						<h3 class="font-bold text-darken dark:text-white mb-2">One system, many roles</h3>
+						<p class="text-sm text-gray-500 dark:text-gray-400">Admins, teachers, students, parents, bursars, and supervisors each get access to the tools they need without exposing more than necessary.</p>
+					</div>
+				</div>
+
+				<div class="mt-4 grid gap-4 sm:grid-cols-3">
+					<div class="rounded-2xl bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-100/80 dark:border-yellow-500/20 p-4">
+						<p class="text-xs font-semibold uppercase tracking-[0.25em] text-yellow-500">Records</p>
+						<p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Student profiles, streams, attendance, and academic history in one place.</p>
+					</div>
+					<div class="rounded-2xl bg-teal-50 dark:bg-teal-500/10 border border-teal-100/80 dark:border-teal-500/20 p-4">
+						<p class="text-xs font-semibold uppercase tracking-[0.25em] text-teal-500">Learning</p>
+						<p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Homework, quizzes, report cards, and result tracking for daily school use.</p>
+					</div>
+					<div class="rounded-2xl bg-purple-50 dark:bg-purple-500/10 border border-purple-100/80 dark:border-purple-500/20 p-4">
+						<p class="text-xs font-semibold uppercase tracking-[0.25em] text-purple-500">Admin</p>
+						<p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Fees, settings, staff permissions, and messaging under one controlled system.</p>
+					</div>
+				</div>
+
+				<p class="mt-6 text-gray-500 dark:text-gray-400">The goal is simple: reduce manual work, keep school data organized, and give every role a clear view of what matters without making the system complicated to use.</p>
 			</div>
 		</div>
 	</section>
@@ -274,9 +328,9 @@
 					<p class="text-sm text-gray-400 mt-1">For a single small school</p>
 					<p class="mt-6 text-3xl font-extrabold text-darken dark:text-white">UGX 150k <span class="text-sm font-medium text-gray-400">/ term</span></p>
 					<ul class="mt-6 space-y-3 text-sm text-gray-500 dark:text-gray-400 flex-grow">
-						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Students &amp; attendance</span></li>
-						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Fees tracking</span></li>
-						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Report cards</span></li>
+						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Students &amp; attendance</span></li>
+						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Fees tracking</span></li>
+						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Report cards</span></li>
 					</ul>
 					<a href="{{ route('register') }}" wire:navigate class="mt-8 text-center py-3 rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">Start free demo</a>
 				</div>
@@ -287,9 +341,9 @@
 					<p class="text-sm text-gray-300 mt-1">For most primary &amp; secondary schools</p>
 					<p class="mt-6 text-3xl font-extrabold">UGX 350k <span class="text-sm font-medium text-gray-300">/ term</span></p>
 					<ul class="mt-6 space-y-3 text-sm text-gray-200 flex-grow">
-						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Everything in Starter</span></li>
-						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>SMS announcements</span></li>
-						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Multi-branch support</span></li>
+						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">&#10003;</span><span>Everything in Starter</span></li>
+						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">&#10003;</span><span>SMS announcements</span></li>
+						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">&#10003;</span><span>Multi-branch support</span></li>
 					</ul>
 					<a href="{{ route('register') }}" wire:navigate class="mt-8 text-center py-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold hover:scale-105 transition-transform">Start free demo</a>
 				</div>
@@ -299,15 +353,16 @@
 					<p class="text-sm text-gray-400 mt-1">For school groups &amp; large institutions</p>
 					<p class="mt-6 text-3xl font-extrabold text-darken dark:text-white">Custom</p>
 					<ul class="mt-6 space-y-3 text-sm text-gray-500 dark:text-gray-400 flex-grow">
-						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Everything in Growth</span></li>
-						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>Dedicated onboarding</span></li>
-						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span><span>SLA-backed support</span></li>
+						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Everything in Growth</span></li>
+						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Dedicated onboarding</span></li>
+						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>SLA-backed support</span></li>
 					</ul>
 					<a href="#contact" class="mt-8 text-center py-3 rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">Talk to us</a>
 				</div>
 			</div>
 		</div>
 	</section>
+
 
 	<!-- ============ CTA ============ -->
 	<section class="py-24 max-w-7xl mx-auto px-6">
@@ -316,9 +371,9 @@
 			<div class="absolute -left-10 -top-10 w-56 h-56 bg-teal-400/10 rounded-full animate-blob-slow"></div>
 			<div class="relative z-10 px-8 py-16 md:py-20 text-center">
 				<h2 class="text-white text-3xl md:text-4xl font-extrabold">Ready to <span class="text-gradient">ditch the notebooks?</span></h2>
-				<p class="text-gray-300 mt-4 max-w-xl mx-auto">Set up your school on Edlink in minutes ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no card required, no long onboarding calls.</p>
+				<p class="text-gray-300 mt-4 max-w-xl mx-auto">Set up your school on Edlink in minutes — no card required, no long onboarding calls.</p>
 				<div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-					<a href="{{ route('register') }}" wire:navigate class="bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold rounded-full py-4 px-9 shadow-xl shadow-yellow-500/30 hover:scale-105 transition-transform">Try a free demo</a>
+					<a href="{{ route('register') }}" wire:navigate class="bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold rounded-full py-4 px-9 shadow-xl shadow-yellow-500/30 hover:scale-105 transition-transform">{{ $landing['primary_cta'] }}</a>
 					<a href="#contact" class="border border-white/20 text-white font-medium rounded-full py-4 px-9 hover:border-yellow-400 transition-colors">Talk to our team</a>
 				</div>
 			</div>
@@ -380,10 +435,10 @@
 			</div>
 			<div class="flex items-center space-x-4 text-sm mb-6">
 				<a href="#" class="hover:text-white transition-colors">Careers</a>
-				<span class="text-gray-600">ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢</span>
-				<a href="#" class="hover:text-white transition-colors">Privacy</a>
-				<span class="text-gray-600">ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢</span>
-				<a href="#" class="hover:text-white transition-colors">Terms</a>
+				<span class="text-gray-600">•</span>
+				<a href="{{ route('privacy') }}" class="hover:text-white transition-colors">Privacy</a>
+				<span class="text-gray-600">•</span>
+				<a href="{{ route('terms') }}" class="hover:text-white transition-colors">Terms</a>
 			</div>
 			<p class="text-xs text-gray-500">&copy; <span x-data x-text="new Date().getFullYear()"></span> {{ $landing['footer_text'] }}</p>
 		</div>
@@ -405,7 +460,7 @@
 					</div>
 					<div>
 						<p class="text-white text-sm font-semibold">Edlink Assistant</p>
-						<p class="text-green-300 text-xs">Online ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â instant answers</p>
+						<p class="text-green-300 text-xs">Online — instant answers</p>
 					</div>
 				</div>
 				<button @click="open = false" class="text-white/70 hover:text-white">
@@ -472,12 +527,12 @@
 				open: false,
 				typing: false,
 				messages: [
-					{ from: 'bot', text: "Hi! I'm the Edlink assistant. Ask me anything about pricing, demos, or getting started ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Â¹" }
+					{ from: 'bot', text: "Hi! I'm the Edlink assistant. Ask me anything about pricing, demos, or getting started 👋" }
 				],
 				faqs: [
-					{ q: 'Free demo?', a: 'Yes ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â every school gets a free 7-day demo with sample data pre-loaded, no card required. Just click "Try a free demo" up top.' },
+					{ q: 'Free demo?', a: 'Yes — every school gets a free 10-day demo with sample data pre-loaded, no card required. Just click "Try a free demo" up top.' },
 					{ q: 'Pricing?', a: 'Plans start at UGX 150k/term for a single small school, up to custom pricing for school groups. Check the Pricing section above for full details.' },
-					{ q: 'Setup time?', a: 'Most schools are fully set up ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â classes, streams, students, and fees ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â within a day. The demo itself takes about 2 minutes to start.' },
+					{ q: 'Setup time?', a: 'Most schools are fully set up — classes, streams, students, and fees — within a day. The demo itself takes about 2 minutes to start.' },
 					{ q: 'Data security?', a: "Yes. Your school's data is isolated from every other school on Edlink and only accessible to your own staff accounts." },
 					{ q: 'Multi-branch?', a: 'Yes, our Growth and Enterprise plans support multi-branch schools with per-branch reporting and permissions.' },
 					{ q: 'Talk to support?', a: 'Use the WhatsApp or Call buttons below, or send a message through the contact form and we\'ll get back to you fast.' },
@@ -503,7 +558,7 @@
 		}
 	</script>
 
-	<script type="module" src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"></script>
 	<script>AOS.init({ once: true, duration: 700 });</script>
+	<script type="module" src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"></script>
 </body>
 </html>

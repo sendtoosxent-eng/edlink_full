@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,6 +20,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('api', function (Request $request) {
+            $user = $request->user();
+            $key = $user ? "school:{$user->school_id}:user:{$user->id}" : $request->ip();
+
+            return Limit::perMinute(120)->by($key);
+        });
+
         View::composer('layouts.app', function ($view): void {
             $user = Auth::user();
             $notifications = collect();

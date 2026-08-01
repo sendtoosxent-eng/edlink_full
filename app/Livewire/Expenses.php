@@ -45,11 +45,10 @@ class Expenses extends Component
         $this->validate(['category' => ['required', 'in:'.implode(',', Expense::CATEGORIES)], 'amount' => ['required', 'numeric', 'min:0.01'], 'description' => ['nullable', 'string', 'max:255'], 'expense_date' => ['required', 'date'], 'reference_number' => ['required', 'string', 'max:100', Rule::unique('expenses', 'reference_number')->where('school_id', Auth::user()->school_id)]]);
 
         DB::transaction(function () {
-            $expense = Expense::create(['school_id' => Auth::user()->school_id, 'term_id' => $this->selectedTerm->id, 'category' => $this->category, 'amount' => $this->amount, 'description' => $this->description ?: null, 'expense_date' => $this->expense_date, 'reference_number' => $this->reference_number, 'recorded_by' => Auth::id()]);
-            CashPoolEntry::create(['school_id' => $expense->school_id, 'term_id' => $expense->term_id, 'expense_id' => $expense->id, 'direction' => 'debit', 'amount' => $expense->amount, 'description' => '['.$expense->reference_number.'] '.$expense->category.($expense->description ? ': '.$expense->description : ''), 'transacted_at' => $expense->expense_date->startOfDay(), 'recorded_by' => Auth::id()]);
+            $expense = Expense::create(['school_id' => Auth::user()->school_id, 'financial_account_id' => \App\Models\FinancialAccount::where('school_id', Auth::user()->school_id)->where('type','cash')->value('id'), 'term_id' => $this->selectedTerm->id, 'category' => $this->category, 'amount' => $this->amount, 'description' => $this->description ?: null, 'expense_date' => $this->expense_date, 'reference_number' => $this->reference_number, 'recorded_by' => Auth::id()]);
         });
         $this->reset(['amount', 'description', 'reference_number']);
-        session()->flash('status', 'Expense recorded and deducted from the school cash pool.');
+        session()->flash('status', 'Expense recorded and sent for approval. It will be deducted from the cash pool after approval.');
     }
 
     public function confirmDelete(int $id): void { $this->deletingId = $id; }
@@ -59,9 +58,11 @@ class Expenses extends Component
         abort_unless(Auth::user()->hasPermission('finance.expenses'), 403);
         if (! $this->canEdit) { return; }
         $expense = Expense::where('school_id', Auth::user()->school_id)->where('term_id', $this->selectedTerm->id)->findOrFail($id);
+        $ledger = \App\Models\FinanceLedgerEntry::where(['source_type' => \App\Models\Expense::class, 'source_id' => $expense->id])->first();
+        if ($ledger && $ledger->status !== 'pending') { session()->flash('error', 'Posted expenses cannot be deleted. Reverse the transaction from Ledger & Reconciliation.'); $this->deletingId = null; return; }
         DB::transaction(fn () => $expense->delete());
         $this->deletingId = null;
-        session()->flash('status', 'Expense removed and the pool balance restored.');
+        session()->flash('status', 'Pending expense deleted. It had not affected the cash pool.');
     }
 
     public function render()

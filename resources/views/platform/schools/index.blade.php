@@ -2,6 +2,9 @@
 
 @section('content')
 <div class="space-y-6">
+    @if(session('status'))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{{ session('status') }}</div>
+    @endif
     <!-- Header Block with Dark Gradient Background & Ambient Glow -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -188,9 +191,9 @@
 
                             <!-- Actions -->
                             <td class="px-5 py-4 text-right">
-                                <a href="{{ route('platform.licences') }}#school-{{ $school->id }}" 
+                                <a href="{{ route('platform.schools.show', $school) }}"
                                    class="inline-flex items-center gap-1 text-xs font-extrabold text-slate-900 hover:text-amber-600 transition-colors">
-                                    <span>Manage</span>
+                                    <span>View details</span>
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                     </svg>

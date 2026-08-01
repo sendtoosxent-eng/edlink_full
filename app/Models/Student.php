@@ -60,6 +60,11 @@ class Student extends Model
         return $this->hasMany(StudentEnrolment::class);
     }
 
+    public function subjectSelections(): HasMany
+    {
+        return $this->hasMany(StudentSubjectSelection::class);
+    }
+
     public function feePayments(): HasMany
     {
         return $this->hasMany(FeePayment::class);
@@ -148,7 +153,9 @@ class Student extends Model
             return 0;
         }
 
-        return (float) $this->feePayments()->where('term_id', $term->id)->sum('amount');
+        return (float) $this->feePayments()->where('term_id', $term->id)->whereExists(function ($query) {
+            $query->selectRaw('1')->from('finance_ledger_entries')->whereColumn('finance_ledger_entries.source_id', 'fee_payments.id')->where('finance_ledger_entries.source_type', FeePayment::class)->where('finance_ledger_entries.status', 'posted');
+        })->sum('amount');
     }
 
     public function balance(?Term $term = null): float

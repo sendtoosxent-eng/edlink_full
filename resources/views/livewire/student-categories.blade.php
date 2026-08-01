@@ -1,5 +1,5 @@
-<div>
-    <div class="mx-auto max-w-7xl space-y-6">
+
+<div class="space-y-6">
         
         <!-- HEADER BLOCK -->
           <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">

@@ -11,8 +11,8 @@ class LandingPageSetting extends Model
     protected $fillable = ['key', 'value'];
 
     public const DEFAULTS = [
-        'site_title' => 'Edlink â€” Run your school from one dashboard',
-        'announcement' => 'Free 7-day demo â€” no card required',
+        'site_title' => 'Edlink — Run your school from one dashboard',
+        'announcement' => 'Free 10-day demo — no card required',
         'hero_title' => 'Run your school from',
         'hero_highlight' => 'one dashboard,',
         'hero_title_suffix' => 'not ten notebooks',

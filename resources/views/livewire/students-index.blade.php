@@ -1,9 +1,9 @@
 <div>
-    @if($openStudentId)
+    @if($openStudentId && $canManageStudents)
         <script>document.addEventListener('livewire:init', () => Livewire.dispatch('edit-student', { studentId: {{ $openStudentId }} }));</script>
     @endif
 
-    <div class="mx-auto max-w-7xl space-y-6">
+    <div class="space-y-6">
         
         <!-- HEADER BLOCK -->
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
@@ -18,14 +18,14 @@
                 </div>
 
                 <!-- REGISTER STUDENT BUTTON (MOVED TO HEADER RIGHT) -->
-                <a href="{{ route('students.register') }}" 
+                @if($canManageStudents)<a href="{{ route('students.register') }}"
                    wire:navigate 
                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-5 py-3 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 text-sm shrink-0 self-start sm:self-center">
                     <svg class="w-4 h-4 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                     <span>Register Student</span>
-                </a>
+                </a>@endif
             </div>
 
             <!-- Glowing Ambient Background Effect -->
@@ -169,6 +169,7 @@
                                 
                                 <!-- Actions -->
                                 <td class="py-3.5 px-5 text-right">
+                                    @if($canManageStudents)
                                     <div class="inline-flex items-center gap-2">
                                         <!-- Edit Button -->
                                         <button onclick="Livewire.dispatch('edit-student', { studentId: {{ $student->id }} })" 
@@ -186,6 +187,9 @@
                                             {{ $student->status === 'active' ? 'Deactivate' : 'Reactivate' }}
                                         </button>
                                     </div>
+                                    @else
+                                        <span class="text-xs font-semibold text-slate-400">View only</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

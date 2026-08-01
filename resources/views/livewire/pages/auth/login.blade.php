@@ -38,6 +38,22 @@ new #[Layout('layouts.guest-split')] class extends Component
             throw $genericError();
         }
 
+        if (! $school->isLicenceUsable() || $school->isExpiredDemo()) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+            RateLimiter::clear($this->throttleKey());
+
+            $expired = $school->license_status === 'expired'
+                || ($school->license_expires_at && $school->license_expires_at->isPast())
+                || $school->isExpiredDemo();
+
+            throw ValidationException::withMessages([
+                'email' => $expired
+                    ? \App\Http\Middleware\EnsureSchoolLicenceIsActive::EXPIRED_MESSAGE
+                    : \App\Http\Middleware\EnsureSchoolLicenceIsActive::INACTIVE_MESSAGE,
+            ]);
+        }
         /** @var User $user */
         $user = Auth::user();
 
@@ -74,7 +90,7 @@ new #[Layout('layouts.guest-split')] class extends Component
 
         $this->redirect(
             $user->hasVerifiedEmail() ? route($user->portalHomeRoute(), absolute: false) : route('verification.notice', absolute: false),
-            navigate: true
+            navigate: false
         );
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\TeacherAcademicScope;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,14 +15,15 @@ class EnsureDesignationAccess
         $permission = match ($route) {
             'students.index' => 'students.view',
             'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage',
-            'students.activities' => null,
+            'students.activities', 'students.activities.export' => null,
             'fee-payments.index' => 'finance.payments',
             'expenses.index' => 'finance.expenses',
+            'finance.ledger', 'finance.ledger.approve', 'finance.ledger.reverse', 'finance.ledger.reconcile' => 'finance.ledger',
             'attendance.index' => 'attendance.daily',
             'attendance.subject' => 'attendance.subject',
             'attendance.reports' => 'attendance.reports',
             'classes.index' => 'academics.classes',
-            'subjects.index' => 'academics.subjects',
+            'subjects.index', 'subject-selections.index' => 'academics.subjects',
             'timetable.index' => 'academics.timetable',
             'events.index' => 'academics.events',
             'promotions.index' => 'academics.promotions',
@@ -40,12 +42,12 @@ class EnsureDesignationAccess
         };
 
         $module = match (true) {
+            in_array($route, ['students.activities', 'students.activities.export'], true) => null,
             str_starts_with($route, 'students.'), str_starts_with($route, 'student-categories.') => 'students',
             str_starts_with($route, 'fee-'), str_starts_with($route, 'terms.'), str_starts_with($route, 'expenses.') => 'finance',
             str_starts_with($route, 'attendance.') => 'attendance',
-            str_starts_with($route, 'classes.'), str_starts_with($route, 'subjects.'), str_starts_with($route, 'grading-scales.'), str_starts_with($route, 'timetable.'), str_starts_with($route, 'events.'), str_starts_with($route, 'promotions.') => 'academics',
+            str_starts_with($route, 'classes.'), str_starts_with($route, 'subjects.'), str_starts_with($route, 'subject-selections.'), str_starts_with($route, 'grading-scales.'), str_starts_with($route, 'timetable.'), str_starts_with($route, 'events.'), str_starts_with($route, 'promotions.') => 'academics',
             $route === 'workbench.home' => null,
-            $route === 'students.activities' => null,
             $route === 'leaves.index' => null,
             str_starts_with($route, 'staff.'), str_starts_with($route, 'payroll.'), str_starts_with($route, 'leaves.'), str_starts_with($route, 'designations.') => 'staff',
             str_starts_with($route, 'exams.'), str_starts_with($route, 'my-results') => 'exams',
@@ -56,6 +58,10 @@ class EnsureDesignationAccess
         };
 
         $user = $request->user();
+        if ($route === 'students.index' && $user && TeacherAcademicScope::isTeacher($user)) {
+            abort_unless(TeacherAcademicScope::canViewStudentDirectory($user), 403);
+            return $next($request);
+        }
         abort_unless(! $permission || $user?->hasPermission($permission), 403);
         abort_unless($permission || ! $module || $user?->hasModuleAccess($module), 403);
 

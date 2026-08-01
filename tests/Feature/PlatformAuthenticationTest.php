@@ -4,7 +4,9 @@ use App\Models\PlatformAdmin;
 use App\Models\PlatformAuditLog;
 use App\Services\PlatformTotpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use PragmaRX\Google2FA\Google2FA;
 
 uses(RefreshDatabase::class);
@@ -18,6 +20,35 @@ it('renders database-backed landing page content and assets', function () {
         ->assertOk()
         ->assertSee('A database powered school platform')
         ->assertSee(asset('img/hero.png'), false);
+});
+it('updates and renders every landing page image from the platform editor', function () {
+    Storage::fake('public');
+    $admin = PlatformAdmin::create([
+        'name' => 'Website Owner',
+        'email' => 'website@edlink.test',
+        'password' => 'StrongPassword!123',
+        'role' => 'platform_owner',
+        'is_active' => true,
+    ]);
+    $images = collect(['nav_logo', 'hero_image', 'feature_image', 'about_image', 'footer_logo'])
+        ->mapWithKeys(fn ($key) => [$key => UploadedFile::fake()->image($key.'.png')])
+        ->all();
+
+    $response = $this->actingAs($admin, 'platform')
+        ->withSession(['platform_mfa_passed' => true, 'platform_last_activity' => now()->timestamp])
+        ->put(route('platform.website.update'), $images);
+
+    $response->assertSessionHasNoErrors()->assertSessionHas('status');
+    foreach (array_keys($images) as $key) {
+        $path = \App\Models\LandingPageSetting::where('key', $key)->value('value');
+        expect($path)->toStartWith('landing-page/');
+        Storage::disk('public')->assertExists($path);
+    }
+
+    $landing = \App\Models\LandingPageSetting::values();
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(\App\Models\LandingPageSetting::assetUrl($landing, 'feature_image'), false);
 });
 it('shows the separate Edlink platform login', function () {
     $this->get(route('platform.login'))->assertOk()->assertSee('Platform access')->assertSee('Password verification is followed by MFA');
@@ -58,4 +89,24 @@ it('accepts each hashed recovery code only once', function () {
     $this->post(route('platform.login.store'),['email'=>$admin->email,'password'=>'StrongPassword!123']);
     $this->post(route('platform.challenge.verify'),['code'=>$recovery])->assertRedirect(route('platform.dashboard'));
     expect($admin->fresh()->recovery_codes)->toBe([]);
+});
+
+it('lets an authenticated platform administrator securely reset MFA', function () {
+    $admin=PlatformAdmin::create(['name'=>'Reset Owner','email'=>'reset@edlink.test','password'=>'StrongPassword!123','role'=>'platform_owner','is_active'=>true,'totp_secret'=>app(PlatformTotpService::class)->generateSecret(),'totp_confirmed_at'=>now(),'recovery_codes'=>[Hash::make('ABCD-1234-EF56')],'last_totp_hash'=>'old-hash']);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.mfa.reset'))
+        ->assertOk()
+        ->assertSee('Reset MFA');
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.mfa.reset.store'), ['password'=>'StrongPassword!123','confirmation'=>'RESET MFA'])
+        ->assertRedirect(route('platform.setup'));
+
+    $admin->refresh();
+    expect($admin->totp_secret)->toBeNull()
+        ->and($admin->totp_confirmed_at)->toBeNull()
+        ->and($admin->recovery_codes)->toBe([])
+        ->and($admin->last_totp_hash)->toBeNull();
+    expect(PlatformAuditLog::where('event','platform.mfa.reset')->where('platform_admin_id',$admin->id)->exists())->toBeTrue();
 });

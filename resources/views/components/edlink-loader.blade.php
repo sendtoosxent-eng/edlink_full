@@ -2,7 +2,7 @@
     'size' => 18,
     'fullscreen' => false,
     'title' => 'Edlink',
-    'subtitle' => 'Processing request...',
+    'subtitle' => 'Loading...',
 ])
 
 @if($fullscreen)

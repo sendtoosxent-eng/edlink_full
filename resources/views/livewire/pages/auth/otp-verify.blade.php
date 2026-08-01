@@ -22,6 +22,23 @@ new #[Layout('layouts.guest-split')] class extends Component
 
         $user = User::find(session('otp_pending_user_id'));
 
+        $school = $user?->school;
+        if ($user && (! $school || ! $school->isLicenceUsable() || $school->isExpiredDemo())) {
+            session()->forget(['otp_pending_user_id', 'otp_remember']);
+
+            $expired = $school && ($school->license_status === 'expired'
+                || ($school->license_expires_at && $school->license_expires_at->isPast())
+                || $school->isExpiredDemo());
+
+            $this->addError(
+                'code',
+                $expired
+                    ? \App\Http\Middleware\EnsureSchoolLicenceIsActive::EXPIRED_MESSAGE
+                    : \App\Http\Middleware\EnsureSchoolLicenceIsActive::INACTIVE_MESSAGE
+            );
+
+            return;
+        }
         if (! $user || ! $user->otpIsValid($this->code)) {
             $this->addError('code', 'That code is invalid or has expired.');
             return;
@@ -36,7 +53,7 @@ new #[Layout('layouts.guest-split')] class extends Component
 
         $this->redirect(
             $user->hasVerifiedEmail() ? route($user->portalHomeRoute(), absolute: false) : route('verification.notice', absolute: false),
-            navigate: true
+            navigate: false
         );
     }
 

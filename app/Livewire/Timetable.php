@@ -57,15 +57,33 @@ class Timetable extends Component
         if ($data['teacherId'] && ! User::where('school_id',$school->id)->where('employment_status','active')->whereKey($data['teacherId'])->exists()) throw ValidationException::withMessages(['teacherId'=>'Select an active staff member from this school.']);
         if (! $data['subjectId'] && blank($data['label'])) throw ValidationException::withMessages(['label'=>'Choose a subject or enter a label such as Break or Assembly.']);
 
-        $overlap = fn ($query) => $query->where('starts_at','<',$data['endsAt'])->where('ends_at','>',$data['startsAt'])->when($this->editingId,fn($q)=>$q->where('id','!=',$this->editingId));
-        $base = DB::table('timetable_slots')->where('school_id',$school->id)->where('term_id',$term->id)->where('day_of_week',$data['day']);
-        $classSchedule = $overlap(clone $base)->where('school_class_id', $class->id);
+        $overlap = fn ($query) => $query->where('timetable_slots.starts_at','<',$data['endsAt'])->where('timetable_slots.ends_at','>',$data['startsAt'])->when($this->editingId,fn($q)=>$q->where('timetable_slots.id','!=',$this->editingId));
+        $base = DB::table('timetable_slots')->where('timetable_slots.school_id',$school->id)->where('timetable_slots.term_id',$term->id)->where('timetable_slots.day_of_week',$data['day']);
+        $classSchedule = $overlap(clone $base)->where('timetable_slots.school_class_id', $class->id);
         if ($data['streamId']) {
-            $classSchedule->where(fn ($query) => $query->whereNull('stream_id')->orWhere('stream_id', $data['streamId']));
+            $classSchedule->where(fn ($query) => $query->whereNull('timetable_slots.stream_id')->orWhere('timetable_slots.stream_id', $data['streamId']));
         }
         $classConflict = $classSchedule->exists();
         if ($classConflict) throw ValidationException::withMessages(['startsAt'=>'This class or stream already has an activity during that time.']);
-        if ($data['teacherId'] && $overlap(clone $base)->where('user_id',$data['teacherId'])->exists()) throw ValidationException::withMessages(['teacherId'=>'This staff member is already assigned during that time.']);
+        if ($data['teacherId']) {
+            $teacherConflict = $overlap(clone $base)
+                ->leftJoin('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
+                ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
+                ->leftJoin('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
+                ->where('timetable_slots.user_id', $data['teacherId'])
+                ->first([
+                    'timetable_slots.starts_at', 'timetable_slots.ends_at', 'timetable_slots.label',
+                    'school_classes.name as class_name', 'streams.name as stream_name', 'subjects.name as subject_name',
+                ]);
+            if ($teacherConflict) {
+                $activity = $teacherConflict->subject_name ?: $teacherConflict->label ?: 'an activity';
+                $location = $teacherConflict->class_name.($teacherConflict->stream_name ? ' · '.$teacherConflict->stream_name : '');
+                throw ValidationException::withMessages([
+                    'teacherId' => "Conflict: this teacher already has {$activity} with {$location} on {$data['day']}, "
+                        .substr($teacherConflict->starts_at, 0, 5).'–'.substr($teacherConflict->ends_at, 0, 5).'.',
+                ]);
+            }
+        }
 
         $values = ['school_id'=>$school->id,'term_id'=>$term->id,'school_class_id'=>$class->id,'stream_id'=>$data['streamId'] ?: null,'subject_id'=>$data['subjectId'] ?: null,'user_id'=>$data['teacherId'] ?: null,'day_of_week'=>$data['day'],'starts_at'=>$data['startsAt'],'ends_at'=>$data['endsAt'],'label'=>filled($data['label']) ? trim($data['label']) : null,'updated_at'=>now()];
         if ($this->editingId) {

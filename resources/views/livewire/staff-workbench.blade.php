@@ -66,6 +66,29 @@
             })();
         </script>
     @elseif($isTeacherWorkspace)
+        @if($teacher['nextLesson'])
+            @php($nextLesson=$teacher['nextLesson'])
+            <section
+                x-data="{ now: Date.now(), start: new Date(@js($nextLesson->starts_at_iso)).getTime(), end: new Date(@js($nextLesson->ends_at_iso)).getTime(), timer: null, remaining() { const target=this.now < this.start ? this.start : this.end; const seconds=Math.max(0,Math.floor((target-this.now)/1000)); const h=Math.floor(seconds/3600),m=Math.floor((seconds%3600)/60),s=seconds%60; return (h?h+'h ':'')+m+'m '+String(s).padStart(2,'0')+'s'; }, init(){ this.timer=setInterval(()=>this.now=Date.now(),1000) } }"
+                class="relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 to-white p-6 shadow-sm"
+            >
+                <div class="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[.18em] text-amber-700" x-text="now >= start && now < end ? 'Lesson in progress' : 'Your next lesson'"></p>
+                        <h2 class="mt-2 text-xl font-black text-slate-900">{{ $nextLesson->subject ?: $nextLesson->label ?: 'Lesson' }}</h2>
+                        <p class="mt-1 text-sm font-semibold text-slate-600">{{ $nextLesson->class ?: 'Unassigned class' }}{{ $nextLesson->stream ? ' · '.$nextLesson->stream : '' }} · {{ substr($nextLesson->starts_at,0,5) }}–{{ substr($nextLesson->ends_at,0,5) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-slate-900 px-6 py-4 text-center text-white shadow-lg">
+                        <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400" x-text="now >= start && now < end ? 'Time remaining' : 'Starts in'"></p>
+                        <p class="mt-1 font-mono text-2xl font-black text-amber-300" x-text="remaining()"></p>
+                    </div>
+                </div>
+                <div class="absolute -bottom-16 -right-10 h-40 w-40 rounded-full bg-amber-300/20 blur-3xl"></div>
+            </section>
+        @else
+            <section class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">You have no remaining lessons today.</section>
+        @endif
+
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             @foreach([
                 ['Assigned subjects',$teacher['subjects'],'Subjects allocated this term'],
@@ -124,6 +147,7 @@
         </div>
 
         <div class="flex flex-wrap gap-3">
+            <a wire:navigate href="{{ route('homework.index') }}" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white">Send or review homework</a>
             @if(auth()->user()->hasPermission('attendance.subject'))<a wire:navigate href="{{ route('attendance.subject') }}" class="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-950">Mark subject attendance</a>@endif
             @if(auth()->user()->hasPermission('attendance.daily'))<a wire:navigate href="{{ route('attendance.index') }}" class="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-950">Mark class attendance</a>@endif
             @if(auth()->user()->hasPermission('exams.marks'))<a wire:navigate href="{{ route('exams.marks') }}" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold">Enter marks</a>@endif

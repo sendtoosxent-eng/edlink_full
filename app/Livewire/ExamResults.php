@@ -5,6 +5,8 @@ namespace App\Livewire;
 use App\Models\Exam;
 use App\Models\GradingScale;
 use App\Models\Student;
+use App\Services\StudentSubjectSelectionService;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -48,12 +50,23 @@ class ExamResults extends Component
     protected function calculate(Exam $exam): array
     {
         $papers = $exam->papers;
+        $user = Auth::user();
+        if (TeacherAcademicScope::isTeacher($user) && ! TeacherAcademicScope::classIds($user)->contains($exam->school_class_id)) {
+            $subjectIds = TeacherAcademicScope::subjectAssignments($user, $exam->term_id)
+                ->where('school_class_id', $exam->school_class_id)->pluck('subject_id')->map(fn($id)=>(int)$id);
+            $papers = $papers->whereIn('subject_id', $subjectIds)->values();
+        }
         $paperIds = $papers->pluck('id');
         $submissions = DB::table('exam_paper_submissions')->whereIn('exam_paper_id', $paperIds)->pluck('status', 'exam_paper_id');
         $approvedPapers = $papers->filter(fn ($paper) => ($submissions[$paper->id] ?? null) === 'approved')->values();
         $students = $this->studentsFor($exam);
         $scales = GradingScale::where('school_id', $exam->school_id)->where('education_stage', $exam->schoolClass->education_stage)->orderByDesc('minimum_percentage')->get();
         $marks = DB::table('exam_marks')->whereIn('exam_paper_id', $paperIds)->get()->keyBy(fn ($mark) => $mark->exam_paper_id.':'.$mark->student_id);
+        $studentSelections = DB::table('student_subject_selections')
+            ->where('term_id', $exam->term_id)
+            ->whereIn('student_id', $students->pluck('id'))
+            ->get()
+            ->groupBy('student_id');
         $missingMarks = 0;
         $rows = collect();
 
@@ -63,6 +76,16 @@ class ExamResults extends Component
             $weightedMaximum = 0.0;
 
             foreach ($approvedPapers as $paper) {
+                $configuredSelections = $studentSelections->get($student->id, collect());
+                $applicable = ! StudentSubjectSelectionService::classUsesIndividualSelection($exam->schoolClass)
+                    || $configuredSelections->isEmpty()
+                    || $configuredSelections->contains('subject_id', $paper->subject_id);
+
+                if (! $applicable) {
+                    $subjects[] = ['paper' => $paper, 'score' => null, 'percentage' => null, 'grade' => '—', 'applicable' => false];
+                    continue;
+                }
+
                 $mark = $marks->get($paper->id.':'.$student->id);
                 $score = $mark?->score;
                 if ($score === null) {
@@ -70,7 +93,7 @@ class ExamResults extends Component
                 }
                 $numericScore = (float) ($score ?? 0);
                 $percentage = (float) $paper->maximum_score > 0 ? round($numericScore / (float) $paper->maximum_score * 100, 2) : 0;
-                $subjects[] = ['paper' => $paper, 'score' => $score, 'percentage' => $percentage, 'grade' => $this->gradeFor($percentage, $scales)];
+                $subjects[] = ['paper' => $paper, 'score' => $score, 'percentage' => $percentage, 'grade' => $this->gradeFor($percentage, $scales), 'applicable' => true];
                 $weightedScore += $numericScore * (float) $paper->weighting;
                 $weightedMaximum += (float) $paper->maximum_score * (float) $paper->weighting;
             }
@@ -117,20 +140,23 @@ class ExamResults extends Component
 
     protected function selectedExamOrFail(): Exam
     {
-        return Exam::with(['schoolClass', 'stream', 'papers.subject', 'term'])
+        $exam = Exam::with(['schoolClass', 'stream', 'papers.subject', 'term'])
             ->where('school_id', Auth::user()->school_id)->findOrFail($this->examId);
+        abort_unless(TeacherAcademicScope::canViewExam(Auth::user(), $exam->school_class_id, $exam->term_id), 403);
+        return $exam;
     }
 
     protected function canManage(): bool
     {
-        return Auth::user()->hasPermission('exams.results');
+        return ! TeacherAcademicScope::isTeacher(Auth::user()) && Auth::user()->hasPermission('exams.results');
     }
 
     public function render()
     {
         $school = Auth::user()->school;
         $term = $school->currentTerm();
-        $exams = Exam::with(['schoolClass', 'stream'])->where('school_id', $school->id)->when($term, fn (Builder $query) => $query->where('term_id', $term->id))->orderByDesc('created_at')->get();
+        $exams = Exam::with(['schoolClass', 'stream'])->where('school_id', $school->id)->when($term, fn (Builder $query) => $query->where('term_id', $term->id))->orderByDesc('created_at')->get()
+            ->filter(fn(Exam $exam)=>TeacherAcademicScope::canViewExam(Auth::user(),$exam->school_class_id,$exam->term_id))->values();
         $exam = $this->examId !== '' ? $this->selectedExamOrFail() : null;
         $report = $exam ? $this->calculate($exam) : ['papers' => collect(), 'results' => collect(), 'readiness' => null];
 

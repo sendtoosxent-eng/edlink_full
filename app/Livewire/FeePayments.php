@@ -74,9 +74,11 @@ class FeePayments extends Component
             return;
         }
 
+        $ledger = \App\Models\FinanceLedgerEntry::where(['source_type' => \App\Models\FeePayment::class, 'source_id' => $payment->id])->first();
+        if ($ledger && $ledger->status !== 'pending') { session()->flash('error', 'Posted payments cannot be deleted. Reverse the transaction from Ledger & Reconciliation.'); $this->deletingPaymentId = null; return; }
         DB::transaction(fn () => $payment->delete());
         $this->deletingPaymentId = null;
-        session()->flash('status', 'Payment deleted and its credit removed from the cash pool.');
+        session()->flash('status', 'Pending payment deleted. It had not affected the cash pool.');
     }
 
     public function recordPayment(): void
@@ -106,24 +108,16 @@ class FeePayments extends Component
 
         $payment = DB::transaction(function () use ($school, $student, $term) {
             $payment = FeePayment::create([
-                'school_id' => $school->id, 'student_id' => $student->id,
+                'school_id' => $school->id, 'financial_account_id' => \App\Models\FinancialAccount::where('school_id', $school->id)->where('type', $this->method === 'mobile_money' ? 'mobile_money' : $this->method)->value('id'), 'student_id' => $student->id,
                 'term_id' => $term->id, 'amount' => $this->amount,
                 'method' => $this->method, 'transaction_id' => $this->transaction_id ?: null, 'bank_slip_number' => $this->bank_slip_number ?: null, 'notes' => $this->notes ?: null,
                 'recorded_by' => Auth::id(), 'paid_at' => now(),
-            ]);
-
-            CashPoolEntry::create([
-                'school_id' => $school->id, 'term_id' => $term->id,
-                'fee_payment_id' => $payment->id, 'direction' => 'credit',
-                'amount' => $payment->amount, 'description' => 'Student fee payment: '.$student->name,
-                'transacted_at' => $payment->paid_at, 'recorded_by' => Auth::id(),
             ]);
             return $payment;
         });
 
         $this->payingStudentId = null;
-        session()->flash('status', 'Payment of UGX '.number_format((float) $this->amount).' recorded for '.$student->name.'. A thank-you email with the PDF receipt will be sent to the registered parent or guardian email.');
-        $this->dispatch('payment-recorded', receiptUrl: route('fee-payments.receipt', $payment));
+        session()->flash('status', 'Payment of UGX '.number_format((float) $this->amount).' recorded for '.$student->name.' and sent for approval. It will affect the balance and cash pool after approval.');
     }
 
     public function render()

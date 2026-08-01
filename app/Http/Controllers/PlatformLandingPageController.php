@@ -22,7 +22,7 @@ class PlatformLandingPageController extends Controller
             'string',
             'max:'.(str_contains($key, 'text') || str_contains($key, 'description') ? 3000 : 255),
         ]])->all();
-        foreach (['nav_logo','hero_image','feature_image','about_image','footer_logo'] as $key) $rules[$key] = ['nullable','image','max:4096'];
+        foreach (['nav_logo','hero_image','feature_image','about_image','footer_logo'] as $key) $rules[$key] = ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'];
         $data = $request->validate($rules);
         foreach ($textKeys as $key) LandingPageSetting::updateOrCreate(['key'=>$key], ['value'=>$data[$key] ?? '']);
         foreach (['nav_logo','hero_image','feature_image','about_image','footer_logo'] as $key) {

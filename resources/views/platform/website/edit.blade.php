@@ -244,6 +244,20 @@
             </div>
         </section>
 
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 class="font-black text-slate-900">Landing-page assets</h3>
+            <p class="mt-1 text-xs text-slate-500">Upload JPG, PNG or WebP files up to 4 MB. Existing images remain unless replaced.</p>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                @foreach(['nav_logo'=>'Navigation logo','hero_image'=>'Hero image','feature_image'=>'Feature image','about_image'=>'About image','footer_logo'=>'Footer logo'] as $key=>$label)
+                    <label class="rounded-xl border border-dashed border-slate-300 p-4 text-xs font-bold text-slate-600">
+                        <span>{{ $label }}</span>
+                        <img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,$key) }}" class="my-3 h-24 w-full rounded-lg bg-slate-100 object-contain" alt="{{ $label }} preview">
+                        <input type="file" name="{{ $key }}" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="block w-full text-[10px] font-normal">
+                        @error($key)<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+                    </label>
+                @endforeach
+            </div>
+        </section>
         <!-- Fixed/Sticky Bottom Action Bar -->
         <div class="sticky bottom-4 z-20 rounded-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-4 text-white shadow-xl flex items-center justify-between gap-4">
             <div class="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
@@ -264,6 +278,4 @@
     </form>
 </div>
 
-<section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="font-black text-slate-900">Landing-page assets</h3><p class="mt-1 text-xs text-slate-500">Upload JPG, PNG or WebP files up to 4 MB. Existing images remain unless replaced.</p><div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">@foreach(['nav_logo'=>'Navigation logo','hero_image'=>'Hero image','feature_image'=>'Feature image','about_image'=>'About image','footer_logo'=>'Footer logo'] as $key=>$label)<label class="rounded-xl border border-dashed border-slate-300 p-4 text-xs font-bold text-slate-600"><span>{{ $label }}</span><img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,$key) }}" class="my-3 h-24 w-full rounded-lg bg-slate-100 object-contain" alt=""><input type="file" name="{{ $key }}" accept="image/*" class="block w-full text-[10px] font-normal"></label>@endforeach</div></section>
-<div class="sticky bottom-5 flex justify-end"><button class="rounded-xl bg-yellow-400 px-7 py-4 text-sm font-black text-slate-900 shadow-xl hover:bg-slate-900 hover:text-white">Publish landing page</button></div></form></div>
 @endsection

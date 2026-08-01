@@ -24,6 +24,7 @@ class StudentActivities extends Component
     public string $clubDescription = '';
     public string $clubMaximumMembers = '';
     public string $selectedClubId = '';
+    public string $selectedHouseId = '';
     public array $selectedStudents = [];
     public string $studentSearch = '';
     public string $classFilter = '';
@@ -136,6 +137,14 @@ class StudentActivities extends Component
 
     public function updatedSelectedClubId(): void { $this->loadClubMembers(); }
 
+    public function selectHouse(int $houseId): void
+    {
+        $allowed = DB::table('student_houses')->where('school_id', Auth::user()->school_id)->whereKey($houseId)
+            ->when(! $this->isManager(), fn ($query) => $query->where('patron_user_id', Auth::id()))->exists();
+        abort_unless($allowed, 403);
+        $this->selectedHouseId = (string) $houseId;
+    }
+
     private function loadClubMembers(): void
     {
         if (! $this->selectedClubId) { $this->selectedStudents=[]; return; }
@@ -171,8 +180,20 @@ class StudentActivities extends Component
         $clubQuery=DB::table('student_clubs as c')->leftJoin('users as u','u.id','=','c.patron_user_id')->leftJoin('student_club_memberships as m','m.student_club_id','=','c.id')->where('c.school_id',$schoolId)->selectRaw('c.id,c.name,c.color,c.description,c.maximum_members,c.patron_user_id,u.name patron_name,COUNT(m.id) members_count')->groupBy('c.id','c.name','c.color','c.description','c.maximum_members','c.patron_user_id','u.name')->orderBy('c.name');
         if (!$manager) $clubQuery->where('c.patron_user_id',Auth::id());
         $clubs=$clubQuery->get();
+        $houses=$houseQuery->get();
+        if (!$this->selectedHouseId && $houses->isNotEmpty()) $this->selectedHouseId=(string)$houses->first()->id;
         if (!$this->selectedClubId && $clubs->isNotEmpty()) { $this->selectedClubId=(string)$clubs->first()->id; $this->loadClubMembers(); }
         $students=Student::with('schoolClass:id,name')->where('school_id',$schoolId)->where('status','active')->when($this->studentSearch,fn($q)=>$q->where(fn($s)=>$s->where('name','like','%'.$this->studentSearch.'%')->orWhere('admission_no','like','%'.$this->studentSearch.'%')))->when($this->classFilter,fn($q)=>$q->where('school_class_id',$this->classFilter))->orderBy('name')->get(['id','name','admission_no','school_class_id','gender']);
-        return view('livewire.student-activities',['houses'=>$houseQuery->get(),'clubs'=>$clubs,'students'=>$students,'staff'=>User::where('school_id',$schoolId)->where('employment_status','active')->whereIn('role',['teacher','academic_admin','admin'])->orderBy('name')->get(['id','name','job_title']),'classes'=>Auth::user()->school->classes()->orderBy('name')->get(['id','name']),'isManager'=>$manager,'pageTitle'=>'Houses & Clubs']);
+        $houseMembers = $this->selectedHouseId ? Student::query()
+            ->join('student_house_memberships as membership', 'membership.student_id', '=', 'students.id')
+            ->leftJoin('school_classes', 'school_classes.id', '=', 'students.school_class_id')
+            ->where('membership.school_id', $schoolId)->where('membership.student_house_id', $this->selectedHouseId)
+            ->orderBy('students.name')->get(['students.id','students.name','students.admission_no','students.gender','school_classes.name as class_name']) : collect();
+        $clubMembers = $this->selectedClubId ? Student::query()
+            ->join('student_club_memberships as membership', 'membership.student_id', '=', 'students.id')
+            ->leftJoin('school_classes', 'school_classes.id', '=', 'students.school_class_id')
+            ->where('membership.school_id', $schoolId)->where('membership.student_club_id', $this->selectedClubId)
+            ->orderBy('students.name')->get(['students.id','students.name','students.admission_no','students.gender','school_classes.name as class_name']) : collect();
+        return view('livewire.student-activities',['houses'=>$houses,'clubs'=>$clubs,'students'=>$students,'houseMembers'=>$houseMembers,'clubMembers'=>$clubMembers,'staff'=>User::where('school_id',$schoolId)->where('employment_status','active')->whereIn('role',['teacher','academic_admin','admin'])->orderBy('name')->get(['id','name','job_title']),'classes'=>Auth::user()->school->classes()->orderBy('name')->get(['id','name']),'isManager'=>$manager,'pageTitle'=>'Houses & Clubs']);
     }
 }

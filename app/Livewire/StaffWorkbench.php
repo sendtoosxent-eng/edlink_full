@@ -121,10 +121,22 @@ class StaffWorkbench extends Component
                 ->where('timetable_slots.day_of_week', now()->format('l'))->orderBy('timetable_slots.starts_at')
                 ->get(['timetable_slots.starts_at','timetable_slots.ends_at','timetable_slots.label','subjects.name as subject','school_classes.name as class','streams.name as stream']);
 
+            $clock = now();
+            $nextLesson = $todayLessons->map(function ($lesson) use ($clock) {
+                $lesson->starts_at_iso = $clock->copy()->setTimeFromTimeString($lesson->starts_at)->toIso8601String();
+                $lesson->ends_at_iso = $clock->copy()->setTimeFromTimeString($lesson->ends_at)->toIso8601String();
+                $lesson->is_in_progress = $clock->betweenIncluded(
+                    $clock->copy()->setTimeFromTimeString($lesson->starts_at),
+                    $clock->copy()->setTimeFromTimeString($lesson->ends_at)
+                );
+                return $lesson;
+            })->first(fn ($lesson) => $lesson->is_in_progress || $clock->lt($clock->copy()->setTimeFromTimeString($lesson->starts_at)));
+
             $teacher = [
                 'assignments' => $assignments, 'subjects' => $assignments->pluck('subject_id')->unique()->count(), 'classes' => $classIds->count(),
                 'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $school->id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
                 'lessonsToday' => $todayLessons->count(), 'todayLessons' => $todayLessons, 'attendanceToday' => $attendance->filter(fn ($row) => $row->attendance_date?->isToday())->count(),
+                'nextLesson' => $nextLesson,
                 'pendingPapers' => $pendingPapers, 'attendanceLabels' => $days->map(fn ($day) => $day->format('D'))->values(),
                 'presentSeries' => $days->map(fn ($day) => $attendance->filter(fn ($row) => $row->attendance_date?->isSameDay($day))->whereIn('status', ['present','late'])->count())->values(),
                 'absentSeries' => $days->map(fn ($day) => $attendance->filter(fn ($row) => $row->attendance_date?->isSameDay($day))->where('status', 'absent')->count())->values(),

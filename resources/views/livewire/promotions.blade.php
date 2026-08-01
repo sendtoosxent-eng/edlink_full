@@ -1,15 +1,10 @@
 <div class="space-y-6">
     <!-- Header Block with Dark Gradient Background & Ambient Glow -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8  shadow-sm">
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="max-w-2xl">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-bold mb-3">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                    <span>Academic Lifecycle & Progression</span>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-amber-300">
+                
+                <h1 class="mt-3 text-2xl font-black tracking-tight sm:text-3xl text-amber-300">
                     Promotion & Progression
                 </h1>
                 <p class="text-sm font-medium text-slate-400 mt-1.5 leading-relaxed">

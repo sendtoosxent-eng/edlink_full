@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-7xl space-y-6 text-slate-800">
+<div class="space-y-6">
 
     <!-- HEADER BLOCK -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
@@ -133,6 +133,7 @@
                                 @if($house->description)
                                     <p class="mt-3 text-xs text-slate-600 line-clamp-2">{{ $house->description }}</p>
                                 @endif
+                                <button type="button" wire:click="selectHouse({{ $house->id }})" class="mt-4 w-full rounded-xl px-3 py-2 text-xs font-bold {{ (string)$selectedHouseId===(string)$house->id ? 'bg-amber-400 text-slate-950' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">View member list</button>
                             </div>
                         </article>
                     @empty
@@ -141,6 +142,16 @@
                         </div>
                     @endforelse
                 </div>
+
+                @if($selectedHouseId)
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 p-5">
+                            <div><h3 class="font-bold text-slate-900">House members</h3><p class="text-xs text-slate-500">{{ $houseMembers->count() }} assigned students</p></div>
+                            <a href="{{ route('students.activities.export',['type'=>'house','activity'=>$selectedHouseId]) }}" class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Export for Excel</a>
+                        </div>
+                        <div class="overflow-x-auto"><table class="w-full min-w-[560px] text-left text-xs"><thead class="bg-slate-900 text-[10px] uppercase tracking-wider text-white"><tr><th class="px-5 py-3">Admission no.</th><th class="px-5 py-3">Student</th><th class="px-5 py-3">Class</th><th class="px-5 py-3">Gender</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse($houseMembers as $member)<tr><td class="px-5 py-3 font-mono text-slate-500">{{ $member->admission_no }}</td><td class="px-5 py-3 font-bold text-slate-900">{{ $member->name }}</td><td class="px-5 py-3">{{ $member->class_name ?: '—' }}</td><td class="px-5 py-3 capitalize">{{ $member->gender ?: '—' }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">No members assigned.</td></tr>@endforelse</tbody></table></div>
+                    </div>
+                @endif
             </section>
         </div>
 
@@ -218,6 +229,16 @@
                         </button>
                     @endforeach
                 </div>
+
+                @if($selectedClubId)
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 p-5">
+                            <div><h3 class="font-bold text-slate-900">Current club members</h3><p class="text-xs text-slate-500">{{ $clubMembers->count() }} assigned students</p></div>
+                            <a href="{{ route('students.activities.export',['type'=>'club','activity'=>$selectedClubId]) }}" class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Export for Excel</a>
+                        </div>
+                        <div class="max-h-80 overflow-auto"><table class="w-full min-w-[560px] text-left text-xs"><thead class="sticky top-0 bg-slate-900 text-[10px] uppercase tracking-wider text-white"><tr><th class="px-5 py-3">Admission no.</th><th class="px-5 py-3">Student</th><th class="px-5 py-3">Class</th><th class="px-5 py-3">Gender</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse($clubMembers as $member)<tr><td class="px-5 py-3 font-mono text-slate-500">{{ $member->admission_no }}</td><td class="px-5 py-3 font-bold text-slate-900">{{ $member->name }}</td><td class="px-5 py-3">{{ $member->class_name ?: '—' }}</td><td class="px-5 py-3 capitalize">{{ $member->gender ?: '—' }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">No members assigned.</td></tr>@endforelse</tbody></table></div>
+                    </div>
+                @endif
 
                 <!-- MEMBER ASSIGNMENT TABLE -->
                 @if($clubs->isEmpty())

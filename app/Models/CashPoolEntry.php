@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashPoolEntry extends Model
 {
-    protected $fillable = ['school_id', 'term_id', 'fee_payment_id', 'expense_id', 'payroll_run_id', 'direction', 'amount', 'description', 'transacted_at', 'recorded_by'];
+    protected $fillable = ['school_id', 'term_id', 'financial_account_id', 'financial_account_transfer_id', 'finance_ledger_entry_id', 'fee_payment_id', 'expense_id', 'payroll_run_id', 'direction', 'amount', 'description', 'transacted_at', 'recorded_by'];
 
     protected $casts = ['amount' => 'decimal:2', 'transacted_at' => 'datetime'];
 

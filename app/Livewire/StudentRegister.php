@@ -22,7 +22,7 @@ class StudentRegister extends Component
 
     public int $step = 1;
 
-    // Step 1 â€” Bio data
+    // Step 1 — Bio data
     public string $name = '';
     public string $admission_no = '';
     public string $date_of_birth = '';
@@ -30,19 +30,19 @@ class StudentRegister extends Component
     public string $admission_date = '';
     public $photo = null;
 
-    // Step 2 â€” Class data
+    // Step 2 — Class data
     public string $school_class_id = '';
     public string $stream_id = '';
     public string $student_category_id = '';
 
-    // Step 3 â€” Parents data
+    // Step 3 — Parents data
     public string $guardian_name = '';
     public string $guardian_relationship = 'Parent';
     public string $guardian_phone = '';
     public string $guardian_email = '';
     public string $guardian_address = '';
 
-    // Step 4 â€” Social data
+    // Step 4 — Social data
     public string $nationality = '';
     public string $religion = '';
     public string $blood_group = '';
@@ -51,6 +51,7 @@ class StudentRegister extends Component
 
     public function mount(): void
     {
+        abort_unless(Auth::user()->hasPermission('students.manage'), 403);
         $this->admission_date = now()->format('Y-m-d');
     }
 

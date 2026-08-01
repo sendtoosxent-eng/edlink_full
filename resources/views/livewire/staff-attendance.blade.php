@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-7xl space-y-6 text-slate-800">
+<div class="space-y-6">
 
     <!-- HEADER CARD BANNER -->
     <!-- HEADER BLOCK -->

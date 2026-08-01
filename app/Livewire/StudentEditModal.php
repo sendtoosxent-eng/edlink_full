@@ -50,6 +50,7 @@ class StudentEditModal extends Component
     #[On('edit-student')]
     public function open(int $studentId): void
     {
+        abort_unless(Auth::user()->hasPermission('students.manage'), 403);
         $student = Student::with('guardians')->where('school_id', Auth::user()->school_id)->findOrFail($studentId);
 
         $this->resetValidation();
@@ -111,6 +112,7 @@ class StudentEditModal extends Component
 
     public function save(): void
     {
+        abort_unless(Auth::user()->hasPermission('students.manage'), 403);
         $student = Student::where('school_id', Auth::user()->school_id)->findOrFail($this->studentId);
 
         $this->validate([

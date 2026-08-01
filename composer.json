@@ -14,6 +14,7 @@
         "barryvdh/laravel-dompdf": "*",
         "blade-ui-kit/blade-heroicons": "*",
         "laravel/framework": "^13.8",
+        "laravel/sanctum": "*",
         "laravel/tinker": "^3.0",
         "livewire/volt": "*",
         "pragmarx/google2fa": "8.0",
