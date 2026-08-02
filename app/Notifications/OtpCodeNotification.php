@@ -3,12 +3,16 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class OtpCodeNotification extends Notification
+class OtpCodeNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    public int $tries = 3;
+    public int $timeout = 20;
 
     public function __construct(protected string $code) {}
 

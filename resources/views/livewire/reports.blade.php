@@ -47,16 +47,33 @@
     <div class="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm print:hidden">
         <div class="mb-4">
             <span class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Filter Records</span>
-            <p class="text-xs text-slate-500">Verified school records, filtered by the selected term, category, and date range.</p>
+            <p class="text-xs text-slate-500">Verified school records, filtered by branch, term, category, and date range. The logged-in branch is selected by default.</p>
         </div>
         
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <!-- Branch Scope Selector -->
+            <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Branch</label>
+                <div class="relative">
+                    <select wire:model.live="schoolScope" class="w-full appearance-none text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-medium text-slate-800 transition">
+                        @foreach($branchOptions as $branch)
+                            <option value="{{ $branch->id }}">{{ $branch->branch_name ?: $branch->name }} · {{ $branch->school_number }}</option>
+                        @endforeach
+                        @if(auth()->user()->canViewGroupDashboard())
+                            <option value="all">All branches (read-only reporting)</option>
+                        @endif
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+            </div>
             <!-- Term Selector -->
             <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Term</label>
                 <div class="relative">
-                    <select wire:model.live="termId" class="w-full appearance-none text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-medium text-slate-800 transition">
-                        <option value="">Current term</option>
+                    <select wire:model.live="termId" @disabled($allBranches) class="w-full appearance-none text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-medium text-slate-800 transition">
+                        <option value="">{{ $allBranches ? 'Current term in each branch' : 'Current term' }}</option>
                         @foreach($terms as $item)
                             <option value="{{ $item->id }}">{{ $item->name }}, {{ $item->year }} · {{ ucfirst($item->status) }}</option>
                         @endforeach
@@ -133,7 +150,7 @@
                 </button>
             </div>
         </div>
-        <p class="mt-3 text-[11px] text-slate-400">Gender, category, and fee-status filters apply to learner-based reports. Term and date filters apply wherever those records contain term or date information.</p>
+        <p class="mt-3 text-[11px] text-slate-400">Gender, category, and fee-status filters apply to learner-based reports. In All branches mode, each branch uses its own current term; all results and exports remain read-only.</p>
     </div>
 
     <!-- REPORT TYPES SELECTOR GRID -->
@@ -150,12 +167,22 @@
     </div>
 
     <!-- ACTION EXPORT BAR -->
-    <div class="flex items-center justify-between print:hidden px-1">
+    <div class="flex items-center justify-between gap-4 print:hidden px-1" @if($queuedExport && in_array($queuedExport->status,['queued','processing'],true)) wire:poll.2s @endif>
         <span class="text-xs text-slate-500 font-medium">Viewing: <strong class="text-slate-900 font-bold">{{ ucwords(str_replace('_',' ',$report)) }}</strong></span>
-        <button wire:click="export" class="inline-flex items-center gap-2 rounded-xl border border-emerald-300/80 bg-emerald-50 hover:bg-emerald-100/80 px-4 py-2 text-xs font-bold text-emerald-800 transition shadow-xs">
-            <i class="fa fa-file-excel-o text-emerald-600"></i>
-            <span>Export Report (.csv)</span>
-        </button>
+        <div class="flex items-center gap-2">
+            @if($queuedExport?->status === 'completed')
+                <a href="{{ route('reports.exports.download',$queuedExport) }}" data-no-navigate class="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800"><i class="fa fa-download"></i>Download CSV</a>
+                <button wire:click="dismissExport" class="text-xs font-bold text-slate-500">Dismiss</button>
+            @elseif($queuedExport?->status === 'failed')
+                <span class="text-xs font-bold text-red-600">Export failed. Please try again.</span>
+                <button wire:click="dismissExport" class="text-xs font-bold text-slate-500">Dismiss</button>
+            @else
+                <button wire:click="queueExport" @disabled($queuedExport) class="inline-flex items-center gap-2 rounded-xl border border-emerald-300/80 bg-emerald-50 hover:bg-emerald-100/80 px-4 py-2 text-xs font-bold text-emerald-800 transition shadow-xs disabled:opacity-50">
+                    <i class="fa {{ $queuedExport ? 'fa-spinner fa-spin' : 'fa-file-excel-o' }} text-emerald-600"></i>
+                    <span>{{ $queuedExport ? 'Preparing export…' : 'Export Report (.csv)' }}</span>
+                </button>
+            @endif
+        </div>
     </div>
 
     <!-- MAIN REPORT DISPLAY SECTION -->
@@ -163,7 +190,7 @@
         <header class="flex items-center justify-between gap-4 border-b border-slate-100 p-5 sm:p-6 bg-slate-50/50">
             <div>
                 <h2 class="text-base font-extrabold text-slate-900">{{ ucwords(str_replace('_',' ',$report)) }}</h2>
-                <p class="mt-0.5 text-xs text-slate-500">{{ $term ? $term->name.', '.$term->year : 'All available school records' }}</p>
+                <p class="mt-0.5 text-xs text-slate-500">{{ $allBranches ? 'All authorised branches · current term per branch' : ($term ? $term->name.', '.$term->year : 'All available school records') }}</p>
             </div>
             <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-white transition shadow-sm print:hidden">
                 <i class="fa fa-print text-[11px]"></i>

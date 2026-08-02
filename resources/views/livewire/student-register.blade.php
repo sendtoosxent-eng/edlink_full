@@ -314,10 +314,10 @@
                 </div>
 
                 <h4 class="text-base font-bold text-darken transition-all truncate max-w-full">
-                    {{ border_strip($name) ?: 'Student Name' }}
+                    {{ trim($name ?? '') ?: 'Student Name' }}
                 </h4>
                 <p class="text-xs text-gray-400 mt-0.5 font-medium uppercase tracking-wider">
-                    {{ border_strip($admission_no) ?: 'ID: PENDING AUTO-GEN' }}
+                    {{ trim($admission_no ?? '') ?: 'ID: PENDING AUTO-GEN' }}
                 </p>
                 
                 @if($gender)
@@ -346,7 +346,7 @@
                 <div class="flex justify-between items-start py-2 border-b border-gray-50">
                     <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Primary Guardian</span>
                     <div class="text-right">
-                        <span class="font-bold text-darken block">{{ border_strip($guardian_name) ?: 'Not provided' }}</span>
+                        <span class="font-bold text-darken block">{{ trim($guardian_name ?? '') ?: 'Not provided' }}</span>
                         @if($guardian_relationship || $guardian_phone)
                             <span class="text-xs text-gray-400 block mt-0.5">
                                 {{ $guardian_relationship ?? 'Contact' }} @if($guardian_phone) &middot; {{ $guardian_phone }} @endif
@@ -358,7 +358,7 @@
                 <div class="flex justify-between items-start py-2 border-b border-gray-50">
                     <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Home / Physical Address</span>
                     <span class="text-darken font-medium text-right max-w-[60%] truncate">
-                        {{ border_strip($home_address) ?: border_strip($guardian_address) ?: 'Not provided' }}
+                        {{ trim($home_address ?? '') ?: trim($guardian_address ?? '') ?: 'Not provided' }}
                     </span>
                 </div>
 
@@ -403,13 +403,3 @@
 
     </div>
 </div>
-
-@php
-// Helper helper function to clean fallbacks cleaner inside visual architecture markup templates
-function border_strip($val) {
-    return text_custom_clean($val);
-}
-function text_custom_clean($string) {
-    return trim($string ?? '');
-}
-@endphp

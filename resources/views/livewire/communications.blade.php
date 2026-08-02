@@ -77,11 +77,11 @@
                 <button type="submit" wire:loading.attr="disabled" class="w-full rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold py-3 text-xs transition shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2">
                     <span wire:loading.remove class="flex items-center gap-2">
                         <svg class="h-4 w-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                        <span>Send Email Announcement</span>
+                        <span>Queue Email Announcement</span>
                     </span>
                     <span wire:loading class="flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4 text-slate-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span>Sending Broadcast...</span>
+                        <span>Queueing Broadcast...</span>
                     </span>
                 </button>
             </div>
@@ -118,7 +118,7 @@
 
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 border border-emerald-200 text-emerald-800 shrink-0">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span>Sent</span>
+                                <span>Queued</span>
                             </span>
                         </div>
 

@@ -3,7 +3,7 @@
 <aside id="platform-sidebar" class="platform-scroll fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col overflow-y-auto bg-slate-900 text-white shadow-2xl transition-transform duration-200 lg:translate-x-0"><div class="flex h-20 items-center gap-3 border-b border-white/10 px-6"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400 font-black text-slate-900">E</span><div><b class="block text-lg">Edlink</b><span class="text-[10px] font-semibold uppercase tracking-[.18em] text-slate-400">Platform control</span></div></div>
 @php($menus=[
 ['Overview',[['Dashboard','platform.dashboard',true]]],
-['Platform management',[['Schools','platform.schools',true],['Licences & plans','platform.licences',true],['Billing & renewals','platform.billing',true]]],
+['Platform management',[['Schools','platform.schools',true],['School groups','platform.groups.index',true],['Licences & plans','platform.licences',true],['Billing & renewals','platform.billing',true]]],
 ['Operations',[['Website content','platform.website.edit',true],['Support centre','platform.support.index',true],['Platform audit','platform.audit',true]]],
 ['Administration',[['Platform administrators','platform.administrators',true],['System settings','platform.settings',true]]]
 ])

@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\PlatformSchoolController;
+use App\Http\Controllers\PlatformSchoolSmsController;
 use App\Http\Controllers\PlatformSchoolImportController;
 use App\Http\Controllers\PlatformLandingPageController;
 use App\Http\Controllers\LandingPageController;
@@ -61,7 +62,11 @@ use App\Models\ContactMessage;
 use App\Models\AttendanceRecord;
 use App\Http\Controllers\StudentActivityExportController;
 use App\Http\Controllers\SchoolOperationsController;
+use App\Http\Controllers\PlatformSchoolGroupController;
+use App\Http\Controllers\BranchContextController;
+use App\Http\Controllers\GroupDashboardController;
 use App\Http\Controllers\StudentIdCardController;
+use App\Http\Controllers\ReportExportController;
 use Livewire\Volt\Volt;
 
 
@@ -75,18 +80,25 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::post('setup', [PlatformAuthController::class, 'confirmSetup'])->middleware('throttle:10,1')->name('setup.confirm');
         Route::get('challenge', [PlatformAuthController::class, 'showChallenge'])->name('challenge');
         Route::post('challenge', [PlatformAuthController::class, 'challenge'])->middleware('throttle:10,1')->name('challenge.verify');
-        Route::get('mfa/reset', [PlatformAuthController::class, 'showMfaReset'])->name('mfa.reset');
-        Route::post('mfa/reset', [PlatformAuthController::class, 'resetMfa'])->middleware('throttle:5,1')->name('mfa.reset.store');
         Route::post('logout', [PlatformAuthController::class, 'logout'])->name('logout');
     });
     Route::middleware('platform.mfa')->group(function () {
+        Route::get('mfa/reset', [PlatformAuthController::class, 'showMfaReset'])->name('mfa.reset');
+        Route::post('mfa/reset', [PlatformAuthController::class, 'resetMfa'])->middleware('throttle:5,1')->name('mfa.reset.store');
+        Route::get('backups/download', DatabaseBackupController::class)->name('backups.download');
         Route::get('/', [PlatformAuthController::class, 'dashboard'])->name('dashboard');
         Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools');
+        Route::get('groups', [PlatformSchoolGroupController::class, 'index'])->name('groups.index');
+        Route::post('groups', [PlatformSchoolGroupController::class, 'store'])->name('groups.store');
+        Route::get('groups/{schoolGroup}', [PlatformSchoolGroupController::class, 'show'])->name('groups.show');
+        Route::post('groups/{schoolGroup}/branches', [PlatformSchoolGroupController::class, 'addBranch'])->name('groups.branches.store');
+        Route::post('groups/{schoolGroup}/access', [PlatformSchoolGroupController::class, 'grantAccess'])->name('groups.access.store');
         Route::get('schools/create', [PlatformSchoolController::class, 'create'])->name('schools.create');
         Route::post('schools', [PlatformSchoolController::class, 'store'])->name('schools.store');
         Route::get('schools/{school}', [PlatformSchoolController::class, 'show'])->name('schools.show');
         Route::get('schools/{school}/edit', [PlatformSchoolController::class, 'edit'])->name('schools.edit');
         Route::put('schools/{school}', [PlatformSchoolController::class, 'update'])->name('schools.update');
+        Route::put('schools/{school}/sms-configuration', [PlatformSchoolSmsController::class, 'update'])->name('schools.sms-configuration.update');
         Route::delete('schools/{school}', [PlatformSchoolController::class, 'destroy'])->name('schools.destroy');
         Route::post('schools/{school}/imports/students', [PlatformSchoolImportController::class, 'students'])->name('schools.imports.students');
         Route::post('schools/{school}/imports/teachers', [PlatformSchoolImportController::class, 'teachers'])->name('schools.imports.teachers');
@@ -119,7 +131,10 @@ Route::get('dashboard', function () {
     $monthStart = now()->startOfMonth();
     $requestedTermId = (int) request('dashboard_term');
     $term = $school?->terms?->firstWhere('id', $requestedTermId) ?? $school?->currentTerm();
-    $expectedFees = $term ? (float) $school->students()->where('status', 'active')->get()->sum(fn ($student) => $student->mappedFeeAmount($term) ?? 0) : 0;
+    $expectedFees = $term ? (float) StudentEnrolment::where('student_enrolments.school_id', $school->id)
+        ->where('student_enrolments.term_id', $term->id)
+        ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+        ->sum('base_fee_amount') : 0;
     $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->whereHas('student', fn ($query) => $query->where('status', 'active'))->sum('amount') : 0;
     $feesPaid = $term ? (float) FeePayment::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
     $termExpenses = $term ? (float) Expense::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
@@ -203,9 +218,11 @@ Route::get('dashboard', function () {
         'dashboardEvents' => $events, 'dashboardTimetable' => $timetable, 'dashboardTimetableClass' => $dashboardClass?->name, 'dashboardTimetableClassId' => $dashboardClass?->id, 'dashboardTimetableClasses' => $dashboardClasses, 'dashboardReminders' => $dashboardReminders, 'dashboardNotifications' => $notifications,
         'currencySymbol' => $currencySymbol, 'dashboardDebtors' => $debtors,
     ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'branch.context'])->name('dashboard');
 
-Route::middleware(['auth', 'verified', 'designation.access'])->group(function () {
+Route::middleware(['auth', 'verified', 'branch.context', 'designation.access'])->group(function () {
+    Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
+    Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
     Volt::route('profile', 'pages.profile')->name('profile');
     Route::get('portal', PortalHome::class)->name('portal.home');
     Route::get('workbench', StaffWorkbench::class)->name('workbench.home');
@@ -277,6 +294,7 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
     Route::get('staff/designations', Designations::class)->name('designations.index');
     Route::get('settings/licence', Licensing::class)->name('licence.index');
     Route::get('reports', Reports::class)->name('reports.index');
+    Route::get('reports/exports/{reportExport}', ReportExportController::class)->name('reports.exports.download');
     Route::get('academics/subjects', Subjects::class)->name('subjects.index');
     Route::get('academics/subject-selection', StudentSubjectSelections::class)->name('subject-selections.index');
     Route::get('exams/setup', ExamSetup::class)->name('exams.setup');
@@ -315,8 +333,6 @@ Route::middleware(['auth', 'verified', 'designation.access'])->group(function ()
         return redirect()->route('reports.student-term-report.show', [$student, $exam]);
     })->name('exams.report-card');
     Route::get('settings/audit-trail', AuditTrail::class)->name('settings.audit-trail');
-    Route::get('settings/backup', DatabaseBackupController::class)->name('settings.backup');
-    Route::get('settings/backups', [SchoolOperationsController::class, 'backups'])->name('settings.backups');
     Route::get('settings/privacy-requests', [SchoolOperationsController::class, 'privacy'])->name('privacy.requests');
     Route::post('settings/privacy-requests', [SchoolOperationsController::class, 'createPrivacyRequest'])->name('privacy.requests.store');
     Route::post('settings/privacy-requests/{privacyRequest}/execute', [SchoolOperationsController::class, 'executePrivacyRequest'])->name('privacy.requests.execute');

@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DatabaseBackupController extends Controller
 {
     public function __invoke(Request $request): BinaryFileResponse
     {
-        $user = $request->user();
-        abort_unless($user && in_array($user->role, ['admin', 'superadmin'], true) && $user->hasPermission('settings.manage'), 403);
+        // A SQLite snapshot contains every tenant. Only the separately
+        // authenticated, MFA-verified platform guard may download it.
+        abort_unless(Auth::guard('platform')->check() && $request->session()->get('platform_mfa_passed'), 403);
 
         $connection = config('database.default');
         $configuration = config("database.connections.{$connection}");

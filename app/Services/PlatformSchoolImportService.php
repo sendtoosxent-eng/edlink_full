@@ -179,9 +179,7 @@ class PlatformSchoolImportService
 
     private function nextAdmissionNumber(School $school, int $sequence): string
     {
-        do { $number = 'ADM-'.$school->id.'-'.str_pad((string) $sequence++, 4, '0', STR_PAD_LEFT); }
-        while (Student::where('school_id', $school->id)->where('admission_no', $number)->exists());
-        return $number;
+        return app(AdmissionNumberGenerator::class)->generate($school);
     }
 
     private function nextStaffNumber(School $school, int $sequence): string

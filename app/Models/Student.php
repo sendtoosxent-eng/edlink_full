@@ -70,6 +70,16 @@ class Student extends Model
         return $this->hasMany(FeePayment::class);
     }
 
+    public function postedFeePayments(): HasMany
+    {
+        return $this->hasMany(FeePayment::class)->whereExists(function ($query) {
+            $query->selectRaw('1')->from('finance_ledger_entries')
+                ->whereColumn('finance_ledger_entries.source_id', 'fee_payments.id')
+                ->where('finance_ledger_entries.source_type', FeePayment::class)
+                ->where('finance_ledger_entries.status', 'posted');
+        });
+    }
+
     public function arrears(): HasMany
     {
         return $this->hasMany(Arrears::class);
@@ -100,7 +110,9 @@ class Student extends Model
         // Enrolments are the accounting record. Their fee is a snapshot taken
         // when the learner joined the term, so later edits to fee structures
         // cannot alter an already-opened or closed term.
-        $enrolment = $this->enrolments()->where('term_id', $term->id)->first();
+        $enrolment = $this->relationLoaded('enrolments')
+            ? $this->enrolments->firstWhere('term_id', $term->id)
+            : $this->enrolments()->where('term_id', $term->id)->first();
 
         if ($enrolment) {
             return (float) $enrolment->base_fee_amount;
@@ -128,7 +140,9 @@ class Student extends Model
             return 0;
         }
 
-        return (float) $this->arrears()->where('applied_term_id', $term->id)->sum('amount');
+        return (float) ($this->relationLoaded('arrears')
+            ? $this->arrears->where('applied_term_id', $term->id)->sum('amount')
+            : $this->arrears()->where('applied_term_id', $term->id)->sum('amount'));
     }
 
     /**
@@ -153,9 +167,9 @@ class Student extends Model
             return 0;
         }
 
-        return (float) $this->feePayments()->where('term_id', $term->id)->whereExists(function ($query) {
-            $query->selectRaw('1')->from('finance_ledger_entries')->whereColumn('finance_ledger_entries.source_id', 'fee_payments.id')->where('finance_ledger_entries.source_type', FeePayment::class)->where('finance_ledger_entries.status', 'posted');
-        })->sum('amount');
+        return (float) ($this->relationLoaded('postedFeePayments')
+            ? $this->postedFeePayments->where('term_id', $term->id)->sum('amount')
+            : $this->postedFeePayments()->where('term_id', $term->id)->sum('amount'));
     }
 
     public function balance(?Term $term = null): float

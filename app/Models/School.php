@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\Facades\Schema;
 
 class School extends Model
@@ -12,7 +12,7 @@ class School extends Model
     use HasFactory;
 
     protected $fillable = [
-        'school_number',
+        'school_number', 'school_group_id', 'branch_name',
         'name', 'school_type',
         'slug',
         'status',
@@ -55,6 +55,22 @@ class School extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function smsConfiguration(): HasOne
+    {
+        return $this->hasOne(SchoolSmsConfiguration::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(SchoolGroup::class, 'school_group_id');
+    }
+
+    public function accessibleUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'school_user_access')
+            ->withPivot(['role', 'designation_id', 'can_view_group'])->withTimestamps();
     }
 
     public function classes(): HasMany

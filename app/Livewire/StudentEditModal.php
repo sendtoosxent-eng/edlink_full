@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Validation\Rule;
 
 class StudentEditModal extends Component
 {
@@ -92,7 +93,7 @@ class StudentEditModal extends Component
         if (! $this->school_class_id) {
             return collect();
         }
-        return Stream::where('school_class_id', $this->school_class_id)->orderBy('name')->get();
+        return Stream::where('school_id', Auth::user()->school_id)->where('school_class_id', $this->school_class_id)->orderBy('name')->get();
     }
 
     public function getMappedFeeProperty(): ?float
@@ -100,8 +101,8 @@ class StudentEditModal extends Component
         if (! $this->school_class_id || ! $this->student_category_id) {
             return null;
         }
-        $class = SchoolClass::find($this->school_class_id);
-        $category = StudentCategory::find($this->student_category_id);
+        $class = SchoolClass::where('school_id', Auth::user()->school_id)->find($this->school_class_id);
+        $category = StudentCategory::where('school_id', Auth::user()->school_id)->find($this->student_category_id);
         $term = Auth::user()->school->currentTerm();
 
         if (! $class || ! $category || ! $term) {
@@ -121,9 +122,9 @@ class StudentEditModal extends Component
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'in:male,female'],
             'photo' => ['nullable', 'image', 'max:2048'],
-            'school_class_id' => ['required', 'exists:school_classes,id'],
-            'stream_id' => ['nullable', 'exists:streams,id'],
-            'student_category_id' => ['required', 'exists:student_categories,id'],
+            'school_class_id' => ['required', Rule::exists('school_classes', 'id')->where('school_id', Auth::user()->school_id)],
+            'stream_id' => ['nullable', Rule::exists('streams', 'id')->where(fn ($query) => $query->where('school_id', Auth::user()->school_id)->where('school_class_id', $this->school_class_id))],
+            'student_category_id' => ['required', Rule::exists('student_categories', 'id')->where('school_id', Auth::user()->school_id)],
             'guardian_name' => ['required', 'string', 'max:255'],
             'guardian_email' => ['nullable', 'email', 'max:255'],
         ]);
@@ -148,7 +149,7 @@ class StudentEditModal extends Component
         $student->save();
 
         if ($this->guardianId) {
-            StudentGuardian::where('id', $this->guardianId)->update([
+            $student->guardians()->whereKey($this->guardianId)->firstOrFail()->update([
                 'name' => $this->guardian_name,
                 'relationship' => $this->guardian_relationship ?: null,
                 'phone' => $this->guardian_phone ?: null,

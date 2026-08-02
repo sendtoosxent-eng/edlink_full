@@ -11,6 +11,7 @@ use App\Models\StudentEnrolment;
 use App\Models\Stream;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -70,10 +71,11 @@ class StudentRegister extends Component
 
     public function goToStep3(): void
     {
+        $schoolId = Auth::user()->school_id;
         $this->validate([
-            'school_class_id' => ['required', 'exists:school_classes,id'],
-            'stream_id' => ['nullable', 'exists:streams,id'],
-            'student_category_id' => ['required', 'exists:student_categories,id'],
+            'school_class_id' => ['required', Rule::exists('school_classes', 'id')->where('school_id', $schoolId)],
+            'stream_id' => ['nullable', Rule::exists('streams', 'id')->where(fn ($query) => $query->where('school_id', $schoolId)->where('school_class_id', $this->school_class_id))],
+            'student_category_id' => ['required', Rule::exists('student_categories', 'id')->where('school_id', $schoolId)],
         ]);
         $this->step = 3;
     }
@@ -101,8 +103,8 @@ class StudentRegister extends Component
             return null;
         }
 
-        $class = SchoolClass::find($this->school_class_id);
-        $category = StudentCategory::find($this->student_category_id);
+        $class = SchoolClass::where('school_id', Auth::user()->school_id)->find($this->school_class_id);
+        $category = StudentCategory::where('school_id', Auth::user()->school_id)->find($this->student_category_id);
         $term = Auth::user()->school->currentTerm();
 
         if (! $class || ! $category || ! $term) {
@@ -118,7 +120,7 @@ class StudentRegister extends Component
             return collect();
         }
 
-        return Stream::where('school_class_id', $this->school_class_id)->orderBy('name')->get();
+        return Stream::where('school_id', Auth::user()->school_id)->where('school_class_id', $this->school_class_id)->orderBy('name')->get();
     }
 
     public function register(): void
@@ -132,6 +134,11 @@ class StudentRegister extends Component
         ]);
 
         $school = Auth::user()->school;
+        $this->validate([
+            'school_class_id' => ['required', Rule::exists('school_classes', 'id')->where('school_id', $school->id)],
+            'stream_id' => ['nullable', Rule::exists('streams', 'id')->where(fn ($query) => $query->where('school_id', $school->id)->where('school_class_id', $this->school_class_id))],
+            'student_category_id' => ['required', Rule::exists('student_categories', 'id')->where('school_id', $school->id)],
+        ]);
         $term = $school->currentTerm();
         if (! $school->isLicenceUsable()) {
             $this->addError('school_class_id', 'Student registration is unavailable because the school licence is not active.');
@@ -157,7 +164,7 @@ class StudentRegister extends Component
                 'term_id' => $term?->id,
                 'status' => 'active',
                 'name' => $this->name,
-                'admission_no' => $this->admission_no ?: $this->generateAdmissionNo($school->id),
+                'admission_no' => $this->admission_no ?: app(\App\Services\AdmissionNumberGenerator::class)->generate($school),
                 'date_of_birth' => $this->date_of_birth ?: null,
                 'gender' => $this->gender ?: null,
                 'admission_date' => $this->admission_date,
@@ -221,11 +228,6 @@ class StudentRegister extends Component
         $this->redirect(route('students.index'), navigate: true);
     }
 
-    protected function generateAdmissionNo(int $schoolId): string
-    {
-        $count = Student::where('school_id', $schoolId)->count() + 1;
-        return 'ADM-'.str_pad((string) $count, 4, '0', STR_PAD_LEFT);
-    }
 
     public function render()
     {

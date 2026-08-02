@@ -40,8 +40,8 @@ new #[Layout('layouts.guest-split')] class extends Component
 
         if (! $school->isLicenceUsable() || $school->isExpiredDemo()) {
             Auth::logout();
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
+            session()->invalidate();
+            session()->regenerateToken();
             RateLimiter::clear($this->throttleKey());
 
             $expired = $school->license_status === 'expired'
@@ -66,7 +66,8 @@ new #[Layout('layouts.guest-split')] class extends Component
         RateLimiter::clear($this->throttleKey());
 
         $currentIp = request()->ip();
-        $isSuspicious = $user->last_login_ip !== null && $user->last_login_ip !== $currentIp;
+        $otpEnabled = \App\Models\SchoolSetting::where(['school_id'=>$school->id,'key'=>'otp_enabled'])->value('value') === 'enabled';
+        $isSuspicious = $otpEnabled || ($user->last_login_ip !== null && $user->last_login_ip !== $currentIp);
 
         // Testing aid: set OTP_FORCE=true in .env to always trigger the OTP
         // screen, without needing to fake a different login IP each time.
@@ -85,7 +86,7 @@ new #[Layout('layouts.guest-split')] class extends Component
             return;
         }
 
-        request()->session()->regenerate();
+        session()->regenerate();
         $user->forceFill(['last_login_ip' => $currentIp])->save();
 
         $this->redirect(
@@ -145,6 +146,7 @@ new #[Layout('layouts.guest-split')] class extends Component
                 <input type="checkbox" wire:model="remember" class="rounded border-gray-300">
                 <span>Remember me</span>
             </label>
+            <a href='{{ route('password.request') }}' wire:navigate class='text-sm font-medium text-yellow-700 hover:underline'>Forgot password?</a>
         </div>
 
         <button type="submit"

@@ -121,6 +121,7 @@ class PlatformSchoolController extends Controller
 
         return view('platform.schools.show', [
             'school' => $school,
+            'smsConfiguration' => $school->smsConfiguration()->firstOrNew(['provider' => 'africastalking', 'enabled' => false]),
             'canDelete' => $school->is_demo || in_array($school->license_status, ['suspended', 'expired'], true),
         ]);
     }

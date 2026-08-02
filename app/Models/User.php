@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Notifications\QueuedVerifyEmail;
+use App\Notifications\QueuedResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,12 +11,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+
+    protected static function booted(): void
+    {
+        static::created(function (User $user): void {
+            if ($user->school_id && Schema::hasTable('school_user_access')) {
+                $user->schoolAccesses()->syncWithoutDetaching([$user->school_id => [
+                    'role' => $user->role ?: 'admin', 'designation_id' => $user->designation_id, 'can_view_group' => false,
+                ]]);
+            }
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -46,6 +60,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function schoolAccesses(): BelongsToMany
+    {
+        return $this->belongsToMany(School::class, 'school_user_access')
+            ->withPivot(['role', 'designation_id', 'can_view_group'])->withTimestamps();
+    }
+
+    public function canViewGroupDashboard(): bool
+    {
+        if (! $this->school?->school_group_id) return false;
+        return $this->schoolAccesses()->where('school_group_id', $this->school->school_group_id)
+            ->wherePivot('can_view_group', true)->exists();
     }
 
     public function designation(): BelongsTo
@@ -114,6 +141,16 @@ class User extends Authenticatable implements MustVerifyEmail
         ])->save();
 
         return $code;
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new QueuedVerifyEmail);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new QueuedResetPassword($token));
     }
 
     public function otpIsValid(string $code): bool

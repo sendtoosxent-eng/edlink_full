@@ -10,6 +10,7 @@ use App\Models\FeePayment;
 use App\Models\SchoolEvent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\StudentEnrolment;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -42,22 +43,33 @@ class StaffWorkbench extends Component
 
         $finance = [];
         if ($isFinanceWorkspace) {
-            $expectedFees = $term ? (float) $school->students()->where('status', 'active')->get()->sum(fn ($student) => $student->mappedFeeAmount($term) ?? 0) : 0;
+            $expectedFees = $term ? (float) StudentEnrolment::where('student_enrolments.school_id', $school->id)
+                ->where('student_enrolments.term_id', $term->id)
+                ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+                ->sum('base_fee_amount') : 0;
             $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->sum('amount') : 0;
             $income = $term ? (float) FeePayment::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
             $expenses = $term ? (float) Expense::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
             $credits = (float) CashPoolEntry::where('school_id', $school->id)->when($term, fn ($q) => $q->where('term_id', $term->id))->where('direction', 'credit')->sum('amount');
             $debits = (float) CashPoolEntry::where('school_id', $school->id)->when($term, fn ($q) => $q->where('term_id', $term->id))->where('direction', 'debit')->sum('amount');
             $months = collect(range(5, 0))->map(fn ($offset) => now()->subMonths($offset)->startOfMonth());
-            $payments = FeePayment::where('school_id', $school->id)->whereDate('paid_at', '>=', $months->first())->get();
-            $expenseRows = Expense::where('school_id', $school->id)->whereDate('expense_date', '>=', $months->first())->get();
+            $monthExpression = match (DB::getDriverName()) {
+                'pgsql' => "to_char(paid_at, 'YYYY-MM')",
+                'mysql', 'mariadb' => "DATE_FORMAT(paid_at, '%Y-%m')",
+                default => "strftime('%Y-%m', paid_at)",
+            };
+            $expenseMonthExpression = str_replace('paid_at', 'expense_date', $monthExpression);
+            $payments = FeePayment::where('school_id', $school->id)->where('paid_at', '>=', $months->first())
+                ->selectRaw("{$monthExpression} as period, SUM(amount) as total")->groupBy('period')->pluck('total', 'period');
+            $expenseRows = Expense::where('school_id', $school->id)->where('expense_date', '>=', $months->first())
+                ->selectRaw("{$expenseMonthExpression} as period, SUM(amount) as total")->groupBy('period')->pluck('total', 'period');
 
             $finance = [
                 'expected' => $expectedFees + $arrears, 'income' => $income, 'expenses' => $expenses,
                 'outstanding' => max(0, $expectedFees + $arrears - $income), 'poolBalance' => $credits - $debits, 'net' => $income - $expenses,
                 'labels' => $months->map(fn ($month) => $month->format('M Y'))->values(),
-                'incomeSeries' => $months->map(fn ($month) => (float) $payments->filter(fn ($payment) => $payment->paid_at?->isSameMonth($month))->sum('amount'))->values(),
-                'expenseSeries' => $months->map(fn ($month) => (float) $expenseRows->filter(fn ($expense) => $expense->expense_date?->isSameMonth($month))->sum('amount'))->values(),
+                'incomeSeries' => $months->map(fn ($month) => (float) ($payments[$month->format('Y-m')] ?? 0))->values(),
+                'expenseSeries' => $months->map(fn ($month) => (float) ($expenseRows[$month->format('Y-m')] ?? 0))->values(),
                 'recentPayments' => FeePayment::with('student:id,name')->where('school_id', $school->id)->latest('paid_at')->take(6)->get(),
                 'recentExpenses' => Expense::where('school_id', $school->id)->latest('expense_date')->take(6)->get(),
             ];
