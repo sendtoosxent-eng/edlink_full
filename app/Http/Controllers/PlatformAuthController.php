@@ -55,7 +55,7 @@ class PlatformAuthController extends Controller
         if (RateLimiter::tooManyAttempts($key,5)) return back()->withErrors(['code'=>'Too many incorrect codes. Try again in '.RateLimiter::availableIn($key).' seconds.']);
         if (!$this->totp->verify($admin->totp_secret,$data['code'])) { RateLimiter::hit($key,60); $this->audit($request,'platform.totp.setup_failed',$admin->id); return back()->withErrors(['code'=>'That authenticator code is not valid.']); }
         RateLimiter::clear($key); $plain=$this->totp->recoveryCodes();
-        $admin->update(['totp_confirmed_at'=>now(),'recovery_codes'=>collect($plain)->map(fn($code)=>Hash::make($code))->all(),'last_totp_hash'=>$this->codeHash($data['code'])]);
+        $admin->update(['totp_confirmed_at'=>now(),'recovery_codes'=>collect($plain)->map(fn($code)=>Hash::make($code))->all(),'last_totp_hash'=>null]);
         $request->session()->regenerate(); $request->session()->put(['platform_mfa_passed'=>true,'platform_last_activity'=>now()->timestamp]);
         $this->audit($request,'platform.totp.enabled',$admin->id);
         return view('platform.auth.recovery-codes',['codes'=>$plain]);

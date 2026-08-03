@@ -19,6 +19,12 @@
             <span><b class="block text-xs text-slate-900">Allow this school to send SMS</b><span class="mt-1 block text-[11px] leading-5 text-slate-500">Turning this off blocks SMS for this tenant without deleting its credentials.</span></span>
         </label>
 
+        <label class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <input type="hidden" name="sandbox" value="0">
+            <input type="checkbox" name="sandbox" value="1" @checked(old('sandbox', $smsConfiguration->sandbox)) class="mt-0.5 rounded border-amber-300 text-amber-500 focus:ring-amber-400">
+            <span><b class="block text-xs text-slate-900">Africa's Talking sandbox mode</b><span class="mt-1 block text-[11px] leading-5 text-slate-600">Uses the free sandbox API and delivers only to numbers registered in the Africa's Talking simulator. This setting is ignored for other providers.</span></span>
+        </label>
+
         <div class="grid gap-5 sm:grid-cols-2">
             <label class="block"><span class="text-xs font-bold text-slate-700">Provider</span><select name="provider" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold">@foreach(['africastalking'=>'Africa’s Talking','twilio'=>'Twilio','custom'=>'Custom HTTP gateway'] as $value=>$label)<option value="{{ $value }}" @selected(old('provider', $smsConfiguration->provider)===$value)>{{ $label }}</option>@endforeach</select></label>
             <label class="block"><span class="text-xs font-bold text-slate-700">Sender ID</span><input name="sender_id" value="{{ old('sender_id', $smsConfiguration->sender_id) }}" placeholder="EDLINK" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold uppercase">@error('sender_id')<span class="mt-1 block text-xs font-bold text-rose-600">{{ $message }}</span>@enderror</label>

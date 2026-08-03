@@ -5,10 +5,10 @@
             <div>
                
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300  tracking-tight">
-                    Communications
+                    School Announcements
                 </h1>
                 <p class="mt-1 text-sm text-slate-500 max-w-xl">
-                    Dispatch school-wide email notifications to targeted user groups and review delivery history logs.
+                    Notify every school user in-app, with optional background email and SMS delivery.
                 </p>
             </div>
         </div>
@@ -44,17 +44,8 @@
                 <span class="h-2 w-2 rounded-full bg-amber-400"></span>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Target Audience</label>
-                <select wire:model="audience" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
-                    <option value="parents">Parents / Guardians</option>
-                    <option value="staff">All Staff</option>
-                    <option value="teachers">Teachers Only</option>
-                    <option value="all">Everyone with an Account</option>
-                </select>
-                @error('audience')
-                    <span class="mt-1 text-xs font-semibold text-rose-600 block">{{ $message }}</span>
-                @enderror
+            <div class="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-800">
+                Every announcement appears in the notification area for all user accounts belonging to this school.
             </div>
 
             <div>
@@ -73,11 +64,25 @@
                 @enderror
             </div>
 
+            <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Additional delivery</p>
+                <label class="flex cursor-pointer items-start gap-3">
+                    <input wire:model="sendEmail" type="checkbox" class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400">
+                    <span><strong class="block text-sm text-slate-800">Send email</strong><span class="text-xs text-slate-500">Queued for every school user with an email address.</span></span>
+                </label>
+                @error('sendEmail')<span class="block text-xs font-semibold text-rose-600">{{ $message }}</span>@enderror
+                <label class="flex cursor-pointer items-start gap-3 {{ $smsReady ? '' : 'opacity-60' }}">
+                    <input wire:model="sendSms" type="checkbox" @disabled(! $smsReady) class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400">
+                    <span><strong class="block text-sm text-slate-800">Send SMS</strong><span class="text-xs text-slate-500">{{ $smsReady ? 'Queued for every school user with a phone number.' : 'SMS must first be enabled and configured by the platform administrator.' }}</span></span>
+                </label>
+                @error('sendSms')<span class="block text-xs font-semibold text-rose-600">{{ $message }}</span>@enderror
+            </div>
+
             <div class="pt-2">
                 <button type="submit" wire:loading.attr="disabled" class="w-full rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold py-3 text-xs transition shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2">
                     <span wire:loading.remove class="flex items-center gap-2">
                         <svg class="h-4 w-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                        <span>Queue Email Announcement</span>
+                        <span>Send School Announcement</span>
                     </span>
                     <span wire:loading class="flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4 text-slate-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -107,7 +112,7 @@
                                 <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500 font-medium">
                                     <span class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-700">
                                         <svg class="h-3 w-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                        {{ ucfirst($announcement->target_audience) }}
+                                        Whole school
                                     </span>
                                     <span>•</span>
                                     <span><strong class="font-bold text-slate-800">{{ $announcement->recipient_count }}</strong> recipients</span>
@@ -118,7 +123,7 @@
 
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 border border-emerald-200 text-emerald-800 shrink-0">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span>Queued</span>
+                                <span>{{ ucfirst(str_replace('_', ' ', $announcement->delivery_status)) }}</span>
                             </span>
                         </div>
 

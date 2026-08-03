@@ -18,6 +18,7 @@ class PlatformSchoolSmsController extends Controller
         $data = $request->validate([
             'enabled' => ['nullable', 'boolean'],
             'provider' => ['required', Rule::in(['africastalking', 'twilio', 'custom'])],
+            'sandbox' => ['nullable', 'boolean'],
             'api_key' => ['nullable', 'string', 'max:1000'],
             'api_username' => ['nullable', 'string', 'max:150'],
             'sender_id' => ['nullable', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/'],
@@ -35,12 +36,16 @@ class PlatformSchoolSmsController extends Controller
         if ($enabled && $data['provider'] === 'africastalking' && blank($data['api_username'] ?? null)) {
             throw ValidationException::withMessages(['api_username' => 'The Africa’s Talking username is required.']);
         }
+        if ($enabled && $data['provider'] === 'twilio' && blank($data['api_username'] ?? null)) {
+            throw ValidationException::withMessages(['api_username' => 'The Twilio Account SID is required.']);
+        }
         if ($enabled && $data['provider'] === 'custom' && blank($data['endpoint'] ?? null)) {
             throw ValidationException::withMessages(['endpoint' => 'A gateway endpoint is required for a custom provider.']);
         }
 
         $changes = collect($data)->except(['api_key', 'webhook_secret'])->all();
         $changes['enabled'] = $enabled;
+        $changes['sandbox'] = $data['provider'] === 'africastalking' && $request->boolean('sandbox');
         if (filled($data['api_key'] ?? null)) $changes['api_key'] = $data['api_key'];
         if (filled($data['webhook_secret'] ?? null)) $changes['webhook_secret'] = $data['webhook_secret'];
 
@@ -56,6 +61,7 @@ class PlatformSchoolSmsController extends Controller
                 'school' => $school->name,
                 'enabled' => $configuration->enabled,
                 'provider' => $configuration->provider,
+                'sandbox' => $configuration->sandbox,
                 'sender_id' => $configuration->sender_id,
                 'api_key_changed' => filled($data['api_key'] ?? null),
                 'webhook_secret_changed' => filled($data['webhook_secret'] ?? null),

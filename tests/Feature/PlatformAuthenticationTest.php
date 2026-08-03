@@ -61,8 +61,16 @@ it('requires password then enrolls a first-time platform owner in TOTP', functio
     $admin->refresh(); expect($admin->totp_secret)->not->toBeNull();
     $code=(new Google2FA)->getCurrentOtp($admin->totp_secret);
     $this->post(route('platform.setup.confirm'),['code'=>$code])->assertOk()->assertSee('MFA enabled')->assertSee('Save your recovery codes');
-    $admin->refresh(); expect($admin->totp_confirmed_at)->not->toBeNull()->and($admin->recovery_codes)->toHaveCount(10);
+    $admin->refresh(); expect($admin->totp_confirmed_at)->not->toBeNull()->and($admin->recovery_codes)->toHaveCount(10)->and($admin->last_totp_hash)->toBeNull();
     expect(PlatformAuditLog::where('event','platform.totp.enabled')->where('platform_admin_id',$admin->id)->exists())->toBeTrue();
+});
+
+it('allows a reasonable amount of authenticator clock drift', function () {
+    $totp = new Google2FA;
+    $secret = app(PlatformTotpService::class)->generateSecret();
+    $slightlyOldCode = $totp->oathTotp($secret, $totp->getTimestamp() - 2);
+
+    expect(app(PlatformTotpService::class)->verify($secret, $slightlyOldCode))->toBeTrue();
 });
 
 it('requires a valid TOTP before entering the platform dashboard', function () {
@@ -95,7 +103,8 @@ it('lets an authenticated platform administrator securely reset MFA', function (
     $admin=PlatformAdmin::create(['name'=>'Reset Owner','email'=>'reset@edlink.test','password'=>'StrongPassword!123','role'=>'platform_owner','is_active'=>true,'totp_secret'=>app(PlatformTotpService::class)->generateSecret(),'totp_confirmed_at'=>now(),'recovery_codes'=>[Hash::make('ABCD-1234-EF56')],'last_totp_hash'=>'old-hash']);
 
     $this->actingAs($admin, 'platform')->get(route('platform.mfa.reset'))
-        ->assertRedirect(route('platform.challenge'));
+        ->assertOk()
+        ->assertSee('Reset MFA');
 
     $secureSession = ['platform_mfa_passed'=>true, 'platform_last_activity'=>now()->timestamp];
     $this->actingAs($admin, 'platform')->withSession($secureSession)

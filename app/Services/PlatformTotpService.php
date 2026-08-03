@@ -28,7 +28,9 @@ class PlatformTotpService
 
     public function verify(string $secret, string $code): bool
     {
-        return preg_match('/^\d{6}$/', $code) === 1 && $this->totp->verifyKey($secret, $code, 1);
+        // Allow a small amount of clock drift between the server and the
+        // administrator's authenticator without weakening the six-digit check.
+        return preg_match('/^\d{6}$/', $code) === 1 && $this->totp->verifyKey($secret, $code, 2);
     }
 
     public function recoveryCodes(int $count = 10): array

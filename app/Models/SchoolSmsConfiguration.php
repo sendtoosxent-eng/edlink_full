@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SchoolSmsConfiguration extends Model
 {
     protected $fillable = [
-        'school_id', 'enabled', 'provider', 'api_key', 'api_username',
+        'school_id', 'enabled', 'provider', 'sandbox', 'api_key', 'api_username',
         'sender_id', 'endpoint', 'webhook_secret',
     ];
 
@@ -18,6 +18,7 @@ class SchoolSmsConfiguration extends Model
     {
         return [
             'enabled' => 'boolean',
+            'sandbox' => 'boolean',
             'api_key' => 'encrypted',
             'webhook_secret' => 'encrypted',
         ];
@@ -34,6 +35,7 @@ class SchoolSmsConfiguration extends Model
             && filled($this->api_key)
             && filled($this->sender_id)
             && ($this->provider !== 'africastalking' || filled($this->api_username))
+            && ($this->provider !== 'twilio' || filled($this->api_username))
             && ($this->provider !== 'custom' || filled($this->endpoint));
     }
 }

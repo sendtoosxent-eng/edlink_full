@@ -78,7 +78,14 @@ class PortalHome extends Component
             ->whereIn('target_audience', ['all', $user->role === 'parent' ? 'parents' : 'students'])
             ->whereDate('event_date', '>=', today())->orderBy('event_date')->take(5)->get();
 
-        $notifications = collect();
+        $notifications = DB::table('school_notifications')
+            ->where('school_id', $school->id)
+            ->where(fn ($query) => $query->whereNull('user_id')->orWhere('user_id', $user->id))
+            ->latest()->limit(10)->get()
+            ->map(fn ($notification) => [
+                'type' => 'announcement',
+                'message' => $notification->title.': '.$notification->message,
+            ]);
         if ($student) {
             if ($user->role === 'parent' && $term && $student->balance($term) > 0) {
                 $notifications->push(['type' => 'fees', 'message' => $student->name.' has an outstanding balance of '.number_format($student->balance($term), 0).'.']);

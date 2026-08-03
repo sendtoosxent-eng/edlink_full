@@ -80,7 +80,7 @@ it('allows only administrators to review the school audit trail', function () {
     AuditLog::create(['school_id' => $admin->school_id, 'user_id' => $admin->id, 'event' => 'page.viewed', 'metadata' => ['route' => 'dashboard']]);
 
     Livewire::actingAs($admin)->test(AuditTrail::class)
-        ->assertSee('Audit trail')
+        ->assertSee('Audit Trail')
         ->assertSee('page.viewed')
         ->set('search', 'dashboard')
         ->assertSee('page.viewed');

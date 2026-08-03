@@ -4,7 +4,7 @@ it('serves the public Edlink privacy policy page', function () {
     $this->get(route('privacy'))
         ->assertOk()
         ->assertSee('Privacy Policy')
-        ->assertSee('23 July 2026')
+        ->assertSee(now()->format('d F Y'))
         ->assertSee('Information We Collect')
         ->assertSeeText('Children\'s Data')
         ->assertSee('contact@edlink.com');

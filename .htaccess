@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Keep certificate validation available to Hostinger/Let's Encrypt.
+    RewriteRule ^\.well-known/ - [L]
+
+    # Hostinger shared hosting normally serves public_html. Laravel's front
+    # controller lives in public/, so forward all application requests there.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

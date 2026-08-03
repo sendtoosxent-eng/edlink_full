@@ -4,7 +4,7 @@ it('serves the public Edlink terms page', function () {
     $this->get(route('terms'))
         ->assertOk()
         ->assertSee('Terms and Conditions')
-        ->assertSee('23 July 2026')
+        ->assertSee(now()->format('d F Y'))
         ->assertSee('Service Description')
         ->assertSee('Limitation of Liability')
         ->assertSee('Spotnet Technologies');

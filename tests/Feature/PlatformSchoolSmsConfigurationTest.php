@@ -30,6 +30,7 @@ it('configures SMS independently for one school and encrypts its secrets', funct
         ->put(route('platform.schools.sms-configuration.update', $first), [
             'enabled' => '1',
             'provider' => 'africastalking',
+            'sandbox' => '1',
             'api_username' => 'sandbox',
             'api_key' => 'super-secret-api-key',
             'sender_id' => 'EDLINK',
@@ -38,6 +39,7 @@ it('configures SMS independently for one school and encrypts its secrets', funct
 
     $configuration = SchoolSmsConfiguration::where('school_id', $first->id)->firstOrFail();
     expect($configuration->enabled)->toBeTrue()
+        ->and($configuration->sandbox)->toBeTrue()
         ->and($configuration->api_key)->toBe('super-secret-api-key')
         ->and($configuration->isReady())->toBeTrue()
         ->and($second->smsConfiguration)->toBeNull();

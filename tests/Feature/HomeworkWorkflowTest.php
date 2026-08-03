@@ -100,7 +100,7 @@ it('lets a school administrator access homework from the shared sidebar', functi
     $this->actingAs($admin)->get(route('homework.index'))
         ->assertOk()
         ->assertSee('Homework')
-        ->assertSee('Create homework')
+        ->assertSee('Create New Homework')
         ->assertSee('href="'.route('homework.index').'"', false);
 });
 

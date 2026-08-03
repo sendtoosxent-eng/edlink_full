@@ -80,11 +80,11 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::post('setup', [PlatformAuthController::class, 'confirmSetup'])->middleware('throttle:10,1')->name('setup.confirm');
         Route::get('challenge', [PlatformAuthController::class, 'showChallenge'])->name('challenge');
         Route::post('challenge', [PlatformAuthController::class, 'challenge'])->middleware('throttle:10,1')->name('challenge.verify');
+        Route::get('mfa/reset', [PlatformAuthController::class, 'showMfaReset'])->name('mfa.reset');
+        Route::post('mfa/reset', [PlatformAuthController::class, 'resetMfa'])->middleware('throttle:5,1')->name('mfa.reset.store');
         Route::post('logout', [PlatformAuthController::class, 'logout'])->name('logout');
     });
     Route::middleware('platform.mfa')->group(function () {
-        Route::get('mfa/reset', [PlatformAuthController::class, 'showMfaReset'])->name('mfa.reset');
-        Route::post('mfa/reset', [PlatformAuthController::class, 'resetMfa'])->middleware('throttle:5,1')->name('mfa.reset.store');
         Route::get('backups/download', DatabaseBackupController::class)->name('backups.download');
         Route::get('/', [PlatformAuthController::class, 'dashboard'])->name('dashboard');
         Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools');
