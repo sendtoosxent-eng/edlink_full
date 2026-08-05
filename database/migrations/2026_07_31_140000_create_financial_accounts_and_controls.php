@@ -1,3 +1,425 @@
 <?php
-use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\DB;use Illuminate\Support\Facades\Schema;
-return new class extends Migration{public function up():void{Schema::create('financial_accounts',function(Blueprint $t){$t->id();$t->foreignId('school_id')->constrained()->cascadeOnDelete();$t->string('name');$t->string('type');$t->string('currency',3)->default('UGX');$t->decimal('opening_balance',14,2)->default(0);$t->boolean('is_active')->default(true);$t->timestamps();$t->unique(['school_id','name']);});Schema::create('financial_account_transfers',function(Blueprint $t){$t->id();$t->foreignId('school_id')->constrained()->cascadeOnDelete();$t->foreignId('from_account_id')->constrained('financial_accounts')->restrictOnDelete();$t->foreignId('to_account_id')->constrained('financial_accounts')->restrictOnDelete();$t->decimal('amount',14,2);$t->date('transfer_date');$t->string('reference')->nullable();$t->text('notes')->nullable();$t->string('evidence_path')->nullable();$t->string('status')->default('pending');$t->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();$t->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();$t->timestamp('approved_at')->nullable();$t->timestamps();});foreach(['fee_payments','expenses','payroll_runs'] as $table){Schema::table($table,function(Blueprint $t){$t->foreignId('financial_account_id')->nullable()->constrained('financial_accounts')->restrictOnDelete();$t->string('evidence_path')->nullable();});}Schema::table('finance_ledger_entries',fn(Blueprint $t)=>$t->foreignId('financial_account_id')->nullable()->constrained('financial_accounts')->restrictOnDelete());Schema::table('cash_pool_entries',function(Blueprint $t){$t->foreignId('financial_account_id')->nullable()->constrained('financial_accounts')->restrictOnDelete();$t->foreignId('financial_account_transfer_id')->nullable()->constrained('financial_account_transfers')->restrictOnDelete();});Schema::table('finance_reconciliations',function(Blueprint $t){$t->dropUnique(['school_id','period_ending']);$t->foreignId('financial_account_id')->nullable()->constrained('financial_accounts')->restrictOnDelete();$t->string('status')->default('closed');$t->timestamp('closed_at')->nullable();$t->foreignId('reopened_by')->nullable()->constrained('users')->nullOnDelete();$t->text('reopen_reason')->nullable();$t->timestamp('reopened_at')->nullable();$t->unique(['school_id','financial_account_id','period_ending'],'finance_reconciliation_account_period_unique');});DB::table('schools')->orderBy('id')->each(function($school){$ids=[];foreach([['Cash on Hand','cash'],['Main Bank Account','bank'],['Mobile Money','mobile_money'],['Petty Cash','petty_cash']] as[$name,$type]){$ids[$type]=DB::table('financial_accounts')->insertGetId(['school_id'=>$school->id,'name'=>$name,'type'=>$type,'currency'=>'UGX','opening_balance'=>0,'is_active'=>1,'created_at'=>now(),'updated_at'=>now()]);}DB::table('fee_payments')->where('school_id',$school->id)->get()->each(fn($row)=>DB::table('fee_payments')->where('id',$row->id)->update(['financial_account_id'=>$ids[$row->method]??$ids['cash']]));DB::table('expenses')->where('school_id',$school->id)->update(['financial_account_id'=>$ids['cash']]);DB::table('payroll_runs')->where('school_id',$school->id)->get()->each(fn($row)=>DB::table('payroll_runs')->where('id',$row->id)->update(['financial_account_id'=>$ids[$row->method]??$ids['cash']]));DB::table('cash_pool_entries')->where('school_id',$school->id)->get()->each(function($pool)use($ids){$type='cash';if($pool->fee_payment_id){$m=DB::table('fee_payments')->where('id',$pool->fee_payment_id)->value('method');$type=$m??'cash';}elseif($pool->payroll_run_id){$m=DB::table('payroll_runs')->where('id',$pool->payroll_run_id)->value('method');$type=$m??'cash';}DB::table('cash_pool_entries')->where('id',$pool->id)->update(['financial_account_id'=>$ids[$type]??$ids['cash']]);});DB::table('finance_ledger_entries')->where('school_id',$school->id)->get()->each(function($ledger)use($ids){$account=DB::table('cash_pool_entries')->where('finance_ledger_entry_id',$ledger->id)->value('financial_account_id')??$ids['cash'];DB::table('finance_ledger_entries')->where('id',$ledger->id)->update(['financial_account_id'=>$account]);});DB::table('finance_reconciliations')->where('school_id',$school->id)->update(['financial_account_id'=>$ids['cash'],'status'=>'closed','closed_at'=>now()]);});}public function down():void{throw new RuntimeException('Financial account migration is intentionally irreversible after financial history is assigned.');}};
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | Financial accounts
+        |--------------------------------------------------------------------------
+        */
+
+        if (! Schema::hasTable('financial_accounts')) {
+            Schema::create('financial_accounts', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('school_id')
+                    ->constrained()
+                    ->cascadeOnDelete();
+
+                $table->string('name');
+                $table->string('type');
+                $table->string('currency', 3)->default('UGX');
+                $table->decimal('opening_balance', 14, 2)->default(0);
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+
+                $table->unique(
+                    ['school_id', 'name'],
+                    'financial_accounts_school_id_name_unique'
+                );
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Financial account transfers
+        |--------------------------------------------------------------------------
+        */
+
+        if (! Schema::hasTable('financial_account_transfers')) {
+            Schema::create('financial_account_transfers', function (Blueprint $table) {
+                $table->id();
+
+                $table->foreignId('school_id')
+                    ->constrained()
+                    ->cascadeOnDelete();
+
+                $table->foreignId('from_account_id')
+                    ->constrained('financial_accounts')
+                    ->restrictOnDelete();
+
+                $table->foreignId('to_account_id')
+                    ->constrained('financial_accounts')
+                    ->restrictOnDelete();
+
+                $table->decimal('amount', 14, 2);
+                $table->date('transfer_date');
+                $table->string('reference')->nullable();
+                $table->text('notes')->nullable();
+                $table->string('evidence_path')->nullable();
+                $table->string('status')->default('pending');
+
+                $table->foreignId('recorded_by')
+                    ->nullable()
+                    ->constrained('users')
+                    ->nullOnDelete();
+
+                $table->foreignId('approved_by')
+                    ->nullable()
+                    ->constrained('users')
+                    ->nullOnDelete();
+
+                $table->timestamp('approved_at')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fee payments, expenses and payroll
+        |--------------------------------------------------------------------------
+        */
+
+        foreach (['fee_payments', 'expenses', 'payroll_runs'] as $tableName) {
+            if (! Schema::hasColumn($tableName, 'financial_account_id')) {
+                Schema::table($tableName, function (Blueprint $table) {
+                    $table->foreignId('financial_account_id')
+                        ->nullable()
+                        ->constrained('financial_accounts')
+                        ->restrictOnDelete();
+                });
+            }
+
+            if (! Schema::hasColumn($tableName, 'evidence_path')) {
+                Schema::table($tableName, function (Blueprint $table) {
+                    $table->string('evidence_path')->nullable();
+                });
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Finance ledger entries
+        |--------------------------------------------------------------------------
+        */
+
+        if (! Schema::hasColumn(
+            'finance_ledger_entries',
+            'financial_account_id'
+        )) {
+            Schema::table('finance_ledger_entries', function (Blueprint $table) {
+                $table->foreignId('financial_account_id')
+                    ->nullable()
+                    ->constrained('financial_accounts')
+                    ->restrictOnDelete();
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cash pool entries
+        |--------------------------------------------------------------------------
+        */
+
+        if (! Schema::hasColumn(
+            'cash_pool_entries',
+            'financial_account_id'
+        )) {
+            Schema::table('cash_pool_entries', function (Blueprint $table) {
+                $table->foreignId('financial_account_id')
+                    ->nullable()
+                    ->constrained('financial_accounts')
+                    ->restrictOnDelete();
+            });
+        }
+
+        if (! Schema::hasColumn(
+            'cash_pool_entries',
+            'financial_account_transfer_id'
+        )) {
+            Schema::table('cash_pool_entries', function (Blueprint $table) {
+                $table->foreignId('financial_account_transfer_id')
+                    ->nullable()
+                    ->constrained('financial_account_transfers')
+                    ->restrictOnDelete();
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Finance reconciliations
+        |--------------------------------------------------------------------------
+        |
+        | MySQL was using the existing unique index to support the school_id
+        | foreign key. Create a dedicated school_id index before removing it.
+        |
+        */
+
+        if (! Schema::hasIndex(
+            'finance_reconciliations',
+            'finance_reconciliations_school_id_index'
+        )) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->index(
+                    'school_id',
+                    'finance_reconciliations_school_id_index'
+                );
+            });
+        }
+
+        if (Schema::hasIndex(
+            'finance_reconciliations',
+            'finance_reconciliations_school_id_period_ending_unique'
+        )) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->dropUnique(
+                    'finance_reconciliations_school_id_period_ending_unique'
+                );
+            });
+        }
+
+        if (! Schema::hasColumn(
+            'finance_reconciliations',
+            'financial_account_id'
+        )) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->foreignId('financial_account_id')
+                    ->nullable()
+                    ->constrained('financial_accounts')
+                    ->restrictOnDelete();
+            });
+        }
+
+        if (! Schema::hasColumn('finance_reconciliations', 'status')) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->string('status')
+                    ->default('closed');
+            });
+        }
+
+        if (! Schema::hasColumn('finance_reconciliations', 'closed_at')) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->timestamp('closed_at')->nullable();
+            });
+        }
+
+        if (! Schema::hasColumn('finance_reconciliations', 'reopened_by')) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->foreignId('reopened_by')
+                    ->nullable()
+                    ->constrained('users')
+                    ->nullOnDelete();
+            });
+        }
+
+        if (! Schema::hasColumn('finance_reconciliations', 'reopen_reason')) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->text('reopen_reason')->nullable();
+            });
+        }
+
+        if (! Schema::hasColumn('finance_reconciliations', 'reopened_at')) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->timestamp('reopened_at')->nullable();
+            });
+        }
+
+        if (! Schema::hasIndex(
+            'finance_reconciliations',
+            'finance_reconciliation_account_period_unique'
+        )) {
+            Schema::table('finance_reconciliations', function (Blueprint $table) {
+                $table->unique(
+                    [
+                        'school_id',
+                        'financial_account_id',
+                        'period_ending',
+                    ],
+                    'finance_reconciliation_account_period_unique'
+                );
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create default accounts and assign financial history
+        |--------------------------------------------------------------------------
+        */
+
+        DB::table('schools')
+            ->orderBy('id')
+            ->chunkById(100, function ($schools): void {
+                foreach ($schools as $school) {
+                    $accountIds = [];
+
+                    $defaultAccounts = [
+                        ['Cash on Hand', 'cash'],
+                        ['Main Bank Account', 'bank'],
+                        ['Mobile Money', 'mobile_money'],
+                        ['Petty Cash', 'petty_cash'],
+                    ];
+
+                    foreach ($defaultAccounts as [$name, $type]) {
+                        $accountId = DB::table('financial_accounts')
+                            ->where('school_id', $school->id)
+                            ->where('name', $name)
+                            ->value('id');
+
+                        if (! $accountId) {
+                            $accountId = DB::table('financial_accounts')
+                                ->insertGetId([
+                                    'school_id' => $school->id,
+                                    'name' => $name,
+                                    'type' => $type,
+                                    'currency' => 'UGX',
+                                    'opening_balance' => 0,
+                                    'is_active' => true,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                        }
+
+                        $accountIds[$type] = $accountId;
+                    }
+
+                    /*
+                     * Fee payments
+                     */
+                    DB::table('fee_payments')
+                        ->where('school_id', $school->id)
+                        ->whereNull('financial_account_id')
+                        ->orderBy('id')
+                        ->chunkById(500, function ($payments) use ($accountIds): void {
+                            foreach ($payments as $payment) {
+                                $accountId =
+                                    $accountIds[$payment->method]
+                                    ?? $accountIds['cash'];
+
+                                DB::table('fee_payments')
+                                    ->where('id', $payment->id)
+                                    ->update([
+                                        'financial_account_id' => $accountId,
+                                    ]);
+                            }
+                        });
+
+                    /*
+                     * Expenses
+                     */
+                    DB::table('expenses')
+                        ->where('school_id', $school->id)
+                        ->whereNull('financial_account_id')
+                        ->update([
+                            'financial_account_id' => $accountIds['cash'],
+                        ]);
+
+                    /*
+                     * Payroll
+                     */
+                    DB::table('payroll_runs')
+                        ->where('school_id', $school->id)
+                        ->whereNull('financial_account_id')
+                        ->orderBy('id')
+                        ->chunkById(500, function ($payrollRuns) use ($accountIds): void {
+                            foreach ($payrollRuns as $payrollRun) {
+                                $accountId =
+                                    $accountIds[$payrollRun->method]
+                                    ?? $accountIds['cash'];
+
+                                DB::table('payroll_runs')
+                                    ->where('id', $payrollRun->id)
+                                    ->update([
+                                        'financial_account_id' => $accountId,
+                                    ]);
+                            }
+                        });
+
+                    /*
+                     * Cash pool entries
+                     */
+                    DB::table('cash_pool_entries')
+                        ->where('school_id', $school->id)
+                        ->whereNull('financial_account_id')
+                        ->orderBy('id')
+                        ->chunkById(500, function ($poolEntries) use ($accountIds): void {
+                            foreach ($poolEntries as $poolEntry) {
+                                $accountType = 'cash';
+
+                                if ($poolEntry->fee_payment_id) {
+                                    $method = DB::table('fee_payments')
+                                        ->where('id', $poolEntry->fee_payment_id)
+                                        ->value('method');
+
+                                    $accountType = $method ?: 'cash';
+                                } elseif ($poolEntry->payroll_run_id) {
+                                    $method = DB::table('payroll_runs')
+                                        ->where('id', $poolEntry->payroll_run_id)
+                                        ->value('method');
+
+                                    $accountType = $method ?: 'cash';
+                                }
+
+                                DB::table('cash_pool_entries')
+                                    ->where('id', $poolEntry->id)
+                                    ->update([
+                                        'financial_account_id' =>
+                                            $accountIds[$accountType]
+                                            ?? $accountIds['cash'],
+                                    ]);
+                            }
+                        });
+
+                    /*
+                     * Finance ledger entries
+                     */
+                    DB::table('finance_ledger_entries')
+                        ->where('school_id', $school->id)
+                        ->whereNull('financial_account_id')
+                        ->orderBy('id')
+                        ->chunkById(500, function ($ledgerEntries) use ($accountIds): void {
+                            foreach ($ledgerEntries as $ledgerEntry) {
+                                $accountId = DB::table('cash_pool_entries')
+                                    ->where(
+                                        'finance_ledger_entry_id',
+                                        $ledgerEntry->id
+                                    )
+                                    ->value('financial_account_id');
+
+                                DB::table('finance_ledger_entries')
+                                    ->where('id', $ledgerEntry->id)
+                                    ->update([
+                                        'financial_account_id' =>
+                                            $accountId
+                                            ?? $accountIds['cash'],
+                                    ]);
+                            }
+                        });
+
+                    /*
+                     * Finance reconciliations
+                     */
+                    DB::table('finance_reconciliations')
+                        ->where('school_id', $school->id)
+                        ->whereNull('financial_account_id')
+                        ->update([
+                            'financial_account_id' => $accountIds['cash'],
+                            'status' => 'closed',
+                            'closed_at' => now(),
+                        ]);
+                }
+            });
+    }
+
+    public function down(): void
+    {
+        throw new RuntimeException(
+            'Financial account migration is intentionally irreversible after financial history is assigned.'
+        );
+    }
+};
