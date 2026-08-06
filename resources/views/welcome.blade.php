@@ -71,6 +71,12 @@
 		.chat-scroll::-webkit-scrollbar { width: 5px; }
 		.chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
 		.dark .chat-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+		@media (max-width: 639px) {
+			body { overflow-x: hidden; }
+			.mobile-section { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+			.mobile-card { border-radius: 1.25rem !important; padding: 1.25rem !important; }
+			[data-aos] { transition-duration: 450ms !important; }
+		}
 	</style>
 	<script>
 	(function () {
@@ -88,11 +94,12 @@
 
 	<!-- ============ NAVBAR ============ -->
 	<div x-data="{ open: false }" class="fixed top-0 inset-x-0 z-40 glass bg-white/70 dark:bg-ink/70 border-b border-gray-100 dark:border-white/10">
-		<div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
 			<a href="#" class="flex items-center space-x-2">
 			
 				<span class="font-bold text-darken dark:text-white tracking-tight">
-					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'nav_logo') }}" class="h-12" alt="Edlink logo">
+					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'nav_logo') }}" class="h-9 sm:h-12 w-auto dark:hidden" alt="Edlink logo">
+					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'footer_logo') }}" class="hidden h-9 sm:h-12 w-auto dark:block" alt="Edlink logo">
 				</span>
 			</a>
 
@@ -103,7 +110,7 @@
 				<a href="#contact" class="hover:text-yellow-500 transition-colors">Contact</a>
 			</nav>
 
-			<div class="flex items-center space-x-3">
+			<div class="flex items-center gap-1.5 sm:gap-3">
 				<!-- Theme toggle -->
 				<button
 	x-data="{ dark: document.documentElement.classList.contains('dark') }"
@@ -124,23 +131,27 @@
 </button>
 
 				<a href="{{ route('login') }}" wire:navigate class="hidden sm:inline-block px-5 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-white/15 hover:border-yellow-400 transition-colors">Login</a>
-				<a href="{{ route('register') }}" wire:navigate class="px-5 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all">{{ $landing['primary_cta'] }}</a>
+				<a href="{{ route('register') }}" wire:navigate class="hidden sm:inline-block px-5 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all">{{ $landing['primary_cta'] }}</a>
 
 				<button @click="open = !open" class="md:hidden w-9 h-9 flex items-center justify-center">
 					<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path x-show="!open" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /><path x-show="open" x-cloak stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
 				</button>
 			</div>
 		</div>
-		<div x-show="open" x-cloak x-transition class="md:hidden px-6 pb-4 flex flex-col space-y-3 text-sm font-medium border-t border-gray-100 dark:border-white/10 pt-3">
-			<a href="#features" @click="open=false">Features</a>
-			<a href="#pricing" @click="open=false">Pricing</a>
-			<a href="#about" @click="open=false">About</a>
-			<a href="#contact" @click="open=false">Contact</a>
+		<div x-show="open" x-cloak x-transition class="md:hidden px-4 sm:px-6 pb-5 flex flex-col gap-1 text-sm font-medium border-t border-gray-100 dark:border-white/10 pt-3 bg-white/95 dark:bg-ink/95">
+			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#features" @click="open=false">Features</a>
+			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#pricing" @click="open=false">Pricing</a>
+			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#about" @click="open=false">About</a>
+			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#contact" @click="open=false">Contact</a>
+			<div class="grid grid-cols-2 gap-2 pt-2 sm:hidden">
+				<a href="{{ route('login') }}" class="rounded-full border border-gray-200 dark:border-white/15 px-4 py-2.5 text-center">Login</a>
+				<a href="{{ route('register') }}" class="rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2.5 text-center font-semibold text-darken">Get started</a>
+			</div>
 		</div>
 	</div>
 
 	<!-- ============ HERO ============ -->
-	<section class="relative pt-40 pb-32 overflow-hidden bg-gradient-to-b from-white via-yellow-50/40 to-white dark:from-ink dark:via-darken dark:to-ink">
+	<section class="relative pt-28 sm:pt-32 lg:pt-40 pb-20 sm:pb-24 lg:pb-32 overflow-hidden bg-gradient-to-b from-white via-yellow-50/40 to-white dark:from-ink dark:via-darken dark:to-ink">
 		<!-- animated blobs -->
 		<div class="absolute inset-0 overflow-hidden pointer-events-none">
 			<div class="absolute -top-20 -left-20 w-96 h-96 bg-yellow-300/40 dark:bg-yellow-500/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob"></div>
@@ -149,29 +160,29 @@
 			<div class="absolute inset-0 grid-fade"></div>
 		</div>
 
-		<div class="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-			<div data-aos="fade-right" data-aos-duration="800">
+		<div class="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+			<div data-aos="fade-right" data-aos-duration="800" class="text-center lg:text-left">
 				<span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-semibold text-darken dark:text-yellow-400 shadow-sm mb-6">
 					<span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
 					<span>{{ $landing['announcement'] }}</span>
 				</span>
 
-				<h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-darken dark:text-white">
+				<h1 class="text-[2.15rem] sm:text-5xl lg:text-6xl font-extrabold leading-[1.08] text-darken dark:text-white">
 					{{ $landing['hero_title'] }} <span class="text-gradient">{{ $landing['hero_highlight'] }}</span> {{ $landing['hero_title_suffix'] }}
 				</h1>
-				<p class="mt-6 text-lg text-gray-500 dark:text-gray-400 max-w-lg">
+				<p class="mt-5 sm:mt-6 text-base sm:text-lg leading-relaxed text-gray-500 dark:text-gray-400 max-w-lg mx-auto lg:mx-0">
 					{{ $landing['hero_description'] }}
 				</p>
 
-				<div class="mt-9 flex flex-wrap items-center gap-4">
-					<a href="{{ route('register') }}" wire:navigate class="group px-8 py-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold shadow-xl shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all flex items-center space-x-2">
+				<div class="mt-8 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+					<a href="{{ route('register') }}" wire:navigate class="group px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold shadow-xl shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all flex items-center justify-center space-x-2">
 						<span>{{ $landing['primary_cta'] }}</span>
 						<svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
 					</a>
-					<a href="#features" class="px-8 py-4 rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">{{ $landing['secondary_cta'] }}</a>
+					<a href="#features" class="px-7 sm:px-8 py-3.5 sm:py-4 text-center rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">{{ $landing['secondary_cta'] }}</a>
 				</div>
 
-				<div class="mt-10 flex items-center gap-8 text-sm">
+				<div class="mt-9 sm:mt-10 grid grid-cols-3 items-start gap-2 sm:flex sm:items-center sm:gap-8 text-xs sm:text-sm">
 					<div><span class="text-2xl font-extrabold text-darken dark:text-white">{{ $landing['stat_one_value'] }}</span><p class="text-gray-400">{{ $landing['stat_one_label'] }}</p></div>
 					<div class="w-px h-8 bg-gray-200 dark:bg-white/10"></div>
 					<div><span class="text-2xl font-extrabold text-darken dark:text-white">{{ $landing['stat_two_value'] }}</span><p class="text-gray-400">{{ $landing['stat_two_label'] }}</p></div>
@@ -180,14 +191,14 @@
 				</div>
 			</div>
 
-			<div data-aos="fade-left" data-aos-duration="800" class="relative">
+			<div data-aos="fade-left" data-aos-duration="800" class="relative mx-3 sm:mx-6 lg:mx-0">
 				<div class="absolute -inset-6 bg-gradient-to-tr from-yellow-300/30 via-purple-300/20 to-teal-300/30 dark:from-yellow-500/10 dark:via-purple-500/10 dark:to-teal-500/10 rounded-[2.5rem] blur-2xl"></div>
-				<div class="relative rounded-[2rem] overflow-hidden shadow-2xl border border-white/50 dark:border-white/10">
+				<div class="relative rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl border border-white/50 dark:border-white/10">
 					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'hero_image') }}" class="w-full object-cover" alt="Student using Edlink">
 				</div>
 
 				<!-- floating stat card -->
-				<div class="absolute -bottom-6 -left-6 animate-float glass bg-white/90 dark:bg-darken/90 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 px-5 py-4">
+				<div class="absolute -bottom-5 left-3 sm:-bottom-6 sm:-left-6 animate-float glass bg-white/90 dark:bg-darken/90 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 px-3.5 sm:px-5 py-3 sm:py-4">
 					<p class="text-xs text-gray-400">Attendance today</p>
 					<p class="text-xl font-extrabold text-darken dark:text-white">96.4%</p>
 					<div class="mt-1 flex space-x-0.5">
@@ -199,7 +210,7 @@
 				</div>
 
 				<!-- floating badge -->
-				<div class="absolute -top-6 -right-6 animate-float-delay glass bg-white/90 dark:bg-darken/90 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 px-4 py-3 flex items-center space-x-2">
+				<div class="absolute -top-4 right-2 sm:-top-6 sm:-right-6 animate-float-delay glass bg-white/90 dark:bg-darken/90 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center space-x-2">
 					<span class="w-8 h-8 rounded-lg bg-yellow-400/20 flex items-center justify-center">
 						<svg class="w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 					</span>
@@ -216,7 +227,7 @@
 
 
 	<!-- ============ BENTO FEATURES ============ -->
-	<section id="features" class="py-28 max-w-7xl mx-auto px-6">
+	<section id="features" class="mobile-section py-28 max-w-7xl mx-auto px-4 sm:px-6">
 		<div class="text-center max-w-2xl mx-auto mb-16" data-aos="fade-up">
 			<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">What's inside</span>
 			<h2 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">{{ $landing['features_heading'] }}</h2>
@@ -224,7 +235,7 @@
 
 		<div class="grid md:grid-cols-6 gap-5">
 			<!-- big card -->
-			<div data-aos="fade-up" class="md:col-span-4 md:row-span-2 rounded-3xl p-8 bg-gradient-to-br from-darken to-[#2a2560] text-white relative overflow-hidden group">
+			<div data-aos="fade-up" class="mobile-card md:col-span-4 md:row-span-2 rounded-3xl p-8 bg-gradient-to-br from-darken to-[#2a2560] text-white relative overflow-hidden group">
 				<div class="absolute -right-10 -bottom-10 w-56 h-56 bg-yellow-400/10 rounded-full group-hover:scale-110 transition-transform duration-700"></div>
 				<span class="inline-flex w-11 h-11 rounded-xl bg-yellow-400 items-center justify-center mb-6">
 					<svg class="w-5 h-5 text-darken" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5" /></svg>
@@ -271,8 +282,8 @@
 
 
 <!-- ============ ABOUT ============ -->
-	<section id="about" class="py-24 relative overflow-hidden">
-		<div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-14 items-center">
+	<section id="about" class="mobile-section py-24 relative overflow-hidden">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
 			<div data-aos="fade-right" class="relative">
 				<div class="absolute -inset-4 bg-gradient-to-tr from-teal-300/30 to-yellow-300/30 dark:from-teal-500/10 dark:to-yellow-500/10 rounded-[2rem] blur-xl"></div>
 				<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'about_image') }}" class="relative rounded-[2rem] shadow-xl w-full" alt="">
@@ -315,8 +326,8 @@
 	</section>
 
 	<!-- ============ PRICING ============ -->
-	<section id="pricing" class="py-28 bg-gray-50/60 dark:bg-white/[0.02]">
-		<div class="max-w-7xl mx-auto px-6">
+	<section id="pricing" class="mobile-section py-28 bg-gray-50/60 dark:bg-white/[0.02]">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6">
 			<div class="text-center max-w-2xl mx-auto mb-16" data-aos="fade-up">
 				<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">Pricing</span>
 				<h2 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">{{ $landing['pricing_heading'] }}</h2>
@@ -365,8 +376,8 @@
 
 
 	<!-- ============ CTA ============ -->
-	<section class="py-24 max-w-7xl mx-auto px-6">
-		<div data-aos="zoom-in" class="rounded-[2.5rem] overflow-hidden relative bg-gradient-to-br from-darken via-[#2a2560] to-darken">
+	<section class="mobile-section py-24 max-w-7xl mx-auto px-4 sm:px-6">
+		<div data-aos="zoom-in" class="rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative bg-gradient-to-br from-darken via-[#2a2560] to-darken">
 			<div class="absolute -right-10 -bottom-16 w-72 h-72 bg-yellow-400/10 rounded-full animate-blob"></div>
 			<div class="absolute -left-10 -top-10 w-56 h-56 bg-teal-400/10 rounded-full animate-blob-slow"></div>
 			<div class="relative z-10 px-8 py-16 md:py-20 text-center">
@@ -381,9 +392,9 @@
 	</section>
 
 	<!-- ============ CONTACT ============ -->
-	<section id="contact" class="pb-24 max-w-7xl mx-auto px-6">
-		<div class="grid lg:grid-cols-5 rounded-[2rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/10">
-			<div class="lg:col-span-2 p-10 text-white bg-gradient-to-br from-darken to-[#2a2560] flex flex-col justify-between">
+	<section id="contact" class="pb-16 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6">
+		<div class="grid lg:grid-cols-5 rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/10">
+			<div class="lg:col-span-2 p-6 sm:p-10 text-white bg-gradient-to-br from-darken to-[#2a2560] flex flex-col justify-between">
 				<div>
 					<p class="text-yellow-400 text-xs font-bold tracking-widest uppercase">Contact Edlink</p>
 					<h2 class="mt-3 text-2xl md:text-3xl font-extrabold">{{ $landing['contact_heading'] }}</h2>
@@ -405,7 +416,7 @@
 				</div>
 			</div>
 
-			<div class="lg:col-span-3 bg-white dark:bg-darken p-10">
+			<div class="lg:col-span-3 bg-white dark:bg-darken p-6 sm:p-10">
 				@if(session('contact_status'))
 					<div class="mb-5 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 p-4 text-sm text-green-700 dark:text-green-400">{{ session('contact_status') }}</div>
 				@endif
@@ -445,11 +456,11 @@
 	</footer>
 
 	<!-- ============ FLOATING CHAT ASSISTANT ============ -->
-	<div x-data="edlinkChat()" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+	<div x-data="edlinkChat()" class="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
 
 		<!-- Chat window -->
 		<div x-show="open" x-cloak x-transition
-			 class="w-[22rem] max-w-[88vw] h-[30rem] max-h-[75vh] rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-darken flex flex-col mb-4">
+			 class="w-[calc(100vw-1.5rem)] sm:w-[22rem] h-[min(30rem,72vh)] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-darken flex flex-col mb-3 sm:mb-4">
 
 			<!-- header -->
 			<div class="bg-gradient-to-r from-darken to-[#2a2560] px-5 py-4 flex items-center justify-between flex-shrink-0">
