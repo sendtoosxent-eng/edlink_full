@@ -34,6 +34,10 @@ class StudentsIndex extends Component
     {
         abort_unless(Auth::user()->hasPermission('students.manage'), 403);
         $student = $this->studentQuery()->findOrFail($id);
+        if ($student->status === 'graduated') {
+            session()->flash('status', 'Graduates can only be restored from the Graduates & Alumni register with an audited reason.');
+            return;
+        }
         $student->status = $student->status === 'active' ? 'inactive' : 'active';
         $student->save();
 

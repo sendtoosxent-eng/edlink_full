@@ -117,6 +117,9 @@
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                         <span>{{ collect($preview)->where('outcome','promoted')->count() }} Promoted</span>
                     </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1 text-xs font-bold text-slate-700">
+                        <span>{{ collect($preview)->where('outcome','continued')->count() }} Continuing</span>
+                    </span>
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800">
                         <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
                         <span>{{ collect($preview)->where('outcome','repeated')->count() }} Repeat</span>
@@ -209,7 +212,7 @@
                     <div>
                         <p class="text-xs font-extrabold text-slate-900">Confirmation &amp; Execution</p>
                         <p class="text-xs text-slate-500 mt-0.5 max-w-xl">
-                            Commit outcomes to create target-term enrolments. Learners without approved marks repeat automatically.
+                            Terms 1 and 2 keep learners in the same class. After Term 3, passing learners move to the next class, final-class learners graduate, and learners below the pass mark repeat.
                         </p>
                     </div>
                 </div>

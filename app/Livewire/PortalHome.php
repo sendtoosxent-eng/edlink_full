@@ -61,6 +61,8 @@ class PortalHome extends Component
         }
 
         $student = $students->firstWhere('id', (int) $this->selectedStudentId);
+        $graduation = $student?->activeGraduation()->with('term')->first();
+        if ($graduation) $term = $graduation->term;
         $studentAttendance = $student ? AttendanceRecord::where('school_id', $school->id)
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
             ->where('student_id', $student->id)->latest('attendance_date')->get() : collect();
@@ -126,7 +128,7 @@ class PortalHome extends Component
 
         return view('livewire.student-dashboard', compact(
             'school', 'term', 'students', 'student', 'studentAttendance', 'attendanceSeries', 'absenceSeries',
-            'performance', 'timetable', 'events', 'exams', 'feeRule', 'notifications', 'payments', 'fees', 'isParent'
+            'performance', 'timetable', 'events', 'exams', 'feeRule', 'notifications', 'payments', 'fees', 'isParent', 'graduation'
         ), ['pageTitle' => $isParent ? 'Parent Dashboard' : 'Student Dashboard']);
     }
 }

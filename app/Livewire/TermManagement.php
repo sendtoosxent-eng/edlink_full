@@ -10,7 +10,7 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class TermManagement extends Component
 {
-    public string $name = '';
+    public string $termNumber = '1';
     public string $year = '';
 
     public ?int $closingTermId = null;
@@ -25,15 +25,36 @@ class TermManagement extends Component
         $school = Auth::user()->school;
 
         $this->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'termNumber' => ['required', 'integer', 'between:1,3'],
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
+
+        $number = (int) $this->termNumber;
+        if (Term::where('school_id', $school->id)->where('year', $this->year)->where('term_number', $number)->exists()) {
+            $this->addError('termNumber', 'This school already has Term '.$number.' for '.$this->year.'.');
+            return;
+        }
+
+        $existingNumbers = Term::where('school_id', $school->id)->where('year', $this->year)->pluck('term_number');
+        if ($number > 1 && ! $existingNumbers->contains($number - 1)) {
+            $this->addError('termNumber', 'Create Term '.($number - 1).' before Term '.$number.'.');
+            return;
+        }
+        if ($number === 1) {
+            $previousYear = (int) $this->year - 1;
+            $previousCount = Term::where('school_id', $school->id)->where('year', $previousYear)->whereNotNull('term_number')->distinct()->count('term_number');
+            if ($previousCount > 0 && $previousCount < 3) {
+                $this->addError('year', 'Complete all three terms for '.$previousYear.' before starting '.$this->year.'.');
+                return;
+            }
+        }
 
         $hasOpenTerm = Term::where('school_id', $school->id)->where('is_current', true)->exists();
 
         $term = Term::create([
             'school_id' => $school->id,
-            'name' => $this->name,
+            'name' => 'Term '.$number,
+            'term_number' => $number,
             'year' => $this->year,
             'is_current' => ! $hasOpenTerm,
             'status' => $hasOpenTerm ? 'pending' : 'open',
@@ -47,7 +68,7 @@ class TermManagement extends Component
                 ->update(['applied_term_id' => $term->id, 'applied' => true]);
         }
 
-        $this->reset(['name']);
+        $this->termNumber = (string) min(3, $number + 1);
         $this->year = (string) now()->year;
 
         session()->flash('status', 'Term "'.$term->name.'" added'.($hasOpenTerm ? ' (pending — open it when ready).' : ' and opened.'));
@@ -102,6 +123,11 @@ class TermManagement extends Component
 
         if (! $sourceTerm) {
             session()->flash('error', 'Close a term before preparing enrolments for the next one.');
+            return;
+        }
+
+        if (! $sourceTerm->canProgressTo($targetTerm)) {
+            session()->flash('error', 'Terms must progress in order: Term 1 to Term 2, Term 2 to Term 3, then Term 3 to next year\'s Term 1.');
             return;
         }
 

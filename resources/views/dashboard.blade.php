@@ -94,7 +94,7 @@
         id="app-sidebar"
         class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden"
         :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        x-data="{ open: 'dashboard' }"
+        x-data="{ open: 'students' }"
     >
         <div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed && 'justify-center px-0'">
             <span class=" flex-shrink-0">
@@ -119,7 +119,7 @@
             </a>
 
             @foreach([
-                'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'items' => ['Registration', 'All Students', 'Houses & Clubs', 'Promotions', 'ID Cards']],
+                'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'items' => ['Registration', 'All Students', 'Graduates & Alumni', 'Categories', 'Houses & Clubs', 'Portal Access', 'Promotions', 'ID Cards']],
                 'academics' => ['label' => 'Academics', 'icon' => 'M4 6h16M4 12h16M4 18h7', 'items' => ['Classes & Streams', 'Subjects', 'Grading Scales', 'Timetable', 'Homework', 'Events']],
                 'attendance' => ['label' => 'Attendance', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Mark Attendance', 'Attendance Reports']],
                 'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Terms', 'Fee Structure', 'Payments', 'Expenses', 'Ledger & Reconciliation']],
@@ -145,8 +145,11 @@
                                     'Grading Scales' => 'grading-scales.index',
                                     'Promotions' => 'promotions.index',
                                     'All Students' => 'students.index',
+                                    'Graduates & Alumni' => 'graduates.index',
                                     'Houses & Clubs' => 'students.activities',
                                     'Categories' => 'student-categories.index',
+                                    'Portal Access' => 'students.portal-access',
+                                    'ID Cards' => 'students.id-cards',
                                     'Terms' => 'terms.index',
                                     'Fee Structure' => 'fee-structures.index',
                                     'Payments' => 'fee-payments.index',

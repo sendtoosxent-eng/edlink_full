@@ -41,6 +41,7 @@ use App\Livewire\StudentActivities;
 use App\Livewire\AuditTrail;
 use App\Livewire\StudentRegister;
 use App\Livewire\StudentsIndex;
+use App\Livewire\Graduates;
 use App\Livewire\TermManagement;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DatabaseBackupController;
@@ -67,6 +68,7 @@ use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\GroupDashboardController;
 use App\Http\Controllers\StudentIdCardController;
 use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\GraduationCertificateController;
 use Livewire\Volt\Volt;
 
 
@@ -256,6 +258,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'designation.access'])-
     })->name('homework.submission.download');
     Route::get('students/register', StudentRegister::class)->name('students.register');
     Route::get('students', StudentsIndex::class)->name('students.index');
+    Route::get('students/graduates', Graduates::class)->name('graduates.index');
+    Route::get('students/graduates/{graduationRecord}/certificate', GraduationCertificateController::class)->name('graduates.certificate');
     Route::get('students/id-cards', StudentIdCardController::class)->name('students.id-cards');
     Route::get('students/categories', StudentCategories::class)->name('student-categories.index');
     Route::get('students/activities', StudentActivities::class)->name('students.activities');

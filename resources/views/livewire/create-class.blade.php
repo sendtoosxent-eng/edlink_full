@@ -159,6 +159,7 @@
                                             </div>
                                         @else
                                             <h3 class="font-bold text-slate-800 text-sm truncate group-hover:text-amber-600 transition-colors">{{ $class->name }}</h3>
+                                            <button wire:click="setGraduatingClass({{ $class->id }})" class="mt-1 rounded-full px-2 py-0.5 text-[10px] font-bold {{ $class->is_graduating_class ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500 hover:bg-blue-50' }}">{{ $class->is_graduating_class ? 'Final graduating class' : 'Set as final class' }}</button>
                                             <p class="text-[11px] text-slate-400 font-medium mt-0.5">
                                                 {{ $class->streams->count() }} {{ Str::plural('stream', $class->streams->count()) }} attached
                                             </p>

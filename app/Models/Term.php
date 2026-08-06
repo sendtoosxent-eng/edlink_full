@@ -9,12 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class Term extends Model
 {
-    protected $fillable = ['school_id', 'name', 'year', 'is_current', 'status', 'locked', 'closed_at'];
+    protected $fillable = ['school_id', 'name', 'term_number', 'year', 'is_current', 'status', 'locked', 'closed_at'];
 
     protected $casts = [
         'is_current' => 'boolean',
         'locked' => 'boolean',
         'closed_at' => 'datetime',
+        'term_number' => 'integer',
     ];
 
     public function school(): BelongsTo
@@ -50,6 +51,23 @@ class Term extends Model
     public function isLocked(): bool
     {
         return $this->locked;
+    }
+
+    public function isFinalTerm(): bool
+    {
+        return $this->term_number === 3;
+    }
+
+    public function canProgressTo(Term $target): bool
+    {
+        if ($this->school_id !== $target->school_id || $this->term_number === null || $target->term_number === null) return false;
+
+        return match ($this->term_number) {
+            1 => $target->term_number === 2 && $target->year === $this->year,
+            2 => $target->term_number === 3 && $target->year === $this->year,
+            3 => $target->term_number === 1 && $target->year === $this->year + 1,
+            default => false,
+        };
     }
 
     /**
@@ -114,6 +132,10 @@ class Term extends Model
 
         if ($this->status !== 'closed') {
             throw new \RuntimeException('Close the source term before preparing next-term enrolments.');
+        }
+
+        if (! $this->canProgressTo($targetTerm)) {
+            throw new \RuntimeException('Terms must progress from 1 to 2, 2 to 3, then Term 3 to next year\'s Term 1.');
         }
 
         if (! in_array($targetTerm->status, ['pending', 'open'], true)) {

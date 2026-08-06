@@ -88,7 +88,7 @@
     <!-- Sidebar -->
     <aside id="app-sidebar" class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden border-r border-white/5 shadow-2xl"
         :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        x-data="{ open: '{{ $openGroup ?? '' }}' }">
+        x-data="{ open: 'students' }">
 
         <!-- Logo Container -->
         <div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed && 'justify-center px-0'">
@@ -140,9 +140,10 @@
                 <a href="{{ route('students.index') }}" wire:navigate class="nav-link {{ request()->routeIs('students.index') ? 'active' : '' }} flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed && 'justify-center'"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v7" /></svg><span x-show="!$store.ui.collapsed" x-cloak>My Class Students</span></a>
             @endif
             @foreach([
-                'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'routes' => ['students.register', 'students.index', 'student-categories.index', 'students.activities', 'students.portal-access', 'promotions.index'], 'items' => [
+                'students' => ['label' => 'Students', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7', 'routes' => ['students.register', 'students.index', 'graduates.index', 'student-categories.index', 'students.activities', 'students.portal-access', 'promotions.index'], 'items' => [
                     ['label' => 'Registration', 'route' => 'students.register'],
                     ['label' => 'All Students', 'route' => 'students.index'],
+                    ['label' => 'Graduates & Alumni', 'route' => 'graduates.index'],
                     ['label' => 'Categories', 'route' => 'student-categories.index'],
                     ['label' => 'Houses & Clubs', 'route' => 'students.activities'],
                     ['label' => 'Portal Access', 'route' => 'students.portal-access'],
@@ -214,7 +215,7 @@
                         @foreach($group['items'] as $item)
                             @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
                             @php($requiredPermission = match($item['route']) {
-                                'students.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
+                                'students.index', 'graduates.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
                                 'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger',
                                 'attendance.index' => 'attendance.daily', 'attendance.subject' => 'attendance.subject', 'attendance.reports' => 'attendance.reports',
                                 'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',

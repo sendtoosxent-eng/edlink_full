@@ -8,6 +8,7 @@ use App\Models\SchoolClass;
 use App\Models\StudentEnrolment;
 use App\Models\Term;
 use App\Services\StageTermReportCalculator;
+use App\Services\GraduationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -54,19 +55,29 @@ class PromotionsV2 extends Component
             session()->flash('error', 'Choose a closed source term and a pending or open target term.');
             return;
         }
+        if (! $source->canProgressTo($target)) {
+            session()->flash('error', 'Select the next academic term in sequence: 1 to 2, 2 to 3, or Term 3 to next year\'s Term 1.');
+            return;
+        }
 
         $classes = SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('id')->get()->values();
+        $graduatingClassId = $classes->firstWhere('is_graduating_class', true)?->id ?? $classes->last()?->id;
         $enrolments = StudentEnrolment::with(['student', 'schoolClass'])->where([
             'school_id' => $school->id, 'term_id' => $source->id, 'status' => 'active',
         ])->get();
 
-        $this->preview = $enrolments->map(function (StudentEnrolment $enrolment) use ($source, $classes): array {
+        $this->preview = $enrolments->map(function (StudentEnrolment $enrolment) use ($source, $classes, $graduatingClassId): array {
             $report = StageTermReportCalculator::student($enrolment->student, $source);
             $passed = $report['marks']->isNotEmpty() && $report['average'] >= (float) $this->passMark;
             $index = $classes->search(fn (SchoolClass $class) => $class->id === $enrolment->school_class_id);
             $nextClass = $index === false ? null : $classes->get($index + 1);
-            $outcome = $passed ? ($nextClass ? 'promoted' : 'graduated') : 'repeated';
-            $targetClass = $outcome === 'promoted' ? $nextClass : ($outcome === 'repeated' ? $enrolment->schoolClass : null);
+            if (! $source->isFinalTerm()) {
+                $outcome = 'continued';
+                $targetClass = $enrolment->schoolClass;
+            } else {
+                $outcome = $passed ? ($enrolment->school_class_id === $graduatingClassId ? 'graduated' : ($nextClass ? 'promoted' : 'graduated')) : 'repeated';
+                $targetClass = $outcome === 'promoted' ? $nextClass : ($outcome === 'repeated' ? $enrolment->schoolClass : null);
+            }
 
             return [
                 'enrolment_id' => $enrolment->id,
@@ -102,6 +113,11 @@ class PromotionsV2 extends Component
             $this->clearPreview();
             return;
         }
+        if (! $source->canProgressTo($target)) {
+            session()->flash('error', 'The target is no longer the next valid academic term. Generate a new preview.');
+            $this->clearPreview();
+            return;
+        }
 
         $rows = StudentEnrolment::with('student')->where('school_id', $school->id)->where('term_id', $source->id)
             ->where('status', 'active')->whereIn('id', collect($this->preview)->pluck('enrolment_id'))->get()->keyBy('id');
@@ -115,8 +131,12 @@ class PromotionsV2 extends Component
             foreach ($this->preview as $decision) {
                 $enrolment = $rows->get($decision['enrolment_id']);
                 $outcome = $decision['outcome'];
+                if ($outcome === 'graduated') {
+                    StudentEnrolment::where('student_id', $enrolment->student_id)->where('term_id', $target->id)->delete();
+                    app(GraduationService::class)->graduate($enrolment, $source, (float) $decision['average']);
+                    continue;
+                }
                 $enrolment->update(['promotion_outcome' => $outcome]);
-                if ($outcome === 'graduated') continue;
 
                 $classId = (int) $decision['target_class_id'];
                 $fee = FeeStructure::where([
@@ -132,7 +152,7 @@ class PromotionsV2 extends Component
                         'enrolled_at' => now()->toDateString()],
                 );
                 if ($target->isOpen()) {
-                    $enrolment->student->update(['school_class_id' => $classId, 'stream_id' => $sameClass ? $enrolment->stream_id : null, 'term_id' => $target->id]);
+                    $enrolment->student->update(['school_class_id' => $classId, 'stream_id' => $sameClass ? $enrolment->stream_id : null, 'term_id' => $target->id, 'status' => 'active']);
                 }
             }
             AuditLog::record($school->id, 'term.automatic_promotions_committed', $source, [
@@ -140,6 +160,7 @@ class PromotionsV2 extends Component
                 'learners' => count($this->preview),
                 'promoted' => collect($this->preview)->where('outcome', 'promoted')->count(),
                 'repeated' => collect($this->preview)->where('outcome', 'repeated')->count(),
+                'continued' => collect($this->preview)->where('outcome', 'continued')->count(),
                 'graduated' => collect($this->preview)->where('outcome', 'graduated')->count(),
             ]);
         });

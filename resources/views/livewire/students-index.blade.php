@@ -74,6 +74,7 @@
                             class="w-full sm:w-auto text-sm font-semibold bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition shadow-2xs cursor-pointer">
                         <option value="active">Active Enrolment</option>
                         <option value="inactive">Inactive / Alumni</option>
+                        <option value="graduated">Graduated</option>
                         <option value="all">View All Records</option>
                     </select>
                 </div>
@@ -147,6 +148,8 @@
                                     @php $fee = $student->adjustedFeeAmount(); @endphp
                                     @if($fee !== null)
                                         <span class="text-slate-400 font-sans text-xs">UGX</span> {{ number_format($fee) }}
+                                    @elseif($student->status === 'graduated')
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 border border-blue-200 text-blue-700">Graduated</span>
                                     @else
                                         <span class="text-slate-400 font-normal font-sans">—</span>
                                     @endif
@@ -181,11 +184,11 @@
                                         </button>
                                         
                                         <!-- Toggle Status Button -->
-                                        <button wire:click="toggleStatus({{ $student->id }})" 
+                                        @if($student->status !== 'graduated')<button wire:click="toggleStatus({{ $student->id }})"
                                                 wire:confirm="{{ $student->status === 'active' ? 'Mark this student as inactive?' : 'Mark this student as active again?' }}" 
                                                 class="text-xs font-bold transition-all px-3 py-1.5 rounded-xl border shadow-2xs {{ $student->status === 'active' ? 'text-rose-600 bg-rose-50/50 border-rose-200/80 hover:bg-rose-100' : 'text-emerald-700 bg-emerald-50/50 border-emerald-200/80 hover:bg-emerald-100' }}">
                                             {{ $student->status === 'active' ? 'Deactivate' : 'Reactivate' }}
-                                        </button>
+                                        </button>@endif
                                     </div>
                                     @else
                                         <span class="text-xs font-semibold text-slate-400">View only</span>

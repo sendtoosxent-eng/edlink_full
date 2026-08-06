@@ -13,9 +13,9 @@ class SchoolClass extends Model
 
     protected $table = 'school_classes';
 
-    protected $fillable = ['school_id', 'class_teacher_user_id', 'name', 'education_stage', 'is_system', 'sort_order'];
+    protected $fillable = ['school_id', 'class_teacher_user_id', 'name', 'education_stage', 'is_system', 'sort_order', 'is_graduating_class'];
 
-    protected $casts = ['is_system' => 'boolean'];
+    protected $casts = ['is_system' => 'boolean', 'is_graduating_class' => 'boolean'];
 
     public function school(): BelongsTo
     {

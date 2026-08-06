@@ -33,6 +33,15 @@ class ClassesAndStreams extends Component
         session()->flash('status', $teacher ? $teacher->name.' assigned as class teacher for '.$class->name.'.' : 'Class teacher assignment removed.');
     }
 
+    public function setGraduatingClass(int $classId): void
+    {
+        $schoolId = Auth::user()->school_id;
+        $class = SchoolClass::where('school_id', $schoolId)->findOrFail($classId);
+        SchoolClass::where('school_id', $schoolId)->update(['is_graduating_class' => false]);
+        $class->update(['is_graduating_class' => true]);
+        session()->flash('status', $class->name.' is now the final graduating class.');
+    }
+
     public function addClass(): void
     {
         $school = Auth::user()->school;
