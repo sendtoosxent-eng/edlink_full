@@ -5,13 +5,8 @@
         <header class="relative overflow-hidden rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl">
             <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-start gap-4">
-                    <button onclick="window.history.back()" type="button" class="mt-1 inline-flex items-center justify-center h-10 w-10 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 hover:bg-amber-400 hover:text-slate-950 transition duration-200 shadow-sm flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
-                    </button>
+                   
                     <div>
-                        <a href="javascript:history.back()" class="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 hover:text-amber-300 transition mb-1">
-                            <span>&larr; Back to Finance</span>
-                        </a>
                         <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Ledger Reconciliation</h1>
                         <p class="mt-1 text-xs sm:text-sm text-slate-400 max-w-xl">
                             Compare bank and cash statement balances with posted general ledger records.
