@@ -1,4 +1,4 @@
-<div>
+<div x-data="{ photoPreviewUrl: null, setPhotoPreview(event) { const file = event.target.files?.[0]; this.photoPreviewUrl = file ? URL.createObjectURL(file) : null; } }">
     @if($isOpen)
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-data x-on:keydown.escape.window="$wire.close()">
         <!-- Backdrop with modern blur effect -->
@@ -41,13 +41,16 @@
                             <div class="relative group">
                                 <div class="w-20 h-20 rounded-full bg-white p-1 ring-2 ring-yellow-400/70 overflow-hidden flex-shrink-0 shadow-sm">
                                     <div class="w-full h-full rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                                        @if($photo)
-                                            <img src="{{ $photo->temporaryUrl() }}" class="w-full h-full object-cover" alt="Preview">
-                                        @elseif(auth()->user()->avatarUrl())
-                                            <img src="{{ auth()->user()->avatarUrl() }}" class="w-full h-full object-cover" alt="Current photo">
-                                        @else
-                                            <span class="text-2xl font-bold text-gray-400">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
-                                        @endif
+                                        <template x-if="photoPreviewUrl">
+                                            <img :src="photoPreviewUrl" class="w-full h-full object-cover" alt="Preview">
+                                        </template>
+                                        <template x-if="!photoPreviewUrl">
+                                            @if(auth()->user()->avatarUrl())
+                                                <img src="{{ auth()->user()->avatarUrl() }}" class="w-full h-full object-cover" alt="Current photo">
+                                            @else
+                                                <span class="text-2xl font-bold text-gray-400">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                                            @endif
+                                        </template>
                                     </div>
                                 </div>
                                 <div class="absolute bottom-0 right-0 bg-gray-900 text-white p-1.5 rounded-full shadow-md border border-white">
@@ -59,7 +62,7 @@
                                 <label class="inline-block cursor-pointer text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 hover:border-gray-300 shadow-sm transition">
                                     <span wire:loading.remove wire:target="photo">Change Photo</span>
                                     <span wire:loading wire:target="photo" class="inline-flex items-center space-x-1.5"><x-edlink-loader size="12" /><span>Uploading…</span></span>
-                                    <input type="file" wire:model="photo" accept="image/*" class="hidden">
+                                    <input type="file" wire:model="photo" accept="image/*" class="hidden" x-on:change="setPhotoPreview($event)">
                                 </label>
                                 <p class="text-[11px] text-gray-400 mt-1.5">JPG or PNG up to 2MB</p>
                                 @error('photo') <span class="text-rose-600 text-xs block mt-1 font-medium">{{ $message }}</span> @enderror

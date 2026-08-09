@@ -34,6 +34,7 @@ class DispatchSchoolAnnouncement implements ShouldQueue
                     if ($announcement->send_email && filled($user->email)) {
                         $user->notify(new QueuedAnnouncement(
                             $school->name,
+                            $school->email,
                             $announcement->title,
                             $announcement->message,
                         ));

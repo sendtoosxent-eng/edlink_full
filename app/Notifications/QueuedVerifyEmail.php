@@ -6,6 +6,7 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use App\Support\MailIdentity;
 
 class QueuedVerifyEmail extends VerifyEmail implements ShouldQueue
 {
@@ -23,6 +24,6 @@ class QueuedVerifyEmail extends VerifyEmail implements ShouldQueue
             $message->line('Your Edlink school number is: '.$schoolNumber);
         }
 
-        return $message;
+        return MailIdentity::applySupport($message);
     }
 }

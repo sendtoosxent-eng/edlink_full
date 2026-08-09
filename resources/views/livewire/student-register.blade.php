@@ -1,4 +1,4 @@
-<div class="w-full max-w-none mx-auto">
+<div class="w-full max-w-none mx-auto" x-data="{ photoPreviewUrl: null, setPhotoPreview(event) { const file = event.target.files?.[0]; this.photoPreviewUrl = file ? URL.createObjectURL(file) : null; } }">
 
     {{-- Form Header --}}
      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
@@ -52,18 +52,19 @@
                     <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <div class="p-0.5 rounded-full ring-4 ring-yellow-400/20 border border-yellow-400 flex-shrink-0">
                             <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden border border-gray-100 shadow-inner">
-                                @if($photo)
-                                    <img src="{{ $photo->temporaryUrl() }}" class="w-full h-full object-cover" alt="Preview">
-                                @else
+                                <template x-if="photoPreviewUrl">
+                                    <img :src="photoPreviewUrl" class="w-full h-full object-cover" alt="Preview">
+                                </template>
+                                <template x-if="!photoPreviewUrl">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                @endif
+                                </template>
                             </div>
                         </div>
                         <div>
                             <label class="inline-block cursor-pointer text-xs font-semibold text-darken bg-white border border-gray-200 shadow-sm rounded-lg px-4 py-2 hover:bg-gray-50 hover:border-gray-300 transition-all">
                                 <span wire:loading.remove wire:target="photo">Upload image</span>
                                 <span wire:loading wire:target="photo" class="inline-flex items-center space-x-2"><x-edlink-loader size="12" /><span>Uploading…</span></span>
-                                <input type="file" wire:model="photo" accept="image/*" class="hidden">
+                                <input type="file" wire:model="photo" accept="image/*" class="hidden" x-on:change="setPhotoPreview($event)">
                             </label>
                             @error('photo') <span class="text-red-500 text-xs block mt-1 font-medium">{{ $message }}</span> @enderror
                         </div>
@@ -305,11 +306,12 @@
                 {{-- Image display area --}}
                 <div class="p-0.5 rounded-full ring-4 ring-yellow-400/30 border border-yellow-400 shadow-sm mb-3">
                     <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center overflow-hidden border border-gray-100 shadow-inner">
-                        @if($photo)
-                            <img src="{{ $photo->temporaryUrl() }}" class="w-full h-full object-cover" alt="Live Preview Profile">
-                        @else
+                        <template x-if="photoPreviewUrl">
+                            <img :src="photoPreviewUrl" class="w-full h-full object-cover" alt="Live Preview Profile">
+                        </template>
+                        <template x-if="!photoPreviewUrl">
                             <svg class="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        @endif
+                        </template>
                     </div>
                 </div>
 

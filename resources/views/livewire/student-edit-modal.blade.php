@@ -1,4 +1,4 @@
-<div>
+<div x-data="{ photoPreviewUrl: null, setPhotoPreview(event) { const file = event.target.files?.[0]; this.photoPreviewUrl = file ? URL.createObjectURL(file) : null; } }">
     @if($isOpen)
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-data x-on:keydown.escape.window="$wire.close()">
         <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" wire:click="close"></div>
@@ -25,17 +25,18 @@
                         <div class="flex items-center space-x-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100/80">
                             <div class="w-16 h-16 rounded-full bg-white p-1 ring-2 ring-yellow-400/70 overflow-hidden flex-shrink-0 shadow-sm">
                                 <div class="w-full h-full rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                                    @if($photo)
-                                        <img src="{{ $photo->temporaryUrl() }}" class="w-full h-full object-cover" alt="Preview">
-                                    @else
+                                    <template x-if="photoPreviewUrl">
+                                        <img :src="photoPreviewUrl" class="w-full h-full object-cover" alt="Preview">
+                                    </template>
+                                    <template x-if="!photoPreviewUrl">
                                         <svg class="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                    @endif
+                                    </template>
                                 </div>
                             </div>
                             <label class="inline-block cursor-pointer text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 shadow-sm transition">
                                 <span wire:loading.remove wire:target="photo">Change photo</span>
                                 <span wire:loading wire:target="photo" class="inline-flex items-center space-x-1.5"><x-edlink-loader size="12" /><span>Uploading…</span></span>
-                                <input type="file" wire:model="photo" accept="image/*" class="hidden">
+                                <input type="file" wire:model="photo" accept="image/*" class="hidden" x-on:change="setPhotoPreview($event)">
                             </label>
                             @error('photo') <span class="text-rose-600 text-xs block">{{ $message }}</span> @enderror
                         </div>

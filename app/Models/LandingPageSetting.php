@@ -27,7 +27,7 @@ class LandingPageSetting extends Model
         'pricing_heading' => 'Simple plans, priced per school',
         'contact_heading' => 'Need help, or want a school demo?',
         'contact_description' => 'Talk to our team, report an issue, or reach us directly.',
-        'phone' => '+256 763 316 839', 'whatsapp' => '256763316839', 'support_email' => 'support@edlink.test',
+        'phone' => '+256 763 316 839', 'whatsapp' => '256763316839', 'support_email' => 'support@edlink.space',
         'footer_text' => 'Edlink. Built by Spotnet Technologies.',
         'nav_logo' => 'img/logoneg.png', 'hero_image' => 'img/girl.png', 'feature_image' => 'img/gradebook.png', 'about_image' => 'img/testimonials.png', 'footer_logo' => 'img/logo.png',
     ];

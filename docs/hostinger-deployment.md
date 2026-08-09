@@ -23,7 +23,10 @@ Never upload a real `.env` file to Git or include it in a public download.
 2. Upload or clone the project, including the locally generated `public/build`
    directory.
 3. Copy `.env.hostinger.example` to `.env` on the server. Fill in the real
-   domain, database, and SMTP settings.
+   domain, database, and SMTP settings. `MAIL_USERNAME` must be the complete
+   Hostinger mailbox address, `MAIL_PASSWORD` must be that mailbox's password
+   (not the hPanel account password), and `MAIL_FROM_ADDRESS` should match the
+   authenticated mailbox.
 4. From the project root, run:
 
 ```sh
@@ -53,6 +56,34 @@ these cron entries in hPanel:
 On a VPS, use a process supervisor for `queue:work` instead of the second cron
 entry. The scheduler runs expiry, backups, monitoring, renewal reminders, and
 model pruning.
+
+## Testing email
+
+After changing any mail setting, rebuild Laravel's cached configuration:
+
+```sh
+php artisan optimize:clear
+php artisan config:cache
+```
+
+Send a direct SMTP test from the project root, replacing the recipient:
+
+```sh
+php artisan tinker --execute="Mail::raw('Edlink SMTP test', fn (\$message) => \$message->to('you@example.com')->subject('Edlink SMTP test'));"
+```
+
+Verification, password-reset, announcement, and renewal emails are queued. Run
+the queue once manually while diagnosing them:
+
+```sh
+php artisan queue:work --stop-when-empty --tries=3 -v
+php artisan queue:failed
+```
+
+If SMTP port 465 is unavailable, use Hostinger's alternative STARTTLS settings:
+`MAIL_SCHEME=smtp` and `MAIL_PORT=587`. Never use `MAIL_SCHEME=tls`; the scheme
+is a mail transport (`smtp` or `smtps`), while TLS is selected by that transport.
+Check `storage/logs/laravel.log` for the exact SMTP or queue exception.
 
 ## Updating
 
