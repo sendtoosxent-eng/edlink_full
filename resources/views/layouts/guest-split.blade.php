@@ -45,16 +45,15 @@
         </div>
 
         <!-- Form panel -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center px-6 py-10">
+        <div class="w-full lg:w-1/2 flex items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
             <div class="w-full max-w-md">
-                <div class="text-center mb-8 lg:hidden">
-                    <a href="{{ url('/') }}" class="inline-flex items-center space-x-2">
-                        <span class="w-9 h-9 rounded-lg bg-darken text-yellow-400 font-bold flex items-center justify-center">E</span>
-                        <span class="text-darken font-semibold text-xl">Edlink</span>
+                <div class="text-center mb-6 sm:mb-8 lg:hidden">
+                    <a href="{{ url('/') }}" class="inline-flex items-center justify-center">
+                        <img src="{{ asset('img/logo.png') }}" alt="Edlink" class="h-auto w-44 sm:w-52">
                     </a>
                 </div>
 
-                <div class="bg-white lg:shadow-none shadow-xl rounded-2xl p-8 lg:p-0">
+                <div class="bg-white lg:shadow-none shadow-xl rounded-2xl p-5 sm:p-8 lg:p-0">
                     {{ $slot }}
                 </div>
 
