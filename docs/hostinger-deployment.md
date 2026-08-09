@@ -54,8 +54,25 @@ these cron entries in hPanel:
 ```
 
 On a VPS, use a process supervisor for `queue:work` instead of the second cron
-entry. The scheduler runs expiry, backups, monitoring, renewal reminders, and
-model pruning.
+entry. The scheduler runs expiry, MySQL backups, monitoring, renewal reminders,
+and model pruning. Backups are compressed into
+`storage/app/private/backups`, verified by checksum and dump-header validation,
+and pruned after `BACKUP_RETENTION_DAYS` (30 by default). They remain on the
+same Hostinger account, so use Hostinger's own backup service or an off-site
+object-storage copy for disaster recovery.
+
+Test the production backup manually after confirming that `mysqldump` is
+available on the account:
+
+```sh
+command -v mysqldump
+php artisan edlink:backup --restore-test --keep-days=30
+ls -lh storage/app/private/backups
+```
+
+The MySQL `--restore-test` verifies the compressed dump and checksum; a full
+restore should still be rehearsed against a separate database, never the live
+database.
 
 ## Testing email
 
