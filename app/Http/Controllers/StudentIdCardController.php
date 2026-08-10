@@ -12,7 +12,8 @@ class StudentIdCardController extends Controller
         $students = Student::with(['schoolClass', 'stream'])
             ->where('school_id', auth()->user()->school_id)
             ->where('status', 'active')
-            ->orderBy('first_name')
+            // Students are stored with a single `name` column in the current schema.
+            ->orderBy('name')
             ->get();
 
         return Pdf::loadView('students.id-cards', [
