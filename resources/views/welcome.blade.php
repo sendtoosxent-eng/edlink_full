@@ -162,8 +162,8 @@
 
 		<div class="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 			<div data-aos="fade-right" data-aos-duration="800" class="text-center lg:text-left">
-				<span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-semibold text-darken dark:text-yellow-400 shadow-sm mb-6">
-					<span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+				<span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-amber/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-semibold text-darken dark:text-yellow-400 shadow-sm mb-6">
+					
 					<span>{{ $landing['announcement'] }}</span>
 				</span>
 
