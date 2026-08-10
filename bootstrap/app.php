@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('web', \App\Http\Middleware\CaptureStaffActivity::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureSchoolLicenceIsActive::class);
-        $middleware->alias(['branch.context' => \App\Http\Middleware\ResolveActiveSchool::class, 'designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class, 'platform.mfa' => \App\Http\Middleware\EnsurePlatformMfa::class]);
+        $middleware->alias(['branch.context' => \App\Http\Middleware\ResolveActiveSchool::class, 'designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class, 'active.user' => \App\Http\Middleware\EnsureActiveUser::class, 'platform.mfa' => \App\Http\Middleware\EnsurePlatformMfa::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

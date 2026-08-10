@@ -140,12 +140,24 @@
                         <option value="">Select an access designation</option>
                         @foreach($designations as $designation)<option value="{{ $designation->id }}">{{ $designation->name }}</option>@endforeach
                     </select>
+                    @if($designations->isEmpty() && $role !== 'admin')
+                        <p class="mt-1 text-[10px] font-semibold text-amber-700">No designation exists yet. Create one in <a class="underline" href="{{ route('designations.index') }}" wire:navigate>Staff designations</a>, then return here.</p>
+                    @endif
+                    @error('designation_id') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Joining date</label>
                     <input wire:model="joined_at" type="date" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900">
                 </div>
+                @if($role === 'admin')
+                    <label class="sm:col-span-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900">
+                        <input wire:model="admin_confirmation" type="checkbox" class="mt-0.5 rounded border-amber-300">
+                        <span>I confirm this person should have unrestricted administrator access.</span>
+                    </label>
+                @endif
+                @error('designation_id') <p class="sm:col-span-2 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                @error('admin_confirmation') <p class="sm:col-span-2 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
             </div>
 
             <!-- STEP 3: PAYROLL MATRIX & AUDIT REVIEW -->
@@ -160,7 +172,7 @@
                 </div>
             </div>
 
-            <div class="p-4">
+            <div class="p-4 space-y-5">
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Monthly salary</label>
                     <div class="relative w-full">
@@ -168,6 +180,20 @@
                         <input wire:model="base_salary" type="number" min="0" class="w-full text-xs font-mono pl-12 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-bold text-slate-900" placeholder="0">
                     </div>
                 </div>
+                <div class="grid gap-3.5 grid-cols-1 sm:grid-cols-2">
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Contract type</label><select wire:model="contract_type" class="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg"><option value="permanent">Permanent</option><option value="contract">Contract</option><option value="part_time">Part-time</option><option value="volunteer">Volunteer</option></select></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Probation ends</label><input wire:model="probation_ends_at" type="date" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Emergency contact name</label><input wire:model="emergency_contact_name" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Emergency contact phone</label><input wire:model="emergency_contact_phone" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">National ID</label><input wire:model="national_id" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Bank name</label><input wire:model="bank_name" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Account name</label><input wire:model="bank_account_name" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Account number</label><input wire:model="bank_account_number" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Document type</label><input wire:model="document_type" placeholder="ID, contract, certificate" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">Staff document</label><input wire:model="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-[10px]"></div>
+                </div>
+                @error('probation_ends_at') <p class="text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                @error('document_file') <p class="text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
             </div>
             @endif
 

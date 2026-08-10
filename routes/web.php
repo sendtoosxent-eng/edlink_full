@@ -220,9 +220,9 @@ Route::get('dashboard', function () {
         'dashboardEvents' => $events, 'dashboardTimetable' => $timetable, 'dashboardTimetableClass' => $dashboardClass?->name, 'dashboardTimetableClassId' => $dashboardClass?->id, 'dashboardTimetableClasses' => $dashboardClasses, 'dashboardReminders' => $dashboardReminders, 'dashboardNotifications' => $notifications,
         'currencySymbol' => $currencySymbol, 'dashboardDebtors' => $debtors,
     ]);
-})->middleware(['auth', 'verified', 'branch.context'])->name('dashboard');
+})->middleware(['auth', 'verified', 'branch.context', 'active.user'])->name('dashboard');
 
-Route::middleware(['auth', 'verified', 'branch.context', 'designation.access'])->group(function () {
+Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designation.access'])->group(function () {
     Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
     Volt::route('profile', 'pages.profile')->name('profile');

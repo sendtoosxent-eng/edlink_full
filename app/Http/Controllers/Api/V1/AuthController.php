@@ -20,6 +20,7 @@ class AuthController extends ApiController
         if (! $school || ! $user || ! Hash::check($request->string('password'), $user->password)) {
             throw ValidationException::withMessages(['email' => ['The school number, email, or password is incorrect.']]);
         }
+        abort_if($user->employment_status === 'inactive', 403, 'This staff account is inactive.');
         abort_unless(in_array($user->role, ['teacher', 'student', 'parent'], true), 403, 'This account is not enabled for the mobile application.');
         abort_unless($school->isLicenceUsable() && ! $school->isExpiredDemo(), 403, 'This school is not currently active.');
 

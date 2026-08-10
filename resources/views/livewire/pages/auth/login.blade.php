@@ -57,6 +57,13 @@ new #[Layout('layouts.guest-split')] class extends Component
         /** @var User $user */
         $user = Auth::user();
 
+        if ($user->employment_status === 'inactive') {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'This account is inactive. Please contact your school administrator.',
+            ]);
+        }
+
         if ($user->school_id !== $school->id) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());

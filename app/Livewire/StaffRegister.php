@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Models\Designation;
+use App\Models\AuditLog;
 use App\Services\StaffNumberGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,17 @@ class StaffRegister extends Component
     public string $base_salary = '';
     public string $employment_status = 'active';
     public string $designation_id = '';
+    public bool $admin_confirmation = false;
+    public string $emergency_contact_name = '';
+    public string $emergency_contact_phone = '';
+    public string $national_id = '';
+    public string $contract_type = 'permanent';
+    public string $probation_ends_at = '';
+    public string $bank_name = '';
+    public string $bank_account_name = '';
+    public string $bank_account_number = '';
+    public string $document_type = '';
+    public $document_file = null;
 
     public function mount(): void
     {
@@ -54,6 +66,7 @@ class StaffRegister extends Component
                 'phone' => 'nullable|string|max:30',
                 'photo' => 'nullable|image|max:2048',
                 'password' => 'required|string|min:8|confirmed',
+                'admin_confirmation' => 'accepted_if:role,admin',
             ]);
         }
 
@@ -63,6 +76,7 @@ class StaffRegister extends Component
                 'role' => 'required|in:teacher,bursar,admin',
                 'designation_id' => 'required_unless:role,admin|nullable|integer',
                 'joined_at' => 'required|date',
+                'admin_confirmation' => 'accepted_if:role,admin',
             ]);
         }
 
@@ -83,6 +97,7 @@ class StaffRegister extends Component
             'email' => ['required', 'email', $this->schoolEmailRule()],
             'phone' => 'nullable|string|max:30',
             'photo' => 'nullable|image|max:2048',
+            'document_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'password' => 'required|string|min:8|confirmed',
             'job_title' => 'required|string|max:100',
             'role' => 'required|in:teacher,bursar,admin',
@@ -90,6 +105,16 @@ class StaffRegister extends Component
             'joined_at' => 'required|date',
             'base_salary' => 'required|numeric|min:0',
             'employment_status' => 'required|in:active,inactive',
+            'admin_confirmation' => 'accepted_if:role,admin',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:30',
+            'national_id' => 'nullable|string|max:100',
+            'contract_type' => 'required|in:permanent,contract,part_time,volunteer',
+            'probation_ends_at' => 'nullable|date|after_or_equal:joined_at',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account_name' => 'nullable|string|max:255',
+            'bank_account_number' => 'nullable|string|max:100',
+            'document_type' => 'nullable|string|max:100',
         ]);
 
         try {
@@ -106,15 +131,32 @@ class StaffRegister extends Component
                     'email' => $this->email,
                     'phone' => $this->phone ?: null,
                     'avatar_path' => $this->photo ? $this->photo->store('avatars', 'public') : null,
+                    // Keep identity documents on the non-public local disk.
+                    'staff_document_path' => $this->document_file ? $this->document_file->store('staff-documents', 'local') : null,
+                    'staff_document_type' => $this->document_type ?: null,
                     'password' => Hash::make($this->password),
                     'job_title' => $this->job_title,
                     'role' => $this->role,
                     'joined_at' => $this->joined_at,
                     'base_salary' => $this->base_salary,
                     'employment_status' => $this->employment_status,
+                    'emergency_contact_name' => $this->emergency_contact_name ?: null,
+                    'emergency_contact_phone' => $this->emergency_contact_phone ?: null,
+                    'national_id' => $this->national_id ?: null,
+                    'contract_type' => $this->contract_type,
+                    'probation_ends_at' => $this->probation_ends_at ?: null,
+                    'bank_name' => $this->bank_name ?: null,
+                    'bank_account_name' => $this->bank_account_name ?: null,
+                    'bank_account_number' => $this->bank_account_number ?: null,
                 ]);
 
                 $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
+                $staff->sendEmailVerificationNotification();
+                AuditLog::record($school->id, 'staff.registered', $staff, [
+                    'staff_number' => $staff->staff_number,
+                    'role' => $staff->role,
+                    'employment_status' => $staff->employment_status,
+                ]);
             });
 
             session()->flash('status', $this->name.' was registered successfully.');

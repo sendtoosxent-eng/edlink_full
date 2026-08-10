@@ -38,6 +38,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'role',
         'avatar_path',
         'staff_number', 'phone', 'job_title', 'base_salary', 'employment_status', 'joined_at',
+        'emergency_contact_name', 'emergency_contact_phone', 'national_id', 'contract_type',
+        'probation_ends_at', 'bank_name', 'bank_account_name', 'bank_account_number',
+        'staff_document_path', 'staff_document_type',
     ];
 
     protected $hidden = [
@@ -54,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'base_salary' => 'decimal:2',
             'joined_at' => 'date',
+            'probation_ends_at' => 'date',
         ];
     }
 
