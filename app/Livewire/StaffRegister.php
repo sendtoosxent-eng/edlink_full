@@ -57,6 +57,28 @@ class StaffRegister extends Component
         return Rule::unique('users', 'email')->where('school_id', Auth::user()->school_id);
     }
 
+    private function validationMessages(): array
+    {
+        return [
+            'name.required' => 'Enter the staff member’s full name.',
+            'email.required' => 'Enter an email address.',
+            'email.email' => 'Enter a valid email address.',
+            'email.unique' => 'That email is already registered in this school.',
+            'password.required' => 'Enter a temporary password.',
+            'password.confirmed' => 'The password confirmation does not match.',
+            'password.min' => 'The password must be at least 8 characters.',
+            'job_title.required' => 'Enter the staff member’s job title.',
+            'role.required' => 'Select an account type.',
+            'designation_id.required_unless' => 'Select a designation before continuing.',
+            'designation_id.integer' => 'Select a valid designation.',
+            'joined_at.required' => 'Select the joining date.',
+            'base_salary.required' => 'Enter the monthly salary, or enter 0.',
+            'base_salary.numeric' => 'Salary must be a valid number.',
+            'admin_confirmation.accepted_if' => 'Confirm administrator access before continuing.',
+            'document_file.mimes' => 'The document must be a PDF, JPG, JPEG, or PNG file.',
+        ];
+    }
+
     public function next(): void
     {
         if ($this->step === 1) {
@@ -67,7 +89,7 @@ class StaffRegister extends Component
                 'photo' => 'nullable|image|max:2048',
                 'password' => 'required|string|min:8|confirmed',
                 'admin_confirmation' => 'accepted_if:role,admin',
-            ]);
+            ], $this->validationMessages());
         }
 
         if ($this->step === 2) {
@@ -77,7 +99,7 @@ class StaffRegister extends Component
                 'designation_id' => 'required_unless:role,admin|nullable|integer',
                 'joined_at' => 'required|date',
                 'admin_confirmation' => 'accepted_if:role,admin',
-            ]);
+            ], $this->validationMessages());
         }
 
         if ($this->step < 3) {
@@ -115,7 +137,7 @@ class StaffRegister extends Component
             'bank_account_name' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:100',
             'document_type' => 'nullable|string|max:100',
-        ]);
+        ], $this->validationMessages());
 
         try {
             $school = Auth::user()->school;

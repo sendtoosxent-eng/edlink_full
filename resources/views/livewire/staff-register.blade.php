@@ -84,10 +84,12 @@
                     <div class="sm:col-span-2">
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Full name</label>
                         <input wire:model="name" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="e.g. Mukasa Ronald">
+                        @error('name') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Email address</label>
+                        @error('email') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                         <input wire:model="email" type="email" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="name@school.com">
                     </div>
                     
@@ -98,11 +100,13 @@
                     
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Temporary password</label>
+                        @error('password') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                         <input wire:model="password" type="password" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900">
                     </div>
                     
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Confirm password</label>
+                        @error('password_confirmation') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                         <input wire:model="password_confirmation" type="password" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900">
                     </div>
                 </div>
@@ -123,7 +127,8 @@
             <div class="p-4 grid gap-3.5 grid-cols-1 sm:grid-cols-2">
                 <div class="sm:col-span-2">
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Job title</label>
-                    <input wire:model="job_title" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="e.g. Senior Physics Teacher">
+                        <input wire:model="job_title" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="e.g. Senior Physics Teacher">
+                        @error('job_title') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 
                 <div>
@@ -148,6 +153,7 @@
                 
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Joining date</label>
+                    @error('joined_at') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                     <input wire:model="joined_at" type="date" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900">
                 </div>
                 @if($role === 'admin')
@@ -177,6 +183,7 @@
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Monthly salary</label>
                     <div class="relative w-full">
                         <span class="absolute left-3 top-2 text-xs font-bold text-slate-400 font-mono">UGX</span>
+                        @error('base_salary') <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
                         <input wire:model="base_salary" type="number" min="0" class="w-full text-xs font-mono pl-12 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-bold text-slate-900" placeholder="0">
                     </div>
                 </div>
