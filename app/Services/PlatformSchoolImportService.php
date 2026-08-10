@@ -141,16 +141,19 @@ class PlatformSchoolImportService
         if ($errors) throw ValidationException::withMessages($errors);
 
         return DB::transaction(function () use ($prepared, $school): int {
-            $sequence = $school->users()->count() + 1;
             foreach ($prepared as $item) {
                 $row = $item['row'];
-                User::create([
+                $staff = User::create([
                     'school_id'=>$school->id,'designation_id'=>$item['designation']->id,
-                    'staff_number'=>$this->nextStaffNumber($school, $sequence++),'name'=>$row['name'],
+                    'name'=>$row['name'],
                     'email'=>$row['email'],'phone'=>$row['phone'] ?: null,'password'=>$row['temporary_password'],
                     'job_title'=>$row['job_title'],'role'=>'teacher','joined_at'=>$row['joined_at'],
                     'base_salary'=>$row['base_salary'] ?: 0,'employment_status'=>$row['employment_status'],
-                ])->forceFill(['email_verified_at'=>now()])->save();
+                ]);
+                $staff->forceFill([
+                    'staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff),
+                    'email_verified_at' => now(),
+                ])->save();
             }
             return count($prepared);
         });
@@ -182,10 +185,4 @@ class PlatformSchoolImportService
         return app(AdmissionNumberGenerator::class)->generate($school);
     }
 
-    private function nextStaffNumber(School $school, int $sequence): string
-    {
-        do { $number = 'STF-'.$school->id.'-'.str_pad((string) $sequence++, 4, '0', STR_PAD_LEFT); }
-        while (User::where('staff_number', $number)->exists());
-        return $number;
-    }
 }

@@ -25,7 +25,6 @@ class StudentRegister extends Component
 
     // Step 1 — Bio data
     public string $name = '';
-    public string $admission_no = '';
     public string $date_of_birth = '';
     public string $gender = '';
     public string $admission_date = '';
@@ -60,7 +59,6 @@ class StudentRegister extends Component
     {
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'admission_no' => ['nullable', 'string', 'max:255'],
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'in:male,female'],
             'admission_date' => ['required', 'date'],
@@ -164,7 +162,7 @@ class StudentRegister extends Component
                 'term_id' => $term?->id,
                 'status' => 'active',
                 'name' => $this->name,
-                'admission_no' => $this->admission_no ?: app(\App\Services\AdmissionNumberGenerator::class)->generate($school),
+                'admission_no' => null,
                 'date_of_birth' => $this->date_of_birth ?: null,
                 'gender' => $this->gender ?: null,
                 'admission_date' => $this->admission_date,
@@ -174,6 +172,10 @@ class StudentRegister extends Component
                 'blood_group' => $this->blood_group ?: null,
                 'home_address' => $this->home_address ?: null,
                 'medical_notes' => $this->medical_notes ?: null,
+            ]);
+
+            $student->update([
+                'admission_no' => app(\App\Services\AdmissionNumberGenerator::class)->generateForStudent($school, $student),
             ]);
 
             StudentGuardian::create([

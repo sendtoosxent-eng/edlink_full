@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Models\Designation;
+use App\Services\StaffNumberGenerator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -58,9 +60,11 @@ class StaffManagement extends Component
         ]);
 
         try {
-            $number = 'STF-'.str_pad((string) ($school->users()->count() + 1), 4, '0', STR_PAD_LEFT);
             if ($this->designationId && ! Designation::where('school_id', $school->id)->whereKey($this->designationId)->exists()) { $this->addError('designationId', 'Choose a designation created for this school.'); return; }
-            User::create(['school_id' => $school->id, 'designation_id' => $this->designationId ?: null, 'staff_number' => $number, 'name' => $this->name, 'email' => $this->email, 'phone' => $this->phone ?: null, 'job_title' => $this->job_title, 'role' => $this->role, 'base_salary' => $this->base_salary, 'employment_status' => 'active', 'joined_at' => $this->joined_at, 'password' => Hash::make($this->password)]);
+            DB::transaction(function () use ($school): void {
+                $staff = User::create(['school_id' => $school->id, 'designation_id' => $this->designationId ?: null, 'name' => $this->name, 'email' => $this->email, 'phone' => $this->phone ?: null, 'job_title' => $this->job_title, 'role' => $this->role, 'base_salary' => $this->base_salary, 'employment_status' => 'active', 'joined_at' => $this->joined_at, 'password' => Hash::make($this->password)]);
+                $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
+            });
             $this->reset(['name', 'email', 'phone', 'base_salary', 'password', 'designationId']);
             $this->job_title = 'Teacher';
             $this->role = 'teacher';

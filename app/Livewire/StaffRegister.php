@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Models\Designation;
+use App\Services\StaffNumberGenerator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -96,23 +98,24 @@ class StaffRegister extends Component
                 $this->addError('designation_id', 'Choose a designation created for this school.');
                 return;
             }
-            $number = 'STF-'.str_pad((string) ($school->users()->count() + 1), 4, '0', STR_PAD_LEFT);
+            DB::transaction(function () use ($school): void {
+                $staff = User::create([
+                    'school_id' => $school->id,
+                    'designation_id' => $this->designation_id ?: null,
+                    'name' => $this->name,
+                    'email' => $this->email,
+                    'phone' => $this->phone ?: null,
+                    'avatar_path' => $this->photo ? $this->photo->store('avatars', 'public') : null,
+                    'password' => Hash::make($this->password),
+                    'job_title' => $this->job_title,
+                    'role' => $this->role,
+                    'joined_at' => $this->joined_at,
+                    'base_salary' => $this->base_salary,
+                    'employment_status' => $this->employment_status,
+                ]);
 
-            User::create([
-                'school_id' => $school->id,
-                'designation_id' => $this->designation_id ?: null,
-                'staff_number' => $number,
-                'name' => $this->name,
-                'email' => $this->email,
-                'phone' => $this->phone ?: null,
-                'avatar_path' => $this->photo ? $this->photo->store('avatars', 'public') : null,
-                'password' => Hash::make($this->password),
-                'job_title' => $this->job_title,
-                'role' => $this->role,
-                'joined_at' => $this->joined_at,
-                'base_salary' => $this->base_salary,
-                'employment_status' => $this->employment_status,
-            ]);
+                $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
+            });
 
             session()->flash('status', $this->name.' was registered successfully.');
             $this->redirect(route('staff.index'), navigate: true);

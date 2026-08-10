@@ -7,6 +7,11 @@ use App\Models\Student;
 
 class AdmissionNumberGenerator
 {
+    public function generateForStudent(School $school, Student $student): string
+    {
+        return 'STU-'.$school->id.'-'.str_pad((string) $student->id, 6, '0', STR_PAD_LEFT);
+    }
+
     public function generate(School $school): string
     {
         $branchLabel = trim((string) ($school->branch_name ?: $school->name));

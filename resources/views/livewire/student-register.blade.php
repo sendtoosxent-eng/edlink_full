@@ -78,10 +78,10 @@
                     </div>
 
                     <div class="grid sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Admission number</label>
-                            <input type="text" wire:model.live="admission_no" placeholder="Auto-generated if left blank"
-                                class="w-full border border-gray-200 bg-gray-50/50 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30 focus:border-yellow-400 transition-all">
+                        <div class="flex items-end">
+                            <p class="w-full rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-2.5 text-xs text-gray-500">
+                                Student ID is generated automatically when registration is completed.
+                            </p>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Gender</label>
@@ -319,7 +319,7 @@
                     {{ trim($name ?? '') ?: 'Student Name' }}
                 </h4>
                 <p class="text-xs text-gray-400 mt-0.5 font-medium uppercase tracking-wider">
-                    {{ trim($admission_no ?? '') ?: 'ID: PENDING AUTO-GEN' }}
+                    ID: GENERATED ON SAVE
                 </p>
                 
                 @if($gender)
