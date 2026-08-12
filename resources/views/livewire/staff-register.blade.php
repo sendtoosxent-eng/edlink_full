@@ -136,6 +136,8 @@
                     <select wire:model="role" class="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 text-slate-800 font-semibold transition shadow-sm">
                         <option value="teacher">Teacher</option>
                         <option value="bursar">Bursar</option>
+                        <option value="registrar">Registrar</option>
+                        <option value="academic_admin">Academic administrator</option>
                         <option value="admin">Administrator</option>
                     </select>
                 </div>
@@ -166,19 +168,42 @@
                 @error('admin_confirmation') <p class="sm:col-span-2 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
             </div>
 
-            <!-- STEP 3: PAYROLL MATRIX & AUDIT REVIEW -->
+            <!-- STEP 3: ASSIGNMENTS AND PAYROLL -->
             @else
             <div class="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
                 <div class="w-6 h-6 rounded-md bg-emerald-500 text-white font-bold flex items-center justify-center shadow-xs shrink-0">
                     <i class="fa fa-money text-[10px]"></i>
                 </div>
                 <div>
-                    <h2 class="text-xs font-bold text-slate-900">Payroll parameters</h2>
-                    <p class="text-[9px] text-slate-400">Determine compensation metrics and review credentials.</p>
+                        <h2 class="text-xs font-bold text-slate-900">Assignments and payroll</h2>
+                        <p class="text-[9px] text-slate-400">Map teaching responsibilities and record compensation details.</p>
                 </div>
             </div>
 
             <div class="p-4 space-y-5">
+                @if(in_array($role, ['teacher', 'academic_admin'], true))
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                        <div><p class="text-[11px] font-bold text-slate-800">Teaching assignments</p><p class="text-[10px] text-slate-500">These assignments apply to the current term{{ $currentTerm ? ' ('.$currentTerm->name.')' : '' }}.</p></div>
+                        <label class="block text-[11px] font-semibold text-slate-700">Class teacher (optional)
+                            <select wire:model="class_teacher_class_id" class="mt-1 w-full text-xs rounded-lg border-slate-200">
+                                <option value="">No class-teacher assignment</option>
+                                @foreach($classes as $class)<option value="{{ $class->id }}">{{ $class->name }}</option>@endforeach
+                            </select>
+                        </label>
+                        <div><p class="text-[11px] font-semibold text-slate-700 mb-1">Subjects by class</p><div class="max-h-48 overflow-y-auto space-y-1 rounded-lg bg-white p-2 border border-slate-200">
+                            @forelse($classes as $class)
+                                <p class="pt-1 text-[10px] font-bold text-slate-500">{{ $class->name }}</p>
+                                @foreach($subjects as $subject)
+                                    <label class="flex items-center gap-2 text-[10px] text-slate-700"><input type="checkbox" wire:model="subject_assignments" value="{{ $class->id }}:{{ $subject->id }}" class="rounded border-slate-300 text-yellow-500">{{ $subject->name }}</label>
+                                @endforeach
+                            @empty
+                                <p class="text-[10px] text-slate-400">Create classes before assigning a class or subject.</p>
+                            @endforelse
+                        </div></div>
+                        @error('class_teacher_class_id') <p class="text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        @error('subject_assignments') <p class="text-[10px] font-semibold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                @endif
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1">Monthly salary</label>
                     <div class="relative w-full">

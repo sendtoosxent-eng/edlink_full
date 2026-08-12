@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\AuditLog;
 use App\Models\Designation;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -18,7 +19,11 @@ class Designations extends Component
 
     public function save(): void
     {
-        $this->validate(['name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:500'], 'permissions' => ['array']]);
+        $this->validate([
+            'name' => ['required', 'string', 'max:100', Rule::unique('designations', 'name')->where('school_id', Auth::user()->school_id)->ignore($this->editingId)],
+            'description' => ['nullable', 'string', 'max:500'],
+            'permissions' => ['array'],
+        ]);
         $schoolId = Auth::user()->school_id;
         $designation = $this->editingId ? Designation::where('school_id', $schoolId)->findOrFail($this->editingId) : new Designation(['school_id' => $schoolId]);
         $designation->fill(['name' => $this->name, 'description' => $this->description ?: null, 'permissions' => array_values($this->permissions)])->save();

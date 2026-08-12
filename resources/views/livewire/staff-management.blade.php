@@ -30,32 +30,17 @@
     @endif
 
     <div class="grid items-start gap-6 lg:grid-cols-3">
-        <form wire:submit="add" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="bg-slate-900 px-5 py-4">
-                <h2 class="font-black text-amber-300">Quick Add Staff</h2>
-                <p class="mt-0.5 text-xs text-slate-400">Create a basic staff account directly.</p>
+                <h2 class="font-black text-amber-300">Register staff member</h2>
+                <p class="mt-0.5 text-xs text-slate-400">Use the guided workflow so salary, access, classes and subjects are captured together.</p>
             </div>
-            <div class="space-y-3 p-5">
-                <input wire:model="name" placeholder="Full name" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <input wire:model="email" type="email" placeholder="Email address" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <input wire:model="phone" placeholder="Phone number" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <input wire:model="job_title" placeholder="Job title" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <select wire:model="role" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                    <option value="teacher">Teacher</option>
-                    <option value="bursar">Bursar</option>
-                    <option value="admin">Administrator</option>
-                </select>
-                <select wire:model="designationId" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                    <option value="">Select an access designation</option>
-                    @foreach($designations as $designation)<option value="{{ $designation->id }}">{{ $designation->name }}</option>@endforeach
-                </select>
-                <input wire:model="base_salary" type="number" min="0" placeholder="Monthly salary (UGX)" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <input wire:model="joined_at" type="date" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <input wire:model="password" type="password" placeholder="Temporary password" class="w-full rounded-xl border-slate-200 text-sm focus:border-amber-400 focus:ring-amber-400">
-                <button class="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-black text-slate-950 transition hover:bg-amber-300">Add staff</button>
-                <a href="{{ route('staff.register') }}" wire:navigate class="block text-center text-xs font-bold text-amber-700 hover:underline">Use the complete registration form</a>
+            <div class="space-y-4 p-5">
+                <div class="rounded-xl bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">Every new account must have its employment details, designation and teaching assignments reviewed before it is saved.</div>
+                <a href="{{ route('staff.register') }}" wire:navigate class="block w-full rounded-xl bg-amber-400 py-3 text-center text-sm font-black text-slate-950 transition hover:bg-amber-300">Start guided registration</a>
+                <a href="{{ route('designations.index') }}" wire:navigate class="block text-center text-xs font-bold text-amber-700 hover:underline">Manage designations first</a>
             </div>
-        </form>
+        </div>
 
         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <div class="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-5 py-4">
@@ -115,6 +100,14 @@
                     <label class="text-sm font-semibold">Job title<input wire:model="editJobTitle" class="mt-1 w-full rounded-xl border-slate-200 focus:border-amber-400 focus:ring-amber-400"></label>
                     <label class="text-sm font-semibold">Account role<select wire:model.live="editRole" class="mt-1 w-full rounded-xl border-slate-200 focus:border-amber-400 focus:ring-amber-400"><option value="teacher">Teacher</option><option value="bursar">Bursar</option><option value="registrar">Registrar</option><option value="academic_admin">Academic administrator</option><option value="admin">Administrator</option></select></label>
                     <label class="text-sm font-semibold">Designation<select wire:model="editDesignationId" class="mt-1 w-full rounded-xl border-slate-200 focus:border-amber-400 focus:ring-amber-400"><option value="">No designation</option>@foreach($designations as $designation)<option value="{{ $designation->id }}">{{ $designation->name }}</option>@endforeach</select></label>
+                    @if(in_array($editRole, ['teacher', 'academic_admin'], true))
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
+                            <p class="text-xs font-bold text-slate-800">Teaching assignments{{ $currentTerm ? ' · '.$currentTerm->name : '' }}</p>
+                            <select wire:model="editClassTeacherClassId" class="mt-2 w-full rounded-lg border-slate-200 text-sm"><option value="">No class-teacher assignment</option>@foreach($classes as $class)<option value="{{ $class->id }}">{{ $class->name }}</option>@endforeach</select>
+                            <div class="mt-2 grid max-h-36 gap-1 overflow-y-auto rounded-lg bg-white p-2 sm:grid-cols-2">@foreach($classes as $class)@foreach($subjects as $subject)<label class="flex items-center gap-2 text-[10px] text-slate-700"><input type="checkbox" wire:model="editSubjectAssignments" value="{{ $class->id }}:{{ $subject->id }}" class="rounded border-slate-300 text-yellow-500">{{ $class->name }} · {{ $subject->name }}</label>@endforeach @endforeach</div>
+                            @error('editClassTeacherClassId')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror @error('editSubjectAssignments')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                        </div>
+                    @endif
                     <label class="text-sm font-semibold">Monthly salary (UGX)<input wire:model="editBaseSalary" type="number" min="0" class="mt-1 w-full rounded-xl border-slate-200 focus:border-amber-400 focus:ring-amber-400"></label>
                     <label class="text-sm font-semibold">Joined date<input wire:model="editJoinedAt" type="date" class="mt-1 w-full rounded-xl border-slate-200 focus:border-amber-400 focus:ring-amber-400"></label>
                     <label class="text-sm font-semibold">Employment status<select wire:model="editEmploymentStatus" class="mt-1 w-full rounded-xl border-slate-200 focus:border-amber-400 focus:ring-amber-400"><option value="active">Active</option><option value="inactive">Inactive</option></select></label>

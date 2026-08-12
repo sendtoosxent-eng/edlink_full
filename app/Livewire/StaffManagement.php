@@ -4,12 +4,15 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Models\Designation;
+use App\Models\SchoolClass;
+use App\Models\Subject;
 use App\Services\StaffNumberGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -40,6 +43,8 @@ class StaffManagement extends Component
     public string $editJoinedAt = '';
     public string $editEmploymentStatus = 'active';
     public string $editPassword = '';
+    public string $editClassTeacherClassId = '';
+    public array $editSubjectAssignments = [];
     public $editPhoto = null;
 
     public function mount(): void { $this->joined_at = now()->toDateString(); }
@@ -61,10 +66,13 @@ class StaffManagement extends Component
 
         try {
             if ($this->designationId && ! Designation::where('school_id', $school->id)->whereKey($this->designationId)->exists()) { $this->addError('designationId', 'Choose a designation created for this school.'); return; }
-            DB::transaction(function () use ($school): void {
+            $staff = DB::transaction(function () use ($school): User {
                 $staff = User::create(['school_id' => $school->id, 'designation_id' => $this->designationId ?: null, 'name' => $this->name, 'email' => $this->email, 'phone' => $this->phone ?: null, 'job_title' => $this->job_title, 'role' => $this->role, 'base_salary' => $this->base_salary, 'employment_status' => 'active', 'joined_at' => $this->joined_at, 'password' => Hash::make($this->password)]);
                 $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
+                $this->syncSchoolAccess($staff, $school);
+                return $staff;
             });
+            $staff->sendEmailVerificationNotification();
             $this->reset(['name', 'email', 'phone', 'base_salary', 'password', 'designationId']);
             $this->job_title = 'Teacher';
             $this->role = 'teacher';
@@ -95,6 +103,7 @@ class StaffManagement extends Component
             return;
         }
         $staff->update(['designation_id' => $designationId ?: null]);
+        $this->syncSchoolAccess($staff->fresh(), Auth::user()->school);
         session()->flash('status', $staff->name.' designation updated.');
     }
 
@@ -113,13 +122,16 @@ class StaffManagement extends Component
         $this->editJoinedAt = $staff->joined_at?->toDateString() ?? '';
         $this->editEmploymentStatus = $staff->employment_status ?? 'active';
         $this->editPassword = '';
+        $this->editClassTeacherClassId = (string) (SchoolClass::where('school_id', $staff->school_id)->where('class_teacher_user_id', $staff->id)->value('id') ?? '');
+        $term = Auth::user()->school->currentTerm();
+        $this->editSubjectAssignments = $term ? DB::table('staff_subjects')->where('school_id', $staff->school_id)->where('term_id', $term->id)->where('user_id', $staff->id)->get(['school_class_id', 'subject_id'])->map(fn ($row) => $row->school_class_id.':'.$row->subject_id)->all() : [];
         $this->reset('editPhoto');
         $this->resetValidation();
     }
 
     public function cancelEdit(): void
     {
-        $this->reset(['editingId', 'editName', 'editEmail', 'editPhone', 'editJobTitle', 'editDesignationId', 'editBaseSalary', 'editJoinedAt', 'editPassword', 'editPhoto']);
+        $this->reset(['editingId', 'editName', 'editEmail', 'editPhone', 'editJobTitle', 'editDesignationId', 'editBaseSalary', 'editJoinedAt', 'editPassword', 'editPhoto', 'editClassTeacherClassId', 'editSubjectAssignments']);
         $this->editRole = 'teacher';
         $this->editEmploymentStatus = 'active';
         $this->resetValidation();
@@ -141,7 +153,20 @@ class StaffManagement extends Component
             'editEmploymentStatus' => ['required', 'in:active,inactive'],
             'editPassword' => ['nullable', 'string', 'min:8'],
             'editPhoto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'editClassTeacherClassId' => ['nullable', 'integer'],
+            'editSubjectAssignments' => ['array'],
         ]);
+
+        $school = Auth::user()->school;
+        if ($this->editClassTeacherClassId && ! SchoolClass::where('school_id', $school->id)->whereKey($this->editClassTeacherClassId)->exists()) {
+            $this->addError('editClassTeacherClassId', 'Choose a class belonging to this school.');
+            return;
+        }
+        $pairs = collect($this->editSubjectAssignments)->map(function ($assignment) { [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null); return ['class_id' => (int) $classId, 'subject_id' => (int) $subjectId]; })->filter(fn ($pair) => $pair['class_id'] && $pair['subject_id'])->values();
+        if ($pairs->isNotEmpty() && (SchoolClass::where('school_id', $school->id)->whereIn('id', $pairs->pluck('class_id'))->count() !== $pairs->pluck('class_id')->unique()->count() || Subject::where('school_id', $school->id)->whereIn('id', $pairs->pluck('subject_id'))->count() !== $pairs->pluck('subject_id')->unique()->count())) {
+            $this->addError('editSubjectAssignments', 'Choose only classes and subjects belonging to this school.');
+            return;
+        }
 
         if ($this->editDesignationId !== '' && ! Designation::where('school_id', Auth::user()->school_id)->whereKey($this->editDesignationId)->exists()) {
             $this->addError('editDesignationId', 'Choose a designation created for this school.');
@@ -166,6 +191,8 @@ class StaffManagement extends Component
             if ($oldAvatar) Storage::disk('public')->delete($oldAvatar);
         }
         $staff->update($data);
+        $this->syncTeachingAssignments($staff->fresh(), $school, $this->editClassTeacherClassId, $this->editSubjectAssignments);
+        $this->syncSchoolAccess($staff->fresh(), Auth::user()->school);
         $name = $staff->fresh()->name;
         $this->cancelEdit();
         session()->flash('status', $name.' profile updated.');
@@ -173,6 +200,32 @@ class StaffManagement extends Component
 
     public function render()
     {
-        return view('livewire.staff-management', ['staff' => User::with('designation')->where('school_id', Auth::user()->school_id)->when(! $this->showInactive, fn ($query) => $query->where('employment_status', 'active'))->orderBy('name')->get(), 'designations' => Designation::where('school_id', Auth::user()->school_id)->orderBy('name')->get(), 'pageTitle' => 'Staff']);
+        $school = Auth::user()->school;
+        return view('livewire.staff-management', ['staff' => User::with('designation')->where('school_id', $school->id)->when(! $this->showInactive, fn ($query) => $query->where('employment_status', 'active'))->orderBy('name')->get(), 'designations' => Designation::where('school_id', $school->id)->orderBy('name')->get(), 'classes' => SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(), 'currentTerm' => $school->currentTerm(), 'pageTitle' => 'Staff']);
+    }
+
+    private function syncTeachingAssignments(User $staff, $school, string $classTeacherId, array $assignments): void
+    {
+        SchoolClass::where('school_id', $school->id)->where('class_teacher_user_id', $staff->id)->update(['class_teacher_user_id' => null]);
+        if ($classTeacherId) SchoolClass::where('school_id', $school->id)->whereKey($classTeacherId)->update(['class_teacher_user_id' => $staff->id]);
+        $term = $school->currentTerm();
+        if (! $term) return;
+        DB::table('staff_subjects')->where('school_id', $school->id)->where('term_id', $term->id)->where('user_id', $staff->id)->delete();
+        foreach ($assignments as $assignment) {
+            [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null);
+            if (! $classId || ! $subjectId) continue;
+            DB::table('class_subjects')->updateOrInsert(['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => (int) $classId, 'subject_id' => (int) $subjectId], ['updated_at' => now(), 'created_at' => now()]);
+            DB::table('staff_subjects')->updateOrInsert(['school_id' => $school->id, 'term_id' => $term->id, 'user_id' => $staff->id, 'school_class_id' => (int) $classId, 'subject_id' => (int) $subjectId], ['updated_at' => now(), 'created_at' => now()]);
+        }
+    }
+
+    private function syncSchoolAccess(User $staff, $school): void
+    {
+        if (! Schema::hasTable('school_user_access')) return;
+
+        DB::table('school_user_access')->updateOrInsert(
+            ['school_id' => $school->id, 'user_id' => $staff->id],
+            ['role' => $staff->role, 'designation_id' => $staff->designation_id, 'updated_at' => now(), 'created_at' => now()],
+        );
     }
 }

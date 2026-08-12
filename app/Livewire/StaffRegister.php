@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Models\Designation;
+use App\Models\SchoolClass;
+use App\Models\Subject;
 use App\Models\AuditLog;
 use App\Services\StaffNumberGenerator;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +37,8 @@ class StaffRegister extends Component
     public string $base_salary = '';
     public string $employment_status = 'active';
     public string $designation_id = '';
+    public string $class_teacher_class_id = '';
+    public array $subject_assignments = [];
     public bool $admin_confirmation = false;
     public string $emergency_contact_name = '';
     public string $emergency_contact_phone = '';
@@ -95,7 +99,7 @@ class StaffRegister extends Component
         if ($this->step === 2) {
             $this->validate([
                 'job_title' => 'required|string|max:100',
-                'role' => 'required|in:teacher,bursar,admin',
+                'role' => 'required|in:teacher,bursar,registrar,academic_admin,admin',
                 'designation_id' => 'required_unless:role,admin|nullable|integer',
                 'joined_at' => 'required|date',
                 'admin_confirmation' => 'accepted_if:role,admin',
@@ -122,7 +126,7 @@ class StaffRegister extends Component
             'document_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'password' => 'required|string|min:8|confirmed',
             'job_title' => 'required|string|max:100',
-            'role' => 'required|in:teacher,bursar,admin',
+            'role' => 'required|in:teacher,bursar,registrar,academic_admin,admin',
             'designation_id' => 'required_unless:role,admin|nullable|integer',
             'joined_at' => 'required|date',
             'base_salary' => 'required|numeric|min:0',
@@ -144,6 +148,25 @@ class StaffRegister extends Component
             if ($this->designation_id && ! Designation::where('school_id', $school->id)->whereKey($this->designation_id)->exists()) {
                 $this->addError('designation_id', 'Choose a designation created for this school.');
                 return;
+            }
+            $classTeacherClass = $this->class_teacher_class_id
+                ? SchoolClass::where('school_id', $school->id)->find($this->class_teacher_class_id)
+                : null;
+            if ($this->class_teacher_class_id && ! $classTeacherClass) {
+                $this->addError('class_teacher_class_id', 'Choose a class belonging to this school.');
+                return;
+            }
+            $assignments = collect($this->subject_assignments)->map(function ($assignment) {
+                [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null);
+                return ['class_id' => (int) $classId, 'subject_id' => (int) $subjectId];
+            })->filter(fn ($assignment) => $assignment['class_id'] && $assignment['subject_id'])->values();
+            if ($assignments->isNotEmpty()) {
+                $validClasses = SchoolClass::where('school_id', $school->id)->whereIn('id', $assignments->pluck('class_id'))->count();
+                $validSubjects = Subject::where('school_id', $school->id)->whereIn('id', $assignments->pluck('subject_id'))->count();
+                if ($validClasses !== $assignments->pluck('class_id')->unique()->count() || $validSubjects !== $assignments->pluck('subject_id')->unique()->count()) {
+                    $this->addError('subject_assignments', 'Choose only classes and subjects belonging to this school.');
+                    return;
+                }
             }
             DB::transaction(function () use ($school): void {
                 $staff = User::create([
@@ -173,6 +196,25 @@ class StaffRegister extends Component
                 ]);
 
                 $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
+                if ($this->class_teacher_class_id) {
+                    SchoolClass::where('school_id', $school->id)->where('class_teacher_user_id', $staff->id)->update(['class_teacher_user_id' => null]);
+                    SchoolClass::where('school_id', $school->id)->whereKey($this->class_teacher_class_id)->update(['class_teacher_user_id' => $staff->id]);
+                }
+                $term = $school->currentTerm();
+                if ($term) {
+                    foreach ($this->subject_assignments as $assignment) {
+                        [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null);
+                        if (! $classId || ! $subjectId) continue;
+                        DB::table('class_subjects')->updateOrInsert(
+                            ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => (int) $classId, 'subject_id' => (int) $subjectId],
+                            ['updated_at' => now(), 'created_at' => now()],
+                        );
+                        DB::table('staff_subjects')->updateOrInsert(
+                            ['school_id' => $school->id, 'term_id' => $term->id, 'user_id' => $staff->id, 'school_class_id' => (int) $classId, 'subject_id' => (int) $subjectId],
+                            ['updated_at' => now(), 'created_at' => now()],
+                        );
+                    }
+                }
                 $staff->sendEmailVerificationNotification();
                 AuditLog::record($school->id, 'staff.registered', $staff, [
                     'staff_number' => $staff->staff_number,
@@ -191,6 +233,13 @@ class StaffRegister extends Component
 
     public function render()
     {
-        return view('livewire.staff-register', ['designations' => Designation::where('school_id', Auth::user()->school_id)->orderBy('name')->get(), 'pageTitle' => 'Register Staff']);
+        $school = Auth::user()->school;
+        return view('livewire.staff-register', [
+            'designations' => Designation::where('school_id', $school->id)->orderBy('name')->get(),
+            'classes' => SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(),
+            'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(),
+            'currentTerm' => $school->currentTerm(),
+            'pageTitle' => 'Register Staff',
+        ]);
     }
 }
