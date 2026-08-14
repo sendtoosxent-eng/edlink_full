@@ -8,7 +8,7 @@ class DesignationPermissions
     {
         return [
             'students' => ['label' => 'Students & admissions', 'rights' => ['students.view' => 'View learners', 'students.manage' => 'Register and manage learners', 'students.activities' => 'Manage houses and clubs']],
-            'finance' => ['label' => 'Finance', 'rights' => ['finance.payments' => 'Record payments and receipts', 'finance.adjustments' => 'Request individual fee adjustments', 'finance.expenses' => 'Manage expenses', 'finance.ledger' => 'Manage ledger, reversals and reconciliation', 'finance.reports' => 'View financial reports']],
+            'finance' => ['label' => 'Finance', 'rights' => ['finance.payments' => 'Record payments and receipts', 'finance.adjustments' => 'Request and review individual fee adjustments', 'finance.expenses' => 'Manage expenses', 'finance.ledger' => 'Manage ledger, reversals and reconciliation', 'finance.reports' => 'View financial reports']],
             'attendance' => ['label' => 'Attendance', 'rights' => ['attendance.daily' => 'Mark daily learner attendance', 'attendance.subject' => 'Mark subject attendance', 'attendance.reports' => 'View attendance reports']],
             'academics' => ['label' => 'Academics', 'rights' => ['academics.classes' => 'Manage classes and streams', 'academics.subjects' => 'Manage subjects and allocations', 'academics.timetable' => 'Manage timetable', 'academics.events' => 'Manage events', 'academics.promotions' => 'Run promotions']],
             'exams' => ['label' => 'Exams & results', 'rights' => ['exams.setup' => 'Create and configure exams', 'exams.marks' => 'Enter and submit marks', 'exams.results' => 'View and approve results']],

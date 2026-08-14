@@ -215,6 +215,7 @@
                 @endif
 
                 <!-- PAYMENT INPUT FORM -->
+                @if($canRecordPayments)
                 <form wire:submit="recordPayment" class="mt-6 space-y-4 border-t border-slate-100 pt-5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Amount (UGX)</label>
@@ -259,6 +260,7 @@
                         <span>Record payment & print receipt</span>
                     </button>
                 </form>
+                @endif
             @else
                 <div class="flex h-full min-h-[360px] flex-col items-center justify-center text-center p-6 text-slate-400">
                     <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3 border border-slate-200/80">
@@ -303,7 +305,7 @@
                         <th class="px-5 py-3.5">Term</th>
                         <th class="px-5 py-3.5">Method / Ref</th>
                         <th class="px-5 py-3.5 text-right">Amount (UGX)</th>
-                        <th class="px-5 py-3.5 text-right">Actions</th>
+                        @if($canRecordPayments)<th class="px-5 py-3.5 text-right">Actions</th>@endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-slate-800 font-medium">
@@ -322,7 +324,7 @@
                             <td class="px-5 py-3.5 text-right font-mono font-extrabold text-slate-900">
                                 {{ number_format($payment->amount) }}
                             </td>
-                            <td class="px-5 py-3.5 text-right space-x-2">
+                            @if($canRecordPayments)<td class="px-5 py-3.5 text-right space-x-2">
                                 <a target="_blank" href="{{route('fee-payments.receipt',$payment)}}" class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-xl border border-amber-200/80 transition">
                                     <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -337,11 +339,11 @@
                                         <span>Delete</span>
                                     </button>
                                 @endif
-                            </td>
+                            </td>@endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-8 text-center text-slate-400">
+                            <td colspan="{{ $canRecordPayments ? 5 : 4 }}" class="p-8 text-center text-slate-400">
                                 No payment records logged yet for this section.
                             </td>
                         </tr>

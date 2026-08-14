@@ -3,6 +3,7 @@
 use App\Livewire\FeePayments;
 use App\Models\Arrears;
 use App\Models\AuditLog;
+use App\Models\Designation;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -18,7 +19,7 @@ uses(RefreshDatabase::class);
 
 function feeAdjustmentFixture(string $slug = 'adjustment-school'): array
 {
-    $school = School::create(['name' => 'Adjustment School', 'slug' => $slug]);
+    $school = School::create(['name' => 'Adjustment School', 'slug' => $slug, 'status' => 'active', 'is_demo' => false, 'license_status' => 'active']);
     $term = Term::create(['school_id' => $school->id, 'name' => 'Term 1', 'year' => 2026, 'is_current' => true, 'status' => 'open']);
     $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'Primary Seven']);
     $category = StudentCategory::create(['school_id' => $school->id, 'name' => 'Day']);
@@ -64,6 +65,47 @@ it('keeps a requested adjustment out of the balance until an administrator appro
         ->and(AuditLog::where('event', 'finance.fee_adjustment.cancelled')->exists())->toBeTrue();
 });
 
+it('allows finance adjustment staff to open the screen, request, and approve an adjustment', function () {
+    extract(feeAdjustmentFixture('finance-staff-adjustment-school'));
+    $designation = Designation::create([
+        'school_id' => $school->id,
+        'name' => 'Finance Adjustments Officer',
+        'permissions' => ['finance.adjustments'],
+    ]);
+    $financeUser = User::factory()->create([
+        'school_id' => $school->id,
+        'designation_id' => $designation->id,
+        'role' => 'bursar',
+    ]);
+
+    expect($financeUser->hasPermission('finance.adjustments'))->toBeTrue()
+        ->and($financeUser->hasPermission('finance.payments'))->toBeFalse();
+    $this->actingAs($financeUser)->get(route('fee-payments.index'))->assertOk();
+
+    Livewire::actingAs($financeUser)->test(FeePayments::class)
+        ->call('openPaymentForm', $student->id)
+        ->assertDontSee('Record payment & print receipt')
+        ->set('adjustmentType', 'negotiated')
+        ->set('adjustmentCalculation', 'fixed')
+        ->set('adjustmentValue', '200000')
+        ->set('adjustmentReason', 'Finance approved a lower individual fee for this learner.')
+        ->call('requestAdjustment')
+        ->assertHasNoErrors();
+
+    $adjustment = StudentFeeAdjustment::firstOrFail();
+    Livewire::actingAs($financeUser)->test(FeePayments::class)
+        ->call('reviewAdjustment', $adjustment->id, 'approved')
+        ->assertHasNoErrors();
+
+    expect($adjustment->fresh()->status)->toBe('approved')
+        ->and($adjustment->fresh()->reviewed_by)->toBe($financeUser->id)
+        ->and($student->fresh()->totalDue($term))->toBe(600000.0);
+
+    Livewire::actingAs($financeUser)->test(FeePayments::class)
+        ->call('recordPayment')
+        ->assertForbidden();
+});
+
 it('supports percentage discounts and final agreed fees', function () {
     extract(feeAdjustmentFixture('calculation-school'));
 
@@ -100,6 +142,24 @@ it('prevents cross-school approval and excessive reductions', function () {
         ->set('adjustmentCalculation', 'fixed')->set('adjustmentValue', '900000')
         ->set('adjustmentReason', 'This reduction exceeds the learner fee amount.')
         ->call('requestAdjustment')->assertHasErrors(['adjustmentValue']);
+});
+
+it('never approves combined adjustments above the initial term fee', function () {
+    extract(feeAdjustmentFixture('combined-adjustment-cap-school'));
+    $first = StudentFeeAdjustment::create(['school_id' => $school->id, 'student_id' => $student->id, 'term_id' => $term->id, 'requested_by' => $admin->id, 'type' => 'negotiated', 'calculation_type' => 'fixed', 'value' => 500000, 'amount' => 500000, 'reason' => 'First valid reduction for this learner.', 'status' => 'pending']);
+    $second = StudentFeeAdjustment::create(['school_id' => $school->id, 'student_id' => $student->id, 'term_id' => $term->id, 'requested_by' => $admin->id, 'type' => 'scholarship', 'calculation_type' => 'fixed', 'value' => 400000, 'amount' => 400000, 'reason' => 'Second reduction that would exceed the initial fee.', 'status' => 'pending']);
+
+    Livewire::actingAs($admin)->test(FeePayments::class)
+        ->call('reviewAdjustment', $first->id, 'approved')
+        ->assertHasNoErrors();
+    Livewire::actingAs($admin)->test(FeePayments::class)
+        ->call('reviewAdjustment', $second->id, 'approved')
+        ->assertHasNoErrors();
+
+    expect($first->fresh()->status)->toBe('approved')
+        ->and($second->fresh()->status)->toBe('pending')
+        ->and($student->fresh()->feeAdjustmentTotal($term))->toBe(500000.0)
+        ->and($student->fresh()->totalDue($term))->toBe(300000.0);
 });
 
 it('uses approved adjusted balances when rolling arrears', function () {

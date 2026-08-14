@@ -16,7 +16,7 @@ class EnsureDesignationAccess
             'students.index', 'graduates.index', 'graduates.certificate' => 'students.view',
             'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage',
             'students.activities', 'students.activities.export' => null,
-            'fee-payments.index' => 'finance.payments',
+            'fee-payments.index' => null,
             'expenses.index' => 'finance.expenses',
             'finance.ledger', 'finance.ledger.approve', 'finance.ledger.reverse', 'finance.ledger.reconcile' => 'finance.ledger',
             'attendance.index' => 'attendance.daily',
@@ -58,6 +58,15 @@ class EnsureDesignationAccess
         };
 
         $user = $request->user();
+        if ($route === 'fee-payments.index') {
+            abort_unless(
+                $user?->hasPermission('finance.payments') || $user?->hasPermission('finance.adjustments'),
+                403
+            );
+
+            return $next($request);
+        }
+
         if ($route === 'students.index' && $user && TeacherAcademicScope::isTeacher($user)) {
             abort_unless(TeacherAcademicScope::canViewStudentDirectory($user), 403);
             return $next($request);

@@ -71,6 +71,8 @@ class FeePayments extends Component
 
     public function deletePayment(int $paymentId): void
     {
+        abort_unless(Auth::user()->hasPermission('finance.payments'), 403);
+
         $school = Auth::user()->school;
         $term = $school->currentTerm();
         $payment = FeePayment::where('school_id', $school->id)->findOrFail($paymentId);
@@ -90,6 +92,8 @@ class FeePayments extends Component
 
     public function recordPayment(): void
     {
+        abort_unless(Auth::user()->hasPermission('finance.payments'), 403);
+
         $school = Auth::user()->school;
         $term = $school->currentTerm();
 
@@ -144,55 +148,64 @@ class FeePayments extends Component
             'adjustmentReason' => ['required', 'string', 'min:10', 'max:2000'],
         ]);
 
-        $student = Student::where('school_id', $user->school_id)->where('status', 'active')->findOrFail($this->payingStudentId);
-        $baseFee = (float) ($student->mappedFeeAmount($term) ?? 0);
-        if ($baseFee <= 0) {
-            $this->addError('adjustmentValue', 'This learner has no mapped fee for the current term.');
-            return;
-        }
+        $created = DB::transaction(function () use ($user, $term): bool {
+            // Requests and reviews lock the same student row. This makes
+            // the initial-fee cap reliable when two finance users act at once.
+            $student = Student::where('school_id', $user->school_id)
+                ->where('status', 'active')->lockForUpdate()->findOrFail($this->payingStudentId);
+            $baseFee = (float) ($student->mappedFeeAmount($term) ?? 0);
+            if ($baseFee <= 0) {
+                $this->addError('adjustmentValue', 'This learner has no mapped fee for the current term.');
+                return false;
+            }
 
-        $value = (float) $this->adjustmentValue;
-        $amount = match ($this->adjustmentCalculation) {
-            'percentage' => round($baseFee * $value / 100, 2),
-            'final_fee' => round($baseFee - $value, 2),
-            default => round($value, 2),
-        };
-        if (($this->adjustmentCalculation === 'percentage' && $value > 100)
-            || ($this->adjustmentCalculation === 'final_fee' && $value >= $baseFee)
-            || $amount <= 0) {
-            $this->addError('adjustmentValue', 'Enter a reduction that leaves a valid adjusted fee. Use a waiver for a full fee reduction.');
-            return;
-        }
+            $value = (float) $this->adjustmentValue;
+            $amount = match ($this->adjustmentCalculation) {
+                'percentage' => round($baseFee * $value / 100, 2),
+                'final_fee' => round($baseFee - $value, 2),
+                default => round($value, 2),
+            };
+            if (($this->adjustmentCalculation === 'percentage' && $value > 100)
+                || ($this->adjustmentCalculation === 'final_fee' && $value >= $baseFee)
+                || $amount <= 0) {
+                $this->addError('adjustmentValue', 'Enter a reduction that leaves a valid adjusted fee. Use a waiver for a full fee reduction.');
+                return false;
+            }
 
-        $existing = $student->feeAdjustments()->where('term_id', $term->id)->whereIn('status', ['pending', 'approved']);
-        if ($this->adjustmentCalculation === 'final_fee' && (clone $existing)->exists()) {
-            $this->addError('adjustmentValue', 'A final agreed fee cannot be combined with another active adjustment.');
-            return;
-        }
-        if ((clone $existing)->where('calculation_type', 'final_fee')->exists()) {
-            $this->addError('adjustmentValue', 'This learner already has a final agreed fee awaiting or holding approval.');
-            return;
-        }
-        if ((float) (clone $existing)->sum('amount') + $amount > $baseFee) {
-            $this->addError('adjustmentValue', 'Active adjustments cannot reduce the fee below zero.');
-            return;
-        }
+            $existing = $student->feeAdjustments()->where('term_id', $term->id)->whereIn('status', ['pending', 'approved']);
+            if ($this->adjustmentCalculation === 'final_fee' && (clone $existing)->exists()) {
+                $this->addError('adjustmentValue', 'A final agreed fee cannot be combined with another active adjustment.');
+                return false;
+            }
+            if ((clone $existing)->where('calculation_type', 'final_fee')->exists()) {
+                $this->addError('adjustmentValue', 'This learner already has a final agreed fee awaiting or holding approval.');
+                return false;
+            }
+            if ((float) (clone $existing)->sum('amount') + $amount > $baseFee) {
+                $this->addError('adjustmentValue', 'Active adjustments cannot exceed this learner\'s initial term fee.');
+                return false;
+            }
 
-        $adjustment = StudentFeeAdjustment::create([
-            'school_id' => $user->school_id,
-            'student_id' => $student->id,
-            'term_id' => $term->id,
-            'requested_by' => $user->id,
-            'type' => $this->adjustmentType,
-            'calculation_type' => $this->adjustmentCalculation,
-            'value' => $value,
-            'amount' => $amount,
-            'reason' => $this->adjustmentReason,
-            'status' => 'pending',
-        ]);
-        AuditLog::record($user->school_id, 'finance.fee_adjustment.requested', $adjustment, [
-            'student_id' => $student->id, 'term_id' => $term->id, 'amount' => $amount,
-        ]);
+            $adjustment = StudentFeeAdjustment::create([
+                'school_id' => $user->school_id,
+                'student_id' => $student->id,
+                'term_id' => $term->id,
+                'requested_by' => $user->id,
+                'type' => $this->adjustmentType,
+                'calculation_type' => $this->adjustmentCalculation,
+                'value' => $value,
+                'amount' => $amount,
+                'reason' => $this->adjustmentReason,
+                'status' => 'pending',
+            ]);
+            AuditLog::record($user->school_id, 'finance.fee_adjustment.requested', $adjustment, [
+                'student_id' => $student->id, 'term_id' => $term->id, 'amount' => $amount,
+            ]);
+
+            return true;
+        });
+
+        if (! $created) return;
 
         $this->reset(['adjustmentValue', 'adjustmentReason']);
         session()->flash('status', 'Fee adjustment submitted for approval. The learner balance has not changed yet.');
@@ -201,7 +214,7 @@ class FeePayments extends Component
     public function reviewAdjustment(int $adjustmentId, string $decision): void
     {
         $user = Auth::user();
-        abort_unless(in_array($user->role, ['admin', 'superadmin'], true), 403);
+        abort_unless($user->hasPermission('finance.adjustments'), 403);
         abort_unless(in_array($decision, ['approved', 'rejected'], true), 422);
         $term = $user->school->currentTerm();
         if (! $term?->isEditable()) {
@@ -209,16 +222,23 @@ class FeePayments extends Component
             return;
         }
 
-        DB::transaction(function () use ($user, $term, $adjustmentId, $decision): void {
+        $reviewed = DB::transaction(function () use ($user, $term, $adjustmentId, $decision): bool {
+            $pending = StudentFeeAdjustment::where('school_id', $user->school_id)
+                ->where('term_id', $term->id)->findOrFail($adjustmentId);
+            $student = Student::where('school_id', $user->school_id)
+                ->lockForUpdate()->findOrFail($pending->student_id);
             $adjustment = StudentFeeAdjustment::where('school_id', $user->school_id)
                 ->where('term_id', $term->id)->lockForUpdate()->findOrFail($adjustmentId);
-            if ($adjustment->status !== 'pending') return;
+            if ($adjustment->status !== 'pending') return false;
 
             if ($decision === 'approved') {
-                $baseFee = (float) ($adjustment->student->mappedFeeAmount($term) ?? 0);
-                $approved = (float) $adjustment->student->feeAdjustments()
+                $baseFee = (float) ($student->mappedFeeAmount($term) ?? 0);
+                $approved = (float) $student->feeAdjustments()
                     ->where('term_id', $term->id)->where('status', 'approved')->sum('amount');
-                abort_if($approved + (float) $adjustment->amount > $baseFee, 422, 'This adjustment would reduce the fee below zero.');
+                $amount = (float) $adjustment->amount;
+                if ($baseFee <= 0 || $amount <= 0 || $approved + $amount > $baseFee) {
+                    return false;
+                }
             }
 
             $adjustment->update([
@@ -232,7 +252,14 @@ class FeePayments extends Component
                 'term_id' => $adjustment->term_id,
                 'amount' => (float) $adjustment->amount,
             ]);
+
+            return true;
         });
+
+        if (! $reviewed) {
+            session()->flash('error', 'This adjustment could not be reviewed because it is no longer pending or would exceed the learner\'s initial term fee.');
+            return;
+        }
 
         $this->reviewNotes = '';
         session()->flash('status', 'Fee adjustment '.$decision.'.');
@@ -241,26 +268,31 @@ class FeePayments extends Component
     public function cancelAdjustment(int $adjustmentId): void
     {
         $user = Auth::user();
-        abort_unless(in_array($user->role, ['admin', 'superadmin'], true), 403);
+        abort_unless($user->hasPermission('finance.adjustments'), 403);
         $term = $user->school->currentTerm();
         if (! $term?->isEditable()) {
             session()->flash('error', 'Approved adjustments cannot be cancelled after the term is locked.');
             return;
         }
 
-        $adjustment = StudentFeeAdjustment::where('school_id', $user->school_id)
-            ->where('term_id', $term->id)->where('status', 'approved')->findOrFail($adjustmentId);
-        $adjustment->update([
-            'status' => 'cancelled',
-            'reviewed_by' => $user->id,
-            'review_notes' => $this->reviewNotes ?: 'Cancelled by school administrator.',
-            'reviewed_at' => now(),
-        ]);
-        AuditLog::record($user->school_id, 'finance.fee_adjustment.cancelled', $adjustment, [
-            'student_id' => $adjustment->student_id,
-            'term_id' => $adjustment->term_id,
-            'amount' => (float) $adjustment->amount,
-        ]);
+        DB::transaction(function () use ($user, $term, $adjustmentId): void {
+            $approved = StudentFeeAdjustment::where('school_id', $user->school_id)
+                ->where('term_id', $term->id)->where('status', 'approved')->findOrFail($adjustmentId);
+            Student::where('school_id', $user->school_id)->lockForUpdate()->findOrFail($approved->student_id);
+            $adjustment = StudentFeeAdjustment::where('school_id', $user->school_id)
+                ->where('term_id', $term->id)->where('status', 'approved')->lockForUpdate()->findOrFail($adjustmentId);
+            $adjustment->update([
+                'status' => 'cancelled',
+                'reviewed_by' => $user->id,
+                'review_notes' => $this->reviewNotes ?: 'Cancelled by finance staff.',
+                'reviewed_at' => now(),
+            ]);
+            AuditLog::record($user->school_id, 'finance.fee_adjustment.cancelled', $adjustment, [
+                'student_id' => $adjustment->student_id,
+                'term_id' => $adjustment->term_id,
+                'amount' => (float) $adjustment->amount,
+            ]);
+        });
         $this->reviewNotes = '';
         session()->flash('status', 'Approved fee adjustment cancelled and the learner balance restored.');
     }
@@ -298,7 +330,8 @@ class FeePayments extends Component
             'pendingAdjustments' => $term ? StudentFeeAdjustment::with(['student', 'requester'])
                 ->where('school_id', $school->id)->where('term_id', $term->id)->where('status', 'pending')->latest()->get() : collect(),
             'canRequestAdjustments' => Auth::user()->hasPermission('finance.adjustments'),
-            'canApproveAdjustments' => in_array(Auth::user()->role, ['admin', 'superadmin'], true),
+            'canApproveAdjustments' => Auth::user()->hasPermission('finance.adjustments'),
+            'canRecordPayments' => Auth::user()->hasPermission('finance.payments'),
             'pageTitle' => 'Fee Payments',
         ]);
     }
