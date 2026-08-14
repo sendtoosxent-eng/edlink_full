@@ -73,6 +73,9 @@
                                 <td class="px-5 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $member->employment_status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ ucfirst($member->employment_status) }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">
                                     <button wire:click="edit({{ $member->id }})" class="mr-3 text-xs font-bold text-amber-700">Edit</button>
+                                    @if(! $member->hasVerifiedEmail())
+                                        <button wire:click="resendVerification({{ $member->id }})" wire:loading.attr="disabled" class="mr-3 text-xs font-bold text-indigo-700">Resend verification</button>
+                                    @endif
                                     <button wire:click="toggleStatus({{ $member->id }})" class="text-xs font-bold text-slate-600 hover:text-amber-600">{{ $member->employment_status === 'active' ? 'Deactivate' : 'Activate' }}</button>
                                 </td>
                             </tr>

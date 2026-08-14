@@ -82,7 +82,7 @@ class SubjectAttendance extends Component
                         'subject_id' => $slot->subject_id,
                         'school_class_id' => $slot->school_class_id,
                         'stream_id' => $slot->stream_id,
-                        'lesson_time' => $slot->starts_at,
+                        'lesson_time' => $slot->starts_at ?: null,
                         'status' => $this->statuses[$student->id],
                         'recorded_by' => Auth::id(),
                     ],
@@ -101,7 +101,7 @@ class SubjectAttendance extends Component
             return collect();
         }
 
-        return DB::table('timetable_slots')
+        $timetableSlots = DB::table('timetable_slots')
             ->join('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
             ->join('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
             ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
@@ -115,11 +115,48 @@ class SubjectAttendance extends Component
                     ->whereColumn('staff_subjects.subject_id', 'timetable_slots.subject_id')
                     ->whereColumn('staff_subjects.school_class_id', 'timetable_slots.school_class_id')
                     ->where('staff_subjects.school_id', $user->school_id)
-                    ->where('staff_subjects.term_id', $term->id)
+                    ->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id'))
                     ->where('staff_subjects.user_id', $user->id);
             })
             ->orderBy('timetable_slots.starts_at')
-            ->get(['timetable_slots.*', 'subjects.name as subject_name', 'school_classes.name as class_name', 'streams.name as stream_name']);
+            ->get(['timetable_slots.*', 'subjects.name as subject_name', 'school_classes.name as class_name', 'streams.name as stream_name'])
+            ->map(function (object $slot): object {
+                $slot->selection_key = 'slot:'.$slot->id;
+                $slot->is_assignment_only = false;
+
+                return $slot;
+            });
+
+        $scheduledPairs = $timetableSlots->mapWithKeys(
+            fn (object $slot): array => [$slot->school_class_id.':'.$slot->subject_id => true],
+        );
+
+        $assignmentFallbacks = DB::table('staff_subjects')
+            ->join('subjects', 'subjects.id', '=', 'staff_subjects.subject_id')
+            ->join('school_classes', 'school_classes.id', '=', 'staff_subjects.school_class_id')
+            ->where('staff_subjects.school_id', $user->school_id)
+            ->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id'))
+            ->where('staff_subjects.user_id', $user->id)
+            ->orderBy('school_classes.name')
+            ->orderBy('subjects.name')
+            ->get([
+                'staff_subjects.term_id', 'staff_subjects.school_class_id', 'staff_subjects.subject_id',
+                'subjects.name as subject_name', 'school_classes.name as class_name',
+            ])
+            ->reject(fn (object $assignment): bool => $scheduledPairs->has($assignment->school_class_id.':'.$assignment->subject_id))
+            ->map(function (object $assignment): object {
+                $assignment->id = null;
+                $assignment->selection_key = 'assignment:'.$assignment->school_class_id.':'.$assignment->subject_id;
+                $assignment->stream_id = null;
+                $assignment->stream_name = null;
+                $assignment->starts_at = null;
+                $assignment->ends_at = null;
+                $assignment->is_assignment_only = true;
+
+                return $assignment;
+            });
+
+        return $timetableSlots->concat($assignmentFallbacks)->values();
     }
 
     protected function selectedSlot(): ?object
@@ -128,7 +165,7 @@ class SubjectAttendance extends Component
             return null;
         }
 
-        return $this->availableSlots()->firstWhere('id', (int) $this->slotId);
+        return $this->availableSlots()->firstWhere('selection_key', $this->slotId);
     }
 
     protected function selectedSlotOrFail(): object
@@ -154,7 +191,9 @@ class SubjectAttendance extends Component
 
     protected function sessionKey(object $slot): string
     {
-        return 'subject:'.$slot->subject_id.':slot:'.$slot->id;
+        return $slot->is_assignment_only
+            ? 'subject:'.$slot->subject_id.':class:'.$slot->school_class_id.':assignment'
+            : 'subject:'.$slot->subject_id.':slot:'.$slot->id;
     }
 
     public function render()

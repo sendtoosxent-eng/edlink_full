@@ -24,7 +24,7 @@ class QueuedResetPassword extends ResetPassword implements ShouldQueue
     {
         return url(route('password.reset', [
             'token'=>$this->token,
-            'email'=>$notifiable->getEmailForPasswordReset(),
+            'email'=>$notifiable->email,
             'school_number'=>$notifiable->school?->school_number,
         ], false));
     }

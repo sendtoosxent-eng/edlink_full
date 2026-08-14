@@ -75,10 +75,10 @@
             </label>
             <div class="relative">
                 <select id="lesson" wire:model.live="slotId" class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-3.5 pl-4 pr-10 text-sm font-semibold text-slate-900 transition focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
-                    <option value="">-- Choose a timetable slot --</option>
+                    <option value="">-- Choose an assigned lesson or subject --</option>
                     @foreach ($lessons as $item)
-                        <option value="{{ $item->id }}">
-                            {{ substr($item->starts_at, 0, 5) }} - {{ substr($item->ends_at, 0, 5) }} &bull; {{ $item->subject_name }} &bull; {{ $item->class_name }}{{ $item->stream_name ? ' ('.$item->stream_name.')' : '' }}
+                        <option value="{{ $item->selection_key }}">
+                            {{ $item->is_assignment_only ? 'Any time' : substr($item->starts_at, 0, 5).' - '.substr($item->ends_at, 0, 5) }} &bull; {{ $item->subject_name }} &bull; {{ $item->class_name }}{{ $item->stream_name ? ' ('.$item->stream_name.')' : '' }}
                         </option>
                     @endforeach
                 </select>
@@ -95,8 +95,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                        <strong class="font-bold">No eligible lessons today.</strong>
-                        <p class="mt-0.5 text-amber-800/80">Make sure your timetable slot lists you as the assigned teacher and aligns with your subject/class mapping for this term.</p>
+                        <strong class="font-bold">No subjects are assigned.</strong>
+                        <p class="mt-0.5 text-amber-800/80">Ask an administrator to map at least one current-term class and subject to your staff account.</p>
                     </div>
                 </div>
             @endif
@@ -127,7 +127,7 @@
                     <svg class="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>{{ substr($lesson->starts_at, 0, 5) }} - {{ substr($lesson->ends_at, 0, 5) }}</span>
+                    <span>{{ $lesson->is_assignment_only ? 'Current-term assignment' : substr($lesson->starts_at, 0, 5).' - '.substr($lesson->ends_at, 0, 5) }}</span>
                 </div>
             </div>
 

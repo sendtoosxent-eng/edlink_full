@@ -20,7 +20,8 @@ it('queues email verification when a client registration event is fired', functi
     Notification::assertSentTo($user,QueuedVerifyEmail::class,function($notification){
         expect($notification)->toBeInstanceOf(ShouldQueue::class)
             ->and($notification->timeout)->toBe(20)
-            ->and($notification->tries)->toBe(3);
+            ->and($notification->tries)->toBe(3)
+            ->and($notification->connection)->toBe('sync');
         return true;
     });
 });

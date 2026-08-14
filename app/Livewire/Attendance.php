@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\SchoolClass;
 use App\Models\Stream;
 use App\Models\Student;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -38,12 +39,22 @@ class Attendance extends Component
     {
         $term = Auth::user()->school->currentTerm();
         if (! $term) return;
-        $this->statuses = AttendanceRecord::where('school_id', Auth::user()->school_id)->where('term_id', $term->id)->where('session_key', 'daily')->whereDate('attendance_date', $this->attendanceDate)->pluck('status', 'student_id')->all();
+        $studentIds = $this->studentsQuery()->pluck('id');
+        $this->statuses = AttendanceRecord::where('school_id', Auth::user()->school_id)
+            ->where('term_id', $term->id)
+            ->where('session_key', 'daily')
+            ->whereDate('attendance_date', $this->attendanceDate)
+            ->whereIn('student_id', $studentIds)
+            ->pluck('status', 'student_id')
+            ->all();
     }
 
     public function save(): void
     {
         abort_unless(Auth::user()->hasPermission('attendance.daily'), 403);
+        if ($this->schoolClassId && TeacherAcademicScope::isTeacher(Auth::user())) {
+            abort_unless(TeacherAcademicScope::classIds(Auth::user())->contains((int) $this->schoolClassId), 403);
+        }
         $school = Auth::user()->school;
         $term = $school->currentTerm();
         if (! $term || ! $term->isOpen()) { session()->flash('error', 'Attendance can only be recorded in an open term.'); return; }
@@ -68,7 +79,18 @@ class Attendance extends Component
 
     private function studentsQuery()
     {
-        return Student::with(['schoolClass', 'stream'])->where('school_id', Auth::user()->school_id)->where('status', 'active')->when($this->schoolClassId, fn ($query) => $query->where('school_class_id', $this->schoolClassId))->when($this->streamId, fn ($query) => $query->where('stream_id', $this->streamId))->orderBy('name');
+        $user = Auth::user();
+
+        return Student::with(['schoolClass', 'stream'])
+            ->where('school_id', $user->school_id)
+            ->where('status', 'active')
+            ->when(
+                TeacherAcademicScope::isTeacher($user),
+                fn ($query) => $query->whereIn('school_class_id', TeacherAcademicScope::classIds($user)),
+            )
+            ->when($this->schoolClassId, fn ($query) => $query->where('school_class_id', $this->schoolClassId))
+            ->when($this->streamId, fn ($query) => $query->where('stream_id', $this->streamId))
+            ->orderBy('name');
     }
 
     private function performanceRows()
@@ -83,9 +105,12 @@ class Attendance extends Component
 
     public function render()
     {
-        $school = Auth::user()->school; $term = $school->currentTerm(); $students = $this->studentsQuery()->get();
-        $selectedDay = AttendanceRecord::where('school_id', $school->id)->where('session_key', 'daily')->when($term, fn ($query) => $query->where('term_id', $term->id))->whereDate('attendance_date', $this->attendanceDate)->when($this->schoolClassId, fn ($query) => $query->whereHas('student', fn ($q) => $q->where('school_class_id', $this->schoolClassId)))->when($this->streamId, fn ($query) => $query->whereHas('student', fn ($q) => $q->where('stream_id', $this->streamId)))->get();
+        $user = Auth::user(); $school = $user->school; $term = $school->currentTerm(); $students = $this->studentsQuery()->get();
+        $selectedDay = AttendanceRecord::where('school_id', $school->id)->where('session_key', 'daily')->when($term, fn ($query) => $query->where('term_id', $term->id))->whereDate('attendance_date', $this->attendanceDate)->whereIn('student_id', $students->pluck('id'))->get();
         $performance = $this->performanceRows();
-        return view('livewire.attendance', ['term' => $term, 'classes' => SchoolClass::where('school_id', $school->id)->orderBy('name')->get(), 'streams' => Stream::where('school_id', $school->id)->when($this->schoolClassId, fn ($query) => $query->where('school_class_id', $this->schoolClassId))->orderBy('name')->get(), 'students' => $students, 'selectedDay' => $selectedDay, 'performance' => $performance, 'pageTitle' => 'Attendance']);
+        $classes = SchoolClass::where('school_id', $school->id)
+            ->when(TeacherAcademicScope::isTeacher($user), fn ($query) => $query->whereIn('id', TeacherAcademicScope::classIds($user)))
+            ->orderBy('name')->get();
+        return view('livewire.attendance', ['term' => $term, 'classes' => $classes, 'streams' => Stream::where('school_id', $school->id)->when($this->schoolClassId, fn ($query) => $query->where('school_class_id', $this->schoolClassId))->orderBy('name')->get(), 'students' => $students, 'selectedDay' => $selectedDay, 'performance' => $performance, 'pageTitle' => 'Attendance']);
     }
 }

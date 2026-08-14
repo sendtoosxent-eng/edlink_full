@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\StudentEnrolment;
 use App\Models\StudentFeeAdjustment;
+use App\Support\TeacherAcademicScope;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -27,7 +28,7 @@ class StaffWorkbench extends Component
         $term = $school->currentTerm();
         $designationName = $user->designation?->name ?? '';
         $isFinanceWorkspace = $user->role === 'bursar' || strcasecmp($designationName, 'Bursar') === 0;
-        $isTeacherWorkspace = ! $isFinanceWorkspace && ($user->role === 'teacher' || str_contains(strtolower($designationName), 'teacher'));
+        $isTeacherWorkspace = ! $isFinanceWorkspace && TeacherAcademicScope::isTeacher($user);
 
         $moduleDefinitions = [
             'students' => ['Students & admissions', 'students.index'],
@@ -94,7 +95,14 @@ class StaffWorkbench extends Component
                 ->orderBy('subjects.name')
                 ->get(['staff_subjects.subject_id','staff_subjects.school_class_id','subjects.name as subject','subjects.code','school_classes.name as class']);
 
-            $classIds = $assignments->pluck('school_class_id')->filter()->unique()->values();
+            $classTeacherClasses = DB::table('school_classes')
+                ->where('school_id', $school->id)
+                ->where('class_teacher_user_id', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+            $classIds = $assignments->pluck('school_class_id')
+                ->concat($classTeacherClasses->pluck('id'))
+                ->filter()->unique()->values();
             $days = collect(range(6, 0))->map(fn ($offset) => now()->subDays($offset)->startOfDay());
             $attendance = AttendanceRecord::where('school_id', $school->id)->where('recorded_by', $user->id)
                 ->when($term, fn ($query) => $query->where('term_id', $term->id))
@@ -154,6 +162,7 @@ class StaffWorkbench extends Component
 
             $teacher = [
                 'assignments' => $assignments, 'subjects' => $assignments->pluck('subject_id')->unique()->count(), 'classes' => $classIds->count(),
+                'classTeacherClasses' => $classTeacherClasses,
                 'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $school->id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
                 'lessonsToday' => $todayLessons->count(), 'todayLessons' => $todayLessons, 'attendanceToday' => $attendance->filter(fn ($row) => $row->attendance_date?->isToday())->count(),
                 'nextLesson' => $nextLesson,

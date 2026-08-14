@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Notifications\QueuedVerifyEmail;
 use App\Notifications\QueuedResetPassword;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,6 +89,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         if ($this->isSuperadmin() || $this->role === 'admin') return true;
         if (in_array($this->role, ['student', 'parent'], true)) return true;
+        if ($this->exists && TeacherAcademicScope::grantsMappedModule($this, $module)) return true;
         if (! $this->designation_id) return false;
 
         return collect($this->designation?->permissions ?? [])
@@ -97,6 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasPermission(string $permission): bool
     {
         if ($this->isSuperadmin() || $this->role === 'admin') return true;
+        if ($this->exists && TeacherAcademicScope::grantsMappedPermission($this, $permission)) return true;
         if (! $this->designation_id) return false;
 
         $permissions = collect($this->designation?->permissions ?? []);
@@ -149,12 +152,26 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new QueuedVerifyEmail);
+        // Account activation is critical and must work even when a cloud queue
+        // worker is not running. Keep the notification queue-compatible while
+        // delivering this request on the synchronous connection.
+        $this->notify((new QueuedVerifyEmail)->onConnection('sync'));
     }
 
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new QueuedResetPassword($token));
+        // Password recovery must not depend on a long-running queue worker.
+        // The notification remains a queueable job, but the sync connection
+        // sends this critical email before the request finishes.
+        $this->notify((new QueuedResetPassword($token))->onConnection('sync'));
+    }
+
+    public function getEmailForPasswordReset(): string
+    {
+        // Email addresses are unique per school, not globally. Laravel uses
+        // this value as the password-token key, so include the tenant ID to
+        // prevent a token for one school from being valid in another school.
+        return hash('sha256', $this->school_id.'|'.strtolower($this->email));
     }
 
     public function otpIsValid(string $code): bool

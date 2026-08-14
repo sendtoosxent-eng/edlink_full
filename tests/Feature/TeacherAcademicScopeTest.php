@@ -34,7 +34,10 @@ function scopedTeacherFixture(): array
     $exam=Exam::create(['school_id'=>$school->id,'term_id'=>$term->id,'school_class_id'=>$classA->id,'name'=>'Midterm']);
     $mathPaper=ExamPaper::create(['exam_id'=>$exam->id,'subject_id'=>$math->id,'maximum_score'=>100,'weighting'=>1]);
     $englishPaper=ExamPaper::create(['exam_id'=>$exam->id,'subject_id'=>$english->id,'maximum_score'=>100,'weighting'=>1]);
-    DB::table('staff_subjects')->insert(['school_id'=>$school->id,'term_id'=>$term->id,'user_id'=>$subjectTeacher->id,'subject_id'=>$math->id,'school_class_id'=>$classA->id,'created_at'=>now(),'updated_at'=>now()]);
+    DB::table('staff_subjects')->insert([
+        ['school_id'=>$school->id,'term_id'=>$term->id,'user_id'=>$classTeacher->id,'subject_id'=>$math->id,'school_class_id'=>$classA->id,'created_at'=>now(),'updated_at'=>now()],
+        ['school_id'=>$school->id,'term_id'=>$term->id,'user_id'=>$subjectTeacher->id,'subject_id'=>$math->id,'school_class_id'=>$classA->id,'created_at'=>now(),'updated_at'=>now()],
+    ]);
     return compact('school','term','classA','classB','classTeacher','subjectTeacher','studentA','studentB','mathPaper','englishPaper');
 }
 
@@ -51,10 +54,10 @@ it('does not give a subject teacher the general student directory', function () 
     $this->actingAs($data['subjectTeacher'])->get(route('students.register'))->assertForbidden();
 });
 
-it('lets a class teacher enter every subject in their class', function () {
+it('limits a class teacher marks entry to subjects explicitly assigned in their class', function () {
     $data=scopedTeacherFixture();
     Livewire::actingAs($data['classTeacher'])->test(MarksEntry::class)
-        ->assertSee('Mathematics')->assertSee('English');
+        ->assertSee('Mathematics')->assertDontSee('English');
 });
 
 it('limits a subject teacher to their assigned subject', function () {

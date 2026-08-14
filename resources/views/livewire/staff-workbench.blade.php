@@ -137,11 +137,15 @@
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b p-5"><h2 class="font-bold">Teaching assignments</h2></div>
                 <div class="max-h-80 divide-y overflow-y-auto">
-                    @forelse($teacher['assignments'] as $assignment)
+                    @foreach($teacher['classTeacherClasses'] as $classTeacherClass)
+                        <div class="bg-amber-50 p-4 text-sm"><p class="font-semibold">{{ $classTeacherClass->name }}</p><p class="text-xs font-bold text-amber-700">Class teacher responsibility</p></div>
+                    @endforeach
+                    @foreach($teacher['assignments'] as $assignment)
                         <div class="p-4 text-sm"><p class="font-semibold">{{ $assignment->subject }}</p><p class="text-xs text-slate-400">{{ $assignment->class ?: 'All assigned classes' }}{{ $assignment->code ? ' · '.$assignment->code : '' }}</p></div>
-                    @empty
+                    @endforeach
+                    @if($teacher['assignments']->isEmpty() && $teacher['classTeacherClasses']->isEmpty())
                         <div class="p-8 text-center text-sm text-slate-400">No subjects have been assigned.</div>
-                    @endforelse
+                    @endif
                 </div>
             </section>
         </div>

@@ -295,7 +295,7 @@
             <!-- Reconciliation History Table -->
             <section class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
                 <div class="border-b border-slate-100 p-5 bg-slate-50/50">
-                    <h2 class="text-base font-extrabold text-slate-900">Reconciliation History</h2>
+                    <h2 class="text-base font-extrabold text-slate-900">Reconciliation history</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-xs text-left">

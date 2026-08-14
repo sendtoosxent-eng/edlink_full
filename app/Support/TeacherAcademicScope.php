@@ -10,7 +10,10 @@ final class TeacherAcademicScope
 {
     public static function isTeacher(User $user): bool
     {
-        return $user->role === 'teacher' || str_contains(strtolower((string) $user->designation?->name), 'teacher');
+        return $user->role === 'teacher'
+            || str_contains(strtolower((string) $user->designation?->name), 'teacher')
+            || self::classIds($user)->isNotEmpty()
+            || self::subjectAssignments($user, $user->school?->currentTerm()?->id)->isNotEmpty();
     }
 
     public static function classIds(User $user): Collection
@@ -28,7 +31,10 @@ final class TeacherAcademicScope
 
     public static function canViewStudentDirectory(User $user): bool
     {
-        if (! self::isTeacher($user)) return $user->hasPermission('students.view');
+        if (! self::isTeacher($user)) {
+            return $user->hasPermission('students.view');
+        }
+
         return $user->hasPermission('students.manage') || self::classIds($user)->isNotEmpty();
     }
 
@@ -39,8 +45,10 @@ final class TeacherAcademicScope
 
     public static function canEnterPaper(User $user, int $classId, int $subjectId, int $termId): bool
     {
-        if (! self::isTeacher($user)) return $user->hasPermission('exams.marks') || $user->hasPermission('exams.setup');
-        if (self::classIds($user)->contains($classId)) return true;
+        if (! self::isTeacher($user)) {
+            return $user->hasPermission('exams.marks') || $user->hasPermission('exams.setup');
+        }
+
         return self::subjectAssignments($user, $termId)->contains(
             fn ($assignment) => (int) $assignment->school_class_id === $classId && (int) $assignment->subject_id === $subjectId
         );
@@ -48,8 +56,38 @@ final class TeacherAcademicScope
 
     public static function canViewExam(User $user, int $classId, int $termId): bool
     {
-        if (! self::isTeacher($user)) return $user->hasPermission('exams.results');
+        if (! self::isTeacher($user)) {
+            return $user->hasPermission('exams.results');
+        }
+
         return self::classIds($user)->contains($classId)
             || self::subjectAssignments($user, $termId)->contains(fn ($assignment) => (int) $assignment->school_class_id === $classId);
+    }
+
+    public static function grantsMappedPermission(User $user, string $permission): bool
+    {
+        if (! in_array($permission, ['attendance.daily', 'attendance.subject', 'exams.marks', 'exams.results'], true)) {
+            return false;
+        }
+
+        $termId = $user->school?->currentTerm()?->id;
+
+        return match ($permission) {
+            'attendance.daily' => self::classIds($user)->isNotEmpty(),
+            'attendance.subject', 'exams.marks' => self::subjectAssignments($user, $termId)->isNotEmpty(),
+            'exams.results' => self::classIds($user)->isNotEmpty() || self::subjectAssignments($user, $termId)->isNotEmpty(),
+            default => false,
+        };
+    }
+
+    public static function grantsMappedModule(User $user, string $module): bool
+    {
+        return match ($module) {
+            'attendance' => self::grantsMappedPermission($user, 'attendance.daily')
+                || self::grantsMappedPermission($user, 'attendance.subject'),
+            'exams' => self::grantsMappedPermission($user, 'exams.marks')
+                || self::grantsMappedPermission($user, 'exams.results'),
+            default => false,
+        };
     }
 }

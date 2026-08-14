@@ -39,10 +39,10 @@ new #[Layout('layouts.guest')] class extends Component
 <div>
     <h1 class='text-2xl font-bold text-darken'>Choose a new password</h1>
     <form wire:submit='resetPassword' class='mt-6 space-y-4'>
-        <div><label class='text-sm font-medium'>School number</label><input wire:model='school_number' required class='mt-1 w-full rounded-lg border-gray-300 uppercase'></div>
-        <div><label class='text-sm font-medium'>Email address</label><input wire:model='email' type='email' required class='mt-1 w-full rounded-lg border-gray-300'>@error('email')<span class='text-xs text-red-600'>{{ $message }}</span>@enderror</div>
-        <div><label class='text-sm font-medium'>New password</label><input wire:model='password' type='password' required class='mt-1 w-full rounded-lg border-gray-300'>@error('password')<span class='text-xs text-red-600'>{{ $message }}</span>@enderror</div>
-        <div><label class='text-sm font-medium'>Confirm password</label><input wire:model='password_confirmation' type='password' required class='mt-1 w-full rounded-lg border-gray-300'></div>
+        <div><label class='text-sm font-medium'>School number</label><input wire:model='school_number' required autocomplete='organization' class='mt-1 w-full rounded-lg border-gray-300 uppercase'>@error('school_number')<span class='text-xs text-red-600'>{{ $message }}</span>@enderror</div>
+        <div><label class='text-sm font-medium'>Email address</label><input wire:model='email' type='email' required autocomplete='email' class='mt-1 w-full rounded-lg border-gray-300'>@error('email')<span class='text-xs text-red-600'>{{ $message }}</span>@enderror</div>
+        <div><label class='text-sm font-medium'>New password</label><input wire:model='password' type='password' required autocomplete='new-password' class='mt-1 w-full rounded-lg border-gray-300'>@error('password')<span class='text-xs text-red-600'>{{ $message }}</span>@enderror</div>
+        <div><label class='text-sm font-medium'>Confirm password</label><input wire:model='password_confirmation' type='password' required autocomplete='new-password' class='mt-1 w-full rounded-lg border-gray-300'></div>
         <button class='w-full rounded-full bg-darken py-3 font-medium text-white'>Reset password</button>
     </form>
 </div>

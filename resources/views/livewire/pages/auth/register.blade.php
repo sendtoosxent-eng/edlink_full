@@ -134,6 +134,8 @@ new #[Layout('layouts.guest-blank')] class extends Component
                 'role' => 'admin',
             ]);
 
+            app(\App\Services\DefaultDesignationService::class)->ensureFor($school);
+
             DemoRegistration::updateOrCreate(
                 ['email' => $this->email],
                 ['used_at' => now()],

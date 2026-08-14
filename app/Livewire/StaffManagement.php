@@ -72,7 +72,11 @@ class StaffManagement extends Component
                 $this->syncSchoolAccess($staff, $school);
                 return $staff;
             });
-            $staff->sendEmailVerificationNotification();
+            try {
+                $staff->sendEmailVerificationNotification();
+            } catch (Throwable $mailException) {
+                Log::warning('Staff created but verification email delivery failed.', ['school_id' => $school->id, 'staff_id' => $staff->id, 'exception' => $mailException]);
+            }
             $this->reset(['name', 'email', 'phone', 'base_salary', 'password', 'designationId']);
             $this->job_title = 'Teacher';
             $this->role = 'teacher';
@@ -80,6 +84,30 @@ class StaffManagement extends Component
         } catch (Throwable $exception) {
             Log::error('Quick staff creation failed.', ['school_id' => $school->id, 'exception' => $exception]);
             $this->addError('add', 'The staff record was not saved. Please try again.');
+        }
+    }
+
+    public function resendVerification(int $id): void
+    {
+        abort_unless(Auth::user()->hasPermission('staff.manage'), 403);
+        $staff = User::where('school_id', Auth::user()->school_id)->findOrFail($id);
+
+        if ($staff->hasVerifiedEmail()) {
+            session()->flash('status', $staff->name.' has already verified their email.');
+
+            return;
+        }
+
+        try {
+            $staff->sendEmailVerificationNotification();
+            session()->flash('status', 'A new verification link was sent to '.$staff->email.'.');
+        } catch (Throwable $exception) {
+            Log::warning('Verification email resend failed.', [
+                'school_id' => $staff->school_id,
+                'staff_id' => $staff->id,
+                'exception' => $exception,
+            ]);
+            session()->flash('error', 'The verification email could not be sent. Check the cloud mail settings and try again.');
         }
     }
 
@@ -178,7 +206,7 @@ class StaffManagement extends Component
         }
 
         $data = [
-            'name' => trim($this->editName), 'email' => trim($this->editEmail),
+            'name' => trim($this->editName), 'email' => strtolower(trim($this->editEmail)),
             'phone' => trim($this->editPhone) ?: null, 'job_title' => trim($this->editJobTitle),
             'role' => $this->editRole, 'designation_id' => $this->editDesignationId ?: null,
             'base_salary' => $this->editBaseSalary, 'joined_at' => $this->editJoinedAt ?: null,
