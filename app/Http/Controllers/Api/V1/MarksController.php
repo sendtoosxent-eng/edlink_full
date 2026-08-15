@@ -29,7 +29,7 @@ class MarksController extends ApiController
     public function show(Request $request,int $paper)
     {
         $paper=$this->paper($request,$paper);
-        $students=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id)->orderBy('name')->get(['id','name','admission_no']);
+        $students=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id,$paper->exam->term_id)->orderBy('name')->get(['id','name','admission_no']);
         $marks=DB::table('exam_marks')->where('exam_paper_id',$paper->id)->get()->keyBy('student_id');
         $submission=DB::table('exam_paper_submissions')->where('exam_paper_id',$paper->id)->first();
         return $this->ok(['paper'=>$paper,'status'=>$submission?->status??'draft','students'=>$students->map(fn($s)=>['student'=>$s,'score'=>$marks->get($s->id)?->score])],
@@ -40,7 +40,7 @@ class MarksController extends ApiController
         $paper=$this->paper($request,$paper); $data=$request->validated();
         $submission=DB::table('exam_paper_submissions')->where('exam_paper_id',$paper->id)->first();
         abort_if($submission && $submission->status!=='draft',409,'Submitted marks are read-only.');
-        $allowed=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id)->pluck('id');
+        $allowed=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id,$paper->exam->term_id)->pluck('id');
         abort_unless(collect($data['marks'])->pluck('student_id')->diff($allowed)->isEmpty(),403);
         foreach($data['marks'] as $mark) abort_if($mark['score']!==null && $mark['score']>$paper->maximum_score,422,'A score exceeds the paper maximum.');
         $version=DB::table('exam_marks')->where('exam_paper_id',$paper->id)->max('updated_at');

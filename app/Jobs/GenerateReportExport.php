@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Livewire\Reports;
 use App\Models\ReportExport;
 use App\Models\User;
+use App\Support\CsvSafe;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Auth;
@@ -38,12 +39,12 @@ class GenerateReportExport implements ShouldQueue
         fputcsv($stream, $result['columns']);
         $count = 0;
         foreach ($result['rows'] as $row) {
-            fputcsv($stream, collect($row)->map(fn ($value) => strip_tags((string) $value))->all());
+            fputcsv($stream, CsvSafe::row($row));
             $count++;
         }
         if ($result['summaryLabel'] ?? null) {
             fputcsv($stream, []);
-            fputcsv($stream, [$result['summaryLabel'], $result['summaryValue']]);
+            fputcsv($stream, CsvSafe::row([$result['summaryLabel'], $result['summaryValue']]));
         }
         rewind($stream);
         $path = 'report-exports/'.$export->id.'.csv';

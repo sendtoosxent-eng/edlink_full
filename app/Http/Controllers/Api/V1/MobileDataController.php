@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\HomeworkAssignment;
 use App\Support\MobileAccess;
 use App\Support\TeacherAcademicScope;
+use App\Services\StudentSubjectSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -72,6 +73,10 @@ class MobileDataController extends ApiController
         $exams = Exam::query()->where('school_id', $request->user()->school_id)->where('school_class_id', $student->school_class_id)
             ->whereNotNull('published_at')->with(['term:id,name', 'papers.subject:id,name,code'])
             ->latest('published_at')->get()->map(function ($exam) use ($student) {
+                if (StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)) {
+                    $selected = $student->subjectSelections()->where('term_id', $exam->term_id)->pluck('subject_id');
+                    if ($selected->isNotEmpty()) $exam->setRelation('papers', $exam->papers->whereIn('subject_id', $selected)->values());
+                }
                 $marks = DB::table('exam_marks')->where('student_id', $student->id)->whereIn('exam_paper_id', $exam->papers->pluck('id'))->get()->keyBy('exam_paper_id');
                 return ['id'=>$exam->id,'name'=>$exam->name,'term'=>$exam->term?->name,'published_at'=>$exam->published_at,
                     'papers'=>$exam->papers->map(fn($paper)=>['id'=>$paper->id,'subject'=>$paper->subject?->name,'score'=>$marks->get($paper->id)?->score,'maximum_score'=>$paper->maximum_score])];
@@ -96,10 +101,6 @@ class MobileDataController extends ApiController
             ->where('staff_subjects.school_id',$user->school_id)->where('staff_subjects.user_id',$user->id)
             ->when($termId,fn($q)=>$q->where(fn($x)=>$x->where('staff_subjects.term_id',$termId)->orWhereNull('staff_subjects.term_id')))
             ->get(['school_classes.id as school_class_id','school_classes.name as class_name','subjects.id as subject_id','subjects.name as subject_name']);
-        foreach(TeacherAcademicScope::classIds($user) as $classId){
-            $className=DB::table('school_classes')->where('school_id',$user->school_id)->where('id',$classId)->value('name');
-            foreach(DB::table('subjects')->where('school_id',$user->school_id)->get(['id','name']) as $subject) $assigned->push((object)['school_class_id'=>$classId,'class_name'=>$className,'subject_id'=>$subject->id,'subject_name'=>$subject->name]);
-        }
         return $this->ok($assigned->unique(fn($a)=>$a->school_class_id.'-'.$a->subject_id)->values());
     }
 
@@ -123,6 +124,10 @@ class MobileDataController extends ApiController
         if ($student) $query->whereNotNull('published_at')->where('school_class_id',$student->school_class_id)
             ->where(fn($q)=>$q->whereNull('stream_id')->orWhere('stream_id',$student->stream_id));
         else $query->where('teacher_id',$request->user()->id);
+        if ($student && StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)) {
+            $selected = $student->subjectSelections()->where('term_id', $request->user()->school->currentTerm()?->id)->pluck('subject_id');
+            if ($selected->isNotEmpty()) $query->whereIn('subject_id', $selected);
+        }
         return $query;
     }
 

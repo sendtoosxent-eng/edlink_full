@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\StudentEnrolment;
 use App\Models\Term;
 use App\Services\TermReportCalculator;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,7 @@ class StudentTermReport extends Component
         if ($student && $exam) {
             abort_unless($this->canAccessStudent($student)
                 && $exam->school_id === Auth::user()->school_id
+                && (! TeacherAcademicScope::isTeacher(Auth::user()) || TeacherAcademicScope::canViewExam(Auth::user(), $exam->school_class_id, $exam->term_id))
                 && $exam->school_class_id === $student->school_class_id
                 && (! $exam->stream_id || $exam->stream_id === $student->stream_id)
                 && (! $this->isPortalUser() || $exam->isPublished()), 404);
@@ -59,8 +61,20 @@ class StudentTermReport extends Component
 
     protected function canAccessStudent(Student $student): bool
     {
-        return $student->school_id === Auth::user()->school_id
-            && (! $this->isPortalUser() || $this->linkedStudentIds()->contains($student->id));
+        if ($student->school_id !== Auth::user()->school_id) {
+            return false;
+        }
+        if ($this->isPortalUser()) {
+            return $this->linkedStudentIds()->contains($student->id);
+        }
+        if (TeacherAcademicScope::isTeacher(Auth::user())) {
+            $classIds = TeacherAcademicScope::academicClassIds(Auth::user(), (int) ($this->termId ?: 0));
+
+            return $classIds->contains($student->school_class_id)
+                || $student->enrolments()->whereIn('school_class_id', $classIds)->exists();
+        }
+
+        return true;
     }
 
     public function updatedTermId(): void
@@ -89,12 +103,15 @@ class StudentTermReport extends Component
 
     protected function studentsQuery(): Builder
     {
-        return Student::where('students.school_id', Auth::user()->school_id)
+        $query = Student::where('students.school_id', Auth::user()->school_id)
             ->when($this->isPortalUser(), fn (Builder $query) => $query->whereIn('students.id', $this->linkedStudentIds()))
             ->when($this->termId, fn (Builder $query) => $query->where(function (Builder $scope) {
                 $scope->whereHas('enrolments', fn (Builder $enrolment) => $enrolment->where('term_id', $this->termId))
                     ->orWhere('students.term_id', $this->termId);
-            }))->orderBy('students.name');
+            }));
+
+        return TeacherAcademicScope::scopeStudents($query, Auth::user(), (int) ($this->termId ?: 0))
+            ->orderBy('students.name');
     }
 
     protected function examsQuery(): Builder
@@ -128,13 +145,20 @@ class StudentTermReport extends Component
     {
         $scales = GradingScale::where('school_id', $student->school_id)->where('education_stage', $exam->schoolClass->education_stage)->orderByDesc('minimum_percentage')->get();
 
-        return DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
+        $query = DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
             ->join('exam_paper_submissions', 'exam_paper_submissions.exam_paper_id', '=', 'exam_papers.id')
             ->join('subjects', 'subjects.id', '=', 'exam_papers.subject_id')
             ->where('exam_marks.student_id', $student->id)->where('exam_papers.exam_id', $exam->id)
             ->where('exam_paper_submissions.status', 'approved')->whereNotNull('exam_marks.score')
-            ->select('subjects.id as subject_id', 'subjects.name as subject_name', 'exam_marks.score', 'exam_papers.maximum_score', 'exam_papers.weighting')
-            ->orderBy('subjects.name')->get()->map(function (object $row) use ($scales): object {
+            ->select('subjects.id as subject_id', 'subjects.name as subject_name', 'exam_marks.score', 'exam_papers.maximum_score', 'exam_papers.weighting');
+        $user = Auth::user();
+        if (TeacherAcademicScope::isTeacher($user) && ! TeacherAcademicScope::classIds($user)->contains($exam->school_class_id)) {
+            $subjectIds = TeacherAcademicScope::subjectAssignments($user, $exam->term_id)
+                ->where('school_class_id', $exam->school_class_id)->pluck('subject_id');
+            $query->whereIn('subjects.id', $subjectIds);
+        }
+
+        return $query->orderBy('subjects.name')->get()->map(function (object $row) use ($scales): object {
                 $percentage = (float) $row->maximum_score > 0 ? round((float) $row->score / (float) $row->maximum_score * 100, 2) : 0;
                 $scale = $scales->first(fn ($item) => $percentage >= (float) $item->minimum_percentage && $percentage <= (float) $item->maximum_percentage);
                 $grade = $scale?->grade ?? '—';
@@ -145,6 +169,16 @@ class StudentTermReport extends Component
     protected function attendanceFor(Student $student, Term $term): Collection
     {
         $base = AttendanceRecord::where(['school_id' => $student->school_id, 'term_id' => $term->id, 'student_id' => $student->id]);
+        $user = Auth::user();
+        if (TeacherAcademicScope::isTeacher($user)) {
+            if (TeacherAcademicScope::classIds($user)->contains($student->school_class_id)) {
+                return $base->whereNull('subject_id')->get();
+            }
+            $subjectIds = TeacherAcademicScope::subjectAssignments($user, $term->id)
+                ->where('school_class_id', $student->school_class_id)->pluck('subject_id');
+
+            return $base->whereIn('subject_id', $subjectIds)->get();
+        }
         $daily = (clone $base)->where('session_key', 'daily')->get();
         return $daily->isNotEmpty() ? $daily : $base->whereNotNull('subject_id')->get();
     }
@@ -191,6 +225,9 @@ class StudentTermReport extends Component
             $enrolment = StudentEnrolment::with(['schoolClass', 'stream'])->where('school_id', $school->id)->where('term_id', $term->id)->where('student_id', $student->id)->first();
             if ($enrolment) { $student->setRelation('schoolClass', $enrolment->schoolClass); $student->setRelation('stream', $enrolment->stream); }
             $settings = \App\Services\StageReportSettings::get($school->id, $student->schoolClass->education_stage);
+            if (TeacherAcademicScope::isTeacher(Auth::user())) {
+                $settings['show_fees'] = false;
+            }
             $student->setAttribute('section', $student->stream?->name ?? '—');
             $student->setAttribute('photo_url', $student->photoUrl());
             $grades = $this->gradesFor($student, $exam);
@@ -199,8 +236,11 @@ class StudentTermReport extends Component
             $gpa = $credits > 0 ? round($calculationGrades->sum(fn ($grade) => $grade->grade_point * $grade->credit_hours) / $credits, 2) : 0;
             $aggregate = $calculationGrades->sum(fn ($grade) => (int) ($grade->aggregate_points ?? 0));
             $attendance = $this->attendanceFor($student, $term);
-            $position = $settings['show_position'] ? $this->positionFor($student, $exam) : null;
-            $fees = ['due' => $student->totalDue($term), 'paid' => $student->totalPaid($term), 'balance' => $student->balance($term)];
+            $canViewWholeClass = ! TeacherAcademicScope::isTeacher(Auth::user()) || TeacherAcademicScope::classIds(Auth::user())->contains($exam->school_class_id);
+            $position = $settings['show_position'] && $canViewWholeClass ? $this->positionFor($student, $exam) : null;
+            if (! TeacherAcademicScope::isTeacher(Auth::user())) {
+                $fees = ['due' => $student->totalDue($term), 'paid' => $student->totalPaid($term), 'balance' => $student->balance($term)];
+            }
             $promotion = $enrolment?->promotion_outcome;
         }
 

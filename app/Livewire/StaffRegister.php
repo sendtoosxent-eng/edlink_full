@@ -190,6 +190,7 @@ class StaffRegister extends Component
 
     public function register(StaffRegistrationService $registration): void
     {
+        abort_unless(Auth::user()->hasPermission('staff.manage'), 403);
         $this->normalizeIdentity();
         $this->has_teaching_duties = $this->role === 'teacher' || $this->has_teaching_duties;
 
@@ -206,6 +207,11 @@ class StaffRegister extends Component
         ], $this->validationMessages());
 
         $designation = $this->validateDesignation();
+        if ($this->role === 'admin' && ! in_array(Auth::user()->role, ['admin', 'superadmin'], true)) {
+            throw ValidationException::withMessages([
+                'role' => 'Only a school administrator may create another administrator.',
+            ]);
+        }
         $school = Auth::user()->school;
         $term = $school->currentTerm();
         $subjectAssignments = $this->validatedSubjectAssignments();

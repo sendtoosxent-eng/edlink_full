@@ -21,10 +21,15 @@ class AuthController extends ApiController
             throw ValidationException::withMessages(['email' => ['The school number, email, or password is incorrect.']]);
         }
         abort_if($user->employment_status === 'inactive', 403, 'This staff account is inactive.');
+        abort_unless($user->hasVerifiedEmail(), 403, 'Verify your email address before using the mobile application.');
         abort_unless(in_array($user->role, ['teacher', 'student', 'parent'], true), 403, 'This account is not enabled for the mobile application.');
         abort_unless($school->isLicenceUsable() && ! $school->isExpiredDemo(), 403, 'This school is not currently active.');
 
-        $token = $user->createToken($request->string('device_name'), ['mobile'])->plainTextToken;
+        $token = $user->createToken(
+            $request->string('device_name'),
+            ['mobile'],
+            now()->addMinutes((int) config('sanctum.expiration', 10080)),
+        )->plainTextToken;
         AuditLog::record($school->id, 'mobile.login', $user, ['device_name' => $request->string('device_name')]);
 
         return $this->ok(['token' => $token, 'user' => $this->userPayload($user)]);

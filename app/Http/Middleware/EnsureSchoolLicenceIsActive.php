@@ -23,6 +23,10 @@ class EnsureSchoolLicenceIsActive
         }
 
         $school = $user->school;
+        $activeSchoolId = (int) $request->session()->get('active_school_id');
+        if ($activeSchoolId && $activeSchoolId !== (int) $user->school_id) {
+            $school = $user->schoolAccesses()->whereKey($activeSchoolId)->first() ?? $school;
+        }
         if ($school && $school->isLicenceUsable() && ! $school->isExpiredDemo()) {
             return $next($request);
         }

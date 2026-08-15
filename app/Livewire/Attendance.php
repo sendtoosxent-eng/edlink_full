@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Support\CsvSafe;
 use App\Models\AttendanceRecord;
 use App\Models\SchoolClass;
 use App\Models\Stream;
@@ -72,7 +73,7 @@ class Attendance extends Component
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, ['Learner', 'Admission no.', 'Class', 'Recorded days', 'Present / Late', 'Absent', 'Excused', 'Attendance rate']);
-            foreach ($rows as $row) fputcsv($out, [$row['name'], $row['admission_no'], $row['class'], $row['total'], $row['present'], $row['absent'], $row['excused'], $row['rate'].'%']);
+            foreach ($rows as $row) fputcsv($out, CsvSafe::row([$row['name'], $row['admission_no'], $row['class'], $row['total'], $row['present'], $row['absent'], $row['excused'], $row['rate'].'%']));
             fclose($out);
         }, 'attendance-performance-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }

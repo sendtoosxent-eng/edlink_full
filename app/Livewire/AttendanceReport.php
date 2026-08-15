@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Support\CsvSafe;
+use App\Support\TeacherAcademicScope;
 use App\Models\AttendanceRecord;
 use App\Models\SchoolClass;
 use App\Models\Stream;
@@ -64,7 +66,7 @@ class AttendanceReport extends Component
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, ['Date', 'Time', 'Subject/session', 'Learner', 'Admission no.', 'Class', 'Stream', 'Status', 'Recorded by']);
             foreach ($records as $record) {
-                fputcsv($out, [
+                fputcsv($out, CsvSafe::row([
                     $record->attendance_date?->format('Y-m-d'),
                     $record->lesson_time ?: '',
                     $record->subject?->name ?? 'Daily register',
@@ -74,7 +76,7 @@ class AttendanceReport extends Component
                     $record->stream?->name ?? $record->student?->stream?->name,
                     ucfirst($record->status),
                     $record->recorder?->name,
-                ]);
+                ]));
             }
             fclose($out);
         }, 'attendance-report-'.$this->fromDate.'-to-'.$this->toDate.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
@@ -85,7 +87,7 @@ class AttendanceReport extends Component
         $school = Auth::user()->school;
         $term = $school->currentTerm();
 
-        return AttendanceRecord::with(['student.schoolClass', 'student.stream', 'subject', 'schoolClass', 'stream', 'recorder:id,name'])
+        $query = AttendanceRecord::with(['student.schoolClass', 'student.stream', 'subject', 'schoolClass', 'stream', 'recorder:id,name'])
             ->where('school_id', $school->id)
             ->when($term, fn (Builder $query) => $query->where('term_id', $term->id))
             ->when($this->fromDate, fn (Builder $query) => $query->whereDate('attendance_date', '>=', $this->fromDate))
@@ -104,11 +106,17 @@ class AttendanceReport extends Component
             ->when($this->search, fn (Builder $query) => $query->whereHas('student', fn (Builder $student) => $student
                 ->where('name', 'like', '%'.$this->search.'%')
                 ->orWhere('admission_no', 'like', '%'.$this->search.'%')));
+
+        return TeacherAcademicScope::scopeAttendance($query, Auth::user(), $term?->id);
     }
 
     public function render()
     {
         $school = Auth::user()->school;
+        $user = Auth::user();
+        $term = $school->currentTerm();
+        $classIds = TeacherAcademicScope::isTeacher($user) ? TeacherAcademicScope::academicClassIds($user, $term?->id) : null;
+        $subjectIds = TeacherAcademicScope::isTeacher($user) ? TeacherAcademicScope::subjectAssignments($user, $term?->id)->pluck('subject_id')->unique() : null;
         $base = $this->recordsQuery();
         $counts = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $total = (int) $counts->sum();
@@ -119,9 +127,9 @@ class AttendanceReport extends Component
             'counts' => $counts,
             'total' => $total,
             'rate' => $total ? round($attended / $total * 100, 1) : 0,
-            'classes' => SchoolClass::where('school_id', $school->id)->orderBy('name')->get(),
-            'streams' => Stream::where('school_id', $school->id)->when($this->schoolClassId, fn (Builder $query) => $query->where('school_class_id', $this->schoolClassId))->orderBy('name')->get(),
-            'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(),
+            'classes' => SchoolClass::where('school_id', $school->id)->when($classIds, fn (Builder $query) => $query->whereIn('id', $classIds))->orderBy('name')->get(),
+            'streams' => Stream::where('school_id', $school->id)->when($classIds, fn (Builder $query) => $query->whereIn('school_class_id', $classIds))->when($this->schoolClassId, fn (Builder $query) => $query->where('school_class_id', $this->schoolClassId))->orderBy('name')->get(),
+            'subjects' => Subject::where('school_id', $school->id)->when($subjectIds, fn (Builder $query) => $query->whereIn('id', $subjectIds))->orderBy('name')->get(),
             'term' => $school->currentTerm(),
             'pageTitle' => 'Attendance Reports',
         ]);

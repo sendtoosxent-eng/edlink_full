@@ -82,13 +82,14 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::post('setup', [PlatformAuthController::class, 'confirmSetup'])->middleware('throttle:10,1')->name('setup.confirm');
         Route::get('challenge', [PlatformAuthController::class, 'showChallenge'])->name('challenge');
         Route::post('challenge', [PlatformAuthController::class, 'challenge'])->middleware('throttle:10,1')->name('challenge.verify');
-        Route::get('mfa/reset', [PlatformAuthController::class, 'showMfaReset'])->name('mfa.reset');
-        Route::post('mfa/reset', [PlatformAuthController::class, 'resetMfa'])->middleware('throttle:5,1')->name('mfa.reset.store');
         Route::post('logout', [PlatformAuthController::class, 'logout'])->name('logout');
     });
     Route::middleware('platform.mfa')->group(function () {
-        Route::get('backups/download', DatabaseBackupController::class)->name('backups.download');
+        Route::get('mfa/reset', [PlatformAuthController::class, 'showMfaReset'])->name('mfa.reset');
+        Route::post('mfa/reset', [PlatformAuthController::class, 'resetMfa'])->middleware('throttle:5,1')->name('mfa.reset.store');
         Route::get('/', [PlatformAuthController::class, 'dashboard'])->name('dashboard');
+        Route::middleware('platform.role:platform_owner,operations_admin')->group(function () {
+        Route::get('backups/download', DatabaseBackupController::class)->middleware('platform.role:platform_owner')->name('backups.download');
         Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools');
         Route::get('groups', [PlatformSchoolGroupController::class, 'index'])->name('groups.index');
         Route::post('groups', [PlatformSchoolGroupController::class, 'store'])->name('groups.store');
@@ -101,7 +102,7 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::get('schools/{school}/edit', [PlatformSchoolController::class, 'edit'])->name('schools.edit');
         Route::put('schools/{school}', [PlatformSchoolController::class, 'update'])->name('schools.update');
         Route::put('schools/{school}/sms-configuration', [PlatformSchoolSmsController::class, 'update'])->name('schools.sms-configuration.update');
-        Route::delete('schools/{school}', [PlatformSchoolController::class, 'destroy'])->name('schools.destroy');
+        Route::delete('schools/{school}', [PlatformSchoolController::class, 'destroy'])->middleware('platform.role:platform_owner')->name('schools.destroy');
         Route::post('schools/{school}/imports/students', [PlatformSchoolImportController::class, 'students'])->name('schools.imports.students');
         Route::post('schools/{school}/imports/teachers', [PlatformSchoolImportController::class, 'teachers'])->name('schools.imports.teachers');
         Route::get('imports/templates/{type}', [PlatformSchoolImportController::class, 'template'])->name('imports.template');
@@ -109,23 +110,28 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::patch('licences/{school}', [PlatformSchoolController::class, 'updateLicence'])->name('licences.update');
         Route::get('website', [PlatformLandingPageController::class, 'edit'])->name('website.edit');
         Route::put('website', [PlatformLandingPageController::class, 'update'])->name('website.update');
+        Route::get('billing', [PlatformOperationsController::class, 'billing'])->name('billing');
+        Route::get('audit', [PlatformOperationsController::class, 'audit'])->name('audit');
+        Route::get('settings', [PlatformOperationsController::class, 'settings'])->name('settings');
+        Route::put('settings', [PlatformOperationsController::class, 'updateSettings'])->name('settings.update');
+        });
+        Route::middleware('platform.role:platform_owner,support_admin')->group(function () {
         Route::get('support', [PlatformSupportController::class, 'index'])->name('support.index');
         Route::get('support/{contactMessage}', [PlatformSupportController::class, 'show'])->name('support.show');
         Route::post('support/{contactMessage}/reply', [PlatformSupportController::class, 'reply'])->name('support.reply');
         Route::patch('support/{contactMessage}/status', [PlatformSupportController::class, 'toggleStatus'])->name('support.status');
-        Route::get('billing', [PlatformOperationsController::class, 'billing'])->name('billing');
-        Route::get('audit', [PlatformOperationsController::class, 'audit'])->name('audit');
+        });
+        Route::middleware('platform.role:platform_owner')->group(function () {
         Route::get('administrators', [PlatformOperationsController::class, 'administrators'])->name('administrators');
         Route::post('administrators', [PlatformOperationsController::class, 'storeAdministrator'])->name('administrators.store');
         Route::patch('administrators/{platformAdmin}', [PlatformOperationsController::class, 'updateAdministrator'])->name('administrators.update');
-        Route::get('settings', [PlatformOperationsController::class, 'settings'])->name('settings');
-        Route::put('settings', [PlatformOperationsController::class, 'updateSettings'])->name('settings.update');
+        });
     });
 });
 Route::get('/', LandingPageController::class)->name('home');
 Route::view('privacy', 'legal.privacy')->name('privacy');
 Route::view('terms', 'legal.terms')->name('terms');
-Route::post('contact', function (\Illuminate\Http\Request $request) { $data=$request->validate(['name'=>'required|string|max:255','email'=>'required|email|max:255','subject'=>'required|string|max:255','message'=>'required|string|max:5000','type'=>'nullable|in:contact,issue']); ContactMessage::create($data); return back()->with('contact_status','Thank you. The Edlink team will get back to you shortly.'); })->name('contact.store');
+Route::post('contact', function (\Illuminate\Http\Request $request) { $data=$request->validate(['name'=>'required|string|max:255','email'=>'required|email|max:255','subject'=>'required|string|max:255','message'=>'required|string|max:5000','type'=>'nullable|in:contact,issue']); ContactMessage::create($data); return back()->with('contact_status','Thank you. The Edlink team will get back to you shortly.'); })->middleware('throttle:5,1')->name('contact.store');
 
 Route::get('dashboard', function () {
     if (! auth()->user()->isSuperadmin() && auth()->user()->role !== 'admin') return redirect()->route('workbench.home');

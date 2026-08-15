@@ -17,11 +17,13 @@ class TermManagement extends Component
 
     public function mount(): void
     {
+        $this->authorizeManagement();
         $this->year = (string) now()->year;
     }
 
     public function add(): void
     {
+        $this->authorizeManagement();
         $school = Auth::user()->school;
 
         $this->validate([
@@ -76,6 +78,7 @@ class TermManagement extends Component
 
     public function openTerm(int $id): void
     {
+        $this->authorizeManagement();
         $term = Term::where('school_id', Auth::user()->school_id)->findOrFail($id);
 
         try {
@@ -98,6 +101,7 @@ class TermManagement extends Component
 
     public function closeWithRoll(int $id): void
     {
+        $this->authorizeManagement();
         $term = Term::where('school_id', Auth::user()->school_id)->findOrFail($id);
         $term->closeTerm(true);
         $this->closingTermId = null;
@@ -106,6 +110,7 @@ class TermManagement extends Component
 
     public function closeWithoutRoll(int $id): void
     {
+        $this->authorizeManagement();
         $term = Term::where('school_id', Auth::user()->school_id)->findOrFail($id);
         $term->closeTerm(false);
         $this->closingTermId = null;
@@ -114,6 +119,7 @@ class TermManagement extends Component
 
     public function prepareEnrolments(int $targetTermId): void
     {
+        $this->authorizeManagement();
         $schoolId = Auth::user()->school_id;
         $targetTerm = Term::where('school_id', $schoolId)->findOrFail($targetTermId);
         $sourceTerm = Term::where('school_id', $schoolId)
@@ -148,5 +154,10 @@ class TermManagement extends Component
                 ->get(),
             'pageTitle' => 'Terms',
         ]);
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(Auth::user()->hasPermission('finance.ledger'), 403);
     }
 }

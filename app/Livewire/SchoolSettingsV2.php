@@ -12,6 +12,7 @@ class SchoolSettingsV2 extends SchoolSettings
 {
     public function mount(): void
     {
+        $this->authorizeManagement();
         parent::mount();
         $defaults = [
             'academic_year_rule' => 'Three terms per academic year',
@@ -31,6 +32,7 @@ class SchoolSettingsV2 extends SchoolSettings
 
     public function save(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -64,9 +66,11 @@ class SchoolSettingsV2 extends SchoolSettings
 
     public function removeBadge(): void
     {
+        $this->authorizeManagement();
         $school = Auth::user()->school;
-        if ($school->badge_path) Storage::disk('public')->delete($school->badge_path);
+        $oldBadge = $school->badge_path;
         $school->update(['badge_path' => null]);
+        if ($oldBadge) Storage::disk('public')->delete($oldBadge);
         $this->reset('badge');
         Auth::user()->setRelation('school', $school->fresh());
         session()->flash('status', 'School badge removed.');
@@ -79,5 +83,10 @@ class SchoolSettingsV2 extends SchoolSettings
             ? Storage::disk('public')->url($school->badge_path) : null;
 
         return view('livewire.school-settings', compact('currentBadgeUrl') + ['pageTitle' => 'System Settings']);
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(Auth::user()->hasPermission('settings.manage'), 403);
     }
 }

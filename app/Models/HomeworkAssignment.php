@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HomeworkAssignment extends Model
 {
+    protected $hidden = ['attachment_path'];
     protected $fillable = ['school_id','term_id','teacher_id','school_class_id','stream_id','subject_id','title','instructions','attachment_path','attachment_name','maximum_score','due_at','published_at'];
     protected $casts = ['due_at'=>'datetime','published_at'=>'datetime'];
 

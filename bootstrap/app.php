@@ -13,9 +13,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\CaptureStaffActivity::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureSchoolLicenceIsActive::class);
-        $middleware->alias(['branch.context' => \App\Http\Middleware\ResolveActiveSchool::class, 'designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class, 'active.user' => \App\Http\Middleware\EnsureActiveUser::class, 'platform.mfa' => \App\Http\Middleware\EnsurePlatformMfa::class]);
+        $middleware->alias([
+            'branch.context' => \App\Http\Middleware\ResolveActiveSchool::class,
+            'designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class,
+            'active.user' => \App\Http\Middleware\EnsureActiveUser::class,
+            'platform.mfa' => \App\Http\Middleware\EnsurePlatformMfa::class,
+            'platform.role' => \App\Http\Middleware\EnsurePlatformRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

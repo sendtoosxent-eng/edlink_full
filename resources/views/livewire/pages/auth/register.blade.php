@@ -12,6 +12,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -83,6 +84,11 @@ new #[Layout('layouts.guest-blank')] class extends Component
 
     public function finish(): void
     {
+        $rateKey = 'demo-registration|'.request()->ip();
+        if (RateLimiter::tooManyAttempts($rateKey, 3)) {
+            $this->addError('email', 'Too many demo registrations from this connection. Please try again later.');
+            return;
+        }
         $this->email = Str::lower(trim($this->email));
         $this->staff_email = Str::lower(trim($this->staff_email));
 
@@ -183,6 +189,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
         });
 
         event(new Registered($user));
+        RateLimiter::hit($rateKey, 3600);
         Auth::login($user);
 
         session()->flash('new_school_number', $user->school->school_number);

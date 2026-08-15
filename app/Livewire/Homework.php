@@ -10,6 +10,8 @@ use App\Models\Subject;
 use App\Services\StudentSubjectSelectionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -53,14 +55,16 @@ class Homework extends Component
         $term=$user->school->currentTerm();
         if (!$term) throw ValidationException::withMessages(['classId'=>'Open a current term before assigning homework.']);
         $data=$this->validate([
-            'classId'=>'required|integer','streamId'=>'nullable|integer','subjectId'=>'required|integer',
+            'classId'=>['required', Rule::exists('school_classes','id')->where('school_id',$user->school_id)],
+            'streamId'=>['nullable', Rule::exists('streams','id')->where(fn($query)=>$query->where('school_id',$user->school_id)->where('school_class_id',$this->classId))],
+            'subjectId'=>['required', Rule::exists('subjects','id')->where('school_id',$user->school_id)],
             'title'=>'required|string|max:255','instructions'=>'required|string|max:10000',
             'dueAt'=>'required|date|after:now','maximumScore'=>'required|integer|min:1|max:1000',
-            'attachment'=>'nullable|file|max:10240',
+            'attachment'=>'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,webp,zip|max:10240',
         ]);
         abort_unless($this->offerings()->contains(fn($row)=>(int)$row->school_class_id===(int)$data['classId'] && (int)$row->subject_id===(int)$data['subjectId']),403);
         abort_unless(SchoolClass::where('school_id',$user->school_id)->whereKey($data['classId'])->exists() && Subject::where('school_id',$user->school_id)->whereKey($data['subjectId'])->exists(),404);
-        $path=$this->attachment?->store('homework/assignments');
+        $path=$this->attachment?->store('homework/assignments', 'local');
         HomeworkAssignment::create([
             'school_id'=>$user->school_id,'term_id'=>$term->id,'teacher_id'=>$user->id,
             'school_class_id'=>$data['classId'],'stream_id'=>$data['streamId']?:null,'subject_id'=>$data['subjectId'],
@@ -88,12 +92,14 @@ class Homework extends Component
         abort_unless($this->isStudent(),403);
         $student=$this->linkedStudent(); abort_unless($student,403);
         $assignment=$this->visibleAssignments()->firstWhere('id',$this->selectedAssignmentId); abort_unless($assignment,404);
-        $this->validate(['answer'=>'nullable|string|max:20000','submissionAttachment'=>'nullable|file|max:10240']);
+        $this->validate(['answer'=>'nullable|string|max:20000','submissionAttachment'=>'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,webp,zip|max:10240']);
         if (!filled($this->answer) && !$this->submissionAttachment) throw ValidationException::withMessages(['answer'=>'Write an answer or attach your work.']);
         $existing=HomeworkSubmission::where(['homework_assignment_id'=>$assignment->id,'student_id'=>$student->id])->first();
-        $path=$this->submissionAttachment?->store('homework/submissions') ?? $existing?->attachment_path;
+        $oldPath = $existing?->attachment_path;
+        $path=$this->submissionAttachment?->store('homework/submissions', 'local') ?? $oldPath;
         $existing?->update(['answer'=>$this->answer?:null,'attachment_path'=>$path,'attachment_name'=>$this->submissionAttachment?->getClientOriginalName() ?? $existing->attachment_name,'submitted_by'=>Auth::id(),'submitted_at'=>now(),'status'=>$assignment->due_at->isPast()?'late':'submitted','score'=>null,'feedback'=>null,'reviewed_at'=>null])
             ?? HomeworkSubmission::create(['homework_assignment_id'=>$assignment->id,'student_id'=>$student->id,'submitted_by'=>Auth::id(),'answer'=>$this->answer?:null,'attachment_path'=>$path,'attachment_name'=>$this->submissionAttachment?->getClientOriginalName(),'submitted_at'=>now(),'status'=>$assignment->due_at->isPast()?'late':'submitted']);
+        if ($this->submissionAttachment && $oldPath && $oldPath !== $path) Storage::disk('local')->delete($oldPath);
         $this->reset('submissionAttachment'); session()->flash('status','Your homework was submitted.');
     }
 

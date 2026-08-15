@@ -10,15 +10,15 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "bacon/bacon-qr-code": "3.0",
-        "barryvdh/laravel-dompdf": "*",
-        "blade-ui-kit/blade-heroicons": "*",
+        "bacon/bacon-qr-code": "^3.0",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "blade-ui-kit/blade-heroicons": "^2.7",
         "laravel/framework": "^13.8",
-        "laravel/sanctum": "*",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
-        "livewire/volt": "*",
-        "pragmarx/google2fa": "8.0",
-        "spatie/laravel-permission": "*"
+        "livewire/volt": "^1.10",
+        "pragmarx/google2fa": "^8.0",
+        "spatie/laravel-permission": "^8.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

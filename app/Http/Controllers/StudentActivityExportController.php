@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CsvSafe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -30,10 +31,10 @@ class StudentActivityExportController extends Controller
         return response()->streamDownload(function () use ($members, $group, $type): void {
             $output = fopen('php://output', 'w');
             fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [ucfirst($type).' member list', $group->name]);
+            fputcsv($output, CsvSafe::row([ucfirst($type).' member list', $group->name]));
             fputcsv($output, ['Admission number', 'Student name', 'Class', 'Gender', 'Status']);
             foreach ($members as $member) {
-                fputcsv($output, [$member->admission_no, $member->name, $member->class_name, ucfirst((string) $member->gender), ucfirst($member->status)]);
+                fputcsv($output, CsvSafe::row([$member->admission_no, $member->name, $member->class_name, ucfirst((string) $member->gender), ucfirst($member->status)]));
             }
             fclose($output);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);

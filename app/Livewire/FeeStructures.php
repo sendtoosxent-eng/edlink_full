@@ -6,6 +6,7 @@ use App\Models\FeeStructure;
 use App\Models\SchoolClass;
 use App\Models\StudentCategory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -19,12 +20,13 @@ class FeeStructures extends Component
 
     public function add(): void
     {
+        $this->authorizeManagement();
         $school = Auth::user()->school;
         $term = $school->currentTerm();
 
         $this->validate([
-            'school_class_id' => ['required', 'exists:school_classes,id'],
-            'student_category_id' => ['required', 'exists:student_categories,id'],
+            'school_class_id' => ['required', Rule::exists('school_classes', 'id')->where('school_id', $school->id)],
+            'student_category_id' => ['required', Rule::exists('student_categories', 'id')->where('school_id', $school->id)],
             'amount' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -67,6 +69,7 @@ class FeeStructures extends Component
 
     public function delete(int $id): void
     {
+        $this->authorizeManagement();
         FeeStructure::where('school_id', Auth::user()->school_id)->findOrFail($id)->delete();
         $this->deletingId = null;
         session()->flash('status', 'Fee structure removed.');
@@ -89,5 +92,10 @@ class FeeStructures extends Component
                 : collect(),
             'pageTitle' => 'Fee Structure',
         ]);
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(Auth::user()->hasPermission('finance.ledger'), 403);
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -21,6 +22,11 @@ new #[Layout('layouts.guest-split')] class extends Component
         $this->validate(['code' => ['required', 'digits:6']]);
 
         $user = User::find(session('otp_pending_user_id'));
+        $key = 'otp-verify|'.(int) session('otp_pending_user_id').'|'.request()->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $this->addError('code', 'Too many attempts. Try again in '.RateLimiter::availableIn($key).' seconds.');
+            return;
+        }
 
         $school = $user?->school;
         if ($user && (! $school || ! $school->isLicenceUsable() || $school->isExpiredDemo())) {
@@ -40,10 +46,12 @@ new #[Layout('layouts.guest-split')] class extends Component
             return;
         }
         if (! $user || ! $user->otpIsValid($this->code)) {
+            RateLimiter::hit($key, 60);
             $this->addError('code', 'That code is invalid or has expired.');
             return;
         }
 
+        RateLimiter::clear($key);
         $user->clearOtp();
         $user->forceFill(['last_login_ip' => request()->ip()])->save();
 
@@ -60,8 +68,15 @@ new #[Layout('layouts.guest-split')] class extends Component
     public function resend(): void
     {
         $user = User::find(session('otp_pending_user_id'));
+        $key = 'otp-resend|'.(int) session('otp_pending_user_id').'|'.request()->ip();
 
-        if ($user) {
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $this->addError('code', 'Please wait '.RateLimiter::availableIn($key).' seconds before requesting another code.');
+            return;
+        }
+
+        if ($user && $user->employment_status !== 'inactive' && $user->school?->isLicenceUsable() && ! $user->school->isExpiredDemo()) {
+            RateLimiter::hit($key, 60);
             $code = $user->generateOtp();
             $user->notify(new \App\Notifications\OtpCodeNotification($code));
             session()->flash('status', 'A new code has been sent.');

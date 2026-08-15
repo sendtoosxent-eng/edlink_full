@@ -8,6 +8,8 @@ use App\Models\HomeworkAssignment;
 use App\Models\HomeworkSubmission;
 use App\Support\MobileAccess;
 use App\Support\TeacherAcademicScope;
+use App\Services\StudentSubjectSelectionService;
+use App\Models\Stream;
 use Illuminate\Http\Request;
 
 class HomeworkController extends ApiController
@@ -16,14 +18,17 @@ class HomeworkController extends ApiController
     {
         $user=$request->user();
         if(TeacherAcademicScope::isTeacher($user)) $query=HomeworkAssignment::where('school_id',$user->school_id)->where('teacher_id',$user->id);
-        else { $student=MobileAccess::student($user,$request->integer('student_id')?:null); $query=HomeworkAssignment::where('school_id',$user->school_id)->whereNotNull('published_at')->where('school_class_id',$student->school_class_id)->where(fn($q)=>$q->whereNull('stream_id')->orWhere('stream_id',$student->stream_id)); }
+        else { $student=MobileAccess::student($user,$request->integer('student_id')?:null); $query=HomeworkAssignment::where('school_id',$user->school_id)->whereNotNull('published_at')->where('school_class_id',$student->school_class_id)->where(fn($q)=>$q->whereNull('stream_id')->orWhere('stream_id',$student->stream_id));if(StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)){$selections=$student->subjectSelections()->where('term_id',$user->school->currentTerm()?->id);if((clone $selections)->exists())$query->whereIn('subject_id',(clone $selections)->pluck('subject_id'));} }
         return $this->ok($query->with(['subject:id,name','schoolClass:id,name'])->orderBy('due_at')->paginate(20));
     }
     public function store(HomeworkStoreRequest $request)
     {
         $user=$request->user(); abort_unless(TeacherAcademicScope::isTeacher($user),403); $data=$request->validated();
+        $term = $user->school->currentTerm();
+        abort_unless($term, 422, 'Open a term before creating homework.');
         MobileAccess::teacherStudentQuery($user,$data['school_class_id'],$data['subject_id'])->exists();
-        $assignment=HomeworkAssignment::create([...$data,'school_id'=>$user->school_id,'term_id'=>$user->school->currentTerm()->id,'teacher_id'=>$user->id,'published_at'=>now()]);
+        if (! empty($data['stream_id'])) abort_unless(Stream::where('school_id',$user->school_id)->where('school_class_id',$data['school_class_id'])->whereKey($data['stream_id'])->exists(),422,'The selected stream does not belong to this class.');
+        $assignment=HomeworkAssignment::create([...$data,'school_id'=>$user->school_id,'term_id'=>$term->id,'teacher_id'=>$user->id,'published_at'=>now()]);
         AuditLog::record($user->school_id,'mobile.homework.created',$assignment);
         return $this->ok($assignment);
     }

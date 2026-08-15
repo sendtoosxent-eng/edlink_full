@@ -1114,6 +1114,9 @@
     <script>
       try {
         // ---- Mini calendar ----
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+        })[character]);
         const eventRecords = @json($dashboardEvents);
         let calDate = new Date();
         function renderCalendar() {
@@ -1146,7 +1149,7 @@
             list.innerHTML = eventRecords.filter(event => event.event_date.startsWith(`${year}-${String(month + 1).padStart(2,'0')}`)).map(event => `
                 <div class="flex items-center space-x-2">
                     <span class="w-8 text-center text-xs font-medium bg-gray-100 rounded py-1 text-gray-600">${new Date(event.event_date+'T00:00:00').getDate()}</span>
-                    <span class="text-gray-600">${event.title}</span>
+                    <span class="text-gray-600">${escapeHtml(event.title)}</span>
                 </div>
             `).join('') || '<p class="text-gray-400 text-xs">No events this month.</p>';
         }
@@ -1168,8 +1171,8 @@
         });
         document.getElementById('timetableBody').innerHTML = timetable.map(row => `
             <tr class="border-t border-gray-100">
-                <td class="py-2 pr-2 font-medium text-gray-500 whitespace-nowrap">${row[0]}</td>
-                ${row.slice(1).map(subj => `<td class="py-2 px-1 text-center ${subj === 'Break' ? 'text-gray-300 italic' : ''}">${subj}</td>`).join('')}
+                <td class="py-2 pr-2 font-medium text-gray-500 whitespace-nowrap">${escapeHtml(row[0])}</td>
+                ${row.slice(1).map(subj => `<td class="py-2 px-1 text-center ${subj === 'Break' ? 'text-gray-300 italic' : ''}">${escapeHtml(subj)}</td>`).join('')}
             </tr>
         `).join('');
 
@@ -1189,10 +1192,10 @@
         if (liveNotifications.length) notifications.splice(0, notifications.length, ...liveNotifications);
         const renderNotifications = (n) => `
             <div class="flex items-start space-x-3 py-3 border-b border-gray-50 last:border-0 px-1">
-                <span class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 flex-shrink-0">${n.icon}</span>
+                <span class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 flex-shrink-0">${escapeHtml(n.icon)}</span>
                 <div class="flex-1">
-                    <p class="text-sm text-gray-600">${n.text}</p>
-                    <p class="text-xs text-gray-400 mt-0.5">${n.time}</p>
+                    <p class="text-sm text-gray-600">${escapeHtml(n.text)}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">${escapeHtml(n.time)}</p>
                 </div>
             </div>
         `;
@@ -1207,10 +1210,10 @@
         const reminders = @json($dashboardReminders);
         document.getElementById('remindersList').innerHTML = reminders.length ? reminders.map(r => `
             <div class="flex items-start space-x-3 py-3 border-b border-gray-50 last:border-0">
-                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">${r.icon}</span>
+                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">${escapeHtml(r.icon)}</span>
                 <div class="flex-1">
-                    <p class="text-sm text-gray-600">${r.text}</p>
-                    <p class="text-xs text-orange-500 font-medium mt-0.5">${r.due}</p>
+                    <p class="text-sm text-gray-600">${escapeHtml(r.text)}</p>
+                    <p class="text-xs text-orange-500 font-medium mt-0.5">${escapeHtml(r.due)}</p>
                 </div>
             </div>
         `).join('') : '<p class="py-6 text-center text-xs text-gray-400">No upcoming events or deadlines.</p>';
@@ -1361,7 +1364,7 @@ performanceClassFilter.addEventListener('change', function () {
         const currencySymbol = @json($currencySymbol);
         function refreshDebtorsSpotlight() {
             const grid = document.getElementById('debtorsSpotlightGrid');
-            grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${debtor.name}</p><p class="text-xs text-gray-400">${debtor.class}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${currencySymbol} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${debtor.id}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" onclick="return confirm('Open an email reminder for this learner’s parent/guardian?')" href="mailto:${debtor.guardian_email}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for ${debtor.name}.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
+            grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${escapeHtml(debtor.name)}</p><p class="text-xs text-gray-400">${escapeHtml(debtor.class)}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${escapeHtml(currencySymbol)} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${Number(debtor.id)}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${Number(debtor.id)}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" href="mailto:${encodeURIComponent(String(debtor.guardian_email))}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for '+String(debtor.name)+'.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
         }
         refreshDebtorsSpotlight();
     </script>

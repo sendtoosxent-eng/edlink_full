@@ -5,6 +5,8 @@ use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -26,10 +28,18 @@ new #[Layout('layouts.guest')] class extends Component
 
     public function resetPassword(): void
     {
-        $this->validate(['school_number'=>['required','string'],'email'=>['required','email'],'password'=>['required','string','min:8','confirmed']]);
+        $this->validate(['school_number'=>['required','string','max:50'],'email'=>['required','email','max:255'],'password'=>['required','string','min:8','max:255','confirmed']]);
         $school=School::where('school_number',strtoupper(trim($this->school_number)))->first();
         if (!$school) {$this->addError('email','This password reset link is invalid or has expired.');return;}
-        $status=Password::broker()->reset(['email'=>strtolower(trim($this->email)),'school_id'=>$school->id,'password'=>$this->password,'password_confirmation'=>$this->password_confirmation,'token'=>$this->token],function(User $user,string $password){$user->forceFill(['password'=>Hash::make($password),'remember_token'=>Str::random(60)])->save();event(new PasswordReset($user));});
+        $status=Password::broker()->reset(['email'=>strtolower(trim($this->email)),'school_id'=>$school->id,'password'=>$this->password,'password_confirmation'=>$this->password_confirmation,'token'=>$this->token],function(User $user,string $password){
+            $user->forceFill(['password'=>Hash::make($password),'remember_token'=>Str::random(60)])->save();
+            $user->tokens()->delete();
+            $user->clearOtp();
+            if (config('session.driver') === 'database' && Schema::hasTable(config('session.table', 'sessions'))) {
+                DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+            }
+            event(new PasswordReset($user));
+        });
         if ($status!==Password::PASSWORD_RESET) {$this->addError('email','This password reset link is invalid or has expired.');return;}
         session()->flash('status','Your password was reset. You can now log in.');
         $this->redirect(route('login',absolute:false),navigate:true);

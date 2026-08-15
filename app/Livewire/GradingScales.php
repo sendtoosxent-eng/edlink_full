@@ -29,6 +29,7 @@ class GradingScales extends Component
 
     public function save(): void
     {
+        $this->authorizeManagement();
         $schoolId = Auth::user()->school_id;
         $this->grade = strtoupper(trim($this->grade));
 
@@ -73,6 +74,7 @@ class GradingScales extends Component
 
     public function edit(int $id): void
     {
+        $this->authorizeManagement();
         $scale = $this->schoolScales()->findOrFail($id);
         $this->editingId = $scale->id;
         $this->minimum = (string) (float) $scale->minimum_percentage;
@@ -91,6 +93,7 @@ class GradingScales extends Component
 
     public function delete(int $id): void
     {
+        $this->authorizeManagement();
         $this->schoolScales()->findOrFail($id)->delete();
         if ($this->editingId === $id) {
             $this->cancelEditing();
@@ -100,6 +103,7 @@ class GradingScales extends Component
 
     public function installDefaults(): void
     {
+        $this->authorizeManagement();
         if ($this->schoolScales()->exists()) {
             $this->addError('grade', 'Remove existing bands before installing the default scale.');
             return;
@@ -117,6 +121,11 @@ class GradingScales extends Component
     protected function canManage(): bool
     {
         return Auth::user()->hasPermission('exams.setup');
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless($this->canManage(), 403);
     }
 
     public function render()

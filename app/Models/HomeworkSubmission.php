@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class HomeworkSubmission extends Model
 {
+    protected $hidden = ['attachment_path'];
     protected $fillable = ['homework_assignment_id','student_id','submitted_by','answer','attachment_path','attachment_name','submitted_at','status','score','feedback','reviewed_at'];
     protected $casts = ['submitted_at'=>'datetime','reviewed_at'=>'datetime','score'=>'decimal:2'];
 

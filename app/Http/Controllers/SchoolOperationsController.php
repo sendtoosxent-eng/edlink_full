@@ -174,16 +174,20 @@ class SchoolOperationsController extends Controller
 
         if ($privacyRequest->request_type === 'export') {
             $payload = $this->exportPayload($privacyRequest);
-            $path = 'privacy-exports/'.Str::uuid().'.json';
-            Storage::disk('local')->put($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-            $privacyRequest->update(['status' => 'completed', 'result' => ['export_path' => $path], 'completed_at' => now()]);
+            $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            $privacyRequest->update(['status' => 'completed', 'result' => ['delivered_at' => now()->toISOString()], 'completed_at' => now()]);
 
-            return Storage::disk('local')->download($path, 'edlink-privacy-export.json');
+            return response()->streamDownload(
+                static fn () => print($json),
+                'edlink-privacy-export.json',
+                ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store, private'],
+            );
         }
 
         abort_unless($privacyRequest->subject_type === Student::class && $privacyRequest->subject_id, 422, 'Deletion requests must identify a student.');
-        DB::transaction(function () use ($privacyRequest): void {
+        $photoPath = DB::transaction(function () use ($privacyRequest): ?string {
             $student = Student::where('school_id', $privacyRequest->school_id)->findOrFail($privacyRequest->subject_id);
+            $photoPath = $student->photo_path;
             $suffix = 'deleted-'.$student->id;
             $student->update([
                 'name' => 'Deleted Student '.$student->id,
@@ -195,7 +199,12 @@ class SchoolOperationsController extends Controller
             ]);
             $student->guardians()->update(['name' => 'Deleted Guardian', 'email' => null, 'phone' => null, 'address' => null]);
             $privacyRequest->update(['status' => 'completed', 'result' => ['anonymized_student_id' => $student->id], 'completed_at' => now()]);
+
+            return $photoPath;
         });
+        if ($photoPath) {
+            Storage::disk('public')->delete($photoPath);
+        }
 
         return back()->with('status', 'Personal identifiers were removed. Financial and audit records were retained.');
     }
@@ -214,11 +223,18 @@ class SchoolOperationsController extends Controller
         }
 
         $payload = [];
-        foreach (['schools', 'users', 'students', 'student_guardians', 'fee_payments', 'expenses', 'attendance_records', 'audit_logs'] as $table) {
+        foreach (['schools', 'students', 'student_guardians', 'fee_payments', 'expenses', 'attendance_records', 'audit_logs'] as $table) {
             if (Schema::hasTable($table) && Schema::hasColumn($table, 'school_id')) {
                 $payload[$table] = DB::table($table)->where('school_id', $privacyRequest->school_id)->get();
             }
         }
+        $payload['users'] = DB::table('users')
+            ->where('school_id', $privacyRequest->school_id)
+            ->get([
+                'id', 'school_id', 'designation_id', 'name', 'email', 'email_verified_at',
+                'staff_number', 'phone', 'job_title', 'role', 'employment_status',
+                'joined_at', 'created_at', 'updated_at',
+            ]);
 
         return $payload;
     }
