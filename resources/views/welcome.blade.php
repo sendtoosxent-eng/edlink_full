@@ -547,6 +547,7 @@
 					{ q: 'Data security?', a: "Yes. Your school's data is isolated from every other school on Edlink and only accessible to your own staff accounts." },
 					{ q: 'Multi-branch?', a: 'Yes, our Growth and Enterprise plans support multi-branch schools with per-branch reporting and permissions.' },
 					{ q: 'Talk to support?', a: 'Use the WhatsApp or Call buttons below, or send a message through the contact form and we\'ll get back to you fast.' },
+					{q: 'What is Edlink?', a: 'Edlink is a school management system that helps schools manage students, classes, teachers, results, fees, homework, and communication in one place.' }
 				],
 				ask(q) {
 					this.messages.push({ from: 'user', text: q.q });
