@@ -158,21 +158,21 @@ new #[Layout('layouts.guest-split')] class extends Component
     <form wire:submit="login" class="space-y-5">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">School number</label>
-            <input type="text" wire:model="school_number" required autofocus placeholder="e.g. EDL-4K9P2"
+            <input type="text" wire:model.fill="school_number" value="{{ $school_number }}" required autofocus placeholder="e.g. EDL-4K9P2"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-yellow-400">
             @error('school_number') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" wire:model="email" required
+            <input type="email" x-model="$wire.email" required
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400">
             @error('email') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" wire:model="password" required
+            <input type="password" x-model="$wire.password" required
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400">
             @error('password') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>

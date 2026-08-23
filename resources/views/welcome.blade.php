@@ -71,6 +71,20 @@
 		.chat-scroll::-webkit-scrollbar { width: 5px; }
 		.chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
 		.dark .chat-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+		.cta-primary, .cta-secondary { position: relative; isolation: isolate; overflow: hidden; }
+		.cta-primary::before {
+			content: ''; position: absolute; inset: 0; z-index: -1;
+			background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.55) 45%, transparent 70%);
+			transform: translateX(-140%); transition: transform .7s ease;
+		}
+		.cta-primary:hover::before { transform: translateX(140%); }
+		.cta-primary:hover .cta-arrow { transform: translateX(5px); }
+		.cta-secondary::after {
+			content: ''; position: absolute; inset: auto 50% 0; height: 2px; background: #facc15;
+			transition: inset .3s ease;
+		}
+		.cta-secondary:hover::after { inset-inline: 18%; }
+		.demo-role-card:hover .demo-role-arrow { transform: translateX(4px) rotate(-8deg); }
 		@media (max-width: 639px) {
 			body { overflow-x: hidden; }
 			.mobile-section { padding-top: 4rem !important; padding-bottom: 4rem !important; }
@@ -130,8 +144,8 @@
 	</svg>
 </button>
 
-				<a href="{{ route('login') }}" wire:navigate class="hidden sm:inline-block px-5 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-white/15 hover:border-yellow-400 transition-colors">Login</a>
-				<a href="{{ route('register') }}" wire:navigate class="hidden sm:inline-block px-5 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all">{{ $landing['primary_cta'] }}</a>
+				<a href="{{ route('login') }}" class="cta-secondary hidden sm:inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-full border border-gray-200 dark:border-white/15 hover:border-yellow-400 hover:-translate-y-0.5 transition-all">Login <span aria-hidden="true">&rarr;</span></a>
+				<a href="#demo-access" class="cta-primary hidden sm:inline-flex items-center gap-2 px-5 py-2 text-sm font-bold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:-translate-y-0.5 transition-all">Try demo <span class="cta-arrow transition-transform" aria-hidden="true">&rarr;</span></a>
 
 				<button @click="open = !open" class="md:hidden w-9 h-9 flex items-center justify-center">
 					<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path x-show="!open" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /><path x-show="open" x-cloak stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -144,8 +158,8 @@
 			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#about" @click="open=false">About</a>
 			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#contact" @click="open=false">Contact</a>
 			<div class="grid grid-cols-2 gap-2 pt-2 sm:hidden">
-				<a href="{{ route('login') }}" class="rounded-full border border-gray-200 dark:border-white/15 px-4 py-2.5 text-center">Login</a>
-				<a href="{{ route('register') }}" class="rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2.5 text-center font-semibold text-darken">Get started</a>
+				<a href="{{ route('login') }}" class="cta-secondary rounded-full border border-gray-200 dark:border-white/15 px-4 py-2.5 text-center">Login</a>
+				<a href="#demo-access" class="cta-primary rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2.5 text-center font-semibold text-darken" @click="open=false">Try demo</a>
 			</div>
 		</div>
 	</div>
@@ -175,14 +189,13 @@
 				</p>
 
 				<div class="mt-8 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-					<a href="{{ route('register') }}" wire:navigate class="group px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold shadow-xl shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:scale-105 transition-all flex items-center justify-center space-x-2">
-						<span>{{ $landing['primary_cta'] }}</span>
-						<svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+					<a href="#demo-access" class="cta-primary group px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold shadow-xl shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:-translate-y-1 transition-all flex items-center justify-center space-x-2">
+						<span class="whitespace-nowrap">Try interactive demo</span>
+						<svg class="cta-arrow w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
 					</a>
-					<a href="#demo-access" class="px-7 sm:px-8 py-3.5 sm:py-4 rounded-full border border-gray-300 dark:border-white/20 text-darken dark:text-white font-semibold hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-white/5 transition-all text-center">
-						Explore demo roles
+					<a href="{{ route('login') }}" class="cta-secondary px-7 sm:px-8 py-3.5 sm:py-4 rounded-full border border-gray-300 dark:border-white/20 text-darken dark:text-white font-semibold hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-white/5 hover:-translate-y-1 transition-all text-center">
+						I already have an account <span aria-hidden="true">&rarr;</span>
 					</a>
-					<a href="#features" class="px-7 sm:px-8 py-3.5 sm:py-4 text-center rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">{{ $landing['secondary_cta'] }}</a>
 				</div>
 
 				<div class="mt-9 sm:mt-10 grid grid-cols-3 items-start gap-2 sm:flex sm:items-center sm:gap-8 text-xs sm:text-sm">
@@ -238,13 +251,13 @@
 
 			<div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
 				@foreach(config('edlink.demo.roles', []) as $role => $account)
-					<a href="{{ route('login', ['demo' => $role]) }}" wire:navigate class="group rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.03] p-6 hover:border-yellow-400 hover:-translate-y-1 hover:shadow-xl transition-all" data-aos="fade-up">
+					<a href="{{ route('login', ['demo' => $role]) }}" class="demo-role-card group rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.03] p-6 hover:border-yellow-400 hover:-translate-y-1 hover:shadow-xl transition-all" data-aos="fade-up">
 						<div class="flex items-start justify-between gap-4">
 							<div>
 								<h3 class="font-bold text-lg text-darken dark:text-white">{{ $account['label'] }}</h3>
 								<p class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{{ $account['description'] }}</p>
 							</div>
-							<span class="shrink-0 w-10 h-10 rounded-full bg-yellow-400/20 text-yellow-600 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-darken transition-colors">&rarr;</span>
+							<span class="demo-role-arrow shrink-0 w-10 h-10 rounded-full bg-yellow-400/20 text-yellow-600 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-darken transition-all">&rarr;</span>
 						</div>
 						<p class="mt-5 text-xs font-semibold uppercase tracking-wider text-yellow-600">Open demo login</p>
 					</a>
@@ -371,7 +384,7 @@
 						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Fees tracking</span></li>
 						<li class="flex items-center space-x-2"><span class="text-teal-500 font-bold">&#10003;</span><span>Report cards</span></li>
 					</ul>
-					<a href="{{ route('register') }}" wire:navigate class="mt-8 text-center py-3 rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">Start free demo</a>
+					<a href="#demo-access" class="cta-secondary mt-8 text-center py-3 rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 hover:-translate-y-0.5 transition-all">Try demo</a>
 				</div>
 
 				<div data-aos="fade-up" data-aos-delay="100" class="rounded-3xl p-8 bg-gradient-to-br from-darken to-[#2a2560] text-white shadow-2xl flex flex-col relative md:-translate-y-4">
@@ -384,7 +397,7 @@
 						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">&#10003;</span><span>SMS announcements</span></li>
 						<li class="flex items-center space-x-2"><span class="text-yellow-400 font-bold">&#10003;</span><span>Multi-branch support</span></li>
 					</ul>
-					<a href="{{ route('register') }}" wire:navigate class="mt-8 text-center py-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold hover:scale-105 transition-transform">Start free demo</a>
+					<a href="#demo-access" class="cta-primary mt-8 text-center py-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold hover:-translate-y-0.5 hover:shadow-lg transition-all">Try demo</a>
 				</div>
 
 				<div data-aos="fade-up" data-aos-delay="200" class="rounded-3xl p-8 bg-white dark:bg-darken border border-gray-100 dark:border-white/10 shadow-sm flex flex-col hover:-translate-y-1 transition-transform">
@@ -412,7 +425,7 @@
 				<h2 class="text-white text-3xl md:text-4xl font-extrabold">Ready to <span class="text-gradient">ditch the notebooks?</span></h2>
 				<p class="text-gray-300 mt-4 max-w-xl mx-auto">Set up your school on Edlink in minutes — no card required, no long onboarding calls.</p>
 				<div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-					<a href="{{ route('register') }}" wire:navigate class="bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold rounded-full py-4 px-9 shadow-xl shadow-yellow-500/30 hover:scale-105 transition-transform">{{ $landing['primary_cta'] }}</a>
+					<a href="#demo-access" class="cta-primary bg-gradient-to-r from-yellow-400 to-orange-500 text-darken font-bold rounded-full py-4 px-9 shadow-xl shadow-yellow-500/30 hover:-translate-y-1 hover:shadow-yellow-500/50 transition-all">Try a role-based demo</a>
 					<a href="#contact" class="border border-white/20 text-white font-medium rounded-full py-4 px-9 hover:border-yellow-400 transition-colors">Talk to our team</a>
 				</div>
 			</div>

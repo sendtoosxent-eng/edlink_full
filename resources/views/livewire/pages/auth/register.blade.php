@@ -214,7 +214,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
     }
 }; ?>
 
-<div class="min-h-screen flex font-sans bg-slate-50 text-slate-900" x-data="{ currentStep: @define($step) }">
+<div class="min-h-screen flex font-sans bg-slate-50 text-slate-900">
     
     <!-- Left Panel Graphic Layout Area -->
     <div class="hidden lg:flex lg:w-5/12 bg-[#252641] flex-col justify-between p-12 relative overflow-hidden">
