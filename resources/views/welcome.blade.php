@@ -179,6 +179,9 @@
 						<span>{{ $landing['primary_cta'] }}</span>
 						<svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
 					</a>
+					<a href="#demo-access" class="px-7 sm:px-8 py-3.5 sm:py-4 rounded-full border border-gray-300 dark:border-white/20 text-darken dark:text-white font-semibold hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-white/5 transition-all text-center">
+						Explore demo roles
+					</a>
 					<a href="#features" class="px-7 sm:px-8 py-3.5 sm:py-4 text-center rounded-full border border-gray-200 dark:border-white/15 font-semibold hover:border-yellow-400 transition-colors">{{ $landing['secondary_cta'] }}</a>
 				</div>
 
@@ -223,6 +226,31 @@
 	<!-- ============ LOGOS / TRUST BAR ============ -->
 	<section class="py-10 border-y border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/[0.02]">
 		<p class="text-center text-xs uppercase tracking-widest text-gray-400 font-semibold">{{ $landing['trust_text'] }}</p>
+	</section>
+
+	<section id="demo-access" class="mobile-section scroll-mt-20 py-24 bg-white dark:bg-ink">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6">
+			<div class="text-center max-w-3xl mx-auto" data-aos="fade-up">
+				<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">Interactive demo</span>
+				<h2 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">Choose whose workspace you want to explore</h2>
+				<p class="mt-4 text-gray-500 dark:text-gray-400">Pick a role and Edlink will prepare the matching demo credentials on the login page.</p>
+			</div>
+
+			<div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+				@foreach(config('edlink.demo.roles', []) as $role => $account)
+					<a href="{{ route('login', ['demo' => $role]) }}" wire:navigate class="group rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.03] p-6 hover:border-yellow-400 hover:-translate-y-1 hover:shadow-xl transition-all" data-aos="fade-up">
+						<div class="flex items-start justify-between gap-4">
+							<div>
+								<h3 class="font-bold text-lg text-darken dark:text-white">{{ $account['label'] }}</h3>
+								<p class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{{ $account['description'] }}</p>
+							</div>
+							<span class="shrink-0 w-10 h-10 rounded-full bg-yellow-400/20 text-yellow-600 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-darken transition-colors">&rarr;</span>
+						</div>
+						<p class="mt-5 text-xs font-semibold uppercase tracking-wider text-yellow-600">Open demo login</p>
+					</a>
+				@endforeach
+			</div>
+		</div>
 	</section>
 
 

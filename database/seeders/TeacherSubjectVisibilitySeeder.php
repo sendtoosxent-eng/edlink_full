@@ -20,7 +20,7 @@ class TeacherSubjectVisibilitySeeder extends Seeder
     public function run(): void
     {
         $school = School::updateOrCreate(
-            ['school_number' => 'EDL-TEACH'],
+            ['school_number' => (string) config('edlink.demo.school_number')],
             [
                 'name' => 'Teacher Visibility Demo School',
                 'slug' => 'teacher-visibility-demo',
@@ -67,6 +67,10 @@ class TeacherSubjectVisibilitySeeder extends Seeder
         $subjectTeacherDesignation = Designation::updateOrCreate(
             ['school_id' => $school->id, 'name' => 'Subject Teacher'],
             ['permissions' => DesignationPermissions::defaults()['Subject Teacher']],
+        );
+        $bursarDesignation = Designation::updateOrCreate(
+            ['school_id' => $school->id, 'name' => 'Bursar'],
+            ['permissions' => DesignationPermissions::defaults()['Bursar']],
         );
 
         $classTeacher = $this->teacher(
@@ -137,9 +141,24 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             );
         }
 
+        $this->account($school, 'Demo School Administrator', 'admin@edlink.local', 'admin', null, 'DEMO-ADMIN-01');
+        $this->account($school, 'Demo School Bursar', 'bursar@edlink.local', 'bursar', $bursarDesignation, 'DEMO-BURSAR-01');
+        $parent = $this->account($school, 'Demo Parent', 'parent@edlink.local', 'parent');
+        $studentUser = $this->account($school, 'Amina Class Learner', 'student@edlink.local', 'student');
+        $learner = Student::where('school_id', $school->id)->where('admission_no', 'P5-001')->firstOrFail();
+        $parent->portalStudents()->syncWithoutDetaching([
+            $learner->id => ['school_id' => $school->id, 'relationship' => 'Guardian'],
+        ]);
+        $studentUser->portalStudents()->syncWithoutDetaching([
+            $learner->id => ['school_id' => $school->id, 'relationship' => 'Student'],
+        ]);
+        $learner->guardians()->updateOrCreate(
+            ['email' => $parent->email],
+            ['name' => $parent->name, 'relationship' => 'Guardian', 'is_primary' => true],
+        );
+
         $this->command?->info('Teacher subject-visibility data seeded for EDL-TEACH.');
-        $this->command?->line('Class teacher: class.teacher@edlink.local / TeacherTest@2026');
-        $this->command?->line('Subject teacher: subject.teacher@edlink.local / TeacherTest@2026');
+        $this->command?->line('All demo accounts use password: TeacherTest@2026');
     }
 
     private function teacher(
@@ -164,5 +183,30 @@ class TeacherSubjectVisibilitySeeder extends Seeder
         $teacher->forceFill(['email_verified_at' => now()])->save();
 
         return $teacher;
+    }
+
+    private function account(
+        School $school,
+        string $name,
+        string $email,
+        string $role,
+        ?Designation $designation = null,
+        ?string $staffNumber = null,
+    ): User {
+        $user = User::updateOrCreate(
+            ['school_id' => $school->id, 'email' => $email],
+            [
+                'designation_id' => $designation?->id,
+                'name' => $name,
+                'password' => (string) config('edlink.demo.password'),
+                'role' => $role,
+                'staff_number' => $staffNumber,
+                'employment_status' => 'active',
+                'joined_at' => $staffNumber ? now()->subYear()->toDateString() : null,
+            ],
+        );
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return $user;
     }
 }

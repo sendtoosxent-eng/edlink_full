@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureSchoolLicenceIsActive;
 use App\Models\School;
+use App\Models\SchoolSetting;
 use App\Models\User;
 use App\Notifications\OtpCodeNotification;
 use Illuminate\Support\Facades\Auth;
@@ -13,9 +15,28 @@ use Livewire\Volt\Component;
 new #[Layout('layouts.guest-split')] class extends Component
 {
     public string $school_number = '';
+
     public string $email = '';
+
     public string $password = '';
+
     public bool $remember = false;
+
+    public ?string $demoRole = null;
+
+    public function mount(): void
+    {
+        $role = (string) request()->query('demo', '');
+        $account = config('edlink.demo.roles.'.$role);
+        if (! is_array($account)) {
+            return;
+        }
+
+        $this->demoRole = $role;
+        $this->school_number = (string) config('edlink.demo.school_number');
+        $this->email = (string) $account['email'];
+        $this->password = (string) config('edlink.demo.password');
+    }
 
     public function login(): void
     {
@@ -50,8 +71,8 @@ new #[Layout('layouts.guest-split')] class extends Component
 
             throw ValidationException::withMessages([
                 'email' => $expired
-                    ? \App\Http\Middleware\EnsureSchoolLicenceIsActive::EXPIRED_MESSAGE
-                    : \App\Http\Middleware\EnsureSchoolLicenceIsActive::INACTIVE_MESSAGE,
+                    ? EnsureSchoolLicenceIsActive::EXPIRED_MESSAGE
+                    : EnsureSchoolLicenceIsActive::INACTIVE_MESSAGE,
             ]);
         }
         /** @var User $user */
@@ -73,7 +94,7 @@ new #[Layout('layouts.guest-split')] class extends Component
         RateLimiter::clear($this->throttleKey());
 
         $currentIp = request()->ip();
-        $otpEnabled = \App\Models\SchoolSetting::where(['school_id'=>$school->id,'key'=>'otp_enabled'])->value('value') === 'enabled';
+        $otpEnabled = SchoolSetting::where(['school_id' => $school->id, 'key' => 'otp_enabled'])->value('value') === 'enabled';
         $isSuspicious = $otpEnabled || ($user->last_login_ip !== null && $user->last_login_ip !== $currentIp);
 
         // Testing aid: set OTP_FORCE=true in .env to always trigger the OTP
@@ -90,6 +111,7 @@ new #[Layout('layouts.guest-split')] class extends Component
             session(['otp_pending_user_id' => $user->id, 'otp_remember' => $this->remember]);
 
             $this->redirect(route('otp.verify', absolute: false), navigate: true);
+
             return;
         }
 
@@ -125,6 +147,13 @@ new #[Layout('layouts.guest-split')] class extends Component
     <h1 class="text-3xl font-extrabold text-[#252641] tracking-tight">Welcome back</h1>
     <br>
     <p class="text-gray-500 text-sm mb-6">Log in to your school's dashboard.</p>
+
+    @if($demoRole)
+        <div class="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+            <p class="font-semibold">{{ config('edlink.demo.roles.'.$demoRole.'.label') }} demo selected</p>
+            <p class="mt-1 text-xs text-yellow-800">The demo credentials are ready. Select Log in to enter the workspace.</p>
+        </div>
+    @endif
 
     <form wire:submit="login" class="space-y-5">
         <div>
