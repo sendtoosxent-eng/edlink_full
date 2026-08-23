@@ -38,6 +38,7 @@ use App\Livewire\PromotionsV2 as Promotions;
 use App\Livewire\FeeStructures;
 use App\Livewire\StudentCategories;
 use App\Livewire\StudentActivities;
+use App\Livewire\NotificationCenter;
 use App\Livewire\AuditTrail;
 use App\Livewire\StudentRegister;
 use App\Livewire\StudentsIndex;
@@ -229,6 +230,7 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified', 'branch.context', 'active.user'])->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designation.access'])->group(function () {
+    Route::get('notifications', NotificationCenter::class)->name('notifications.index');
     Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
     Volt::route('profile', 'pages.profile')->name('profile');

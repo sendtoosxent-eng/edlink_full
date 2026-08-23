@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\School;
+use App\Models\SchoolSetting;
 use App\Support\DemoAccounts;
 use Database\Seeders\TeacherSubjectVisibilitySeeder;
 use Illuminate\Console\Command;
@@ -17,7 +18,9 @@ class EnsureDemoAccounts extends Command
     {
         $school = School::where('school_number', DemoAccounts::schoolNumber())->first();
         $emails = collect(DemoAccounts::roles())->pluck('email');
-        $complete = $school && $school->users()->whereIn('email', $emails)->count() === $emails->count();
+        $complete = $school
+            && $school->users()->whereIn('email', $emails)->count() === $emails->count()
+            && SchoolSetting::getValue($school->id, 'public_demo_seed_version') === DemoAccounts::SEED_VERSION;
 
         if ($complete) {
             $this->info('Public demo accounts are ready.');

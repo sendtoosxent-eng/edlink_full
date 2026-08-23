@@ -309,19 +309,19 @@
                     <input type="text" placeholder="Search students, classes..." class="w-48 lg:w-64 pl-9 pr-4 py-2 text-sm bg-gray-100 border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors">
                 </div>
 
-                <!-- Notification bell (hover dropdown) -->
-                <div class="relative group">
-                    <button class="relative w-9 h-9 rounded-lg hover:bg-gray-50 flex items-center justify-center text-gray-500 transition-colors">
+                <!-- Notification bell and hover preview -->
+                <div class="relative group pb-1 -mb-1">
+                    <a href="{{ route('notifications.index') }}" wire:navigate aria-label="Open notification center" title="Notifications" class="relative w-9 h-9 rounded-lg hover:bg-amber-50 hover:text-amber-700 flex items-center justify-center text-gray-500 transition-colors">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                         @if(collect($layoutNotifications ?? [])->whereNull('read_at')->isNotEmpty())<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>@endif
-                    </button>
+                    </a>
 
                     <div class="absolute right-0 mt-1 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-30">
                         <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
                             <p class="text-sm font-semibold text-darken">Notifications</p>
-                            <span class="text-xs text-yellow-600 font-medium">{{ collect($layoutNotifications ?? [])->whereNull('read_at')->count() }} new</span>
+                            <a href="{{ route('notifications.index') }}" wire:navigate class="text-xs text-yellow-700 font-bold hover:text-yellow-900">View all · {{ collect($layoutNotifications ?? [])->whereNull('read_at')->count() }} new</a>
                         </div>
-                        <div id="notificationsDropdown" class="max-h-80 overflow-y-auto">@forelse($layoutNotifications ?? collect() as $notification)<div class="flex items-start gap-3 border-b border-gray-50 px-4 py-3 last:border-0"><span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $notification->type === 'warning' ? 'bg-amber-50 text-amber-700' : ($notification->type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700') }}">{{ $notification->type === 'warning' ? '!' : 'i' }}</span><div class="min-w-0"><p class="text-sm font-semibold text-slate-700">{{ $notification->title }}</p><p class="mt-0.5 text-xs text-slate-500">{{ $notification->message }}</p><p class="mt-1 text-[11px] text-slate-400">{{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</p></div></div>@empty<div class="px-4 py-8 text-center text-sm text-slate-400">No notifications yet.</div>@endforelse</div>
+                        <div id="notificationsDropdown" class="max-h-80 overflow-y-auto">@forelse($layoutNotifications ?? collect() as $notification)<a href="{{ route('notifications.index') }}" wire:navigate class="flex items-start gap-3 border-b border-gray-50 px-4 py-3 last:border-0 hover:bg-slate-50 {{ $notification->read_at ? '' : 'bg-amber-50/40' }}"><span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $notification->type === 'warning' ? 'bg-amber-50 text-amber-700' : ($notification->type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700') }}">{{ $notification->type === 'warning' ? '!' : ($notification->type === 'success' ? '✓' : 'i') }}</span><div class="min-w-0"><p class="text-sm font-semibold text-slate-700">{{ $notification->title }}</p><p class="mt-0.5 line-clamp-2 text-xs text-slate-500">{{ $notification->message }}</p><p class="mt-1 text-[11px] text-slate-400">{{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</p></div></a>@empty<div class="px-4 py-8 text-center text-sm text-slate-400">No notifications yet.</div>@endforelse</div>
                     </div>
                 </div>
 

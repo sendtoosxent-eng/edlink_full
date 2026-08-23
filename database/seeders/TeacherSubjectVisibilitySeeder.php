@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
+use App\Models\SchoolSetting;
 use App\Support\DemoAccounts;
 use App\Support\DesignationPermissions;
 use Illuminate\Database\Seeder;
@@ -31,6 +32,8 @@ class TeacherSubjectVisibilitySeeder extends Seeder
                 'license_status' => 'active',
                 'license_started_at' => now()->subDay(),
                 'license_expires_at' => now()->addYear(),
+                'is_demo' => true,
+                'demo_expires_at' => now()->addYear(),
             ],
         );
 
@@ -158,8 +161,94 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             ['name' => $parent->name, 'relationship' => 'Guardian', 'is_primary' => true],
         );
 
+        $this->seedDemoExperience($school, $term, $primaryFive, $primarySix, $subjects, $classTeacher, $studentUser);
+        SchoolSetting::setValue($school->id, 'public_demo_seed_version', DemoAccounts::SEED_VERSION);
+
         $this->command?->info('Teacher subject-visibility data seeded for EDL-TEACH.');
         $this->command?->line('All demo accounts use password: TeacherTest@2026');
+    }
+
+    private function seedDemoExperience(
+        School $school,
+        Term $term,
+        SchoolClass $primaryFive,
+        SchoolClass $primarySix,
+        $subjects,
+        User $classTeacher,
+        User $studentUser,
+    ): void {
+        $admin = User::where('school_id', $school->id)->where('email', 'admin@edlink.local')->firstOrFail();
+        $students = Student::where('school_id', $school->id)->orderBy('id')->get();
+
+        foreach ([
+            ['Welcome to the Edlink demo', 'Explore academics, finance, attendance, activities and communication using the role-based demo accounts.', 'info', null],
+            ['Term results published', 'The latest assessment results are ready to view in the Results area.', 'success', null],
+            ['Sports day reminder', 'Inter-house sports day starts Friday at 9:00 AM. Learners should wear their house colours.', 'warning', null],
+            ['Homework feedback ready', 'Your Mathematics homework has been reviewed by the class teacher.', 'success', $studentUser->id],
+        ] as [$title, $message, $type, $userId]) {
+            DB::table('school_notifications')->updateOrInsert(
+                ['school_id' => $school->id, 'user_id' => $userId, 'title' => $title],
+                ['message' => $message, 'type' => $type, 'read_at' => null, 'created_at' => now()->subMinutes(random_int(5, 240)), 'updated_at' => now()],
+            );
+        }
+
+        foreach ($students as $index => $student) {
+            foreach (range(1, 7) as $daysAgo) {
+                $date = now()->subDays($daysAgo);
+                if ($date->isWeekend()) continue;
+                DB::table('attendance_records')->updateOrInsert(
+                    ['student_id' => $student->id, 'attendance_date' => $date->toDateString()],
+                    ['school_id' => $school->id, 'term_id' => $term->id, 'status' => ($daysAgo === 3 && $index === 1) ? 'late' : 'present', 'recorded_by' => $classTeacher->id, 'created_at' => now(), 'updated_at' => now()],
+                );
+            }
+        }
+
+        $exam = Exam::where('school_id', $school->id)->where('school_class_id', $primaryFive->id)->where('name', 'Visibility Test Exam')->firstOrFail();
+        $exam->update(['status' => 'published']);
+        foreach ($exam->papers as $paperIndex => $paper) {
+            DB::table('exam_paper_submissions')->updateOrInsert(
+                ['exam_paper_id' => $paper->id],
+                ['status' => 'approved', 'submitted_by' => $classTeacher->id, 'submitted_at' => now()->subDay(), 'approved_by' => $admin->id, 'approved_at' => now()->subHours(12), 'created_at' => now(), 'updated_at' => now()],
+            );
+            foreach ($students->where('school_class_id', $primaryFive->id) as $student) {
+                DB::table('exam_marks')->updateOrInsert(
+                    ['exam_paper_id' => $paper->id, 'student_id' => $student->id],
+                    ['score' => 76 + ($paperIndex * 5), 'entered_by' => $classTeacher->id, 'created_at' => now(), 'updated_at' => now()],
+                );
+            }
+        }
+
+        foreach ([['Yellow House', '#facc15'], ['Blue House', '#3b82f6']] as [$name, $color]) {
+            DB::table('student_houses')->updateOrInsert(['school_id' => $school->id, 'name' => $name], ['color' => $color, 'patron_user_id' => $classTeacher->id, 'description' => 'A demo learner house.', 'created_at' => now(), 'updated_at' => now()]);
+        }
+        $houses = DB::table('student_houses')->where('school_id', $school->id)->orderBy('id')->get();
+        foreach ($students as $index => $student) {
+            DB::table('student_house_memberships')->updateOrInsert(['school_id' => $school->id, 'student_id' => $student->id], ['student_house_id' => $houses[$index % $houses->count()]->id, 'allocation_method' => 'automatic', 'assigned_by' => $admin->id, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        foreach ([['Science Club', '#10b981'], ['Debate Club', '#8b5cf6']] as [$name, $color]) {
+            DB::table('student_clubs')->updateOrInsert(['school_id' => $school->id, 'name' => $name], ['color' => $color, 'patron_user_id' => $classTeacher->id, 'description' => 'A demo co-curricular club.', 'maximum_members' => 40, 'created_at' => now(), 'updated_at' => now()]);
+        }
+        $clubs = DB::table('student_clubs')->where('school_id', $school->id)->orderBy('id')->get();
+        foreach ($students as $index => $student) {
+            DB::table('student_club_memberships')->updateOrInsert(['student_club_id' => $clubs[$index % $clubs->count()]->id, 'student_id' => $student->id], ['school_id' => $school->id, 'assigned_by' => $admin->id, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        DB::table('homework_assignments')->updateOrInsert(
+            ['school_id' => $school->id, 'title' => 'Fractions in everyday life'],
+            ['term_id' => $term->id, 'teacher_id' => $classTeacher->id, 'school_class_id' => $primaryFive->id, 'stream_id' => null, 'subject_id' => $subjects['Mathematics']->id, 'instructions' => 'Complete the five fraction exercises and explain one real-life example.', 'maximum_score' => 20, 'due_at' => now()->addDays(5), 'published_at' => now()->subDay(), 'created_at' => now(), 'updated_at' => now()],
+        );
+
+        foreach ([['Inter-house Sports Day', 5, 'sports'], ['Parent and Teacher Meeting', 12, 'meeting']] as [$title, $days, $type]) {
+            DB::table('school_events')->updateOrInsert(['school_id' => $school->id, 'title' => $title], ['term_id' => $term->id, 'event_date' => now()->addDays($days)->toDateString(), 'type' => $type, 'target_audience' => 'all', 'description' => 'Demo calendar event for the school community.', 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        foreach ([['Monday', '08:00:00', '09:00:00', 'Mathematics'], ['Tuesday', '09:00:00', '10:00:00', 'English'], ['Wednesday', '10:30:00', '11:30:00', 'Science']] as [$day, $start, $end, $subject]) {
+            DB::table('timetable_slots')->updateOrInsert(
+                ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $primaryFive->id, 'day_of_week' => $day, 'starts_at' => $start],
+                ['stream_id' => null, 'subject_id' => $subjects[$subject]->id, 'user_id' => $classTeacher->id, 'ends_at' => $end, 'label' => $subject, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
     }
 
     private function teacher(

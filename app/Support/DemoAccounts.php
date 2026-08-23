@@ -4,6 +4,8 @@ namespace App\Support;
 
 final class DemoAccounts
 {
+    public const SEED_VERSION = '2';
+
     public const SCHOOL_NUMBER = 'EDL-TEACH';
 
     public const PASSWORD = 'TeacherTest@2026';
