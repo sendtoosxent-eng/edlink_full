@@ -76,3 +76,31 @@ it('logs the parent demo into a linked learner dashboard', function () {
         ->assertSee('Amina Class Learner')
         ->assertDontSee('No learner is linked');
 });
+
+it('opens the correct landing page after every demo role login', function (string $role, string $expectedRoute) {
+    $this->seed(TeacherSubjectVisibilitySeeder::class);
+    $account = config("edlink.demo.roles.{$role}");
+
+    Volt::test('pages.auth.login')
+        ->set('school_number', config('edlink.demo.school_number'))
+        ->set('email', $account['email'])
+        ->set('password', config('edlink.demo.password'))
+        ->call('login')
+        ->assertRedirect(route($expectedRoute, absolute: false));
+
+    $this->get(route($expectedRoute))->assertOk();
+})->with([
+    'administrator' => ['administrator', 'dashboard'],
+    'class teacher' => ['class-teacher', 'workbench.home'],
+    'subject teacher' => ['subject-teacher', 'workbench.home'],
+    'bursar' => ['bursar', 'workbench.home'],
+    'parent' => ['parent', 'portal.home'],
+    'student' => ['student', 'portal.home'],
+]);
+
+it('redirects portal accounts away from the staff workbench', function (string $role) {
+    $this->seed(TeacherSubjectVisibilitySeeder::class);
+    $user = User::where('email', config("edlink.demo.roles.{$role}.email"))->firstOrFail();
+
+    $this->actingAs($user)->get(route('workbench.home'))->assertRedirect(route('portal.home'));
+})->with(['parent', 'student']);

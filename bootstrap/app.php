@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch.context' => \App\Http\Middleware\ResolveActiveSchool::class,
             'designation.access' => \App\Http\Middleware\EnsureDesignationAccess::class,
             'active.user' => \App\Http\Middleware\EnsureActiveUser::class,
+            'staff.workbench' => \App\Http\Middleware\RedirectPortalUsersFromWorkbench::class,
             'platform.mfa' => \App\Http\Middleware\EnsurePlatformMfa::class,
             'platform.role' => \App\Http\Middleware\EnsurePlatformRole::class,
         ]);

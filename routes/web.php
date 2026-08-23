@@ -235,7 +235,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
     Volt::route('profile', 'pages.profile')->name('profile');
     Route::get('portal', PortalHome::class)->name('portal.home');
-    Route::get('workbench', StaffWorkbench::class)->name('workbench.home');
+    Route::get('workbench', StaffWorkbench::class)->middleware('staff.workbench')->name('workbench.home');
     Route::get('homework', \App\Livewire\Homework::class)->name('homework.index');
     Route::get('homework/assignments/{assignment}/download', function (\App\Models\HomeworkAssignment $assignment) {
         $user=auth()->user();
