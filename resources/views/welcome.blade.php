@@ -250,7 +250,7 @@
 			</div>
 
 			<div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-				@foreach(config('edlink.demo.roles', []) as $role => $account)
+				@foreach(\App\Support\DemoAccounts::roles() as $role => $account)
 					<a href="{{ route('login', ['demo' => $role]) }}" class="demo-role-card group rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.03] p-6 hover:border-yellow-400 hover:-translate-y-1 hover:shadow-xl transition-all" data-aos="fade-up">
 						<div class="flex items-start justify-between gap-4">
 							<div>

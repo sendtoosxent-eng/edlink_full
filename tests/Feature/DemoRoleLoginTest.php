@@ -3,6 +3,7 @@
 use App\Models\User;
 use Database\Seeders\TeacherSubjectVisibilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Livewire\Volt\Volt;
 
 uses(RefreshDatabase::class);
@@ -14,6 +15,20 @@ it('offers every configured demo role from the landing page', function () {
         $response->assertSee($account['label'])
             ->assertSee(route('login', ['demo' => $role]), false);
     }
+});
+
+it('keeps demo roles available when deployed configuration is stale', function () {
+    Config::set('edlink.demo', null);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('School Administrator')
+        ->assertSee(route('login', ['demo' => 'parent']), false);
+
+    $this->get(route('login', ['demo' => 'parent']))
+        ->assertOk()
+        ->assertSee('Parent demo selected')
+        ->assertSee('parent@edlink.local');
 });
 
 it('prefills only allowlisted demo credentials', function () {

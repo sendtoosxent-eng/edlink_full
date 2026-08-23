@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
+use App\Support\DemoAccounts;
 use App\Support\DesignationPermissions;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class TeacherSubjectVisibilitySeeder extends Seeder
     public function run(): void
     {
         $school = School::updateOrCreate(
-            ['school_number' => (string) config('edlink.demo.school_number')],
+            ['school_number' => DemoAccounts::schoolNumber()],
             [
                 'name' => 'Teacher Visibility Demo School',
                 'slug' => 'teacher-visibility-demo',
@@ -198,7 +199,7 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             [
                 'designation_id' => $designation?->id,
                 'name' => $name,
-                'password' => (string) config('edlink.demo.password'),
+                'password' => DemoAccounts::password(),
                 'role' => $role,
                 'staff_number' => $staffNumber,
                 'employment_status' => 'active',

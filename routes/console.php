@@ -8,6 +8,7 @@ Schedule::command('edlink:expire-demos')->daily();
 Schedule::command('edlink:backup --restore-test --keep-days='.config('edlink.backup_retention_days'))->dailyAt('01:30')->withoutOverlapping();
 Schedule::command('edlink:monitor')->hourly()->withoutOverlapping();
 Schedule::command('edlink:renewal-reminders')->dailyAt('08:00')->withoutOverlapping();
+Schedule::command('edlink:ensure-demo-accounts')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('model:prune')->dailyAt('02:30');
 
 Artisan::command('inspire', function () {

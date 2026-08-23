@@ -5,6 +5,7 @@ use App\Models\School;
 use App\Models\SchoolSetting;
 use App\Models\User;
 use App\Notifications\OtpCodeNotification;
+use App\Support\DemoAccounts;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -27,15 +28,15 @@ new #[Layout('layouts.guest-split')] class extends Component
     public function mount(): void
     {
         $role = (string) request()->query('demo', '');
-        $account = config('edlink.demo.roles.'.$role);
+        $account = DemoAccounts::role($role);
         if (! is_array($account)) {
             return;
         }
 
         $this->demoRole = $role;
-        $this->school_number = (string) config('edlink.demo.school_number');
+        $this->school_number = DemoAccounts::schoolNumber();
         $this->email = (string) $account['email'];
-        $this->password = (string) config('edlink.demo.password');
+        $this->password = DemoAccounts::password();
     }
 
     public function login(): void
@@ -150,7 +151,7 @@ new #[Layout('layouts.guest-split')] class extends Component
 
     @if($demoRole)
         <div class="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
-            <p class="font-semibold">{{ config('edlink.demo.roles.'.$demoRole.'.label') }} demo selected</p>
+            <p class="font-semibold">{{ DemoAccounts::role($demoRole)['label'] }} demo selected</p>
             <p class="mt-1 text-xs text-yellow-800">The demo credentials are ready. Select Log in to enter the workspace.</p>
         </div>
     @endif
