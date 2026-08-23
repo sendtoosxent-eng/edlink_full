@@ -25,9 +25,25 @@ final class TeacherAcademicScope
 
     public static function subjectAssignments(User $user, ?int $termId = null): Collection
     {
-        return DB::table('staff_subjects')->where('school_id', $user->school_id)->where('user_id', $user->id)
+        $assigned = DB::table('staff_subjects')->where('school_id', $user->school_id)->where('user_id', $user->id)
             ->when($termId, fn ($query) => $query->where(fn ($scope) => $scope->where('term_id', $termId)->orWhereNull('term_id')))
             ->get(['school_class_id', 'subject_id']);
+
+        if (! $termId) {
+            return $assigned;
+        }
+
+        $classTeacherOfferings = DB::table('class_subjects')
+            ->join('school_classes', 'school_classes.id', '=', 'class_subjects.school_class_id')
+            ->where('class_subjects.school_id', $user->school_id)
+            ->where('class_subjects.term_id', $termId)
+            ->where('school_classes.class_teacher_user_id', $user->id)
+            ->get(['class_subjects.school_class_id', 'class_subjects.subject_id']);
+
+        return $assigned->concat($classTeacherOfferings)
+            ->filter(fn ($assignment) => $assignment->school_class_id && $assignment->subject_id)
+            ->unique(fn ($assignment) => $assignment->school_class_id.':'.$assignment->subject_id)
+            ->values();
     }
 
     public static function academicClassIds(User $user, ?int $termId = null): Collection
@@ -130,13 +146,14 @@ final class TeacherAcademicScope
 
     public static function grantsMappedPermission(User $user, string $permission): bool
     {
-        if (! in_array($permission, ['attendance.daily', 'attendance.subject', 'exams.marks', 'exams.results'], true)) {
+        if (! in_array($permission, ['academics.subjects', 'attendance.daily', 'attendance.subject', 'exams.marks', 'exams.results'], true)) {
             return false;
         }
 
         $termId = $user->school?->currentTerm()?->id;
 
         return match ($permission) {
+            'academics.subjects' => self::subjectAssignments($user, $termId)->isNotEmpty(),
             'attendance.daily' => self::classIds($user)->isNotEmpty(),
             'attendance.subject', 'exams.marks' => self::subjectAssignments($user, $termId)->isNotEmpty(),
             'exams.results' => self::classIds($user)->isNotEmpty() || self::subjectAssignments($user, $termId)->isNotEmpty(),
@@ -147,6 +164,7 @@ final class TeacherAcademicScope
     public static function grantsMappedModule(User $user, string $module): bool
     {
         return match ($module) {
+            'academics' => self::grantsMappedPermission($user, 'academics.subjects'),
             'attendance' => self::grantsMappedPermission($user, 'attendance.daily')
                 || self::grantsMappedPermission($user, 'attendance.subject'),
             'exams' => self::grantsMappedPermission($user, 'exams.marks')

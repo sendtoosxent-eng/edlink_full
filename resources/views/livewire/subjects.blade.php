@@ -43,6 +43,7 @@
         </div>
     @endif
 
+    @if($canManage)
     <!-- Split Workspace Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         
@@ -146,13 +147,14 @@
         </div>
 
     </div>
+    @endif
 
     <!-- Registered Subjects Explorer -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6">
         <div class="mb-5 pb-3 border-b border-slate-100 flex items-center justify-between">
             <div>
-                <h2 class="font-bold text-slate-900 text-base">Active Subjects Directory</h2>
-                <p class="text-xs text-slate-500 mt-0.5">List of all global subjects registered in the system.</p>
+                <h2 class="font-bold text-slate-900 text-base">{{ $canManage ? 'Active Subjects Directory' : 'My Subjects' }}</h2>
+                <p class="text-xs text-slate-500 mt-0.5">{{ $canManage ? 'List of all global subjects registered in the system.' : 'Subjects available through your class-teacher and teaching assignments.' }}</p>
             </div>
             <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                 {{ $subjects->count() }} {{ Str::plural('Subject', $subjects->count()) }}

@@ -8,11 +8,11 @@ use App\Models\CashPoolEntry;
 use App\Models\Expense;
 use App\Models\FeePayment;
 use App\Models\SchoolEvent;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use App\Models\StudentEnrolment;
 use App\Models\StudentFeeAdjustment;
 use App\Support\TeacherAcademicScope;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -86,14 +86,20 @@ class StaffWorkbench extends Component
 
         $teacher = [];
         if ($isTeacherWorkspace) {
-            $assignments = DB::table('staff_subjects')
-                ->join('subjects', 'subjects.id', '=', 'staff_subjects.subject_id')
-                ->leftJoin('school_classes', 'school_classes.id', '=', 'staff_subjects.school_class_id')
-                ->where('staff_subjects.school_id', $school->id)
-                ->where('staff_subjects.user_id', $user->id)
-                ->when($term, fn ($query) => $query->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id')))
-                ->orderBy('subjects.name')
-                ->get(['staff_subjects.subject_id','staff_subjects.school_class_id','subjects.name as subject','subjects.code','school_classes.name as class']);
+            $subjectNames = DB::table('subjects')->where('school_id', $school->id)->get(['id', 'name', 'code'])->keyBy('id');
+            $classNames = DB::table('school_classes')->where('school_id', $school->id)->pluck('name', 'id');
+            $assignments = TeacherAcademicScope::subjectAssignments($user, $term?->id)
+                ->map(function ($assignment) use ($subjectNames, $classNames) {
+                    $subject = $subjectNames->get($assignment->subject_id);
+
+                    return (object) [
+                        'subject_id' => (int) $assignment->subject_id,
+                        'school_class_id' => (int) $assignment->school_class_id,
+                        'subject' => $subject?->name,
+                        'code' => $subject?->code,
+                        'class' => $classNames[$assignment->school_class_id] ?? null,
+                    ];
+                })->sortBy('subject')->values();
 
             $classTeacherClasses = DB::table('school_classes')
                 ->where('school_id', $school->id)
@@ -137,7 +143,7 @@ class StaffWorkbench extends Component
                         ->where('staff_subjects.user_id', $user->id)
                         ->when($term, fn ($q) => $q->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id')));
                 })
-                ->where(fn ($query) => $query->whereNull('exam_paper_submissions.id')->orWhereIn('exam_paper_submissions.status', ['draft','rejected']))
+                ->where(fn ($query) => $query->whereNull('exam_paper_submissions.id')->orWhereIn('exam_paper_submissions.status', ['draft', 'rejected']))
                 ->count();
 
             $todayLessons = DB::table('timetable_slots')
@@ -147,7 +153,7 @@ class StaffWorkbench extends Component
                 ->where('timetable_slots.school_id', $school->id)->where('timetable_slots.user_id', $user->id)
                 ->when($term, fn ($query) => $query->where('timetable_slots.term_id', $term->id))
                 ->where('timetable_slots.day_of_week', now()->format('l'))->orderBy('timetable_slots.starts_at')
-                ->get(['timetable_slots.starts_at','timetable_slots.ends_at','timetable_slots.label','subjects.name as subject','school_classes.name as class','streams.name as stream']);
+                ->get(['timetable_slots.starts_at', 'timetable_slots.ends_at', 'timetable_slots.label', 'subjects.name as subject', 'school_classes.name as class', 'streams.name as stream']);
 
             $clock = now();
             $nextLesson = $todayLessons->map(function ($lesson) use ($clock) {
@@ -157,6 +163,7 @@ class StaffWorkbench extends Component
                     $clock->copy()->setTimeFromTimeString($lesson->starts_at),
                     $clock->copy()->setTimeFromTimeString($lesson->ends_at)
                 );
+
                 return $lesson;
             })->first(fn ($lesson) => $lesson->is_in_progress || $clock->lt($clock->copy()->setTimeFromTimeString($lesson->starts_at)));
 
@@ -167,7 +174,7 @@ class StaffWorkbench extends Component
                 'lessonsToday' => $todayLessons->count(), 'todayLessons' => $todayLessons, 'attendanceToday' => $attendance->filter(fn ($row) => $row->attendance_date?->isToday())->count(),
                 'nextLesson' => $nextLesson,
                 'pendingPapers' => $pendingPapers, 'attendanceLabels' => $days->map(fn ($day) => $day->format('D'))->values(),
-                'presentSeries' => $days->map(fn ($day) => $attendance->filter(fn ($row) => $row->attendance_date?->isSameDay($day))->whereIn('status', ['present','late'])->count())->values(),
+                'presentSeries' => $days->map(fn ($day) => $attendance->filter(fn ($row) => $row->attendance_date?->isSameDay($day))->whereIn('status', ['present', 'late'])->count())->values(),
                 'absentSeries' => $days->map(fn ($day) => $attendance->filter(fn ($row) => $row->attendance_date?->isSameDay($day))->where('status', 'absent')->count())->values(),
                 'performanceLabels' => $performance->pluck('name')->values(), 'performanceSeries' => $performance->pluck('average')->map(fn ($value) => (float) $value)->values(),
             ];

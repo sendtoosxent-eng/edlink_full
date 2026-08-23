@@ -5,15 +5,16 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Announcement;
 use App\Models\Exam;
 use App\Models\HomeworkAssignment;
+use App\Services\StudentSubjectSelectionService;
 use App\Support\MobileAccess;
 use App\Support\TeacherAcademicScope;
-use App\Services\StudentSubjectSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MobileDataController extends ApiController
 {
-    private function student(Request $request) {
+    private function student(Request $request)
+    {
         return in_array($request->user()->role, ['student', 'parent'], true)
             ? MobileAccess::student($request->user(), $request->integer('student_id') ?: null) : null;
     }
@@ -56,6 +57,7 @@ class MobileDataController extends ApiController
     public function announcements(Request $request)
     {
         $role = $request->user()->role;
+
         return $this->ok(Announcement::where('school_id', $request->user()->school_id)->whereNotNull('sent_at')
             ->whereIn('target_audience', ['all', $role, $role.'s'])->latest('sent_at')->paginate(20));
     }
@@ -63,6 +65,7 @@ class MobileDataController extends ApiController
     public function children(Request $request)
     {
         abort_unless($request->user()->role === 'parent', 403);
+
         return $this->ok($request->user()->portalStudents()->where('students.school_id', $request->user()->school_id)
             ->with(['schoolClass:id,name', 'stream:id,name'])->get()->map(fn ($student) => $this->studentPayload($student)));
     }
@@ -75,12 +78,16 @@ class MobileDataController extends ApiController
             ->latest('published_at')->get()->map(function ($exam) use ($student) {
                 if (StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)) {
                     $selected = $student->subjectSelections()->where('term_id', $exam->term_id)->pluck('subject_id');
-                    if ($selected->isNotEmpty()) $exam->setRelation('papers', $exam->papers->whereIn('subject_id', $selected)->values());
+                    if ($selected->isNotEmpty()) {
+                        $exam->setRelation('papers', $exam->papers->whereIn('subject_id', $selected)->values());
+                    }
                 }
                 $marks = DB::table('exam_marks')->where('student_id', $student->id)->whereIn('exam_paper_id', $exam->papers->pluck('id'))->get()->keyBy('exam_paper_id');
-                return ['id'=>$exam->id,'name'=>$exam->name,'term'=>$exam->term?->name,'published_at'=>$exam->published_at,
-                    'papers'=>$exam->papers->map(fn($paper)=>['id'=>$paper->id,'subject'=>$paper->subject?->name,'score'=>$marks->get($paper->id)?->score,'maximum_score'=>$paper->maximum_score])];
+
+                return ['id' => $exam->id, 'name' => $exam->name, 'term' => $exam->term?->name, 'published_at' => $exam->published_at,
+                    'papers' => $exam->papers->map(fn ($paper) => ['id' => $paper->id, 'subject' => $paper->subject?->name, 'score' => $marks->get($paper->id)?->score, 'maximum_score' => $paper->maximum_score])];
             });
+
         return $this->ok($exams);
     }
 
@@ -88,52 +95,69 @@ class MobileDataController extends ApiController
     {
         $user = $request->user();
         abort_unless(TeacherAcademicScope::isTeacher($user), 403);
-        $houses = DB::table('student_houses')->where('school_id',$user->school_id)->where('patron_user_id',$user->id)->get();
-        $clubs = DB::table('student_clubs')->where('school_id',$user->school_id)->where('patron_user_id',$user->id)->get();
-        return $this->ok(['houses'=>$houses,'clubs'=>$clubs]);
+        $houses = DB::table('student_houses')->where('school_id', $user->school_id)->where('patron_user_id', $user->id)->get();
+        $clubs = DB::table('student_clubs')->where('school_id', $user->school_id)->where('patron_user_id', $user->id)->get();
+
+        return $this->ok(['houses' => $houses, 'clubs' => $clubs]);
     }
 
     public function teachingAssignments(Request $request)
     {
-        $user=$request->user(); abort_unless(TeacherAcademicScope::isTeacher($user),403);
-        $termId=$user->school->currentTerm()?->id;
-        $assigned=DB::table('staff_subjects')->join('school_classes','school_classes.id','=','staff_subjects.school_class_id')->join('subjects','subjects.id','=','staff_subjects.subject_id')
-            ->where('staff_subjects.school_id',$user->school_id)->where('staff_subjects.user_id',$user->id)
-            ->when($termId,fn($q)=>$q->where(fn($x)=>$x->where('staff_subjects.term_id',$termId)->orWhereNull('staff_subjects.term_id')))
-            ->get(['school_classes.id as school_class_id','school_classes.name as class_name','subjects.id as subject_id','subjects.name as subject_name']);
-        return $this->ok($assigned->unique(fn($a)=>$a->school_class_id.'-'.$a->subject_id)->values());
+        $user = $request->user();
+        abort_unless(TeacherAcademicScope::isTeacher($user), 403);
+        $termId = $user->school->currentTerm()?->id;
+        $classes = DB::table('school_classes')->where('school_id', $user->school_id)->pluck('name', 'id');
+        $subjects = DB::table('subjects')->where('school_id', $user->school_id)->pluck('name', 'id');
+        $assigned = TeacherAcademicScope::subjectAssignments($user, $termId)->map(fn ($assignment) => (object) [
+            'school_class_id' => (int) $assignment->school_class_id,
+            'class_name' => $classes[$assignment->school_class_id] ?? null,
+            'subject_id' => (int) $assignment->subject_id,
+            'subject_name' => $subjects[$assignment->subject_id] ?? null,
+        ]);
+
+        return $this->ok($assigned);
     }
 
     private function slotQuery(Request $request, $student)
     {
         $user = $request->user();
-        $query = DB::table('timetable_slots')->leftJoin('subjects','subjects.id','=','timetable_slots.subject_id')
-            ->leftJoin('school_classes','school_classes.id','=','timetable_slots.school_class_id')
-            ->leftJoin('streams','streams.id','=','timetable_slots.stream_id')
-            ->where('timetable_slots.school_id',$user->school_id)
-            ->select(['timetable_slots.id','timetable_slots.school_class_id','timetable_slots.subject_id','day_of_week','starts_at','ends_at','label','subjects.name as subject','school_classes.name as class_name','streams.name as stream_name']);
-        if ($student) $query->where('timetable_slots.school_class_id',$student->school_class_id)
-            ->where(fn($q)=>$q->whereNull('timetable_slots.stream_id')->orWhere('timetable_slots.stream_id',$student->stream_id));
-        else $query->where('timetable_slots.user_id',$user->id);
+        $query = DB::table('timetable_slots')->leftJoin('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
+            ->leftJoin('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
+            ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
+            ->where('timetable_slots.school_id', $user->school_id)
+            ->select(['timetable_slots.id', 'timetable_slots.school_class_id', 'timetable_slots.subject_id', 'day_of_week', 'starts_at', 'ends_at', 'label', 'subjects.name as subject', 'school_classes.name as class_name', 'streams.name as stream_name']);
+        if ($student) {
+            $query->where('timetable_slots.school_class_id', $student->school_class_id)
+                ->where(fn ($q) => $q->whereNull('timetable_slots.stream_id')->orWhere('timetable_slots.stream_id', $student->stream_id));
+        } else {
+            $query->where('timetable_slots.user_id', $user->id);
+        }
+
         return $query;
     }
 
     private function homeworkQuery(Request $request, $student)
     {
-        $query = HomeworkAssignment::query()->where('school_id',$request->user()->school_id)->with(['subject:id,name','schoolClass:id,name']);
-        if ($student) $query->whereNotNull('published_at')->where('school_class_id',$student->school_class_id)
-            ->where(fn($q)=>$q->whereNull('stream_id')->orWhere('stream_id',$student->stream_id));
-        else $query->where('teacher_id',$request->user()->id);
+        $query = HomeworkAssignment::query()->where('school_id', $request->user()->school_id)->with(['subject:id,name', 'schoolClass:id,name']);
+        if ($student) {
+            $query->whereNotNull('published_at')->where('school_class_id', $student->school_class_id)
+                ->where(fn ($q) => $q->whereNull('stream_id')->orWhere('stream_id', $student->stream_id));
+        } else {
+            $query->where('teacher_id', $request->user()->id);
+        }
         if ($student && StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)) {
             $selected = $student->subjectSelections()->where('term_id', $request->user()->school->currentTerm()?->id)->pluck('subject_id');
-            if ($selected->isNotEmpty()) $query->whereIn('subject_id', $selected);
+            if ($selected->isNotEmpty()) {
+                $query->whereIn('subject_id', $selected);
+            }
         }
+
         return $query;
     }
 
     private function studentPayload($student): array
     {
-        return ['id'=>$student->id,'name'=>$student->name,'admission_no'=>$student->admission_no,'photo_url'=>$student->photoUrl(),
-            'class'=>$student->schoolClass?->name,'stream'=>$student->stream?->name];
+        return ['id' => $student->id, 'name' => $student->name, 'admission_no' => $student->admission_no, 'photo_url' => $student->photoUrl(),
+            'class' => $student->schoolClass?->name, 'stream' => $student->stream?->name];
     }
 }

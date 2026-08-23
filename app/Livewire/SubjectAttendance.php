@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Services\StudentSubjectSelectionService;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,7 @@ use Livewire\Component;
 class SubjectAttendance extends Component
 {
     public string $slotId = '';
+
     public array $statuses = [];
 
     public function mount(): void
@@ -60,6 +62,7 @@ class SubjectAttendance extends Component
 
         if (! $term?->isOpen()) {
             $this->addError('slotId', 'Subject attendance can only be recorded in an open term.');
+
             return;
         }
 
@@ -100,6 +103,7 @@ class SubjectAttendance extends Component
         if (! $term) {
             return collect();
         }
+        $allowedAssignments = TeacherAcademicScope::subjectAssignments($user, $term->id);
 
         $timetableSlots = DB::table('timetable_slots')
             ->join('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
@@ -110,16 +114,12 @@ class SubjectAttendance extends Component
             ->where('timetable_slots.user_id', $user->id)
             ->where('timetable_slots.day_of_week', today()->format('l'))
             ->whereNotNull('timetable_slots.subject_id')
-            ->whereExists(function ($query) use ($user, $term) {
-                $query->selectRaw('1')->from('staff_subjects')
-                    ->whereColumn('staff_subjects.subject_id', 'timetable_slots.subject_id')
-                    ->whereColumn('staff_subjects.school_class_id', 'timetable_slots.school_class_id')
-                    ->where('staff_subjects.school_id', $user->school_id)
-                    ->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id'))
-                    ->where('staff_subjects.user_id', $user->id);
-            })
             ->orderBy('timetable_slots.starts_at')
             ->get(['timetable_slots.*', 'subjects.name as subject_name', 'school_classes.name as class_name', 'streams.name as stream_name'])
+            ->filter(fn (object $slot): bool => $allowedAssignments->contains(
+                fn ($assignment) => (int) $assignment->school_class_id === (int) $slot->school_class_id
+                    && (int) $assignment->subject_id === (int) $slot->subject_id
+            ))
             ->map(function (object $slot): object {
                 $slot->selection_key = 'slot:'.$slot->id;
                 $slot->is_assignment_only = false;
@@ -131,21 +131,15 @@ class SubjectAttendance extends Component
             fn (object $slot): array => [$slot->school_class_id.':'.$slot->subject_id => true],
         );
 
-        $assignmentFallbacks = DB::table('staff_subjects')
-            ->join('subjects', 'subjects.id', '=', 'staff_subjects.subject_id')
-            ->join('school_classes', 'school_classes.id', '=', 'staff_subjects.school_class_id')
-            ->where('staff_subjects.school_id', $user->school_id)
-            ->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id'))
-            ->where('staff_subjects.user_id', $user->id)
-            ->orderBy('school_classes.name')
-            ->orderBy('subjects.name')
-            ->get([
-                'staff_subjects.term_id', 'staff_subjects.school_class_id', 'staff_subjects.subject_id',
-                'subjects.name as subject_name', 'school_classes.name as class_name',
-            ])
+        $subjectNames = DB::table('subjects')->where('school_id', $user->school_id)->pluck('name', 'id');
+        $classNames = DB::table('school_classes')->where('school_id', $user->school_id)->pluck('name', 'id');
+        $assignmentFallbacks = $allowedAssignments
             ->reject(fn (object $assignment): bool => $scheduledPairs->has($assignment->school_class_id.':'.$assignment->subject_id))
-            ->map(function (object $assignment): object {
+            ->map(function (object $assignment) use ($term, $subjectNames, $classNames): object {
                 $assignment->id = null;
+                $assignment->term_id = $term->id;
+                $assignment->subject_name = $subjectNames[$assignment->subject_id] ?? null;
+                $assignment->class_name = $classNames[$assignment->school_class_id] ?? null;
                 $assignment->selection_key = 'assignment:'.$assignment->school_class_id.':'.$assignment->subject_id;
                 $assignment->stream_id = null;
                 $assignment->stream_name = null;
