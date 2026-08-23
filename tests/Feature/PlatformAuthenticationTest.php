@@ -103,8 +103,7 @@ it('lets an authenticated platform administrator securely reset MFA', function (
     $admin=PlatformAdmin::create(['name'=>'Reset Owner','email'=>'reset@edlink.test','password'=>'StrongPassword!123','role'=>'platform_owner','is_active'=>true,'totp_secret'=>app(PlatformTotpService::class)->generateSecret(),'totp_confirmed_at'=>now(),'recovery_codes'=>[Hash::make('ABCD-1234-EF56')],'last_totp_hash'=>'old-hash']);
 
     $this->actingAs($admin, 'platform')->get(route('platform.mfa.reset'))
-        ->assertOk()
-        ->assertSee('Reset MFA');
+        ->assertRedirect(route('platform.challenge'));
 
     $secureSession = ['platform_mfa_passed'=>true, 'platform_last_activity'=>now()->timestamp];
     $this->actingAs($admin, 'platform')->withSession($secureSession)
