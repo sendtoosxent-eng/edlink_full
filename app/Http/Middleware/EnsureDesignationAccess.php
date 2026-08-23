@@ -46,7 +46,7 @@ class EnsureDesignationAccess
             'reports.settings' => 'settings.manage',
             'settings.audit-trail', 'privacy.requests', 'privacy.requests.store',
             'privacy.requests.execute', 'settings.index', 'settings.result-access' => 'settings.manage',
-            'students.id-cards' => 'students.view',
+            'students.id-cards', 'students.id-cards.generate' => 'students.view',
             default => null,
         };
 

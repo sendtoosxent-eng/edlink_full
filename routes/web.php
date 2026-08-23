@@ -268,7 +268,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('students', StudentsIndex::class)->name('students.index');
     Route::get('students/graduates', Graduates::class)->name('graduates.index');
     Route::get('students/graduates/{graduationRecord}/certificate', GraduationCertificateController::class)->name('graduates.certificate');
-    Route::get('students/id-cards', StudentIdCardController::class)->name('students.id-cards');
+    Route::get('students/id-cards', [StudentIdCardController::class, 'index'])->name('students.id-cards');
+    Route::post('students/id-cards', [StudentIdCardController::class, 'generate'])->name('students.id-cards.generate');
     Route::get('students/categories', StudentCategories::class)->name('student-categories.index');
     Route::get('students/activities', StudentActivities::class)->name('students.activities');
     Route::get('students/activities/{type}/{activity}/export', StudentActivityExportController::class)->name('students.activities.export');
