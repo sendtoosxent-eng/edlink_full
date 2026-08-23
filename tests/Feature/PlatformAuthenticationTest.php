@@ -15,11 +15,14 @@ uses(RefreshDatabase::class);
 it('renders database-backed landing page content and assets', function () {
     \App\Models\LandingPageSetting::updateOrCreate(['key' => 'hero_title'], ['value' => 'A database powered school platform']);
     \App\Models\LandingPageSetting::updateOrCreate(['key' => 'hero_image'], ['value' => 'img/hero.png']);
+    \App\Models\LandingPageSetting::updateOrCreate(['key' => 'facebook_url'], ['value' => 'https://facebook.com/edlink']);
 
     $this->get(route('home'))
         ->assertOk()
         ->assertSee('A database powered school platform')
-        ->assertSee(asset('img/hero.png'), false);
+        ->assertSee(asset('img/hero.png'), false)
+        ->assertSee('https://facebook.com/edlink', false)
+        ->assertSee('Follow Edlink on Facebook');
 });
 it('updates and renders every landing page image from the platform editor', function () {
     Storage::fake('public');
@@ -30,7 +33,7 @@ it('updates and renders every landing page image from the platform editor', func
         'role' => 'platform_owner',
         'is_active' => true,
     ]);
-    $images = collect(['nav_logo', 'hero_image', 'feature_image', 'about_image', 'footer_logo'])
+    $images = collect(\App\Models\LandingPageSetting::ASSET_KEYS)
         ->mapWithKeys(fn ($key) => [$key => UploadedFile::fake()->image($key.'.png')])
         ->all();
 

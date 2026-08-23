@@ -238,7 +238,44 @@
 
 	<!-- ============ LOGOS / TRUST BAR ============ -->
 	<section class="py-10 border-y border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/[0.02]">
-		<p class="text-center text-xs uppercase tracking-widest text-gray-400 font-semibold">{{ $landing['trust_text'] }}</p>
+		<div class="mx-auto flex max-w-5xl flex-col items-center gap-5 px-4 text-center sm:flex-row sm:justify-center sm:gap-10">
+			<p class="text-xs uppercase tracking-widest text-gray-400 font-semibold">{{ $landing['trust_text'] }}</p>
+			<div class="flex flex-wrap justify-center gap-2 text-[11px] font-semibold text-gray-500 dark:text-gray-300">
+				<span class="rounded-full border border-gray-200 px-3 py-1.5 dark:border-white/10">School-owned records</span>
+				<span class="rounded-full border border-gray-200 px-3 py-1.5 dark:border-white/10">Role-based access</span>
+				<span class="rounded-full border border-gray-200 px-3 py-1.5 dark:border-white/10">Phone &amp; desktop ready</span>
+			</div>
+		</div>
+	</section>
+
+	<!-- ============ PRODUCT TOUR ============ -->
+	<section class="mobile-section py-24 bg-gray-50/60 dark:bg-white/[0.02]">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6">
+			<div class="grid items-center gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+				<div data-aos="fade-right">
+					<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">See the system</span>
+					<h2 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">One clear view of the whole school</h2>
+					<p class="mt-5 leading-relaxed text-gray-500 dark:text-gray-400">Edlink connects daily administration, academics and communication. Each person signs into a workspace shaped around their responsibilities.</p>
+					<ul class="mt-7 grid gap-3 text-sm text-gray-600 dark:text-gray-300 sm:grid-cols-2 lg:grid-cols-1">
+						@foreach(['Live enrolment, attendance and finance summaries','Teacher marks entry and class workbench','Parent and student results, homework and events','Bursar receipts, balances, arrears and expenses'] as $benefit)
+							<li class="flex gap-3"><span class="mt-0.5 text-teal-500 font-bold">✓</span><span>{{ $benefit }}</span></li>
+						@endforeach
+					</ul>
+					<a href="#demo-access" class="mt-8 inline-flex items-center gap-2 font-bold text-darken dark:text-yellow-400">Open the real interactive demo <span aria-hidden="true">&rarr;</span></a>
+				</div>
+				<div data-aos="fade-left" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-2xl dark:border-white/10 dark:bg-white/5">
+					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'product_image') }}" class="mb-2 max-h-72 w-full rounded-xl bg-white object-contain" alt="Edlink system preview">
+					<div class="rounded-xl bg-slate-900 px-4 py-3 text-white flex items-center justify-between"><b class="text-sm text-yellow-400">Edlink</b><span class="text-[10px] text-slate-400">School administrator workspace</span></div>
+					<div class="grid gap-3 bg-slate-50 p-4 dark:bg-slate-900 sm:grid-cols-3">
+						<div class="rounded-xl bg-white p-4 shadow-sm dark:bg-white/5"><p class="text-[10px] uppercase text-slate-400">Active learners</p><b class="mt-2 block text-2xl text-slate-900 dark:text-white">1,248</b><span class="text-[10px] text-emerald-600">Enrolment overview</span></div>
+						<div class="rounded-xl bg-white p-4 shadow-sm dark:bg-white/5"><p class="text-[10px] uppercase text-slate-400">Attendance today</p><b class="mt-2 block text-2xl text-slate-900 dark:text-white">96.4%</b><span class="text-[10px] text-emerald-600">Live class registers</span></div>
+						<div class="rounded-xl bg-white p-4 shadow-sm dark:bg-white/5"><p class="text-[10px] uppercase text-slate-400">Fee collection</p><b class="mt-2 block text-2xl text-slate-900 dark:text-white">78%</b><span class="text-[10px] text-amber-600">Term progress</span></div>
+						<div class="rounded-xl bg-white p-5 shadow-sm dark:bg-white/5 sm:col-span-2"><div class="flex items-center justify-between"><b class="text-xs text-slate-700 dark:text-white">Weekly attendance</b><span class="text-[9px] text-slate-400">Mon–Fri</span></div><div class="mt-6 flex h-24 items-end gap-3">@foreach([72,88,65,94,82] as $height)<span class="flex-1 rounded-t bg-gradient-to-t from-yellow-400 to-orange-400" style="height:{{$height}}%"></span>@endforeach</div></div>
+						<div class="rounded-xl bg-white p-5 shadow-sm dark:bg-white/5"><b class="text-xs text-slate-700 dark:text-white">Quick actions</b><div class="mt-4 space-y-2 text-[10px] text-slate-500"><p class="rounded-lg bg-slate-50 p-2 dark:bg-white/5">Register a learner</p><p class="rounded-lg bg-slate-50 p-2 dark:bg-white/5">Record fee payment</p><p class="rounded-lg bg-slate-50 p-2 dark:bg-white/5">Generate reports</p></div></div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</section>
 
 	<section id="demo-access" class="mobile-section scroll-mt-20 py-24 bg-white dark:bg-ink">
@@ -318,6 +355,9 @@
 				<h3 class="font-bold text-darken dark:text-white mb-2">Announcements</h3>
 				<p class="text-sm text-gray-500 dark:text-gray-400">Reach one class or the whole school by SMS or in-app notice.</p>
 			</div>
+			<div data-aos="fade-up" class="md:col-span-2 rounded-3xl p-7 bg-blue-50 dark:bg-blue-500/10"><h3 class="font-bold text-darken dark:text-white mb-2">Homework &amp; timetables</h3><p class="text-sm text-gray-500 dark:text-gray-400">Keep lessons, assignments, events and due dates visible to learners and families.</p></div>
+			<div data-aos="fade-up" class="md:col-span-2 rounded-3xl p-7 bg-amber-50 dark:bg-amber-500/10"><h3 class="font-bold text-darken dark:text-white mb-2">Staff &amp; payroll</h3><p class="text-sm text-gray-500 dark:text-gray-400">Manage staff records, attendance, leave, designations and payroll workflows.</p></div>
+			<div data-aos="fade-up" class="md:col-span-2 rounded-3xl p-7 bg-emerald-50 dark:bg-emerald-500/10"><h3 class="font-bold text-darken dark:text-white mb-2">Reports &amp; audit trail</h3><p class="text-sm text-gray-500 dark:text-gray-400">Export decision-ready reports and retain accountability for important changes.</p></div>
 		</div>
 	</section>
 
@@ -362,6 +402,31 @@
 				</div>
 
 				<p class="mt-6 text-gray-500 dark:text-gray-400">The goal is simple: reduce manual work, keep school data organized, and give every role a clear view of what matters without making the system complicated to use.</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- ============ ONBOARDING, SECURITY & FAQ ============ -->
+	<section class="mobile-section py-24 bg-gray-50/60 dark:bg-white/[0.02]">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6">
+			<div class="grid gap-6 md:grid-cols-3">
+				<div class="rounded-3xl bg-darken p-7 text-white"><span class="text-yellow-400 text-xs font-bold uppercase tracking-widest">Onboarding</span><h2 class="mt-3 text-2xl font-extrabold">Bring your existing records</h2><p class="mt-4 text-sm leading-7 text-gray-300">We help prepare your school, classes, streams, learners, staff and fee structures. Existing student and teacher lists can be imported instead of typed again.</p></div>
+				<div class="rounded-3xl border border-gray-200 bg-white p-7 dark:border-white/10 dark:bg-white/5"><span class="text-teal-500 text-xs font-bold uppercase tracking-widest">Security</span><h2 class="mt-3 text-2xl font-extrabold text-darken dark:text-white">Access stays controlled</h2><p class="mt-4 text-sm leading-7 text-gray-500 dark:text-gray-400">School data is separated by institution. Role-based permissions limit each user to the records and actions needed for their work, with audit history for accountability.</p></div>
+				<div class="rounded-3xl border border-gray-200 bg-white p-7 dark:border-white/10 dark:bg-white/5"><span class="text-purple-500 text-xs font-bold uppercase tracking-widest">Support</span><h2 class="mt-3 text-2xl font-extrabold text-darken dark:text-white">Help when your team needs it</h2><p class="mt-4 text-sm leading-7 text-gray-500 dark:text-gray-400">Use Edlink on a phone or desktop and reach the support team through WhatsApp, telephone or the contact form for setup and day-to-day guidance.</p></div>
+			</div>
+			<div class="mx-auto mt-20 max-w-3xl" x-data="{ openFaq: 0 }">
+				<div class="text-center"><span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">Frequently asked questions</span><h2 class="mt-3 text-3xl font-extrabold text-darken dark:text-white">Know before you get started</h2></div>
+				<div class="mt-9 divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:divide-white/10 dark:border-white/10 dark:bg-white/5">
+					@foreach([
+						['How long is the free demo?', 'The interactive demo is available for 10 days and does not require a payment card.'],
+						['Who can use Edlink?', 'Administrators, teachers, bursars, parents and students receive role-appropriate workspaces.'],
+						['Can we import our current records?', 'Yes. Existing learner and teacher lists can be imported during setup.'],
+						['Does it work on phones?', 'Yes. Edlink is responsive and can be used from modern phone and desktop browsers.'],
+						['Are SMS messages included in the plan price?', 'SMS usage and any applicable message charges are confirmed with your school during onboarding.'],
+					] as $index => $faq)
+						<div><button type="button" @click="openFaq = openFaq === {{$index}} ? -1 : {{$index}}" class="flex w-full items-center justify-between gap-4 p-5 text-left font-bold text-darken dark:text-white"><span>{{ $faq[0] }}</span><span x-text="openFaq === {{$index}} ? '−' : '+'"></span></button><p x-show="openFaq === {{$index}}" x-cloak class="px-5 pb-5 text-sm leading-7 text-gray-500 dark:text-gray-400">{{ $faq[1] }}</p></div>
+					@endforeach
+				</div>
 			</div>
 		</div>
 	</section>
@@ -492,6 +557,27 @@
 				<span class="text-gray-600">•</span>
 				<a href="{{ route('terms') }}" class="hover:text-white transition-colors">Terms</a>
 			</div>
+			@php
+				$socials = [
+					'facebook_url' => ['Facebook', 'M9 8h3V6.5C12 5.12 12.9 4 15 4h2v3h-1.5c-.83 0-1.5.67-1.5 1.5V10h3l-.5 3H14v7h-3v-7H9v-3h2V8z'],
+					'instagram_url' => ['Instagram', 'M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1 1 0 110 2 1 1 0 010-2z'],
+					'x_url' => ['X', 'M5 4l11.5 16H19L7.5 4H5zm13.5 0L5 20h2.5L21 4h-2.5z'],
+					'linkedin_url' => ['LinkedIn', 'M5 3.5A2.5 2.5 0 115 8a2.5 2.5 0 010-5zM3 9h4v12H3V9zm6 0h3.8v1.7h.1c.5-1 1.8-2.1 3.8-2.1 4 0 4.8 2.7 4.8 6.1V21h-4v-5.6c0-1.3 0-3.1-1.9-3.1s-2.2 1.5-2.2 3V21H9V9z'],
+					'youtube_url' => ['YouTube', 'M21.6 7.2a2.8 2.8 0 00-2-2C17.8 5 15.1 5 12 5s-5.8 0-7.6.2a2.8 2.8 0 00-2 2A29 29 0 002.2 12a29 29 0 00.2 4.8 2.8 2.8 0 002 2C6.2 19 8.9 19 12 19s5.8 0 7.6-.2a2.8 2.8 0 002-2 29 29 0 00.2-4.8 29 29 0 00-.2-4.8zM10 15.5v-7l6 3.5-6 3.5z'],
+					'tiktok_url' => ['TikTok', 'M14 3h3c.2 2 1.3 3.2 3 3.8v3.1a8 8 0 01-3-1.1V15a6 6 0 11-6-6v3.2a2.8 2.8 0 102 2.8V3h1z'],
+				];
+			@endphp
+			@if(collect(array_keys($socials))->contains(fn($key) => filled($landing[$key] ?? null)))
+				<div class="mb-6 flex flex-wrap items-center justify-center gap-3" aria-label="Edlink social media profiles">
+					@foreach($socials as $key => [$label, $path])
+						@if(filled($landing[$key] ?? null))
+							<a href="{{ $landing[$key] }}" target="_blank" rel="noopener noreferrer" aria-label="Follow Edlink on {{ $label }}" title="{{ $label }}" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-300 transition hover:-translate-y-1 hover:border-yellow-400 hover:bg-yellow-400 hover:text-darken">
+								<svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{ $path }}"/></svg>
+							</a>
+						@endif
+					@endforeach
+				</div>
+			@endif
 			<p class="text-xs text-gray-500">&copy; <span x-data x-text="new Date().getFullYear()"></span> {{ $landing['footer_text'] }}</p>
 		</div>
 	</footer>

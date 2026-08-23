@@ -10,6 +10,8 @@ class LandingPageSetting extends Model
 {
     protected $fillable = ['key', 'value'];
 
+    public const ASSET_KEYS = ['nav_logo', 'hero_image', 'product_image', 'feature_image', 'about_image', 'footer_logo'];
+
     public const DEFAULTS = [
         'site_title' => 'Edlink — Run your school from one dashboard',
         'announcement' => 'Free 10-day demo — no card required',
@@ -18,7 +20,7 @@ class LandingPageSetting extends Model
         'hero_title_suffix' => 'not ten notebooks',
         'hero_description' => 'Edlink brings admissions, attendance, fees, and report cards into a single system your whole staff can actually use.',
         'primary_cta' => 'Try a free demo', 'secondary_cta' => 'See features',
-        'stat_one_value' => '4', 'stat_one_label' => 'Core modules', 'stat_two_value' => '2 min', 'stat_two_label' => 'Setup time', 'stat_three_value' => '7 days', 'stat_three_label' => 'Free demo',
+        'stat_one_value' => '15+', 'stat_one_label' => 'Connected modules', 'stat_two_value' => '6', 'stat_two_label' => 'Role-based portals', 'stat_three_value' => '10 days', 'stat_three_label' => 'Free demo',
         'trust_text' => 'Built for schools that want less paperwork, not more software',
         'features_heading' => 'Everything the front office and the staffroom need',
         'about_heading' => "Built by a team that's shipped school software before",
@@ -28,8 +30,9 @@ class LandingPageSetting extends Model
         'contact_heading' => 'Need help, or want a school demo?',
         'contact_description' => 'Talk to our team, report an issue, or reach us directly.',
         'phone' => '+256 763 316 839', 'whatsapp' => '256763316839', 'support_email' => 'support@edlink.space',
+        'facebook_url' => '', 'instagram_url' => '', 'x_url' => '', 'linkedin_url' => '', 'youtube_url' => '', 'tiktok_url' => '',
         'footer_text' => 'Edlink. Built by Spotnet Technologies.',
-        'nav_logo' => 'img/logoneg.png', 'hero_image' => 'img/girl.png', 'feature_image' => 'img/gradebook.png', 'about_image' => 'img/testimonials.png', 'footer_logo' => 'img/logo.png',
+        'nav_logo' => 'img/logoneg.png', 'hero_image' => 'img/girl.png', 'product_image' => 'img/gradebook.png', 'feature_image' => 'img/gradebook.png', 'about_image' => 'img/teacher-explaining.png', 'footer_logo' => 'img/logo.png',
     ];
 
     public static function values(): array

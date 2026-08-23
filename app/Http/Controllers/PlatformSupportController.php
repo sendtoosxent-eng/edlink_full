@@ -28,13 +28,23 @@ class PlatformSupportController extends Controller
     public function show(ContactMessage $contactMessage): View
     {
         if(!$contactMessage->read_at)$contactMessage->update(['read_at'=>now(),'status'=>$contactMessage->status==='new'?'open':$contactMessage->status]);
-        return view('platform.support.show',['contactMessage'=>$contactMessage->load('replies.administrator')]);
+        return view('platform.support.show',[
+            'contactMessage'=>$contactMessage->load('replies.administrator'),
+            'mailDeliveryEnabled'=>! in_array(config('mail.default'), ['log', 'array'], true),
+            'mailDriver'=>config('mail.default'),
+        ]);
     }
 
     public function reply(Request $request, ContactMessage $contactMessage): RedirectResponse
     {
         $data=$request->validate(['subject'=>['required','string','max:255'],'message'=>['required','string','min:3','max:10000']]);
         $reply=$contactMessage->replies()->create(['platform_admin_id'=>Auth::guard('platform')->id(),'subject'=>$data['subject'],'message'=>$data['message'],'delivery_status'=>'pending']);
+        if (in_array(config('mail.default'), ['log', 'array'], true)) {
+            $reply->update(['delivery_status'=>'failed','delivery_error'=>'Email delivery is disabled because MAIL_MAILER is set to '.config('mail.default').'.']);
+            $this->audit($request,'platform.support.reply_failed',$contactMessage,['reply_id'=>$reply->id,'reason'=>'mail_delivery_disabled']);
+
+            return back()->withErrors(['reply'=>'Email delivery is disabled. Configure MAIL_MAILER with a real email service (for example SMTP or Resend), then try again.']);
+        }
         try {
             Mail::to($contactMessage->email,$contactMessage->name)->send(new ContactMessageReplyMail($contactMessage,$reply));
             $reply->update(['delivery_status'=>'sent','sent_at'=>now()]);

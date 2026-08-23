@@ -27,6 +27,7 @@ it('shows landing page messages and marks an opened message as read', function (
 });
 
 it('emails and stores a platform support reply', function () {
+    config(['mail.default'=>'smtp']);
     Mail::fake(); $admin=authenticatedSupportOwner();
     $message=ContactMessage::create(['name'=>'John Visitor','email'=>'john@example.com','subject'=>'Pricing enquiry','message'=>'What package should our school use?','type'=>'contact']);
 
@@ -36,4 +37,16 @@ it('emails and stores a platform support reply', function () {
     expect(ContactMessageReply::where('contact_message_id',$message->id)->where('platform_admin_id',$admin->id)->where('delivery_status','sent')->exists())->toBeTrue()
         ->and($message->fresh()->status)->toBe('replied')
         ->and(PlatformAuditLog::where('event','platform.support.replied')->exists())->toBeTrue();
+});
+
+it('does not claim delivery when the mailer cannot send email', function () {
+    config(['mail.default'=>'log']);
+    $admin=authenticatedSupportOwner();
+    $message=ContactMessage::create(['name'=>'No Delivery','email'=>'visitor@example.com','subject'=>'Help','message'=>'Please help with setup.','type'=>'contact']);
+
+    $this->post(route('platform.support.reply',$message),['subject'=>'Re: Help','message'=>'We are ready to help you.'])
+        ->assertSessionHasErrors('reply');
+
+    expect(ContactMessageReply::where('contact_message_id',$message->id)->where('platform_admin_id',$admin->id)->where('delivery_status','failed')->exists())->toBeTrue()
+        ->and($message->fresh()->status)->not->toBe('replied');
 });

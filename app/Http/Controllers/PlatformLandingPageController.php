@@ -16,16 +16,19 @@ class PlatformLandingPageController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        $textKeys = array_diff(array_keys(LandingPageSetting::DEFAULTS), ['nav_logo','hero_image','feature_image','about_image','footer_logo']);
+        $textKeys = array_diff(array_keys(LandingPageSetting::DEFAULTS), LandingPageSetting::ASSET_KEYS);
         $rules = collect($textKeys)->mapWithKeys(fn ($key) => [$key => [
             'nullable',
             'string',
             'max:'.(str_contains($key, 'text') || str_contains($key, 'description') ? 3000 : 255),
         ]])->all();
-        foreach (['nav_logo','hero_image','feature_image','about_image','footer_logo'] as $key) $rules[$key] = ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'];
+        foreach (['facebook_url','instagram_url','x_url','linkedin_url','youtube_url','tiktok_url'] as $key) {
+            $rules[$key] = ['nullable', 'url:http,https', 'max:500'];
+        }
+        foreach (LandingPageSetting::ASSET_KEYS as $key) $rules[$key] = ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'];
         $data = $request->validate($rules);
         foreach ($textKeys as $key) LandingPageSetting::updateOrCreate(['key'=>$key], ['value'=>$data[$key] ?? '']);
-        foreach (['nav_logo','hero_image','feature_image','about_image','footer_logo'] as $key) {
+        foreach (LandingPageSetting::ASSET_KEYS as $key) {
             if (! $request->hasFile($key)) continue;
             $current = LandingPageSetting::where('key',$key)->value('value');
             if ($current && str_starts_with($current,'landing-page/')) Storage::disk('public')->delete($current);

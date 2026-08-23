@@ -244,11 +244,27 @@
             </div>
         </section>
 
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Social Media</h3>
+                <p class="mt-0.5 text-xs font-medium text-slate-500">Paste the complete profile URL, including https://. Empty networks will not appear in the public footer.</p>
+            </div>
+            <div class="mt-5 grid gap-4 md:grid-cols-2">
+                @foreach(['facebook_url'=>'Facebook','instagram_url'=>'Instagram','x_url'=>'X (Twitter)','linkedin_url'=>'LinkedIn','youtube_url'=>'YouTube','tiktok_url'=>'TikTok'] as $key=>$label)
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">{{ $label }}</label>
+                        <input type="url" name="{{ $key }}" value="{{ old($key, $landing[$key]) }}" placeholder="https://..." class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        @error($key)<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 class="font-black text-slate-900">Landing-page assets</h3>
-            <p class="mt-1 text-xs text-slate-500">Upload JPG, PNG or WebP files up to 4 MB. Existing images remain unless replaced.</p>
-            <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                @foreach(['nav_logo'=>'Navigation logo','hero_image'=>'Hero image','feature_image'=>'Feature image','about_image'=>'About image','footer_logo'=>'Footer logo'] as $key=>$label)
+            <p class="mt-1 text-xs text-slate-500">Upload JPG, PNG or WebP files up to 4 MB. Each preview identifies exactly where the image appears. Existing images remain unless replaced.</p>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach(['nav_logo'=>'Header · navigation logo','hero_image'=>'Hero · main image','product_image'=>'Product tour · system screenshot','feature_image'=>'Features · module image','about_image'=>'About · team or school image','footer_logo'=>'Footer · brand logo'] as $key=>$label)
                     <label class="rounded-xl border border-dashed border-slate-300 p-4 text-xs font-bold text-slate-600">
                         <span>{{ $label }}</span>
                         <img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,$key) }}" class="my-3 h-24 w-full rounded-lg bg-slate-100 object-contain" alt="{{ $label }} preview">
