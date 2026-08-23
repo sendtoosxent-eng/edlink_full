@@ -31,19 +31,26 @@ class AppServiceProvider extends ServiceProvider
             $user = Auth::user();
             $notifications = collect();
 
-            if ($user && $user->school_id && Schema::hasTable('school_notifications') && Schema::hasTable('school_notification_reads')) {
-                $notifications = DB::table('school_notifications as notifications')
-                    ->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
+            if ($user && $user->school_id && Schema::hasTable('school_notifications')) {
+                $query = DB::table('school_notifications as notifications')
+                    ->when(Schema::hasTable('school_notification_reads'), function ($query) use ($user): void {
+                        $query->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
                         $join->on('reads.school_notification_id', '=', 'notifications.id')
                             ->where('reads.user_id', $user->id);
+                        });
                     })
                     ->where('notifications.school_id', $user->school_id)
                     ->where(function ($query) use ($user): void {
                         $query->whereNull('notifications.user_id')->orWhere('notifications.user_id', $user->id);
                     })
                     ->latest('notifications.created_at')
-                    ->limit(10)
-                    ->get(['notifications.id', 'notifications.title', 'notifications.message', 'notifications.type', 'reads.read_at', 'notifications.created_at']);
+                    ->limit(10);
+
+                $notifications = $query->get([
+                    'notifications.id', 'notifications.title', 'notifications.message',
+                    'notifications.type', 'notifications.created_at',
+                    Schema::hasTable('school_notification_reads') ? 'reads.read_at' : 'notifications.read_at',
+                ]);
             }
 
             $view->with('layoutNotifications', $notifications);

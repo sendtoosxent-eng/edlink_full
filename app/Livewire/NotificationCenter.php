@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -12,6 +13,10 @@ class NotificationCenter extends Component
 {
     public function markRead(int $notificationId): void
     {
+        if (! Schema::hasTable('school_notification_reads')) {
+            return;
+        }
+
         $user = Auth::user();
         $allowed = DB::table('school_notifications')
             ->where('id', $notificationId)
@@ -29,6 +34,10 @@ class NotificationCenter extends Component
 
     public function markAllRead(): void
     {
+        if (! Schema::hasTable('school_notification_reads')) {
+            return;
+        }
+
         $user = Auth::user();
         $ids = DB::table('school_notifications')
             ->where('school_id', $user->school_id)
@@ -46,18 +55,23 @@ class NotificationCenter extends Component
     public function render()
     {
         $user = Auth::user();
-        $notifications = DB::table('school_notifications as notifications')
-            ->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
-                $join->on('reads.school_notification_id', '=', 'notifications.id')
-                    ->where('reads.user_id', $user->id);
-            })
+        $query = DB::table('school_notifications as notifications')
             ->where('notifications.school_id', $user->school_id)
             ->where(fn ($query) => $query->whereNull('notifications.user_id')->orWhere('notifications.user_id', $user->id))
-            ->latest('notifications.created_at')
-            ->get([
-                'notifications.id', 'notifications.title', 'notifications.message',
-                'notifications.type', 'notifications.created_at', 'reads.read_at',
-            ]);
+            ->latest('notifications.created_at');
+
+        if (Schema::hasTable('school_notification_reads')) {
+            $query->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
+                $join->on('reads.school_notification_id', '=', 'notifications.id')
+                    ->where('reads.user_id', $user->id);
+            });
+        }
+
+        $notifications = $query->get([
+            'notifications.id', 'notifications.title', 'notifications.message',
+            'notifications.type', 'notifications.created_at',
+            Schema::hasTable('school_notification_reads') ? 'reads.read_at' : 'notifications.read_at',
+        ]);
 
         return view('livewire.notification-center', [
             'notifications' => $notifications,
