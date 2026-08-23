@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 
 class Student extends Model
@@ -63,6 +64,18 @@ class Student extends Model
     public function subjectSelections(): HasMany
     {
         return $this->hasMany(StudentSubjectSelection::class);
+    }
+
+    public function graduationRecords(): HasMany
+    {
+        return $this->hasMany(GraduationRecord::class);
+    }
+
+    public function activeGraduation(): HasOne
+    {
+        return $this->hasOne(GraduationRecord::class)
+            ->whereNull('reversed_at')
+            ->latestOfMany('graduated_at');
     }
 
     public function feePayments(): HasMany
@@ -167,7 +180,9 @@ class Student extends Model
     public function feeAdjustmentTotal(?Term $term = null): float
     {
         $term ??= $this->school->currentTerm();
-        if (! $term) return 0;
+        if (! $term) {
+            return 0;
+        }
 
         return (float) ($this->relationLoaded('feeAdjustments')
             ? $this->feeAdjustments->where('term_id', $term->id)->where('status', 'approved')->sum('amount')

@@ -44,3 +44,20 @@ it('seeds working login accounts for every landing-page demo role', function () 
         ->call('login')
         ->assertRedirect(route('workbench.home', absolute: false));
 });
+
+it('logs the parent demo into a linked learner dashboard', function () {
+    $this->seed(TeacherSubjectVisibilitySeeder::class);
+
+    Volt::test('pages.auth.login')
+        ->set('school_number', config('edlink.demo.school_number'))
+        ->set('email', config('edlink.demo.roles.parent.email'))
+        ->set('password', config('edlink.demo.password'))
+        ->call('login')
+        ->assertRedirect(route('portal.home', absolute: false));
+
+    $this->get(route('portal.home'))
+        ->assertOk()
+        ->assertSee('Parent / guardian')
+        ->assertSee('Amina Class Learner')
+        ->assertDontSee('No learner is linked');
+});
