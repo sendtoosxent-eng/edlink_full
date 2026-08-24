@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Livewire\FeeAdjustments;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -10,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Some deployments retain the previous route cache after pulling new code.
+        // Keep this newly introduced finance screen reachable until that cache is rebuilt.
+        if ($this->app->routesAreCached() && ! Route::has('fee-adjustments.index')) {
+            Route::middleware(['web', 'auth', 'verified', 'branch.context', 'active.user', 'designation.access'])
+                ->get('finance/fee-adjustments', FeeAdjustments::class)
+                ->name('fee-adjustments.index');
+        }
+
         RateLimiter::for('api', function (Request $request) {
             $user = $request->user();
             $key = $user ? "school:{$user->school_id}:user:{$user->id}" : $request->ip();
