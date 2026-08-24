@@ -5,9 +5,12 @@ namespace Database\Seeders;
 use App\Models\Designation;
 use App\Models\Exam;
 use App\Models\ExamPaper;
+use App\Models\GraduationRecord;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\StudentCategory;
+use App\Models\StudentEnrolment;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
@@ -135,14 +138,49 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             ['created_at' => now(), 'updated_at' => now()],
         );
 
-        foreach ([
-            [$primaryFive, 'P5-001', 'Amina Class Learner'],
-            [$primarySix, 'P6-001', 'Brian Subject Learner'],
-        ] as [$class, $admissionNumber, $name]) {
-            Student::updateOrCreate(
-                ['school_id' => $school->id, 'admission_no' => $admissionNumber],
-                ['school_class_id' => $class->id, 'term_id' => $term->id, 'name' => $name, 'status' => 'active'],
-            );
+        $category = StudentCategory::firstOrCreate(['school_id' => $school->id, 'name' => 'Day Scholar']);
+        $firstNames = ['Amina', 'Brian', 'Cathy', 'David', 'Esther', 'Frank', 'Gloria', 'Henry', 'Irene', 'Joel', 'Karen', 'Liam', 'Mercy', 'Nathan', 'Olivia', 'Peter', 'Queen', 'Robert', 'Sarah', 'Timothy', 'Unity', 'Victor', 'Winnie', 'Yasin', 'Zahara'];
+        $surnames = ['Nakato', 'Okello', 'Atim', 'Kato', 'Namusoke', 'Ochieng', 'Nabirye', 'Tumusiime', 'Akello', 'Ssemanda', 'Nanyonjo', 'Odongo', 'Nakitende', 'Mugisha', 'Auma', 'Kisembo', 'Namukasa', 'Wasswa', 'Nansubuga', 'Opio'];
+
+        foreach ([[$primaryFive, 'P5', 0], [$primarySix, 'P6', 7]] as [$class, $prefix, $nameOffset]) {
+            foreach (range(1, 50) as $number) {
+                $admissionNumber = sprintf('%s-%03d', $prefix, $number);
+                $name = match ([$prefix, $number]) {
+                    ['P5', 1] => 'Amina Class Learner',
+                    ['P6', 1] => 'Brian Subject Learner',
+                    default => $firstNames[($number + $nameOffset - 1) % count($firstNames)].' '.$surnames[(($number * 3) + $nameOffset) % count($surnames)],
+                };
+
+                $student = Student::updateOrCreate(
+                    ['school_id' => $school->id, 'admission_no' => $admissionNumber],
+                    [
+                        'school_class_id' => $class->id,
+                        'student_category_id' => $category->id,
+                        'term_id' => $term->id,
+                        'name' => $name,
+                        'status' => 'active',
+                        'gender' => $number % 2 === 0 ? 'male' : 'female',
+                        'admission_date' => now()->subYears(2)->startOfYear()->addDays($number)->toDateString(),
+                    ],
+                );
+
+                StudentEnrolment::updateOrCreate(
+                    ['student_id' => $student->id, 'term_id' => $term->id],
+                    [
+                        'school_id' => $school->id,
+                        'school_class_id' => $class->id,
+                        'stream_id' => null,
+                        'student_category_id' => $category->id,
+                        'fee_structure_id' => null,
+                        'base_fee_amount' => 0,
+                        'status' => 'active',
+                        'promotion_outcome' => null,
+                        'enrolled_at' => $term->year.'-01-29',
+                        'exited_at' => null,
+                        'notes' => 'Seeded public demo learner.',
+                    ],
+                );
+            }
         }
 
         $this->account($school, 'Demo School Administrator', 'admin@edlink.local', 'admin', null, 'DEMO-ADMIN-01');
@@ -162,10 +200,91 @@ class TeacherSubjectVisibilitySeeder extends Seeder
         );
 
         $this->seedDemoExperience($school, $term, $primaryFive, $primarySix, $subjects, $classTeacher, $studentUser);
+        $this->seedGraduates($school, $primarySix);
         SchoolSetting::setValue($school->id, 'public_demo_seed_version', DemoAccounts::SEED_VERSION);
 
         $this->command?->info('Teacher subject-visibility data seeded for EDL-TEACH.');
         $this->command?->line('All demo accounts use password: TeacherTest@2026');
+    }
+
+    private function seedGraduates(School $school, SchoolClass $graduatingClass): void
+    {
+        $admin = User::where('school_id', $school->id)->where('email', 'admin@edlink.local')->firstOrFail();
+        $category = StudentCategory::firstOrCreate(['school_id' => $school->id, 'name' => 'Day Scholar']);
+
+        foreach ([
+            ['ALU-2025-001', 'Grace Namusoke', 2025, '2025-11-28', 86.40, 0],
+            ['ALU-2025-002', 'Daniel Okello', 2025, '2025-11-28', 78.75, 45000],
+            ['ALU-2025-003', 'Patricia Nabirye', 2025, '2025-11-28', 82.10, 0],
+            ['ALU-2025-004', 'Samuel Ochieng', 2025, '2025-11-28', 69.85, 75000],
+            ['ALU-2025-005', 'Rebecca Tumusiime', 2025, '2025-11-28', 88.30, 0],
+            ['ALU-2024-001', 'Sharon Atim', 2024, '2024-11-29', 91.20, 0],
+            ['ALU-2024-002', 'Isaac Mugisha', 2024, '2024-11-29', 76.45, 30000],
+            ['ALU-2024-003', 'Joan Nakitende', 2024, '2024-11-29', 84.60, 0],
+            ['ALU-2024-004', 'Andrew Odongo', 2024, '2024-11-29', 71.90, 95000],
+            ['ALU-2023-001', 'Moses Kato', 2023, '2023-12-01', 73.50, 120000],
+            ['ALU-2023-002', 'Lydia Namukasa', 2023, '2023-12-01', 80.25, 0],
+            ['ALU-2023-003', 'Joseph Opio', 2023, '2023-12-01', 67.75, 60000],
+        ] as [$admissionNumber, $name, $year, $graduatedAt, $average, $balance]) {
+            $finalTerm = Term::updateOrCreate(
+                ['school_id' => $school->id, 'year' => $year, 'term_number' => 3],
+                [
+                    'name' => 'Term 3',
+                    'is_current' => false,
+                    'status' => 'closed',
+                    'locked' => true,
+                    'closed_at' => $graduatedAt.' 17:00:00',
+                ],
+            );
+
+            $student = Student::updateOrCreate(
+                ['school_id' => $school->id, 'admission_no' => $admissionNumber],
+                [
+                    'school_class_id' => $graduatingClass->id,
+                    'stream_id' => null,
+                    'student_category_id' => $category->id,
+                    'term_id' => $finalTerm->id,
+                    'name' => $name,
+                    'status' => 'graduated',
+                    'admission_date' => ($year - 7).'-02-01',
+                ],
+            );
+
+            StudentEnrolment::updateOrCreate(
+                ['student_id' => $student->id, 'term_id' => $finalTerm->id],
+                [
+                    'school_id' => $school->id,
+                    'school_class_id' => $graduatingClass->id,
+                    'stream_id' => null,
+                    'student_category_id' => $category->id,
+                    'fee_structure_id' => null,
+                    'base_fee_amount' => 0,
+                    'status' => 'graduated',
+                    'promotion_outcome' => 'graduated',
+                    'enrolled_at' => $year.'-01-29',
+                    'exited_at' => $graduatedAt,
+                    'notes' => 'Seeded demo alumni record.',
+                ],
+            );
+
+            GraduationRecord::updateOrCreate(
+                ['student_id' => $student->id, 'term_id' => $finalTerm->id],
+                [
+                    'school_id' => $school->id,
+                    'school_class_id' => $graduatingClass->id,
+                    'graduation_year' => $year,
+                    'graduated_at' => $graduatedAt,
+                    'final_average' => $average,
+                    'outstanding_balance' => $balance,
+                    'certificate_number' => "EDL-DEMO-{$year}-{$student->id}",
+                    'portal_access' => 'read_only',
+                    'graduated_by' => $admin->id,
+                    'reversed_at' => null,
+                    'reversed_by' => null,
+                    'reversal_reason' => null,
+                ],
+            );
+        }
     }
 
     private function seedDemoExperience(

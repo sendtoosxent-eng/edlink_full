@@ -3,6 +3,7 @@
 use App\Livewire\NotificationCenter;
 use App\Models\School;
 use App\Models\User;
+use App\Models\GraduationRecord;
 use Database\Seeders\TeacherSubjectVisibilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -74,5 +75,18 @@ it('seeds a useful cross-module demo experience', function () {
         ->and(DB::table('student_clubs')->where('school_id', $schoolId)->count())->toBe(2)
         ->and(DB::table('homework_assignments')->where('school_id', $schoolId)->exists())->toBeTrue()
         ->and(DB::table('school_events')->where('school_id', $schoolId)->count())->toBeGreaterThanOrEqual(2)
-        ->and(DB::table('timetable_slots')->where('school_id', $schoolId)->count())->toBeGreaterThanOrEqual(3);
+        ->and(DB::table('timetable_slots')->where('school_id', $schoolId)->count())->toBeGreaterThanOrEqual(3)
+        ->and(DB::table('students')->where('school_id', $schoolId)->where('status', 'active')->count())->toBe(100)
+        ->and(DB::table('students')->where('school_id', $schoolId)->where('status', 'active')->where('school_class_id', School::whereKey($schoolId)->firstOrFail()->classes()->where('name', 'Primary Five')->value('id'))->count())->toBe(50)
+        ->and(DB::table('students')->where('school_id', $schoolId)->where('status', 'active')->where('school_class_id', School::whereKey($schoolId)->firstOrFail()->classes()->where('name', 'Primary Six')->value('id'))->count())->toBe(50)
+        ->and(GraduationRecord::where('school_id', $schoolId)->whereNull('reversed_at')->count())->toBe(12);
+
+    $administrator = User::where('school_id', $schoolId)->where('email', 'admin@edlink.local')->firstOrFail();
+    $this->actingAs($administrator)
+        ->get(route('graduates.index'))
+        ->assertOk()
+        ->assertSee('Grace Namusoke')
+        ->assertSee('Daniel Okello')
+        ->assertSee('Sharon Atim')
+        ->assertSee('Moses Kato');
 });
