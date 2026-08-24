@@ -90,6 +90,10 @@ it('allows finance adjustment staff to open the screen, request, and approve an 
         ->assertOk()
         ->assertSee('Fee Adjustments')
         ->assertSee('No fee adjustments are waiting for approval');
+    $this->actingAs($financeUser)->get(route('fee-payments.index', ['screen' => 'adjustments']))
+        ->assertOk()
+        ->assertSee('Fee Adjustments')
+        ->assertSee('No fee adjustments are waiting for approval');
 
     Livewire::actingAs($financeUser)->test(FeePayments::class)
         ->call('openPaymentForm', $student->id)

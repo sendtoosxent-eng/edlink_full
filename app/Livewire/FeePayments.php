@@ -32,9 +32,11 @@ class FeePayments extends Component
     public string $adjustmentValue = '';
     public string $adjustmentReason = '';
     public string $reviewNotes = '';
+    public bool $approvalScreen = false;
 
     public function mount(): void
     {
+        $this->approvalScreen = request()->query('screen') === 'adjustments';
         $studentId = request()->integer('student');
         if ($studentId && Student::where('school_id', Auth::user()->school_id)->where('status', 'active')->whereKey($studentId)->exists()) {
             $this->openPaymentForm($studentId);
@@ -307,6 +309,20 @@ class FeePayments extends Component
     {
         $school = Auth::user()->school;
         $term = $school->currentTerm();
+
+        if ($this->approvalScreen) {
+            abort_unless(Auth::user()->hasPermission('finance.adjustments'), 403);
+            $adjustments = StudentFeeAdjustment::with(['student.schoolClass', 'requester', 'reviewer'])
+                ->where('school_id', $school->id)
+                ->when($term, fn ($query) => $query->where('term_id', $term->id));
+
+            return view('livewire.fee-adjustments', [
+                'term' => $term,
+                'pendingAdjustments' => (clone $adjustments)->where('status', 'pending')->latest()->get(),
+                'reviewedAdjustments' => (clone $adjustments)->whereIn('status', ['approved', 'rejected', 'cancelled'])->latest('reviewed_at')->limit(30)->get(),
+                'pageTitle' => 'Fee Adjustments',
+            ]);
+        }
 
         $students = Student::with(['schoolClass', 'category', 'feeAdjustments'])
             ->where('school_id', $school->id)

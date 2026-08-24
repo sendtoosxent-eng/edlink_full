@@ -20,7 +20,7 @@
 
             <div class="flex flex-col items-start gap-3 sm:items-end">
             @if($canApproveAdjustments)
-                <a href="{{ url('/finance/fee-adjustments') }}" class="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-violet-400">
+                <a href="{{ url('/finance/payments?screen=adjustments') }}" class="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-violet-400">
                     Review Fee Adjustments
                     @if($pendingAdjustments->isNotEmpty())<span class="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] text-slate-950">{{ $pendingAdjustments->count() }}</span>@endif
                 </a>
