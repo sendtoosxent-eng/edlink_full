@@ -94,7 +94,7 @@
         id="app-sidebar"
         class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden"
         :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        x-data="{ open: 'students' }"
+        x-data="{ open: '' }"
     >
         <div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed && 'justify-center px-0'">
             <span class=" flex-shrink-0">
@@ -420,14 +420,31 @@
             </h3>
             <p class="text-xs text-gray-400 font-medium">Learners with outstanding balances in the active term</p>
         </div>
-        <button onclick="refreshDebtorsSpotlight()" class="text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95">
+        <a href="{{ request()->fullUrl() }}" class="text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18" /></svg>
             Refresh
-        </button>
+        </a>
     </div>
 
     <!-- Dynamic Target Container for JavaScript Arrears Grid -->
     <div id="debtorsSpotlightGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @forelse($dashboardDebtors as $debtor)
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/40 p-4">
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-bold text-gray-900">{{ $debtor['name'] }}</p>
+                    <p class="text-xs text-gray-400">{{ $debtor['class'] }}</p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                    <span class="rounded-lg bg-[#252641] px-2.5 py-1 text-xs font-bold text-[#facc15]">{{ $currencySymbol }} {{ number_format($debtor['balance']) }}</span>
+                    <a title="View learner profile" href="{{ route('students.index', ['student' => $debtor['id']]) }}" class="rounded-lg border px-2 py-1 text-xs">Profile</a>
+                    <a title="Pay this learner's fees" href="{{ route('fee-payments.index', ['student' => $debtor['id']]) }}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>
+                </div>
+            </div>
+        @empty
+            <p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>
+        @endforelse
+
+        @if(false)
         <!-- Inside here, your dynamic script will render student layout components like this: -->
          
         <!-- Record 1 -->
@@ -632,6 +649,7 @@
         </div>
     </div>
 </div>
+        @endif
         
     </div>
 </div>
@@ -1021,6 +1039,11 @@
     <script>
         // Shared palette, available to every block below.
         const colors = { yellow: '#eab308', navy: '#252641', teal: '#0d9488', red: '#ef4444', gray: '#e5e7eb' };
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+            })[character]);
+        }
         Chart.register({ id: 'emptyState', afterDraw(chart) {
             const hasData = chart.data.datasets.some(dataset => !dataset.hidden && (dataset.data ?? []).some(value => Number(value) !== 0));
             if (hasData) return;
@@ -1129,9 +1152,6 @@
     <script>
       try {
         // ---- Mini calendar ----
-        const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
-        })[character]);
         const eventRecords = @json($dashboardEvents);
         let calDate = new Date();
         function renderCalendar() {
@@ -1382,6 +1402,12 @@ performanceClassFilter.addEventListener('change', function () {
             grid.innerHTML = liveDebtors.length ? liveDebtors.map(debtor => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50/40 flex items-center justify-between gap-3"><div><p class="font-bold text-gray-900 text-sm">${escapeHtml(debtor.name)}</p><p class="text-xs text-gray-400">${escapeHtml(debtor.class)}</p></div><div class="flex items-center gap-2"><span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#252641] text-[#facc15]">${escapeHtml(currencySymbol)} ${Number(debtor.balance).toLocaleString()}</span><a title="View learner profile" href="{{ route('students.index') }}?student=${Number(debtor.id)}" class="rounded-lg border px-2 py-1 text-xs">Profile</a><a title="Pay this learner's fees" href="{{ route('fee-payments.index') }}?student=${Number(debtor.id)}" class="rounded-lg border px-2 py-1 text-xs">Pay</a>${debtor.guardian_email ? `<a title="Send arrears reminder" href="mailto:${encodeURIComponent(String(debtor.guardian_email))}?subject=${encodeURIComponent('Fee balance reminder')}&body=${encodeURIComponent('Dear parent/guardian, please contact the school regarding the outstanding balance for '+String(debtor.name)+'.')}" class="rounded-lg border px-2 py-1 text-xs">Email</a>` : ''}</div></div>`).join('') : '<p class="col-span-full p-5 text-sm text-gray-500">No active-term debtors.</p>';
         }
         refreshDebtorsSpotlight();
+    </script>
+
+    <script>
+        const refreshDashboardCharts = () => setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
+        window.addEventListener('load', refreshDashboardCharts);
+        document.addEventListener('livewire:navigated', refreshDashboardCharts);
     </script>
 
     @livewireScripts

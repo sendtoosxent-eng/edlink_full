@@ -46,7 +46,12 @@ it('previews notifications on hover and opens the notification center when the b
         ->assertSee('Open notification center')
         ->assertSee(route('notifications.index'))
         ->assertSee('group-hover:visible', false)
-        ->assertSee('Welcome to the Edlink demo');
+        ->assertSee('Welcome to the Edlink demo')
+        ->assertSee('x-data="{ open: \'\' }"', false)
+        ->assertSee('UGX 1,250,000')
+        ->assertDontSee('John Doe')
+        ->assertSee('function escapeHtml', false)
+        ->assertSee('refreshDashboardCharts', false);
 });
 
 it('records notification read state separately for each user', function () {
