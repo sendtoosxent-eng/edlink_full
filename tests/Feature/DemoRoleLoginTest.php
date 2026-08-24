@@ -4,6 +4,7 @@ use App\Models\User;
 use Database\Seeders\TeacherSubjectVisibilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Volt\Volt;
 
 uses(RefreshDatabase::class);
@@ -58,6 +59,22 @@ it('seeds working login accounts for every landing-page demo role', function () 
         ->set('password', config('edlink.demo.password'))
         ->call('login')
         ->assertRedirect(route('workbench.home', absolute: false));
+});
+
+it('bypasses OTP verification for allowlisted demo accounts', function () {
+    Notification::fake();
+    Config::set('app.otp_force', true);
+    $this->seed(TeacherSubjectVisibilitySeeder::class);
+
+    Volt::test('pages.auth.login')
+        ->set('school_number', config('edlink.demo.school_number'))
+        ->set('email', config('edlink.demo.roles.administrator.email'))
+        ->set('password', config('edlink.demo.password'))
+        ->call('login')
+        ->assertRedirect(route('dashboard', absolute: false));
+
+    expect(session('otp_pending_user_id'))->toBeNull();
+    Notification::assertNothingSent();
 });
 
 it('logs the parent demo into a linked learner dashboard', function () {

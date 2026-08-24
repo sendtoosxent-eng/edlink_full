@@ -98,13 +98,17 @@ new #[Layout('layouts.guest-split')] class extends Component
         $otpEnabled = SchoolSetting::where(['school_id' => $school->id, 'key' => 'otp_enabled'])->value('value') === 'enabled';
         $isSuspicious = $otpEnabled || ($user->last_login_ip !== null && $user->last_login_ip !== $currentIp);
 
+        // Public demo accounts use shared credentials and do not have inbox
+        // access, so OTP would make the advertised demo logins unusable.
+        $isDemoAccount = DemoAccounts::includes($school->school_number, $user->email);
+
         // Testing aid: set OTP_FORCE=true in .env to always trigger the OTP
         // screen, without needing to fake a different login IP each time.
         if (config('app.otp_force')) {
             $isSuspicious = true;
         }
 
-        if ($isSuspicious) {
+        if ($isSuspicious && ! $isDemoAccount) {
             $code = $user->generateOtp();
             $user->notify(new OtpCodeNotification($code));
 

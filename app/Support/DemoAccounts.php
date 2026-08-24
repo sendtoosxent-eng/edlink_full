@@ -38,4 +38,15 @@ final class DemoAccounts
     {
         return (string) config('edlink.demo.password', self::PASSWORD);
     }
+
+    public static function includes(string $schoolNumber, string $email): bool
+    {
+        if (strcasecmp(trim($schoolNumber), self::schoolNumber()) !== 0) {
+            return false;
+        }
+
+        return collect(self::roles())->contains(
+            fn (array $account): bool => strcasecmp(trim((string) ($account['email'] ?? '')), trim($email)) === 0
+        );
+    }
 }
