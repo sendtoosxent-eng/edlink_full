@@ -40,7 +40,9 @@ it('keeps a requested adjustment out of the balance until an administrator appro
         ->set('adjustmentValue', '200000')
         ->set('adjustmentReason', 'The family requested temporary financial assistance.')
         ->call('requestAdjustment')
-        ->assertHasNoErrors();
+        ->assertHasNoErrors()
+        ->assertSee('Status: PENDING APPROVAL')
+        ->assertSee('Fee Adjustment Approval Queue');
 
     $adjustment = StudentFeeAdjustment::firstOrFail();
     expect($adjustment->status)->toBe('pending')
@@ -80,7 +82,10 @@ it('allows finance adjustment staff to open the screen, request, and approve an 
 
     expect($financeUser->hasPermission('finance.adjustments'))->toBeTrue()
         ->and($financeUser->hasPermission('finance.payments'))->toBeFalse();
-    $this->actingAs($financeUser)->get(route('fee-payments.index'))->assertOk();
+    $this->actingAs($financeUser)->get(route('fee-payments.index'))
+        ->assertOk()
+        ->assertSee('Fee Adjustment Approval Queue')
+        ->assertSee('No fee adjustments are waiting for approval');
 
     Livewire::actingAs($financeUser)->test(FeePayments::class)
         ->call('openPaymentForm', $student->id)

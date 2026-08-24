@@ -148,7 +148,7 @@ class FeePayments extends Component
             'adjustmentReason' => ['required', 'string', 'min:10', 'max:2000'],
         ]);
 
-        $created = DB::transaction(function () use ($user, $term): bool {
+        $adjustment = DB::transaction(function () use ($user, $term): ?StudentFeeAdjustment {
             // Requests and reviews lock the same student row. This makes
             // the initial-fee cap reliable when two finance users act at once.
             $student = Student::where('school_id', $user->school_id)
@@ -156,7 +156,7 @@ class FeePayments extends Component
             $baseFee = (float) ($student->mappedFeeAmount($term) ?? 0);
             if ($baseFee <= 0) {
                 $this->addError('adjustmentValue', 'This learner has no mapped fee for the current term.');
-                return false;
+                return null;
             }
 
             $value = (float) $this->adjustmentValue;
@@ -169,21 +169,21 @@ class FeePayments extends Component
                 || ($this->adjustmentCalculation === 'final_fee' && $value >= $baseFee)
                 || $amount <= 0) {
                 $this->addError('adjustmentValue', 'Enter a reduction that leaves a valid adjusted fee. Use a waiver for a full fee reduction.');
-                return false;
+                return null;
             }
 
             $existing = $student->feeAdjustments()->where('term_id', $term->id)->whereIn('status', ['pending', 'approved']);
             if ($this->adjustmentCalculation === 'final_fee' && (clone $existing)->exists()) {
                 $this->addError('adjustmentValue', 'A final agreed fee cannot be combined with another active adjustment.');
-                return false;
+                return null;
             }
             if ((clone $existing)->where('calculation_type', 'final_fee')->exists()) {
                 $this->addError('adjustmentValue', 'This learner already has a final agreed fee awaiting or holding approval.');
-                return false;
+                return null;
             }
             if ((float) (clone $existing)->sum('amount') + $amount > $baseFee) {
                 $this->addError('adjustmentValue', 'Active adjustments cannot exceed this learner\'s initial term fee.');
-                return false;
+                return null;
             }
 
             $adjustment = StudentFeeAdjustment::create([
@@ -202,13 +202,19 @@ class FeePayments extends Component
                 'student_id' => $student->id, 'term_id' => $term->id, 'amount' => $amount,
             ]);
 
-            return true;
+            return $adjustment;
         });
 
-        if (! $created) return;
+        if (! $adjustment) return;
 
         $this->reset(['adjustmentValue', 'adjustmentReason']);
-        session()->flash('status', 'Fee adjustment submitted for approval. The learner balance has not changed yet.');
+        $studentName = Student::where('school_id', $user->school_id)->whereKey($adjustment->student_id)->value('name');
+        session()->flash(
+            'status',
+            'Adjustment request #'.$adjustment->id.' was submitted successfully for '.($studentName ?: 'the learner')
+            .' (UGX '.number_format((float) $adjustment->amount).'). Status: PENDING APPROVAL. '
+            .'The learner balance has not changed. A finance approver can review it in the Approval Queue below.'
+        );
     }
 
     public function reviewAdjustment(int $adjustmentId, string $decision): void

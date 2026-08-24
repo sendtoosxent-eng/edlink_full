@@ -275,9 +275,25 @@
         </section>
     </div>
 
-    @if($canApproveAdjustments && $pendingAdjustments->isNotEmpty())
-        <section class="rounded-2xl border border-violet-200 bg-white p-5 shadow-xs">
-            <div class="mb-4"><h2 class="text-sm font-black text-slate-900">Fee adjustments awaiting approval</h2><p class="mt-1 text-xs text-slate-500">Only approval changes a learner's expected fee and balance.</p></div>
+    @if($canApproveAdjustments)
+        <section id="fee-adjustment-approval-queue" class="scroll-mt-6 rounded-2xl border-2 border-violet-300 bg-white p-5 shadow-sm">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-violet-600">Finance approval screen</p>
+                    <h2 class="mt-1 text-lg font-black text-slate-900">Fee Adjustment Approval Queue</h2>
+                    <p class="mt-1 text-xs text-slate-500">Requests from this school and the active term appear here. Only approval changes a learner's fee and balance.</p>
+                </div>
+                <span class="self-start rounded-full px-3 py-1.5 text-xs font-black {{ $pendingAdjustments->isNotEmpty() ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
+                    {{ $pendingAdjustments->count() }} pending
+                </span>
+            </div>
+            @if($pendingAdjustments->isEmpty())
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                    <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">✓</div>
+                    <h3 class="mt-3 text-sm font-black text-slate-900">No fee adjustments are waiting for approval</h3>
+                    <p class="mx-auto mt-1 max-w-2xl text-xs leading-5 text-slate-500">When an adjustment is submitted successfully, it will appear here automatically. Confirm that the requester saw a green “PENDING APPROVAL” alert and that both users are in the same school and active term.</p>
+                </div>
+            @else
             <label class="mb-4 block text-xs font-semibold text-slate-700">Review note <span class="font-normal text-slate-400">(optional)</span><input wire:model="reviewNotes" class="mt-1.5 w-full rounded-xl border-slate-200 text-xs" placeholder="Reason for approval or rejection"></label>
             <div class="space-y-3">
                 @foreach($pendingAdjustments as $adjustment)
@@ -287,6 +303,7 @@
                     </article>
                 @endforeach
             </div>
+            @endif
         </section>
     @endif
 
