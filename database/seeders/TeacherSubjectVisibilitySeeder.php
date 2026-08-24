@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Designation;
 use App\Models\Exam;
 use App\Models\ExamPaper;
+use App\Models\FeeStructure;
 use App\Models\GraduationRecord;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -27,7 +28,7 @@ class TeacherSubjectVisibilitySeeder extends Seeder
         $school = School::updateOrCreate(
             ['school_number' => DemoAccounts::schoolNumber()],
             [
-                'name' => 'Teacher Visibility Demo School',
+                'name' => 'Edlink Primary Demo School',
                 'slug' => 'teacher-visibility-demo',
                 'school_type' => 'primary',
                 'status' => 'active',
@@ -45,19 +46,31 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             ['name' => 'Term 1', 'is_current' => true, 'status' => 'open', 'locked' => false],
         );
 
-        $primaryFive = SchoolClass::updateOrCreate(
-            ['school_id' => $school->id, 'name' => 'Primary Five'],
-            ['education_stage' => 'primary', 'sort_order' => 5],
-        );
-        $primarySix = SchoolClass::updateOrCreate(
-            ['school_id' => $school->id, 'name' => 'Primary Six'],
-            ['education_stage' => 'primary', 'sort_order' => 6],
-        );
+        $classes = collect(['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'])
+            ->mapWithKeys(function (string $level, int $index) use ($school) {
+                $class = SchoolClass::updateOrCreate(
+                    ['school_id' => $school->id, 'name' => 'Primary '.$level],
+                    [
+                        'education_stage' => 'primary',
+                        'sort_order' => $index + 1,
+                        'is_graduating_class' => $level === 'Seven',
+                    ],
+                );
+
+                return [$class->name => $class];
+            });
+        $primaryFive = $classes['Primary Five'];
+        $primarySix = $classes['Primary Six'];
+        $primarySeven = $classes['Primary Seven'];
 
         $subjects = collect([
             ['name' => 'English', 'code' => 'ENG'],
             ['name' => 'Mathematics', 'code' => 'MATH'],
             ['name' => 'Science', 'code' => 'SCI'],
+            ['name' => 'Social Studies', 'code' => 'SST'],
+            ['name' => 'Religious Education', 'code' => 'RE'],
+            ['name' => 'Literacy', 'code' => 'LIT'],
+            ['name' => 'Local Language', 'code' => 'LUG'],
         ])->mapWithKeys(function (array $data) use ($school) {
             $subject = Subject::updateOrCreate(
                 ['school_id' => $school->id, 'name' => $data['name']],
@@ -95,9 +108,24 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             'TEACH-SUBJECT-01',
         );
 
-        $primaryFive->update(['class_teacher_user_id' => $classTeacher->id]);
+        $classTeachers = collect([
+            'Primary One' => ['Mary Akello', 'mary.akello@edlink.local', 'TEACH-CLASS-11'],
+            'Primary Two' => ['John Ssemanda', 'john.ssemanda@edlink.local', 'TEACH-CLASS-12'],
+            'Primary Three' => ['Ruth Nanyonjo', 'ruth.nanyonjo@edlink.local', 'TEACH-CLASS-13'],
+            'Primary Four' => ['Peter Odongo', 'peter.odongo@edlink.local', 'TEACH-CLASS-14'],
+            'Primary Five' => [$classTeacher->name, $classTeacher->email, $classTeacher->staff_number],
+            'Primary Six' => ['Sarah Namukasa', 'sarah.namukasa@edlink.local', 'TEACH-CLASS-16'],
+            'Primary Seven' => ['David Mugisha', 'david.mugisha@edlink.local', 'TEACH-CLASS-17'],
+        ])->mapWithKeys(function (array $details, string $className) use ($school, $classTeacherDesignation, $classTeacher) {
+            $teacher = $className === 'Primary Five'
+                ? $classTeacher
+                : $this->teacher($school, $classTeacherDesignation, $details[0], $details[1], $details[2]);
 
-        foreach ([$primaryFive, $primarySix] as $class) {
+            return [$className => $teacher];
+        });
+
+        foreach ($classes as $className => $class) {
+            $class->update(['class_teacher_user_id' => $classTeachers[$className]->id]);
             foreach ($subjects as $subject) {
                 DB::table('class_subjects')->updateOrInsert(
                     ['term_id' => $term->id, 'school_class_id' => $class->id, 'subject_id' => $subject->id],
@@ -117,32 +145,47 @@ class TeacherSubjectVisibilitySeeder extends Seeder
             }
         }
 
-        DB::table('staff_subjects')->updateOrInsert(
-            [
-                'school_id' => $school->id,
-                'term_id' => $term->id,
-                'user_id' => $subjectTeacher->id,
-                'school_class_id' => $primaryFive->id,
-                'subject_id' => $subjects['Mathematics']->id,
-            ],
-            ['created_at' => now(), 'updated_at' => now()],
-        );
-        DB::table('staff_subjects')->updateOrInsert(
-            [
-                'school_id' => $school->id,
-                'term_id' => $term->id,
-                'user_id' => $classTeacher->id,
-                'school_class_id' => $primarySix->id,
-                'subject_id' => $subjects['English']->id,
-            ],
-            ['created_at' => now(), 'updated_at' => now()],
-        );
+        $subjectTeachers = collect([
+            'Mathematics' => $subjectTeacher,
+            'English' => $this->teacher($school, $subjectTeacherDesignation, 'Florence Nabirye', 'florence.nabirye@edlink.local', 'TEACH-SUBJECT-02'),
+            'Science' => $this->teacher($school, $subjectTeacherDesignation, 'Michael Ochieng', 'michael.ochieng@edlink.local', 'TEACH-SUBJECT-03'),
+            'Social Studies' => $this->teacher($school, $subjectTeacherDesignation, 'Agnes Tumusiime', 'agnes.tumusiime@edlink.local', 'TEACH-SUBJECT-04'),
+        ]);
+        foreach ($subjectTeachers as $subjectName => $teacher) {
+            foreach ($classes as $class) {
+                DB::table('staff_subjects')->updateOrInsert(
+                    [
+                        'school_id' => $school->id,
+                        'term_id' => $term->id,
+                        'user_id' => $teacher->id,
+                        'school_class_id' => $class->id,
+                        'subject_id' => $subjects[$subjectName]->id,
+                    ],
+                    ['created_at' => now(), 'updated_at' => now()],
+                );
+            }
+        }
 
-        $category = StudentCategory::firstOrCreate(['school_id' => $school->id, 'name' => 'Day Scholar']);
+        $categories = collect(['Day Scholar', 'Boarding'])
+            ->mapWithKeys(fn (string $name) => [$name => StudentCategory::firstOrCreate(['school_id' => $school->id, 'name' => $name])]);
+        foreach ($classes->values() as $index => $class) {
+            foreach ($categories as $categoryName => $category) {
+                FeeStructure::updateOrCreate(
+                    ['school_class_id' => $class->id, 'student_category_id' => $category->id, 'term_id' => $term->id],
+                    [
+                        'school_id' => $school->id,
+                        'amount' => 425000 + (($index + 1) * 25000) + ($categoryName === 'Boarding' ? 650000 : 0),
+                    ],
+                );
+            }
+        }
+
         $firstNames = ['Amina', 'Brian', 'Cathy', 'David', 'Esther', 'Frank', 'Gloria', 'Henry', 'Irene', 'Joel', 'Karen', 'Liam', 'Mercy', 'Nathan', 'Olivia', 'Peter', 'Queen', 'Robert', 'Sarah', 'Timothy', 'Unity', 'Victor', 'Winnie', 'Yasin', 'Zahara'];
         $surnames = ['Nakato', 'Okello', 'Atim', 'Kato', 'Namusoke', 'Ochieng', 'Nabirye', 'Tumusiime', 'Akello', 'Ssemanda', 'Nanyonjo', 'Odongo', 'Nakitende', 'Mugisha', 'Auma', 'Kisembo', 'Namukasa', 'Wasswa', 'Nansubuga', 'Opio'];
 
-        foreach ([[$primaryFive, 'P5', 0], [$primarySix, 'P6', 7]] as [$class, $prefix, $nameOffset]) {
+        foreach ($classes->values() as $classIndex => $class) {
+            $prefix = 'P'.($classIndex + 1);
+            $nameOffset = $classIndex * 3;
             foreach (range(1, 50) as $number) {
                 $admissionNumber = sprintf('%s-%03d', $prefix, $number);
                 $name = match ([$prefix, $number]) {
@@ -151,6 +194,12 @@ class TeacherSubjectVisibilitySeeder extends Seeder
                     default => $firstNames[($number + $nameOffset - 1) % count($firstNames)].' '.$surnames[(($number * 3) + $nameOffset) % count($surnames)],
                 };
 
+                $category = $number % 5 === 0 ? $categories['Boarding'] : $categories['Day Scholar'];
+                $feeStructure = FeeStructure::where([
+                    'school_class_id' => $class->id,
+                    'student_category_id' => $category->id,
+                    'term_id' => $term->id,
+                ])->firstOrFail();
                 $student = Student::updateOrCreate(
                     ['school_id' => $school->id, 'admission_no' => $admissionNumber],
                     [
@@ -171,8 +220,8 @@ class TeacherSubjectVisibilitySeeder extends Seeder
                         'school_class_id' => $class->id,
                         'stream_id' => null,
                         'student_category_id' => $category->id,
-                        'fee_structure_id' => null,
-                        'base_fee_amount' => 0,
+                        'fee_structure_id' => $feeStructure->id,
+                        'base_fee_amount' => $feeStructure->amount,
                         'status' => 'active',
                         'promotion_outcome' => null,
                         'enrolled_at' => $term->year.'-01-29',
@@ -200,7 +249,7 @@ class TeacherSubjectVisibilitySeeder extends Seeder
         );
 
         $this->seedDemoExperience($school, $term, $primaryFive, $primarySix, $subjects, $classTeacher, $studentUser);
-        $this->seedGraduates($school, $primarySix);
+        $this->seedGraduates($school, $primarySeven);
         SchoolSetting::setValue($school->id, 'public_demo_seed_version', DemoAccounts::SEED_VERSION);
 
         $this->command?->info('Teacher subject-visibility data seeded for EDL-TEACH.');

@@ -4,7 +4,7 @@ namespace App\Support;
 
 final class DemoAccounts
 {
-    public const SEED_VERSION = '4';
+    public const SEED_VERSION = '5';
 
     public const SCHOOL_NUMBER = 'EDL-TEACH';
 
