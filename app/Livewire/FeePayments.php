@@ -213,7 +213,7 @@ class FeePayments extends Component
             'status',
             'Adjustment request #'.$adjustment->id.' was submitted successfully for '.($studentName ?: 'the learner')
             .' (UGX '.number_format((float) $adjustment->amount).'). Status: PENDING APPROVAL. '
-            .'The learner balance has not changed. A finance approver can review it in the Approval Queue below.'
+            .'The learner balance has not changed. A finance approver can review it on the Fee Adjustments screen.'
         );
     }
 

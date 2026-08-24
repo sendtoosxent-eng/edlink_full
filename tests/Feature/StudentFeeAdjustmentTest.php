@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\FeePayments;
+use App\Livewire\FeeAdjustments;
 use App\Models\Arrears;
 use App\Models\AuditLog;
 use App\Models\Designation;
@@ -42,13 +43,13 @@ it('keeps a requested adjustment out of the balance until an administrator appro
         ->call('requestAdjustment')
         ->assertHasNoErrors()
         ->assertSee('Status: PENDING APPROVAL')
-        ->assertSee('Fee Adjustment Approval Queue');
+        ->assertSee('Review Fee Adjustments');
 
     $adjustment = StudentFeeAdjustment::firstOrFail();
     expect($adjustment->status)->toBe('pending')
         ->and($student->fresh()->totalDue($term))->toBe(800000.0);
 
-    Livewire::actingAs($admin)->test(FeePayments::class)
+    Livewire::actingAs($admin)->test(FeeAdjustments::class)
         ->call('reviewAdjustment', $adjustment->id, 'approved')
         ->assertHasNoErrors();
 
@@ -84,7 +85,10 @@ it('allows finance adjustment staff to open the screen, request, and approve an 
         ->and($financeUser->hasPermission('finance.payments'))->toBeFalse();
     $this->actingAs($financeUser)->get(route('fee-payments.index'))
         ->assertOk()
-        ->assertSee('Fee Adjustment Approval Queue')
+        ->assertSee('Review Fee Adjustments');
+    $this->actingAs($financeUser)->get(route('fee-adjustments.index'))
+        ->assertOk()
+        ->assertSee('Fee Adjustments')
         ->assertSee('No fee adjustments are waiting for approval');
 
     Livewire::actingAs($financeUser)->test(FeePayments::class)
@@ -98,7 +102,7 @@ it('allows finance adjustment staff to open the screen, request, and approve an 
         ->assertHasNoErrors();
 
     $adjustment = StudentFeeAdjustment::firstOrFail();
-    Livewire::actingAs($financeUser)->test(FeePayments::class)
+    Livewire::actingAs($financeUser)->test(FeeAdjustments::class)
         ->call('reviewAdjustment', $adjustment->id, 'approved')
         ->assertHasNoErrors();
 

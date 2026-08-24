@@ -29,7 +29,7 @@
                         @endif
                     </div>
                     <p class="text-sm text-slate-400 mt-1">
-                        Track school operational expenses per term. Expenses can only be recorded for active open terms.
+                        Track approved school operational expenses per term. Pending items remain in Ledger & Reconciliation until another authorized user approves them.
                     </p>
                 </div>
             </div>
@@ -172,7 +172,7 @@
     {{-- Expense Records Table --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-900 text-base">Expense Log</h2>
+            <div><h2 class="font-semibold text-gray-900 text-base">Approved Expense Log</h2><p class="mt-0.5 text-[11px] text-gray-400">Pending and rejected expenses are excluded from this list and all totals.</p></div>
             <span class="text-xs text-gray-400 font-medium">{{ $expenses->total() ?? count($expenses) }} Entries</span>
         </div>
 

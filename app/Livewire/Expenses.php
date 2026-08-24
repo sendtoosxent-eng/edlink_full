@@ -68,7 +68,15 @@ class Expenses extends Component
     public function render()
     {
         $terms = Term::where('school_id', Auth::user()->school_id)->orderByDesc('year')->orderByDesc('id')->get();
-        $expenses = Expense::where('school_id', Auth::user()->school_id)->when($this->termId, fn ($query) => $query->where('term_id', $this->termId))->latest('expense_date')->paginate(15);
-        return view('livewire.expenses', ['terms' => $terms, 'expenses' => $expenses, 'total' => (float) $expenses->getCollection()->sum('amount'), 'totalsByCategory' => Expense::where('school_id', Auth::user()->school_id)->when($this->termId, fn ($query) => $query->where('term_id', $this->termId))->selectRaw('category, SUM(amount) as total')->groupBy('category')->pluck('total', 'category'), 'pageTitle' => 'Expenses']);
+        $expenseQuery = Expense::posted()->where('school_id', Auth::user()->school_id)
+            ->when($this->termId, fn ($query) => $query->where('term_id', $this->termId));
+        $expenses = (clone $expenseQuery)->latest('expense_date')->paginate(15);
+        return view('livewire.expenses', [
+            'terms' => $terms,
+            'expenses' => $expenses,
+            'total' => (float) (clone $expenseQuery)->sum('amount'),
+            'totalsByCategory' => (clone $expenseQuery)->selectRaw('category, SUM(amount) as total')->groupBy('category')->pluck('total', 'category'),
+            'pageTitle' => 'Expenses',
+        ]);
     }
 }

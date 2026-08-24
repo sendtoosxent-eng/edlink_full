@@ -18,8 +18,15 @@
                 </div>
             </div>
 
+            <div class="flex flex-col items-start gap-3 sm:items-end">
+            @if($canApproveAdjustments)
+                <a href="{{ route('fee-adjustments.index') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-violet-400">
+                    Review Fee Adjustments
+                    @if($pendingAdjustments->isNotEmpty())<span class="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] text-slate-950">{{ $pendingAdjustments->count() }}</span>@endif
+                </a>
+            @endif
             @if (isset($term) && $term)
-                <div class="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 shadow-xs backdrop-blur-md self-start sm:self-center">
+                <div class="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 shadow-xs backdrop-blur-md">
                     <span class="relative flex h-2.5 w-2.5">
                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
@@ -30,6 +37,7 @@
                     </div>
                 </div>
             @endif
+            </div>
         </div>
 
         <!-- Ambient Glow Effects -->
@@ -274,38 +282,6 @@
             @endif
         </section>
     </div>
-
-    @if($canApproveAdjustments)
-        <section id="fee-adjustment-approval-queue" class="scroll-mt-6 rounded-2xl border-2 border-violet-300 bg-white p-5 shadow-sm">
-            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-violet-600">Finance approval screen</p>
-                    <h2 class="mt-1 text-lg font-black text-slate-900">Fee Adjustment Approval Queue</h2>
-                    <p class="mt-1 text-xs text-slate-500">Requests from this school and the active term appear here. Only approval changes a learner's fee and balance.</p>
-                </div>
-                <span class="self-start rounded-full px-3 py-1.5 text-xs font-black {{ $pendingAdjustments->isNotEmpty() ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
-                    {{ $pendingAdjustments->count() }} pending
-                </span>
-            </div>
-            @if($pendingAdjustments->isEmpty())
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                    <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">✓</div>
-                    <h3 class="mt-3 text-sm font-black text-slate-900">No fee adjustments are waiting for approval</h3>
-                    <p class="mx-auto mt-1 max-w-2xl text-xs leading-5 text-slate-500">When an adjustment is submitted successfully, it will appear here automatically. Confirm that the requester saw a green “PENDING APPROVAL” alert and that both users are in the same school and active term.</p>
-                </div>
-            @else
-            <label class="mb-4 block text-xs font-semibold text-slate-700">Review note <span class="font-normal text-slate-400">(optional)</span><input wire:model="reviewNotes" class="mt-1.5 w-full rounded-xl border-slate-200 text-xs" placeholder="Reason for approval or rejection"></label>
-            <div class="space-y-3">
-                @foreach($pendingAdjustments as $adjustment)
-                    <article class="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div><b class="text-sm text-slate-900">{{ $adjustment->student->name }}</b><p class="mt-1 text-xs text-slate-600">{{ ucwords(str_replace('_',' ',$adjustment->type)) }} · Deduction UGX {{ number_format($adjustment->amount) }}</p><p class="mt-1 text-xs text-slate-500">{{ $adjustment->reason }}</p><p class="mt-1 text-[10px] text-slate-400">Requested by {{ $adjustment->requester?->name ?? 'Former user' }}</p></div>
-                        <div class="flex shrink-0 gap-2"><button wire:click="reviewAdjustment({{$adjustment->id}}, 'approved')" wire:confirm="Approve this fee adjustment?" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Approve</button><button wire:click="reviewAdjustment({{$adjustment->id}}, 'rejected')" wire:confirm="Reject this fee adjustment?" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">Reject</button></div>
-                    </article>
-                @endforeach
-            </div>
-            @endif
-        </section>
-    @endif
 
     <!-- PREVIOUS PAYMENTS TABLE SECTION -->
     <section class="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">

@@ -164,10 +164,11 @@
                     ['label' => 'Subject Attendance', 'route' => 'attendance.subject'],
                     ['label' => 'Attendance Reports', 'route' => 'attendance.reports'],
                 ]],
-                'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['fee-structures.index', 'fee-payments.index', 'expenses.index', 'terms.index', 'finance.ledger'], 'items' => [
+                'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'routes' => ['fee-structures.index', 'fee-payments.index', 'fee-adjustments.index', 'expenses.index', 'terms.index', 'finance.ledger'], 'items' => [
                     ['label' => 'Terms', 'route' => 'terms.index'],
                     ['label' => 'Fee Structure', 'route' => 'fee-structures.index'],
                     ['label' => 'Payments', 'route' => 'fee-payments.index'],
+                    ['label' => 'Fee Adjustments', 'route' => 'fee-adjustments.index'],
                     ['label' => 'Expenses', 'route' => 'expenses.index'],
                     ['label' => 'Ledger & Reconciliation', 'route' => 'finance.ledger'],
                 ]],
@@ -216,7 +217,7 @@
                             @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
                             @php($requiredPermission = match($item['route']) {
                                 'students.index', 'graduates.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
-                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger',
+                                'fee-payments.index' => 'finance.payments', 'fee-adjustments.index' => 'finance.adjustments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger',
                                 'attendance.index' => 'attendance.daily', 'attendance.subject' => 'attendance.subject', 'attendance.reports' => 'attendance.reports',
                                 'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
                                 'exams.setup' => 'exams.setup', 'exams.marks' => 'exams.marks', 'exams.results' => 'exams.results',

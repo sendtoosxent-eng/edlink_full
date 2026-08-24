@@ -17,6 +17,7 @@ class EnsureDesignationAccess
             'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage',
             'students.activities', 'students.activities.export' => null,
             'fee-payments.index' => null,
+            'fee-adjustments.index' => 'finance.adjustments',
             'terms.index', 'fee-structures.index' => 'finance.ledger',
             'expenses.index' => 'finance.expenses',
             'finance.ledger', 'finance.ledger.approve', 'finance.ledger.reject', 'finance.ledger.reverse',

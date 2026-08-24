@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\FeePayments;
+use App\Livewire\FeeAdjustments;
 use App\Livewire\Expenses;
 use App\Livewire\Attendance;
 use App\Livewire\AttendanceReport;
@@ -146,7 +147,7 @@ Route::get('dashboard', function () {
         ->sum('base_fee_amount') : 0;
     $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->whereHas('student', fn ($query) => $query->where('status', 'active'))->sum('amount') : 0;
     $feesPaid = $term ? (float) FeePayment::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
-    $termExpenses = $term ? (float) Expense::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
+    $termExpenses = $term ? (float) Expense::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
     $poolCredits = $school ? (float) CashPoolEntry::where('school_id', $school->id)->where('direction', 'credit')->sum('amount') : 0;
     $poolDebits = $school ? (float) CashPoolEntry::where('school_id', $school->id)->where('direction', 'debit')->sum('amount') : 0;
     $cashFlow = $term ? CashPoolEntry::where('school_id', $school->id)->where('term_id', $term->id)->orderBy('transacted_at')->get()->groupBy(fn ($entry) => $entry->transacted_at->format('M Y')) : collect();
@@ -276,6 +277,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('finance/terms', TermManagement::class)->name('terms.index');
     Route::get('finance/fee-structure', FeeStructures::class)->name('fee-structures.index');
     Route::get('finance/payments', FeePayments::class)->name('fee-payments.index');
+    Route::get('finance/fee-adjustments', FeeAdjustments::class)->name('fee-adjustments.index');
     Route::get('finance/payments/{payment}/receipt', function (FeePayment $payment) {
         $user = auth()->user();
         $isFinanceStaff = in_array($user->role, ['admin', 'superadmin'], true) || $user->hasPermission('finance.payments');
