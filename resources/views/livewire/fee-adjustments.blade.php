@@ -2,7 +2,6 @@
     <div class="rounded-3xl bg-[#252641] p-6 text-white shadow-md sm:p-8">
         <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-violet-300">Finance approval screen</p>
                 <h1 class="mt-2 text-2xl font-black text-amber-300 sm:text-3xl">Fee Adjustments</h1>
                 <p class="mt-2 max-w-xl text-xs leading-5 text-slate-300">Review individual fee reductions submitted for the active term. A learner’s balance changes only after approval.</p>
             </div>
