@@ -34,6 +34,20 @@ it('shows only notifications intended for the signed-in school user', function (
         ->assertDontSee('Private student message');
 });
 
+it('previews notifications on hover and opens the notification center when the bell is clicked', function () {
+    $this->seed(TeacherSubjectVisibilitySeeder::class);
+
+    $administrator = User::where('email', 'admin@edlink.local')->firstOrFail();
+
+    $this->actingAs($administrator)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Open notification center')
+        ->assertSee(route('notifications.index'))
+        ->assertSee('group-hover:visible', false)
+        ->assertSee('Welcome to the Edlink demo');
+});
+
 it('records notification read state separately for each user', function () {
     $this->seed(TeacherSubjectVisibilitySeeder::class);
 
