@@ -208,8 +208,7 @@
 			</div>
 
 			<div data-aos="fade-left" data-aos-duration="800" class="relative mx-3 sm:mx-6 lg:mx-0">
-				<div class="absolute -inset-6 bg-gradient-to-tr from-yellow-300/30 via-purple-300/20 to-teal-300/30 dark:from-yellow-500/10 dark:via-purple-500/10 dark:to-teal-500/10 rounded-[2.5rem] blur-2xl"></div>
-				<div class="relative rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl border border-white/50 dark:border-white/10">
+				<div class="relative overflow-hidden">
 					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'hero_image') }}" class="w-full object-cover" alt="Student using Edlink">
 				</div>
 
