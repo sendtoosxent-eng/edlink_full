@@ -14,6 +14,7 @@ return [
     'demo' => [
         'school_number' => env('EDLINK_DEMO_SCHOOL_NUMBER', 'EDL-TEACH'),
         'password' => env('EDLINK_DEMO_PASSWORD', 'TeacherTest@2026'),
+        'school_types' => \App\Support\DemoAccounts::SCHOOL_TYPES,
         'roles' => [
             'administrator' => ['label' => 'School Administrator', 'email' => 'admin@edlink.local', 'description' => 'Explore school setup, staff, academics, finance and reports.'],
             'class-teacher' => ['label' => 'Class Teacher', 'email' => 'class.teacher@edlink.local', 'description' => 'View every subject and learner in the assigned class.'],

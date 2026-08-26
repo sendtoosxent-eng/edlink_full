@@ -30,11 +30,21 @@ it('separates lower and advanced secondary structures', function () {
         ->toBe(['A', 'B', 'C', 'D', 'E', 'O', 'F']);
 });
 
-it('leaves kindergarten classes open for the school to define', function () {
+it('provisions a useful default kindergarten structure', function () {
     $school = School::create(['name' => 'Kindergarten Demo', 'school_type' => 'kindergarten', 'slug' => 'kindergarten-demo']);
 
     SchoolAcademicSetup::provision($school);
 
-    expect($school->classes()->count())->toBe(0)
+    expect($school->classes()->pluck('name')->all())->toBe(['Baby Class', 'Middle Class', 'Top Class'])
         ->and(GradingScale::where('school_id', $school->id)->where('education_stage', 'kindergarten')->count())->toBeGreaterThan(0);
+});
+
+it('provisions certificate and diploma cohorts for vocational institutes', function () {
+    $school = School::create(['name' => 'Vocational Demo', 'school_type' => 'tertiary', 'slug' => 'vocational-demo']);
+
+    SchoolAcademicSetup::provision($school);
+
+    expect($school->classes()->pluck('name')->all())->toBe([
+        'Certificate Year 1', 'Certificate Year 2', 'Diploma Year 1', 'Diploma Year 2',
+    ])->and(GradingScale::where('school_id', $school->id)->where('education_stage', 'tertiary')->count())->toBeGreaterThan(0);
 });

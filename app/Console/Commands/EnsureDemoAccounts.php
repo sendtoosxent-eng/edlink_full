@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\School;
 use App\Models\SchoolSetting;
 use App\Support\DemoAccounts;
-use Database\Seeders\TeacherSubjectVisibilitySeeder;
+use Database\Seeders\PublicDemoSchoolsSeeder;
 use Illuminate\Console\Command;
 
 class EnsureDemoAccounts extends Command
@@ -16,11 +16,14 @@ class EnsureDemoAccounts extends Command
 
     public function handle(): int
     {
-        $school = School::where('school_number', DemoAccounts::schoolNumber())->first();
         $emails = collect(DemoAccounts::roles())->pluck('email');
-        $complete = $school
-            && $school->users()->whereIn('email', $emails)->count() === $emails->count()
-            && SchoolSetting::getValue($school->id, 'public_demo_seed_version') === DemoAccounts::SEED_VERSION;
+        $schools = School::whereIn('school_number', collect(DemoAccounts::schoolTypes())->pluck('school_number'))->get();
+        $complete = $schools->count() === count(DemoAccounts::schoolTypes())
+            && $schools->every(fn (School $school) =>
+                $school->users()->whereIn('email', $emails)->count() === $emails->count()
+                && SchoolSetting::getValue($school->id, 'public_demo_seed_version') === DemoAccounts::SEED_VERSION
+            )
+            && School::where('is_demo', true)->whereNotNull('school_group_id')->count() >= 8;
 
         if ($complete) {
             $this->info('Public demo accounts are ready.');
@@ -29,7 +32,7 @@ class EnsureDemoAccounts extends Command
         }
 
         $this->call('db:seed', [
-            '--class' => TeacherSubjectVisibilitySeeder::class,
+            '--class' => PublicDemoSchoolsSeeder::class,
             '--force' => true,
         ]);
 

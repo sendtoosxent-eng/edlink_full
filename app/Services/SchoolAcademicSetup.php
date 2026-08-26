@@ -3,10 +3,16 @@ namespace App\Services;
 use App\Models\GradingScale;use App\Models\School;use App\Models\SchoolClass;use App\Models\SchoolSetting;
 class SchoolAcademicSetup
 {
- public static function stagesFor(School $school):array{return match($school->school_type){'primary'=>['primary'],'secondary'=>['lower_secondary','advanced_level'],default=>['kindergarten']};}
+ public static function stagesFor(School $school):array{return match($school->school_type){'primary'=>['primary'],'secondary'=>['lower_secondary','advanced_level'],'tertiary'=>['tertiary'],default=>['kindergarten']};}
  public static function provision(School $school):void
  {
-  $classes=match($school->school_type){'primary'=>collect(range(1,7))->map(fn($n)=>["Primary {$n}",'primary',$n]),'secondary'=>collect(range(1,6))->map(fn($n)=>["Senior {$n}",$n<=4?'lower_secondary':'advanced_level',$n]),default=>collect()};
+  $classes=match($school->school_type){
+   'primary'=>collect(range(1,7))->map(fn($n)=>["Primary {$n}",'primary',$n]),
+   'secondary'=>collect(range(1,6))->map(fn($n)=>["Senior {$n}",$n<=4?'lower_secondary':'advanced_level',$n]),
+   'kindergarten'=>collect([['Baby Class','kindergarten',1],['Middle Class','kindergarten',2],['Top Class','kindergarten',3]]),
+   'tertiary'=>collect([['Certificate Year 1','tertiary',1],['Certificate Year 2','tertiary',2],['Diploma Year 1','tertiary',3],['Diploma Year 2','tertiary',4]]),
+   default=>collect(),
+  };
   foreach($classes as[$name,$stage,$order])SchoolClass::updateOrCreate(['school_id'=>$school->id,'name'=>$name],['education_stage'=>$stage,'is_system'=>true,'sort_order'=>$order]);
   foreach(self::stagesFor($school)as$stage){self::installDefaultScale($school,$stage);foreach(self::defaultReportSettings($stage)as$key=>$value)SchoolSetting::firstOrCreate(['school_id'=>$school->id,'key'=>"report_{$stage}_{$key}"],['value'=>(string)$value]);}
  }

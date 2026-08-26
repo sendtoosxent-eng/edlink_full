@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use Database\Seeders\TeacherSubjectVisibilitySeeder;
+use Database\Seeders\PublicDemoSchoolsSeeder;
+use App\Models\School;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
@@ -29,19 +31,67 @@ it('keeps demo roles available when deployed configuration is stale', function (
     $this->get(route('login', ['demo' => 'parent']))
         ->assertOk()
         ->assertSee('Parent demo selected')
-        ->assertSee('parent@edlink.local');
+        ->assertSee('Choose the kind of school you want to explore')
+        ->assertDontSee('parent@edlink.local');
 });
 
-it('prefills only allowlisted demo credentials', function () {
+it('prompts for a school type before prefilling allowlisted demo credentials', function () {
     $this->get(route('login', ['demo' => 'bursar']))
         ->assertOk()
-        ->assertSee('Bursar demo selected')
-        ->assertSee(config('edlink.demo.school_number'))
+        ->assertSee('Kindergarten')
+        ->assertSee('Primary School')
+        ->assertSee('Secondary School')
+        ->assertSee('Vocational Institute')
+        ->assertDontSee(config('edlink.demo.roles.bursar.email'));
+
+    $this->get(route('login', ['demo' => 'bursar', 'school_type' => 'secondary']))
+        ->assertOk()
+        ->assertSee('Bursar · Secondary School')
+        ->assertSee('Secondary School')
+        ->assertSee('EDL-SECOND')
         ->assertSee(config('edlink.demo.roles.bursar.email'));
 
     $this->get(route('login', ['demo' => 'not-a-real-role']))
         ->assertOk()
         ->assertDontSee('demo selected');
+});
+
+it('seeds four school types with two populated switchable branches each', function () {
+    $this->seed(PublicDemoSchoolsSeeder::class);
+
+    foreach (\App\Support\DemoAccounts::schoolTypes() as $type => $option) {
+        $main = School::where('school_number', $option['school_number'])->firstOrFail();
+        expect($main->group)->not->toBeNull()
+            ->and($main->group->schools)->toHaveCount(2);
+
+        foreach ($main->group->schools as $branch) {
+            expect($branch->classes()->count())->toBeGreaterThan(0)
+                ->and($branch->students()->count())->toBeGreaterThan(0)
+                ->and($branch->terms()->where('is_current', true)->exists())->toBeTrue();
+        }
+
+        $admin = $main->users()->where('email', config('edlink.demo.roles.administrator.email'))->firstOrFail();
+        expect($admin->schoolAccesses()->where('school_group_id', $main->school_group_id)->count())->toBe(2);
+    }
+});
+
+it('logs into the chosen school type and can switch to its second branch', function () {
+    $this->seed(PublicDemoSchoolsSeeder::class);
+    $main = School::where('school_number', 'EDL-VOCAT')->firstOrFail();
+    $annex = $main->group->schools()->whereKeyNot($main->id)->firstOrFail();
+
+    Volt::test('pages.auth.login', ['demo' => 'administrator', 'school_type' => 'vocational'])
+        ->set('school_number', 'EDL-VOCAT')
+        ->set('email', config('edlink.demo.roles.administrator.email'))
+        ->set('password', config('edlink.demo.password'))
+        ->call('login')
+        ->assertRedirect(route('dashboard', absolute: false));
+
+    $this->flushSession();
+    $admin = User::where('school_id', $main->id)->where('email', config('edlink.demo.roles.administrator.email'))->firstOrFail();
+    $this->actingAs($admin)->withSession(['active_school_id' => $main->id])->put(route('branch-context.update'), ['school_id' => $annex->id])
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas('active_school_id', $annex->id);
 });
 
 it('seeds working login accounts for every landing-page demo role', function () {
