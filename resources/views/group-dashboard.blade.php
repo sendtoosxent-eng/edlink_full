@@ -17,8 +17,7 @@
     <section class="relative overflow-hidden rounded-3xl bg-[#252641] p-6 text-white shadow-xl ring-2 ring-yellow-400/20 sm:p-8">
         <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <span class="inline-flex rounded-full bg-yellow-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-yellow-300">Read-only group reporting</span>
-                <h1 class="mt-4 text-2xl font-black sm:text-3xl">{{ $group->name }}</h1>
+                <h1 class="mt-4 text-2xl font-black sm:text-3xl text-amber-300">{{ $group->name }}</h1>
                 <p class="mt-2 max-w-2xl text-sm text-slate-300">A consolidated view of every branch you are authorised to manage. Select a single branch before entering or changing operational data.</p>
                 <p class="mt-4 text-xs font-bold uppercase tracking-widest text-yellow-300">{{ now()->format('l, d F Y') }}</p>
             </div>
