@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Livewire::setUpdateRoute(function ($handle, $path) {
             return Route::post($path, $handle)
-                ->middleware(['web', 'auth', 'branch.context', 'active.user'])
+                ->middleware(['web', 'branch.context', 'active.user'])
                 ->name('school.livewire.update');
         });
 
