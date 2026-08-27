@@ -164,7 +164,10 @@ return new class extends Migration
             $table->timestamp('posted_at')->nullable();
             $table->timestamps();
             $table->unique(['school_id', 'idempotency_key']);
-            $table->index(['school_id', 'student_id', 'term_id', 'status']);
+            $table->index(
+                ['school_id', 'student_id', 'term_id', 'status'],
+                'fee_assessment_student_term_status_idx'
+            );
         });
 
         Schema::create('accounting_suppliers', function (Blueprint $table) {
