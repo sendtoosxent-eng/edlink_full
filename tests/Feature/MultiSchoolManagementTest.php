@@ -14,6 +14,7 @@ it('resolves the selected branch on livewire form submissions', function () {
         ->first(fn ($route) => $route->getName() === 'school.livewire.update');
 
     expect($route)->not->toBeNull()
+        ->and($route->uri())->toBe('edlink-livewire/update')
         ->and($route->middleware())->toContain('branch.context')
         ->and($route->middleware())->not->toContain('auth');
 });

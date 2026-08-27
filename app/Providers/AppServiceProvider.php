@@ -25,8 +25,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Livewire::setUpdateRoute(function ($handle, $path) {
-            return Route::post($path, $handle)
+        Livewire::setUpdateRoute(function ($handle) {
+            return Route::post('edlink-livewire/update', $handle)
                 ->middleware(['web', 'branch.context', 'active.user'])
                 ->name('school.livewire.update');
         });
