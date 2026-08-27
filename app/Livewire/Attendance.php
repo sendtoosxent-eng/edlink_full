@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -61,8 +62,9 @@ class Attendance extends Component
         if (! $term || ! $term->isOpen()) { session()->flash('error', 'Attendance can only be recorded in an open term.'); return; }
         $this->validate(['attendanceDate' => ['required', 'date'], 'statuses.*' => ['nullable', 'in:present,absent,late,excused']]);
         $students = $this->studentsQuery()->get();
-        DB::transaction(function () use ($students, $school, $term) {
-            foreach ($students as $student) AttendanceRecord::updateOrCreate(['student_id' => $student->id, 'attendance_date' => $this->attendanceDate, 'session_key' => 'daily'], ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $student->school_class_id, 'stream_id' => $student->stream_id, 'status' => $this->statuses[$student->id] ?? 'present', 'recorded_by' => Auth::id()]);
+        $attendanceDate = Carbon::parse($this->attendanceDate)->startOfDay();
+        DB::transaction(function () use ($students, $school, $term, $attendanceDate) {
+            foreach ($students as $student) AttendanceRecord::updateOrCreate(['student_id' => $student->id, 'attendance_date' => $attendanceDate, 'session_key' => 'daily'], ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $student->school_class_id, 'stream_id' => $student->stream_id, 'status' => $this->statuses[$student->id] ?? 'present', 'recorded_by' => Auth::id()]);
         });
         session()->flash('status', 'Attendance saved for '.$students->count().' active learners.');
     }
