@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Livewire\FeeAdjustments;
+use App\Http\Controllers\PersonProfileController;
+use App\Http\Controllers\ProfilePhotoController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -35,6 +37,26 @@ class AppServiceProvider extends ServiceProvider
             Route::middleware(['web', 'auth', 'verified', 'branch.context', 'active.user', 'designation.access'])
                 ->get('finance/fee-adjustments', FeeAdjustments::class)
                 ->name('fee-adjustments.index');
+        }
+
+        // Hostinger may deploy new views before rebuilding the cached route table.
+        // Register profile routes at runtime so those views never fail with a
+        // RouteNotFoundException during that deployment window.
+        if ($this->app->routesAreCached() && ! Route::has('profile-photo.show')) {
+            Route::get('profile-photo/{type}/{person}', ProfilePhotoController::class)
+                ->middleware(['web', 'signed'])
+                ->whereIn('type', ['student', 'user'])->whereNumber('person')->name('profile-photo.show');
+        }
+        if ($this->app->routesAreCached() && ! Route::has('students.profile')) {
+            Route::middleware(['web', 'auth', 'verified', 'branch.context', 'active.user', 'designation.access'])
+                ->group(function (): void {
+                    Route::get('students/{student}/profile', [PersonProfileController::class, 'student'])->name('students.profile');
+                    Route::patch('students/{student}/profile', [PersonProfileController::class, 'updateStudent'])->name('students.profile.update');
+                    Route::get('staff/{user}/profile', [PersonProfileController::class, 'staff'])->name('staff.profile');
+                    Route::patch('staff/{user}/profile', [PersonProfileController::class, 'updateStaff'])->name('staff.profile.update');
+                    Route::get('parents/{user}/profile', [PersonProfileController::class, 'parent'])->name('parents.profile');
+                    Route::patch('parents/{user}/profile', [PersonProfileController::class, 'updateParent'])->name('parents.profile.update');
+                });
         }
 
         RateLimiter::for('api', function (Request $request) {
