@@ -10,13 +10,15 @@ return new class extends Migration
         Designation::query()->eachById(function (Designation $designation): void {
             $permissions = collect($designation->permissions ?? []);
 
-            if (! $permissions->contains('accounting.dashboard.view') && ! $permissions->contains('accounting')) {
+            $isBursar = strcasecmp($designation->name, 'Bursar') === 0;
+
+            if (! $isBursar && ! $permissions->contains('accounting.dashboard.view') && ! $permissions->contains('accounting')) {
                 return;
             }
 
             $assetPermissions = ['accounting.assets.view'];
 
-            if (strcasecmp($designation->name, 'Bursar') === 0) {
+            if ($isBursar) {
                 $assetPermissions = [
                     'accounting.assets.view',
                     'accounting.assets.manage',

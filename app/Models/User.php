@@ -94,6 +94,9 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->isSuperadmin() || $this->role === 'admin') {
             return true;
         }
+        if ($this->role === 'bursar' && $module === 'accounting') {
+            return true;
+        }
         if (in_array($this->role, ['student', 'parent'], true)) {
             return true;
         }
@@ -111,6 +114,9 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasPermission(string $permission): bool
     {
         if ($this->isSuperadmin()) {
+            return true;
+        }
+        if ($this->role === 'bursar' && $permission === 'accounting.assets.view') {
             return true;
         }
         if ($this->role === 'admin' && ! str_starts_with($permission, 'accounting.')) {

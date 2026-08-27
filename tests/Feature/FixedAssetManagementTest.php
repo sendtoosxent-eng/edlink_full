@@ -52,3 +52,17 @@ it('shows asset management to an existing accounting designation', function () {
         ->assertOk()
         ->assertSee('Asset Management');
 });
+
+it('always lets bursar and admin demo roles view asset management', function () {
+    $school = School::create(['name' => 'Demo Asset School', 'slug' => 'demo-asset-school', 'is_demo' => true]);
+    $bursar = User::factory()->create(['school_id' => $school->id, 'role' => 'bursar', 'designation_id' => null]);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin', 'designation_id' => null]);
+
+    expect($bursar->hasModuleAccess('accounting'))->toBeTrue()
+        ->and($bursar->hasPermission('accounting.assets.view'))->toBeTrue()
+        ->and($admin->hasPermission('accounting.assets.view'))->toBeTrue();
+
+    $this->actingAs($bursar)->get(route('accounting.assets'))
+        ->assertOk()
+        ->assertSee('Asset Management');
+});
