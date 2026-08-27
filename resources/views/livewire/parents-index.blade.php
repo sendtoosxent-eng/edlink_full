@@ -34,7 +34,7 @@
             <input wire:model.live.debounce.300ms="search" 
                    type="text" 
                    placeholder="Search by name, email, or phone..." 
-                   class="w-full pl-10 pr-4 py-2.5 bg-white text-sm font-medium text-slate-800 placeholder-slate-400 border border-slate-200 rounded-xl shadow-xs focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" />
+                   class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-medium text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-400/20" />
         </div>
         
         @if(method_exists($parents, 'total'))

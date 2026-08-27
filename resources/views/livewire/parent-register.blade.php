@@ -51,12 +51,12 @@
         <div class="grid gap-5 md:grid-cols-2">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Full Name</label>
-                <input wire:model="name" type="text" placeholder="e.g. Jane Doe" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
+                <input wire:model="name" type="text" placeholder="e.g. Jane Doe" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Relationship</label>
-                <select wire:model="relationship" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
+                <select wire:model="relationship" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
                     <option value="">Select relationship</option>
                     <option value="Parent">Parent</option>
                     <option value="Mother">Mother</option>
@@ -67,17 +67,17 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Email / Login Username</label>
-                <input wire:model="email" type="email" placeholder="parent@example.com" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
+                <input wire:model="email" type="email" placeholder="parent@example.com" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Phone Number</label>
-                <input wire:model="phone" type="text" placeholder="e.g. +256 700 000 000" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
+                <input wire:model="phone" type="text" placeholder="e.g. +256 700 000 000" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
             </div>
 
             <div class="md:col-span-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Temporary Password</label>
-                <input wire:model="password" type="password" placeholder="••••••••" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
+                <input wire:model="password" type="password" placeholder="••••••••" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
                 <p class="mt-1 text-xs text-slate-400 font-medium">Must be at least 8 characters. Share securely with the parent.</p>
             </div>
         </div>
@@ -97,7 +97,7 @@
             <div class="grid max-h-72 gap-2.5 overflow-y-auto p-1 md:grid-cols-2">
                 @forelse ($students as $student)
                     <label class="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition hover:bg-slate-100/60 hover:border-slate-300 cursor-pointer select-none">
-                        <input wire:model="studentIds" type="checkbox" value="{{ $student->id }}" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-yellow-500 focus:ring-2 focus:ring-yellow-400 focus:ring-offset-0 transition">
+                        <input wire:model="studentIds" type="checkbox" value="{{ $student->id }}" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-yellow-500 transition focus:ring-4 focus:ring-yellow-400/30 focus:ring-offset-0">
                         <div class="text-xs">
                             <span class="font-bold text-slate-900 block text-sm">{{ $student->name }}</span>
                             <span class="text-slate-500 font-medium mt-0.5 block">

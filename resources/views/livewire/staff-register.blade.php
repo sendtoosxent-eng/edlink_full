@@ -1,4 +1,4 @@
-<div class="mx-auto w-full max-w-7xl space-y-6 antialiased">
+<div class="space-y-6">
     <!-- Header Banner -->
     <header class="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 sm:p-8">
         <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">

@@ -94,7 +94,7 @@
         id="app-sidebar"
         class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden"
         :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        x-data="{ open: '' }"
+        x-data="{ open: 'students' }"
     >
         <div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed && 'justify-center px-0'">
             <span class=" flex-shrink-0">
@@ -123,10 +123,12 @@
                 'academics' => ['label' => 'Academics', 'icon' => 'M4 6h16M4 12h16M4 18h7', 'items' => ['Classes & Streams', 'Subjects', 'Grading Scales', 'Timetable', 'Homework', 'Events']],
                 'attendance' => ['label' => 'Attendance', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Mark Attendance', 'Attendance Reports']],
                 'finance' => ['label' => 'Finance', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z', 'items' => ['Terms', 'Fee Structure', 'Payments', 'Expenses', 'Ledger & Reconciliation']],
+                'accounting' => ['label' => 'Accounting', 'icon' => 'M4 19.5h16M5.5 17V9.5m4 7.5V9.5m5 7.5V9.5m4 7.5V9.5M3 7l9-4 9 4H3z', 'items' => ['Accounting Workspace']],
                 'exams' => ['label' => 'Exams', 'icon' => 'M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2h-2', 'items' => ['Create Exam', 'Enter Marks', 'Report Cards']],
                 'staff' => ['label' => 'Staff', 'icon' => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-2.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-.001-8.001A4 4 0 0017 8z', 'items' => ['All Staff', 'Add Staff', 'Payroll', 'Leave Requests', 'Designations & Access']],
                 'parents' => ['label' => 'Parents', 'icon' => 'M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l1.586-1.586z', 'items' => ['Register Parent', 'All Parents', 'Communications']],
             ] as $key => $group)
+                @continue($key === 'accounting' && ! auth()->user()->hasModuleAccess('accounting'))
                 <div>
                     <button @click="if($store.ui.collapsed){$store.ui.toggle();open='{{ $key }}'}else{open = open === '{{ $key }}' ? '' : '{{ $key }}'}" class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg" :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === '{{ $key }}' && !$store.ui.collapsed && 'bg-yellow-500/10 text-yellow-400']">
                         <span class="flex items-center space-x-3" :class="$store.ui.collapsed && 'space-x-0'">
@@ -155,6 +157,7 @@
                                     'Payments' => 'fee-payments.index',
                                     'Expenses' => 'expenses.index',
                                     'Ledger & Reconciliation' => 'finance.ledger',
+                                    'Accounting Workspace' => 'accounting.index',
                                     'Create Exam' => 'exams.setup',
                                     'Enter Marks' => 'exams.marks',
                                     'Report Cards' => 'exams.results',
@@ -264,7 +267,7 @@
                 </div>
 
                 <!-- Notification bell (hover dropdown) -->
-                <div class="group relative">
+                <div class="group relative" x-data="{ open: '' }">
                     <a href="{{ route('notifications.index') }}" wire:navigate aria-label="Open notification center" aria-describedby="notificationsDropdownPanel" title="Notifications" class="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                         @if(collect($dashboardNotifications ?? [])->isNotEmpty())<span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>@endif

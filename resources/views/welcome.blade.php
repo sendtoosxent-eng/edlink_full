@@ -40,14 +40,15 @@
 			}
 		}
 	</script>
-	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
 	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 	<style>
 		[x-cloak] { display: none !important; }
 		html { scroll-behavior: smooth; }
-		body { font-family: 'Poppins', sans-serif; }
+		body, button, input, select, textarea { font-family: 'Poppins', sans-serif; }
 		.text-gradient {
 			background: linear-gradient(90deg, #facc15, #fb923c, #facc15);
 			background-size: 200% auto;
@@ -208,8 +209,8 @@
 			</div>
 
 			<div data-aos="fade-left" data-aos-duration="800" class="relative mx-3 sm:mx-6 lg:mx-0">
-				<div class="relative overflow-hidden">
-					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'hero_image') }}" class="w-full object-cover" alt="Student using Edlink">
+				<div class="relative flex min-h-[360px] items-center justify-center sm:min-h-[460px] lg:min-h-[540px]">
+					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'hero_image') }}" class="max-h-[560px] w-full object-contain object-center drop-shadow-[0_28px_35px_rgba(15,23,42,0.16)]" alt="Student using Edlink">
 				</div>
 
 				<!-- floating stat card -->
@@ -262,8 +263,10 @@
 					</ul>
 					<a href="#demo-access" class="mt-8 inline-flex items-center gap-2 font-bold text-darken dark:text-yellow-400">Open the real interactive demo <span aria-hidden="true">&rarr;</span></a>
 				</div>
-				<div data-aos="fade-left" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-2xl dark:border-white/10 dark:bg-white/5">
-					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'product_image') }}" class="mb-2 max-h-72 w-full rounded-xl bg-white object-contain" alt="Edlink system preview">
+				<div data-aos="fade-left" class="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-slate-100 p-2 shadow-2xl shadow-slate-300/40 dark:border-white/10 dark:bg-white/5 dark:shadow-black/20">
+					<div class="mb-2 aspect-[16/9] overflow-hidden rounded-[1.25rem] bg-white">
+						<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'product_image') }}" class="h-full w-full object-cover object-top" alt="Edlink system preview">
+					</div>
 					<div class="rounded-xl bg-slate-900 px-4 py-3 text-white flex items-center justify-between"><b class="text-sm text-yellow-400">Edlink</b><span class="text-[10px] text-slate-400">School administrator workspace</span></div>
 					<div class="grid gap-3 bg-slate-50 p-4 dark:bg-slate-900 sm:grid-cols-3">
 						<div class="rounded-xl bg-white p-4 shadow-sm dark:bg-white/5"><p class="text-[10px] uppercase text-slate-400">Active learners</p><b class="mt-2 block text-2xl text-slate-900 dark:text-white">1,248</b><span class="text-[10px] text-emerald-600">Enrolment overview</span></div>
@@ -319,7 +322,9 @@
 				</span>
 				<h3 class="text-2xl font-bold mb-3">Students, classes &amp; streams</h3>
 				<p class="text-gray-300 max-w-md">Admissions, class streams, categories, and full academic history in one profile per learner &mdash; with fees auto-mapped the moment a student is assigned.</p>
-				<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'feature_image') }}" class="mt-8 rounded-xl w-full max-w-md relative z-10" alt="">
+				<div class="relative z-10 mt-8 aspect-[16/10] w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-1.5 shadow-2xl shadow-black/20">
+					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'feature_image') }}" class="h-full w-full rounded-xl object-cover object-top" alt="Edlink student and class management preview">
+				</div>
 			</div>
 
 			<!-- small cards -->
@@ -364,9 +369,11 @@
 <!-- ============ ABOUT ============ -->
 	<section id="about" class="mobile-section py-24 relative overflow-hidden">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
-			<div data-aos="fade-right" class="relative">
+			<div data-aos="fade-right" class="relative mx-auto w-full max-w-xl">
 				<div class="absolute -inset-4 bg-gradient-to-tr from-teal-300/30 to-yellow-300/30 dark:from-teal-500/10 dark:to-yellow-500/10 rounded-[2rem] blur-xl"></div>
-				<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'about_image') }}" class="relative rounded-[2rem] shadow-xl w-full" alt="">
+				<div class="relative aspect-[4/3] overflow-hidden rounded-[2rem] bg-slate-100 shadow-2xl shadow-slate-300/40 dark:bg-white/5 dark:shadow-black/20">
+					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'about_image') }}" class="h-full w-full object-cover object-center" alt="Teacher using Edlink in the classroom">
+				</div>
 			</div>
 			<div data-aos="fade-left">
 				<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">About us</span>
@@ -433,12 +440,36 @@
 	<!-- ============ PRICING ============ -->
 	<section id="pricing" class="mobile-section py-28 bg-gray-50/60 dark:bg-white/[0.02]">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6">
-			<div class="text-center max-w-2xl mx-auto mb-16" data-aos="fade-up">
+			<div class="text-center max-w-2xl mx-auto" data-aos="fade-up">
 				<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">Pricing</span>
 				<h2 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">{{ $landing['pricing_heading'] }}</h2>
+				<p class="mt-4 text-gray-500 dark:text-gray-400">Whichever package you choose, we help your school move, launch, and keep running successfully.</p>
 			</div>
 
-			<div class="grid md:grid-cols-3 gap-8 items-stretch">
+			<div class="mt-10 rounded-3xl border border-yellow-200/80 bg-gradient-to-br from-yellow-50 to-white p-5 shadow-sm dark:border-yellow-400/20 dark:from-yellow-400/10 dark:to-white/[0.03] sm:p-7" data-aos="fade-up">
+				<div class="flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+					<div>
+						<p class="text-xs font-bold uppercase tracking-[0.2em] text-yellow-600 dark:text-yellow-400">Included at no extra cost</p>
+						<h3 class="mt-1 text-xl font-extrabold text-darken dark:text-white">Free with every Edlink package</h3>
+					</div>
+					<span class="text-xs font-semibold text-gray-500 dark:text-gray-400">We stay with you from setup onward.</span>
+				</div>
+				<div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+					@foreach([
+						['Data migration', 'We move your existing school records into Edlink.'],
+						['School website', 'A professional website for your school.'],
+						['Staff training', 'Practical training so your team starts confidently.'],
+						['Ongoing support', 'Friendly help whenever your school needs it.'],
+					] as [$title, $description])
+						<div class="rounded-2xl border border-gray-100 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+							<div class="flex items-center gap-2"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-black text-teal-600 dark:bg-teal-400/15 dark:text-teal-400">✓</span><h4 class="font-bold text-darken dark:text-white">{{ $title }}</h4></div>
+							<p class="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">{{ $description }}</p>
+						</div>
+					@endforeach
+				</div>
+			</div>
+
+			<div class="mt-16 grid md:grid-cols-3 gap-8 items-stretch">
 				<div data-aos="fade-up" class="rounded-3xl p-8 bg-white dark:bg-darken border border-gray-100 dark:border-white/10 shadow-sm flex flex-col hover:-translate-y-1 transition-transform">
 					<h3 class="font-bold text-lg text-darken dark:text-white">Starter</h3>
 					<p class="text-sm text-gray-400 mt-1">For a single small school</p>
@@ -597,7 +628,7 @@
 					</div>
 					<div>
 						<p class="text-white text-sm font-semibold">Edlink Assistant</p>
-						<p class="text-green-300 text-xs">Online — instant answers</p>
+						<p class="text-green-300 text-xs">Online Ai instant answers</p>
 					</div>
 				</div>
 				<button @click="open = false" class="text-white/70 hover:text-white">
@@ -673,7 +704,8 @@
 					{ q: 'Data security?', a: "Yes. Your school's data is isolated from every other school on Edlink and only accessible to your own staff accounts." },
 					{ q: 'Multi-branch?', a: 'Yes, our Growth and Enterprise plans support multi-branch schools with per-branch reporting and permissions.' },
 					{ q: 'Talk to support?', a: 'Use the WhatsApp or Call buttons below, or send a message through the contact form and we\'ll get back to you fast.' },
-					{q: 'What is Edlink?', a: 'Edlink is a school management system that helps schools manage students, classes, teachers, results, fees, homework, and communication in one place.' }
+					{q: 'What is Edlink?', a: 'Edlink is a school management system that helps schools manage students, classes, teachers, results, fees, homework, and communication in one place.' },
+					{q: 'Which school types does Edlink support?', a: 'Edlink supports multiple school types like kindergaten , Primary , Secondary and Vocational school types'}
 				],
 				ask(q) {
 					this.messages.push({ from: 'user', text: q.q });

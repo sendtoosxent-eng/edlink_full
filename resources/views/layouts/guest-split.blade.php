@@ -19,50 +19,54 @@
     </script>
     @livewireStyles
 </head>
-<body class="font-sans bg-gray-50 min-h-screen">
+<body class="min-h-screen bg-white font-sans text-slate-800">
 @include('partials.global-loader')
-    <div class="min-h-screen flex">
+    <main class="grid min-h-screen lg:grid-cols-[minmax(420px,0.9fr)_minmax(520px,1.1fr)]">
+        <section class="relative hidden min-h-screen overflow-hidden bg-[#161327] lg:flex lg:flex-col">
+            <div class="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-yellow-400/15 blur-3xl"></div>
+            <div class="absolute -right-24 top-1/3 h-72 w-72 rounded-full bg-teal-400/10 blur-3xl"></div>
 
-        <!-- Side image panel -->
-        <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden" style="background-color:#252641;">
-            
-            <div class="absolute inset-0 flex flex-col justify-between p-12 z-10">
-        <div>
-            <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
-            <img src="{{ asset('img/logo.png') }}" alt="Edlink logo" class="w-[180px] h-auto">
-            </a>
-        </div>
+            <div class="relative z-10 flex flex-1 flex-col px-10 pb-0 pt-9 xl:px-14 xl:pt-12">
+                <a href="{{ url('/') }}" class="inline-flex w-fit items-center">
+                    <img src="{{ asset('img/logo.png') }}" alt="Edlink home" class="h-auto w-36 xl:w-40">
+                </a>
 
-                <div class="max-w-md">
-                    <h2 class="text-white text-3xl font-semibold leading-tight mb-4">Run your whole school from one dashboard.</h2>
-                    <p class="text-gray-300">Admissions, attendance, fees, and report cards  all in one place, built for how schools actually run.</p>
+                <div class="mt-12 max-w-lg xl:mt-16">
+                    <span class="inline-flex rounded-full border border-yellow-300/20 bg-yellow-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-300">Your school, connected</span>
+                    <h2 class="mt-5 text-4xl font-extrabold leading-[1.12] text-white xl:text-5xl">Everything your school needs, in one clear workspace.</h2>
+                    <p class="mt-5 max-w-md text-sm leading-7 text-slate-300 xl:text-base">Manage learners, attendance, fees, results, staff, and communication without juggling notebooks and spreadsheets.</p>
                 </div>
 
-                <div class="flex items-center justify-center">
-    <img src="{{ asset('img/login_img.png') }}" alt="" class="max-w-xl w-full">
-</div>
+                <div class="mt-7 grid max-w-lg grid-cols-2 gap-3 text-xs font-semibold text-slate-200">
+                    <span class="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"><b class="mr-2 text-yellow-400">✓</b>Secure role access</span>
+                    <span class="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"><b class="mr-2 text-yellow-400">✓</b>Phone &amp; desktop</span>
+                </div>
+
+                <div class="relative mt-auto flex min-h-0 flex-1 items-end justify-center pt-5">
+                    <img src="{{ asset('img/login_img.png') }}" alt="School administrator working in Edlink" class="max-h-[43vh] w-full max-w-[570px] object-contain object-bottom xl:max-h-[47vh]">
+                </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Form panel -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
-            <div class="w-full max-w-md">
-                <div class="text-center mb-6 sm:mb-8 lg:hidden">
-                    <a href="{{ url('/') }}" class="inline-flex items-center justify-center">
-                        <img src="{{ asset('img/logo.png') }}" alt="Edlink" class="h-auto w-44 sm:w-52">
+        <section class="flex min-h-screen items-center justify-center px-4 py-8 sm:px-8 lg:px-12 xl:px-20">
+            <div class="w-full max-w-[480px]">
+                <div class="mb-7 flex items-center justify-between lg:hidden">
+                    <a href="{{ url('/') }}" class="inline-flex items-center">
+                        <img src="{{ asset('img/logoneg.png') }}" alt="Edlink home" class="h-auto w-32 sm:w-36">
                     </a>
+                    <span class="rounded-full bg-yellow-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">School portal</span>
                 </div>
 
-                <div class="bg-white lg:shadow-none shadow-xl rounded-2xl p-5 sm:p-8 lg:p-0">
+                <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-9 lg:border-0 lg:p-0 lg:shadow-none">
                     {{ $slot }}
                 </div>
 
-                <p class="text-center text-gray-400 text-sm mt-6">
+                <p class="mt-7 text-center text-xs text-slate-400">
                     &copy; <span x-data x-text="new Date().getFullYear()"></span> Edlink. Built by Spotnet Technologies.
                 </p>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     @livewireScripts
 </body>

@@ -85,7 +85,8 @@ it('allows finance adjustment staff to open the screen, request, and approve an 
         ->and($financeUser->hasPermission('finance.payments'))->toBeFalse();
     $this->actingAs($financeUser)->get(route('fee-payments.index'))
         ->assertOk()
-        ->assertSee('Review Fee Adjustments');
+        ->assertSee('Review Fee Adjustments')
+        ->assertSee('href="'.route('fee-adjustments.index').'"', false);
     $this->actingAs($financeUser)->get(route('fee-adjustments.index'))
         ->assertOk()
         ->assertSee('Fee Adjustments')

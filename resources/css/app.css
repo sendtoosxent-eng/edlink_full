@@ -198,17 +198,69 @@ th{
     box-shadow:0 20px 45px rgba(0,0,0,.12)!important;
 }
 
-/* Inputs */
+/* Form controls
+   Keep every Edlink form aligned with the Accounting and Asset Management
+   design system. :where() deliberately keeps specificity low so a compact
+   search box or purpose-built control can still override these defaults. */
 
-input,
-select{
-    border-radius:10px!important;
+:where(
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+    select,
+    textarea
+){
+    min-height:2.625rem;
+    border:1px solid #e5e7eb;
+    border-radius:.75rem;
+    background-color:rgba(249,250,251,.72);
+    padding:.625rem 1rem;
+    color:#1e293b;
+    font-size:.875rem;
+    line-height:1.25rem;
+    outline:none;
+    transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
 }
 
-input:focus,
-select:focus{
-    border-color:#3B82F6!important;
-    box-shadow:0 0 0 4px rgba(59,130,246,.15)!important;
+:where(textarea){
+    min-height:6rem;
+    resize:vertical;
+}
+
+:where(
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+    select,
+    textarea
+):hover:not(:disabled){
+    border-color:#cbd5e1;
+}
+
+:where(
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+    select,
+    textarea
+):focus{
+    border-color:#facc15;
+    background-color:#fff;
+    box-shadow:0 0 0 4px rgba(250,204,21,.22);
+}
+
+:where(input, select, textarea):disabled{
+    cursor:not-allowed;
+    background-color:#f1f5f9;
+    color:#94a3b8;
+    opacity:.8;
+}
+
+:where(input[type="checkbox"], input[type="radio"]){
+    border-color:#cbd5e1;
+    color:#eab308;
+}
+
+:where(input[type="checkbox"], input[type="radio"]):focus{
+    box-shadow:0 0 0 3px rgba(250,204,21,.22);
+}
+
+:where(input[type="file"]){
+    cursor:pointer;
 }
 
 /* Buttons */

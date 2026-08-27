@@ -61,14 +61,14 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Designation Name</label>
-                <input wire:model="name" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" placeholder="e.g. Senior Teacher, Bursar">
+                <input wire:model="name" type="text" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30" placeholder="e.g. Senior Teacher, Bursar">
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                     Description <span class="font-normal text-slate-400 uppercase">(Optional)</span>
                 </label>
-                <textarea wire:model="description" rows="2" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition placeholder:text-slate-400" placeholder="Brief summary of duties or responsibilities..."></textarea>
+                <textarea wire:model="description" rows="3" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30" placeholder="Brief summary of duties or responsibilities..."></textarea>
             </div>
 
             <div class="pt-2">
@@ -86,7 +86,7 @@
                             <div class="grid gap-2">
                                 @foreach ($group['rights'] as $key => $label)
                                     <label class="flex items-center gap-2.5 text-xs font-medium text-slate-700 cursor-pointer select-none hover:text-slate-900">
-                                        <input wire:model="permissions" type="checkbox" value="{{ $key }}" class="h-4 w-4 rounded border-slate-300 text-yellow-500 focus:ring-2 focus:ring-yellow-400 focus:ring-offset-0 transition">
+                                        <input wire:model="permissions" type="checkbox" value="{{ $key }}" class="h-4 w-4 shrink-0 rounded border-slate-300 text-yellow-500 transition focus:ring-4 focus:ring-yellow-400/30 focus:ring-offset-0">
                                         <span>{{ $label }}</span>
                                     </label>
                                 @endforeach

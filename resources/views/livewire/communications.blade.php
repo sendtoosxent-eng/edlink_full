@@ -50,7 +50,7 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Subject</label>
-                <input wire:model="title" type="text" placeholder="e.g. End of Term Briefing" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition">
+                <input wire:model="title" type="text" placeholder="e.g. End of Term Briefing" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
                 @error('title')
                     <span class="mt-1 text-xs font-semibold text-rose-600 block">{{ $message }}</span>
                 @enderror
@@ -58,7 +58,7 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Message</label>
-                <textarea wire:model="message" rows="7" placeholder="Write your broadcast message here..." class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition placeholder:text-slate-400"></textarea>
+                <textarea wire:model="message" rows="7" placeholder="Write your broadcast message here..." class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-slate-800 transition-all placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30"></textarea>
                 @error('message')
                     <span class="mt-1 text-xs font-semibold text-rose-600 block">{{ $message }}</span>
                 @enderror
@@ -67,12 +67,12 @@
             <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Additional delivery</p>
                 <label class="flex cursor-pointer items-start gap-3">
-                    <input wire:model="sendEmail" type="checkbox" class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400">
+                    <input wire:model="sendEmail" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-yellow-500 transition focus:ring-4 focus:ring-yellow-400/30 focus:ring-offset-0">
                     <span><strong class="block text-sm text-slate-800">Send email</strong><span class="text-xs text-slate-500">Queued for every school user with an email address.</span></span>
                 </label>
                 @error('sendEmail')<span class="block text-xs font-semibold text-rose-600">{{ $message }}</span>@enderror
                 <label class="flex cursor-pointer items-start gap-3 {{ $smsReady ? '' : 'opacity-60' }}">
-                    <input wire:model="sendSms" type="checkbox" @disabled(! $smsReady) class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400">
+                    <input wire:model="sendSms" type="checkbox" @disabled(! $smsReady) class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-yellow-500 transition focus:ring-4 focus:ring-yellow-400/30 focus:ring-offset-0">
                     <span><strong class="block text-sm text-slate-800">Send SMS</strong><span class="text-xs text-slate-500">{{ $smsReady ? 'Queued for every school user with a phone number.' : 'SMS must first be enabled and configured by the platform administrator.' }}</span></span>
                 </label>
                 @error('sendSms')<span class="block text-xs font-semibold text-rose-600">{{ $message }}</span>@enderror
