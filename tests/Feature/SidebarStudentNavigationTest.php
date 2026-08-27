@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('opens student navigation on the dashboard and includes categories and graduates', function () {
+it('keeps student navigation closed on the dashboard and includes categories and graduates', function () {
     $school = School::create([
         'name' => 'Navigation School',
         'slug' => 'navigation-school',
@@ -22,7 +22,8 @@ it('opens student navigation on the dashboard and includes categories and gradua
 
     $this->actingAs($admin)->get(route('dashboard'))
         ->assertOk()
-        ->assertSee("open: 'students'", false)
+        ->assertSee("open: ''", false)
+        ->assertDontSee("open: 'students'", false)
         ->assertSee('href="'.route('student-categories.index').'"', false)
         ->assertSee('href="'.route('graduates.index').'"', false);
 });

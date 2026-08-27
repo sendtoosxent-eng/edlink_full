@@ -94,7 +94,7 @@
         id="app-sidebar"
         class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden"
         :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        x-data="{ open: 'students' }"
+        x-data="{ open: '' }"
     >
         <div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed && 'justify-center px-0'">
             <span class=" flex-shrink-0">
