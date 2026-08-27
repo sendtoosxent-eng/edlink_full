@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AccountingJournal;
+use App\Models\Designation;
 use App\Models\FinancialAccount;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
@@ -32,4 +33,22 @@ it('shows asset management as an accounting submenu', function () {
     $school = School::create(['name' => 'Asset Menu School', 'slug' => 'asset-menu-school']);
     $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
     $this->actingAs($admin)->get(route('accounting.assets'))->assertOk()->assertSee('Fixed Asset Management')->assertSee('Asset Register');
+});
+
+it('shows asset management to an existing accounting designation', function () {
+    $school = School::create(['name' => 'Asset Access School', 'slug' => 'asset-access-school']);
+    $designation = Designation::create([
+        'school_id' => $school->id,
+        'name' => 'Accountant',
+        'permissions' => ['accounting.dashboard.view', 'accounting.assets.view'],
+    ]);
+    $accountant = User::factory()->create([
+        'school_id' => $school->id,
+        'designation_id' => $designation->id,
+        'role' => 'staff',
+    ]);
+
+    $this->actingAs($accountant)->get(route('accounting.index'))
+        ->assertOk()
+        ->assertSee('Asset Management');
 });
