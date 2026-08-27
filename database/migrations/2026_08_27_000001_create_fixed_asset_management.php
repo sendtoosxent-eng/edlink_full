@@ -17,8 +17,16 @@ return new class extends Migration
             $table->string('depreciation_method', 30)->default('straight_line');
             $table->decimal('annual_rate', 7, 4)->nullable();
             $table->foreignId('asset_account_id')->constrained('ledger_accounts')->restrictOnDelete();
-            $table->foreignId('accumulated_depreciation_account_id')->constrained('ledger_accounts')->restrictOnDelete();
-            $table->foreignId('depreciation_expense_account_id')->constrained('ledger_accounts')->restrictOnDelete();
+            $table->foreignId('accumulated_depreciation_account_id');
+            $table->foreign(
+                'accumulated_depreciation_account_id',
+                'asset_category_accumulated_account_fk'
+            )->references('id')->on('ledger_accounts')->restrictOnDelete();
+            $table->foreignId('depreciation_expense_account_id');
+            $table->foreign(
+                'depreciation_expense_account_id',
+                'asset_category_depreciation_expense_fk'
+            )->references('id')->on('ledger_accounts')->restrictOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->unique(['school_id', 'code']);
