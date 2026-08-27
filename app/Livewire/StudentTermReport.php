@@ -162,7 +162,18 @@ class StudentTermReport extends Component
                 $percentage = (float) $row->maximum_score > 0 ? round((float) $row->score / (float) $row->maximum_score * 100, 2) : 0;
                 $scale = $scales->first(fn ($item) => $percentage >= (float) $item->minimum_percentage && $percentage <= (float) $item->maximum_percentage);
                 $grade = $scale?->grade ?? '—';
-                return (object) ['subject' => (object) ['id' => $row->subject_id, 'name' => $row->subject_name], 'subject_name' => $row->subject_name, 'credit_hours' => max(1, (float) $row->weighting), 'percentage' => $percentage, 'grade_name' => $grade, 'grade_point' => $this->gradePoint($grade), 'aggregate_points' => $scale?->aggregate_points, 'remarks' => $scale?->remark ?? 'Grade not configured'];
+                return (object) [
+                    'subject' => (object) ['id' => $row->subject_id, 'name' => $row->subject_name],
+                    'subject_name' => $row->subject_name,
+                    'score' => (float) $row->score,
+                    'maximum_score' => (float) $row->maximum_score,
+                    'credit_hours' => max(1, (float) $row->weighting),
+                    'percentage' => $percentage,
+                    'grade_name' => $grade,
+                    'grade_point' => $this->gradePoint($grade),
+                    'aggregate_points' => $scale?->aggregate_points,
+                    'remarks' => $scale?->remark ?? 'Grade not configured',
+                ];
             });
     }
 
@@ -183,7 +194,7 @@ class StudentTermReport extends Component
         return $daily->isNotEmpty() ? $daily : $base->whereNotNull('subject_id')->get();
     }
 
-    protected function positionFor(Student $student, Exam $exam): ?int
+    protected function positionFor(Student $student, Exam $exam, int $bestSubjects): ?int
     {
         $rows = DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
             ->join('exam_paper_submissions', 'exam_paper_submissions.exam_paper_id', '=', 'exam_papers.id')
@@ -195,8 +206,22 @@ class StudentTermReport extends Component
             ->where('students.school_id', $exam->school_id)
             ->whereRaw('coalesce(student_enrolments.school_class_id, students.school_class_id) = ?', [$exam->school_class_id])
             ->when($exam->stream_id, fn ($query) => $query->whereRaw('coalesce(student_enrolments.stream_id, students.stream_id) = ?', [$exam->stream_id]))
-            ->select('students.id', DB::raw('sum(exam_marks.score * exam_papers.weighting) / nullif(sum(exam_papers.maximum_score * exam_papers.weighting), 0) * 100 as average'))
-            ->groupBy('students.id')->orderByDesc('average')->get();
+            ->whereNotNull('exam_marks.score')
+            ->select(
+                'students.id',
+                'exam_papers.subject_id',
+                DB::raw('sum(exam_marks.score * exam_papers.weighting) / nullif(sum(exam_papers.maximum_score * exam_papers.weighting), 0) * 100 as percentage'),
+            )
+            ->groupBy('students.id', 'exam_papers.subject_id')
+            ->get()
+            ->groupBy('id')
+            ->map(fn (Collection $subjects, $studentId) => (object) [
+                'id' => (int) $studentId,
+                'average' => $subjects->sortByDesc('percentage')->take($bestSubjects)->avg('percentage'),
+            ])
+            ->filter(fn (object $row) => $row->average !== null)
+            ->sortByDesc('average')
+            ->values();
         $previous = null; $position = 0;
         foreach ($rows as $index => $row) {
             if ($previous === null || abs((float) $row->average - $previous) >= 0.001) $position = $index + 1;
@@ -237,7 +262,9 @@ class StudentTermReport extends Component
             $aggregate = $calculationGrades->sum(fn ($grade) => (int) ($grade->aggregate_points ?? 0));
             $attendance = $this->attendanceFor($student, $term);
             $canViewWholeClass = ! TeacherAcademicScope::isTeacher(Auth::user()) || TeacherAcademicScope::classIds(Auth::user())->contains($exam->school_class_id);
-            $position = $settings['show_position'] && $canViewWholeClass ? $this->positionFor($student, $exam) : null;
+            $position = $settings['show_position'] && $canViewWholeClass
+                ? $this->positionFor($student, $exam, $settings['best'])
+                : null;
             if (! TeacherAcademicScope::isTeacher(Auth::user())) {
                 $fees = ['due' => $student->totalDue($term), 'paid' => $student->totalPaid($term), 'balance' => $student->balance($term)];
             }

@@ -65,8 +65,8 @@
             </table>
 
             <div class="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-                <div class="border p-2"><b class="block text-xs uppercase">Average</b><span class="text-lg font-black">{{number_format($data['average'],1)}}%</span></div>
-                <div class="border p-2"><b class="block text-xs uppercase">Result</b><span class="font-black">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</span></div>
+                <div class="border p-2"><b class="block text-xs uppercase">Average</b><span class="text-lg font-black">{{number_format($data['average'],1)}}%</span><small class="block text-slate-500">Best {{$settings['best']}} subject{{$settings['best']===1?'':'s'}}</small></div>
+                <div class="border p-2"><b class="block text-xs uppercase">Result</b><span class="font-black">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</span><small class="block text-slate-500">Pass mark {{number_format($settings['pass'],0)}}%</small></div>
                 <div class="border p-2"><b class="block text-xs uppercase">Aggregate</b><span class="text-lg font-black">{{$data['aggregate']}}</span></div>
                 @if($settings['show_position'])<div class="border p-2"><b class="block text-xs uppercase">Position</b><span class="text-lg font-black">{{$positions[$student->id]??'—'}}</span></div>@endif
             </div>

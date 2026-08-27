@@ -138,7 +138,7 @@
                                 <tr class="bg-slate-900 text-white font-extrabold uppercase border-b-2 border-slate-900 text-[11px]">
                                     <th class="p-2.5 border-r-2 border-slate-900 w-12 text-center">S.NO</th>
                                     <th class="p-2.5 border-r-2 border-slate-900">SUBJECT</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">CREDIT HOUR</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">SCORE</th>
                                     <th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE OBTAINED</th>
                                     <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">POINTS</th>
                                     <th class="p-2.5 text-center w-32">REMARKS</th>
@@ -149,7 +149,7 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">{{ $grade->subject->name ?? ($grade['subject_name'] ?? 'SUBJECT') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">{{ number_format($grade->credit_hours ?? ($grade['credit_hours'] ?? 0), 2) }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->score ?? ($grade['score'] ?? 0)), 2, '.', ''), '0'), '.') }} / {{ rtrim(rtrim(number_format((float) ($grade->maximum_score ?? ($grade['maximum_score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? '—') }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ $grade->aggregate_points ?? '—' }}</td>
                                     <td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'Grade not configured') }}</td>
@@ -158,7 +158,7 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">01</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">NO GRADES RECORDED</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">0.00</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">—</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-black">—</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">0.00</td>
                                     <td class="p-2.5 text-center font-medium text-slate-700">—</td>
@@ -183,6 +183,7 @@
                             <span class="block text-xl font-black text-slate-950 font-mono mt-1">
                                 {{ $aggregate }} / {{ number_format((float) $average, 1) }}%
                             </span>
+                            <small class="block text-slate-500">Best {{ $settings['best'] }} subject{{ $settings['best'] === 1 ? '' : 's' }} · Pass mark {{ number_format($settings['pass'], 0) }}%</small>
                         </div>
                     </div>
 
