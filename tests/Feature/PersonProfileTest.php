@@ -25,7 +25,12 @@ it('shows and updates a branch-owned student profile photograph', function () {
 
     $student->refresh();
     Storage::disk('public')->assertExists($student->photo_path);
-    $this->get($student->photoUrl())->assertOk();
+    $firstUrl = $student->photoUrl();
+    $this->get($firstUrl)->assertOk();
+
+    $replacement = UploadedFile::fake()->image('replacement.jpg')->store('students/'.$school->id, 'public');
+    $student->update(['photo_path' => $replacement]);
+    expect($student->fresh()->photoUrl())->not->toBe($firstUrl);
 });
 
 it('keeps profile screens isolated by branch and role', function () {

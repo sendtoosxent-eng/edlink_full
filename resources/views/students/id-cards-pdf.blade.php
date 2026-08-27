@@ -365,7 +365,7 @@
 
 @php
     $badgePath = $school->badge_path
-        ? public_path('storage/'.ltrim($school->badge_path, '/'))
+        ? storage_path('app/public/'.ltrim($school->badge_path, '/'))
         : null;
     $year = $school->currentTerm()?->year ?? now()->year;
     $session = $year.'/'.substr((string) ($year + 1), -2);
@@ -375,8 +375,8 @@
     @php
         $person = $card['person'];
         $photoPath = $type === 'student'
-            ? ($person->photo_path ? public_path('storage/'.ltrim($person->photo_path, '/')) : null)
-            : ($person->avatar_path ? public_path('storage/'.ltrim($person->avatar_path, '/')) : null);
+            ? ($person->photo_path ? storage_path('app/public/'.ltrim($person->photo_path, '/')) : null)
+            : ($person->avatar_path ? storage_path('app/public/'.ltrim($person->avatar_path, '/')) : null);
         $guardian = $type === 'student'
             ? $person->guardians->sortByDesc('is_primary')->first()
             : null;

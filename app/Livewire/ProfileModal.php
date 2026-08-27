@@ -63,7 +63,7 @@ class ProfileModal extends Component
             if ($user->avatar_path) {
                 Storage::disk('public')->delete($user->avatar_path);
             }
-            $user->avatar_path = $this->photo->store('avatars', 'public');
+            $user->avatar_path = $this->photo->store('avatars/'.$user->school_id, 'public');
         }
 
         if ($emailChanged) {

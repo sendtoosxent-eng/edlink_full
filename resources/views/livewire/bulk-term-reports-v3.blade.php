@@ -26,7 +26,7 @@
         <article class="report-sheet mb-8 flex flex-col rounded-2xl border-2 border-slate-900 bg-white p-8 text-slate-900 shadow-sm print:mb-0 print:rounded-none">
             <header class="flex items-start gap-5 border-b-2 border-slate-900 pb-4">
                 <div class="flex h-24 w-24 shrink-0 items-center justify-center border-2 border-slate-900 bg-white">
-                    @if($school->badge_path)<img src="{{Storage::disk('public')->url($school->badge_path)}}" class="h-full w-full object-contain" alt="School badge">@else<span class="text-xs font-bold text-slate-400">SCHOOL BADGE</span>@endif
+                    @if($school->badgeUrl())<img src="{{$school->badgeUrl()}}" class="h-full w-full object-contain" alt="School badge">@else<span class="text-xs font-bold text-slate-400">SCHOOL BADGE</span>@endif
                 </div>
                 <div class="flex-1 text-center">
                     <h2 class="text-2xl font-black uppercase tracking-tight">{{$school->name}}</h2>

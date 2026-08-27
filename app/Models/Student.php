@@ -112,7 +112,7 @@ class Student extends Model
     public function photoUrl(): ?string
     {
         return $this->photo_path && Storage::disk('public')->exists($this->photo_path)
-            ? URL::signedRoute('profile-photo.show', ['type' => 'student', 'person' => $this->id])
+            ? URL::signedRoute('profile-photo.show', ['type' => 'student', 'person' => $this->id, 'v' => substr(sha1($this->photo_path), 0, 12)])
             : null;
     }
 

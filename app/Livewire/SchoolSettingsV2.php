@@ -46,7 +46,7 @@ class SchoolSettingsV2 extends SchoolSettings
 
         $school = Auth::user()->school;
         $oldBadge = $school->badge_path;
-        $newBadge = $this->badge ? $this->badge->store('school-badges', 'public') : $oldBadge;
+        $newBadge = $this->badge ? $this->badge->store('school-badges/'.$school->id, 'public') : $oldBadge;
         $school->update([
             'name' => trim($this->name), 'email' => trim($this->email) ?: null,
             'phone' => trim($this->phone) ?: null, 'address' => trim($this->address) ?: null,

@@ -61,7 +61,7 @@ body { margin: 0; color: #0f172a; background: #fff; font-family: DejaVu Sans, sa
 </head>
 <body>
 @php
-    $badgePath = $school->badge_path ? public_path('storage/'.ltrim($school->badge_path, '/')) : null;
+    $badgePath = $school->badge_path ? storage_path('app/public/'.ltrim($school->badge_path, '/')) : null;
     $receiptNumber = $payment->transaction_id ?: $payment->bank_slip_number ?: 'EDL-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT);
 @endphp
 <div class="receipt">

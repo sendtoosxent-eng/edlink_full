@@ -176,7 +176,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function avatarUrl(): ?string
     {
         return $this->avatar_path && Storage::disk('public')->exists($this->avatar_path)
-            ? URL::signedRoute('profile-photo.show', ['type' => 'user', 'person' => $this->id])
+            ? URL::signedRoute('profile-photo.show', ['type' => 'user', 'person' => $this->id, 'v' => substr(sha1($this->avatar_path), 0, 12)])
             : null;
     }
 

@@ -9,6 +9,7 @@ use App\Models\StudentCategory;
 use App\Models\StudentGuardian;
 use App\Models\Stream;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -143,7 +144,11 @@ class StudentEditModal extends Component
         $student->medical_notes = $this->medical_notes ?: null;
 
         if ($this->photo) {
-            $student->photo_path = $this->photo->store('students', 'public');
+            $oldPhoto = $student->photo_path;
+            $student->photo_path = $this->photo->store('students/'.$student->school_id, 'public');
+            if ($oldPhoto && $oldPhoto !== $student->photo_path) {
+                Storage::disk('public')->delete($oldPhoto);
+            }
         }
 
         $student->save();

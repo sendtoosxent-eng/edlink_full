@@ -233,7 +233,7 @@ class StaffManagement extends Component
         if ($this->editPassword !== '') $data['password'] = Hash::make($this->editPassword);
         if ($this->editPhoto) {
             $oldAvatar = $staff->avatar_path;
-            $data['avatar_path'] = $this->editPhoto->store('avatars', 'public');
+            $data['avatar_path'] = $this->editPhoto->store('avatars/'.$staff->school_id, 'public');
             if ($oldAvatar) Storage::disk('public')->delete($oldAvatar);
         }
         $staff->update($data);

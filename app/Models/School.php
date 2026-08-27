@@ -40,7 +40,7 @@ class School extends Model
     public function badgeUrl(): ?string
     {
         return $this->badge_path && Storage::disk('public')->exists($this->badge_path)
-            ? URL::signedRoute('profile-photo.show', ['type' => 'school', 'person' => $this->id])
+            ? URL::signedRoute('profile-photo.show', ['type' => 'school', 'person' => $this->id, 'v' => substr(sha1($this->badge_path), 0, 12)])
             : null;
     }
 

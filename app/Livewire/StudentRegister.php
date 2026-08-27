@@ -166,7 +166,7 @@ class StudentRegister extends Component
                 'date_of_birth' => $this->date_of_birth ?: null,
                 'gender' => $this->gender ?: null,
                 'admission_date' => $this->admission_date,
-                'photo_path' => $this->photo ? $this->photo->store('students', 'public') : null,
+                'photo_path' => $this->photo ? $this->photo->store('students/'.$school->id, 'public') : null,
                 'nationality' => $this->nationality ?: null,
                 'religion' => $this->religion ?: null,
                 'blood_group' => $this->blood_group ?: null,
