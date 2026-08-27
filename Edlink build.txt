@@ -10,3 +10,14 @@
 
   php artisan optimize:clear
   php artisan optimize
+
+
+
+
+server error
+
+ cd ~/domains/edlink.space/public_html
+  git pull origin main
+  php artisan optimize:clear
+  php artisan route:cache
+  php artisan view:cache
