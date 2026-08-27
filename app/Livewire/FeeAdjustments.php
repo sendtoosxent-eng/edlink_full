@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\AuditLog;
 use App\Models\Student;
 use App\Models\StudentFeeAdjustment;
+use App\Services\StudentReceivablesService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -29,6 +30,7 @@ class FeeAdjustments extends Component
 
         if (! $term?->isEditable()) {
             session()->flash('error', 'Adjustments cannot be reviewed after the term is locked.');
+
             return;
         }
 
@@ -40,13 +42,17 @@ class FeeAdjustments extends Component
             $adjustment = StudentFeeAdjustment::where('school_id', $user->school_id)
                 ->where('term_id', $term->id)->lockForUpdate()->findOrFail($adjustmentId);
 
-            if ($adjustment->status !== 'pending') return false;
+            if ($adjustment->status !== 'pending') {
+                return false;
+            }
 
             if ($decision === 'approved') {
                 $baseFee = (float) ($student->mappedFeeAmount($term) ?? 0);
                 $approved = (float) $student->feeAdjustments()->where('term_id', $term->id)
                     ->where('status', 'approved')->sum('amount');
-                if ($baseFee <= 0 || (float) $adjustment->amount <= 0 || $approved + (float) $adjustment->amount > $baseFee) return false;
+                if ($baseFee <= 0 || (float) $adjustment->amount <= 0 || $approved + (float) $adjustment->amount > $baseFee) {
+                    return false;
+                }
             }
 
             $adjustment->update([
@@ -55,6 +61,9 @@ class FeeAdjustments extends Component
                 'review_notes' => $this->reviewNotes ?: null,
                 'reviewed_at' => now(),
             ]);
+            if ($decision === 'approved') {
+                app(StudentReceivablesService::class)->postAdjustment($adjustment->fresh(), $user->id);
+            }
             AuditLog::record($user->school_id, 'finance.fee_adjustment.'.$decision, $adjustment, [
                 'student_id' => $adjustment->student_id,
                 'term_id' => $adjustment->term_id,
@@ -66,6 +75,7 @@ class FeeAdjustments extends Component
 
         if (! $reviewed) {
             session()->flash('error', 'This request is no longer pending or would exceed the learner’s original term fee.');
+
             return;
         }
 

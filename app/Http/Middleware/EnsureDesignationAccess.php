@@ -23,6 +23,7 @@ class EnsureDesignationAccess
             'finance.ledger', 'finance.ledger.approve', 'finance.ledger.reject', 'finance.ledger.reverse',
             'finance.ledger.reconcile', 'finance.accounts.store', 'finance.transfers.store',
             'finance.transfers.approve', 'finance.reconciliations.reopen' => 'finance.ledger',
+            'accounting.index' => 'accounting.dashboard.view', 'accounting.exports' => 'accounting.reports.export',
             'attendance.index' => 'attendance.daily',
             'attendance.subject' => 'attendance.subject',
             'attendance.reports' => 'attendance.reports',
@@ -55,6 +56,7 @@ class EnsureDesignationAccess
             in_array($route, ['students.activities', 'students.activities.export'], true) => null,
             str_starts_with($route, 'students.'), str_starts_with($route, 'graduates.'), str_starts_with($route, 'student-categories.') => 'students',
             str_starts_with($route, 'fee-'), str_starts_with($route, 'terms.'), str_starts_with($route, 'expenses.') => 'finance',
+            str_starts_with($route, 'accounting.') => 'accounting',
             str_starts_with($route, 'attendance.') => 'attendance',
             str_starts_with($route, 'classes.'), str_starts_with($route, 'subjects.'), str_starts_with($route, 'subject-selections.'), str_starts_with($route, 'grading-scales.'), str_starts_with($route, 'timetable.'), str_starts_with($route, 'events.'), str_starts_with($route, 'promotions.') => 'academics',
             $route === 'workbench.home' => null,
@@ -79,6 +81,7 @@ class EnsureDesignationAccess
 
         if ($route === 'students.index' && $user && TeacherAcademicScope::isTeacher($user)) {
             abort_unless(TeacherAcademicScope::canViewStudentDirectory($user), 403);
+
             return $next($request);
         }
         abort_unless(! $permission || $user?->hasPermission($permission), 403);

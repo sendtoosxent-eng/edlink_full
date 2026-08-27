@@ -1,20 +1,129 @@
 <?php
+
 namespace App\Services;
+
 use App\Models\CashPoolEntry;
+use App\Models\Expense;
+use App\Models\FeePayment;
 use App\Models\FinanceLedgerEntry;
 use App\Models\FinanceReconciliation;
+use App\Models\FinancialAccount;
 use App\Models\FinancialAccountTransfer;
+use App\Models\PayrollRun;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+
 class FinanceLedgerService
 {
- public function post(Model $source,string $type,string $direction,string $description,?int $userId=null):FinanceLedgerEntry{return FinanceLedgerEntry::firstOrCreate(['source_type'=>$source::class,'source_id'=>$source->getKey()],['school_id'=>$source->school_id,'term_id'=>$source->term_id,'financial_account_id'=>$source->financial_account_id,'reference'=>'LED-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),'entry_type'=>$type,'direction'=>$direction,'amount'=>(float)$source->amount,'description'=>$description,'status'=>'pending','recorded_by'=>$userId??Auth::id(),'posted_at'=>now()]);}
- public function approve(FinanceLedgerEntry $entry,int $userId):FinanceLedgerEntry{return DB::transaction(function()use($entry,$userId){$entry=FinanceLedgerEntry::lockForUpdate()->findOrFail($entry->id);if($entry->status!=='pending')throw ValidationException::withMessages(['entry'=>'Only pending entries can be approved.']);if($entry->recorded_by===$userId)throw ValidationException::withMessages(['entry'=>'A different authorized user must approve this entry.']);$entry->update(['status'=>'posted','approved_by'=>$userId,'approved_at'=>now(),'posted_at'=>now()]);$this->postToPool($entry,$userId);if($entry->source_type===\App\Models\FeePayment::class&&$entry->source_id){$paymentId=$entry->source_id;DB::afterCommit(fn()=>app(PaymentReceiptSender::class)->send($paymentId));}return $entry;});}
- public function reverse(FinanceLedgerEntry $entry,string $reason,int $userId):FinanceLedgerEntry{if($entry->status!=='posted'||$entry->reversal_of_id)throw ValidationException::withMessages(['entry'=>'Only unreversed posted entries can be reversed.']);if(FinanceLedgerEntry::where('reversal_of_id',$entry->id)->exists())throw ValidationException::withMessages(['entry'=>'This entry was already reversed.']);return DB::transaction(function()use($entry,$reason,$userId){$reversal=FinanceLedgerEntry::create(['school_id'=>$entry->school_id,'term_id'=>$entry->term_id,'financial_account_id'=>$entry->financial_account_id,'reference'=>'REV-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),'entry_type'=>'reversal','direction'=>$entry->direction==='credit'?'debit':'credit','amount'=>$entry->amount,'description'=>'Reversal of '.$entry->reference.': '.$reason,'status'=>'posted','recorded_by'=>$userId,'approved_by'=>$userId,'approved_at'=>now(),'reversal_of_id'=>$entry->id,'reversal_reason'=>$reason,'posted_at'=>now()]);$entry->update(['status'=>'reversed','reversal_reason'=>$reason]);$this->postToPool($reversal,$userId);return $reversal;});}
- public function reject(FinanceLedgerEntry $entry,string $reason,int $userId):FinanceLedgerEntry{if($entry->status!=='pending')throw ValidationException::withMessages(['entry'=>'Only pending entries can be rejected.']);if($entry->recorded_by===$userId)throw ValidationException::withMessages(['entry'=>'A different authorized user must reject this entry.']);$entry->update(['status'=>'rejected','approved_by'=>$userId,'approved_at'=>now(),'reversal_reason'=>$reason]);return $entry;} public function reconcile(int $schoolId,int $accountId,string $date,float $statement,?string $notes,int $userId):FinanceReconciliation{$account=\App\Models\FinancialAccount::where('school_id',$schoolId)->findOrFail($accountId);$existing=FinanceReconciliation::where(['school_id'=>$schoolId,'financial_account_id'=>$accountId,'period_ending'=>$date])->first();if($existing?->status==='closed')throw ValidationException::withMessages(['period_ending'=>'This period is locked. Reopen it with a reason before changing it.']);$base=FinanceLedgerEntry::where('school_id',$schoolId)->where('financial_account_id',$accountId)->whereIn('status',['posted','reversed'])->whereDate('posted_at','<=',$date);$ledger=(float)$account->opening_balance+(float)(clone $base)->where('direction','credit')->sum('amount')-(float)(clone $base)->where('direction','debit')->sum('amount');return FinanceReconciliation::updateOrCreate(['school_id'=>$schoolId,'financial_account_id'=>$accountId,'period_ending'=>$date],['statement_balance'=>$statement,'ledger_balance'=>$ledger,'difference'=>$statement-$ledger,'notes'=>$notes,'reconciled_by'=>$userId,'reconciled_at'=>now(),'status'=>'closed','closed_at'=>now()]);} public function reopen(FinanceReconciliation $item,string $reason,int $userId):void{$item->update(['status'=>'open','reopened_by'=>$userId,'reopen_reason'=>$reason,'reopened_at'=>now(),'closed_at'=>null]);} public function approveTransfer(FinancialAccountTransfer $transfer,int $userId):void{DB::transaction(function()use($transfer,$userId){$transfer=FinancialAccountTransfer::lockForUpdate()->findOrFail($transfer->id);if($transfer->status!=='pending')throw ValidationException::withMessages(['transfer'=>'Only pending transfers can be approved.']);if($transfer->recorded_by===$userId)throw ValidationException::withMessages(['transfer'=>'A different authorized user must approve this transfer.']);$transfer->update(['status'=>'posted','approved_by'=>$userId,'approved_at'=>now()]);foreach([[$transfer->from_account_id,'debit','transfer_out'],[$transfer->to_account_id,'credit','transfer_in']]as[$account,$direction,$type]){$entry=FinanceLedgerEntry::create(['school_id'=>$transfer->school_id,'financial_account_id'=>$account,'source_type'=>$type,'source_id'=>$transfer->id,'reference'=>'TRF-'.strtoupper($direction).'-'.$transfer->id,'entry_type'=>'account_transfer','direction'=>$direction,'amount'=>$transfer->amount,'description'=>'Account transfer '.($transfer->reference?:$transfer->id),'status'=>'posted','recorded_by'=>$transfer->recorded_by,'approved_by'=>$userId,'approved_at'=>now(),'posted_at'=>$transfer->transfer_date]);CashPoolEntry::create(['school_id'=>$transfer->school_id,'financial_account_id'=>$account,'financial_account_transfer_id'=>$transfer->id,'finance_ledger_entry_id'=>$entry->id,'direction'=>$direction,'amount'=>$transfer->amount,'description'=>$entry->description,'transacted_at'=>$transfer->transfer_date,'recorded_by'=>$userId]);}});}
- private function postToPool(FinanceLedgerEntry $entry,int $userId):CashPoolEntry{$links=['fee_payment_id'=>null,'expense_id'=>null,'payroll_run_id'=>null];if($entry->source_type===\App\Models\FeePayment::class)$links['fee_payment_id']=$entry->source_id;if($entry->source_type===\App\Models\Expense::class)$links['expense_id']=$entry->source_id;if($entry->source_type===\App\Models\PayrollRun::class)$links['payroll_run_id']=$entry->source_id;return CashPoolEntry::firstOrCreate(['finance_ledger_entry_id'=>$entry->id],$links+['school_id'=>$entry->school_id,'term_id'=>$entry->term_id,'financial_account_id'=>$entry->financial_account_id,'direction'=>$entry->direction,'amount'=>$entry->amount,'description'=>$entry->description,'transacted_at'=>$entry->posted_at??now(),'recorded_by'=>$userId]);}
-}
+    public function post(Model $source, string $type, string $direction, string $description, ?int $userId = null): FinanceLedgerEntry
+    {
+        return FinanceLedgerEntry::firstOrCreate(['source_type' => $source::class, 'source_id' => $source->getKey()], ['school_id' => $source->school_id, 'term_id' => $source->term_id, 'financial_account_id' => $source->financial_account_id, 'reference' => 'LED-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)), 'entry_type' => $type, 'direction' => $direction, 'amount' => (float) $source->amount, 'description' => $description, 'status' => 'pending', 'recorded_by' => $userId ?? Auth::id(), 'posted_at' => now()]);
+    }
 
+    public function approve(FinanceLedgerEntry $entry, int $userId): FinanceLedgerEntry
+    {
+        return DB::transaction(function () use ($entry, $userId) {
+            $entry = FinanceLedgerEntry::lockForUpdate()->findOrFail($entry->id);
+            if ($entry->status !== 'pending') {
+                throw ValidationException::withMessages(['entry' => 'Only pending entries can be approved.']);
+            }if ($entry->recorded_by === $userId) {
+                throw ValidationException::withMessages(['entry' => 'A different authorized user must approve this entry.']);
+            }
+            $accounting = app(AccountingPostingService::class);
+            if ($accounting->supports($entry)) {
+                $accounting->postApprovedLedgerEntry($entry, $userId);
+            }
+            $entry->update(['status' => 'posted', 'approved_by' => $userId, 'approved_at' => now(), 'posted_at' => now()]);
+            if ($entry->financial_account_id) {
+                $this->postToPool($entry, $userId);
+            }
+            if ($entry->source_type === FeePayment::class && $entry->source_id) {
+                $paymentId = $entry->source_id;
+                DB::afterCommit(fn () => app(PaymentReceiptSender::class)->send($paymentId));
+            }
+
+            return $entry;
+        });
+    }
+
+    public function reverse(FinanceLedgerEntry $entry, string $reason, int $userId): FinanceLedgerEntry
+    {
+        if ($entry->status !== 'posted' || $entry->reversal_of_id) {
+            throw ValidationException::withMessages(['entry' => 'Only unreversed posted entries can be reversed.']);
+        }if (FinanceLedgerEntry::where('reversal_of_id', $entry->id)->exists()) {
+            throw ValidationException::withMessages(['entry' => 'This entry was already reversed.']);
+        }
+
+        return DB::transaction(function () use ($entry, $reason, $userId) {
+            app(AccountingPostingService::class)->reverseForLegacyEntry($entry, $reason, $userId);
+            $reversal = FinanceLedgerEntry::create(['school_id' => $entry->school_id, 'term_id' => $entry->term_id, 'financial_account_id' => $entry->financial_account_id, 'reference' => 'REV-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)), 'entry_type' => 'reversal', 'direction' => $entry->direction === 'credit' ? 'debit' : 'credit', 'amount' => $entry->amount, 'description' => 'Reversal of '.$entry->reference.': '.$reason, 'status' => 'posted', 'recorded_by' => $userId, 'approved_by' => $userId, 'approved_at' => now(), 'reversal_of_id' => $entry->id, 'reversal_reason' => $reason, 'posted_at' => now()]);
+            $entry->update(['status' => 'reversed', 'reversal_reason' => $reason]);
+            $this->postToPool($reversal, $userId);
+
+            return $reversal;
+        });
+    }
+
+    public function reject(FinanceLedgerEntry $entry, string $reason, int $userId): FinanceLedgerEntry
+    {
+        if ($entry->status !== 'pending') {
+            throw ValidationException::withMessages(['entry' => 'Only pending entries can be rejected.']);
+        }if ($entry->recorded_by === $userId) {
+            throw ValidationException::withMessages(['entry' => 'A different authorized user must reject this entry.']);
+        }$entry->update(['status' => 'rejected', 'approved_by' => $userId, 'approved_at' => now(), 'reversal_reason' => $reason]);
+
+        return $entry;
+    }
+
+    public function reconcile(int $schoolId, int $accountId, string $date, float $statement, ?string $notes, int $userId): FinanceReconciliation
+    {
+        $account = FinancialAccount::where('school_id', $schoolId)->findOrFail($accountId);
+        $existing = FinanceReconciliation::where(['school_id' => $schoolId, 'financial_account_id' => $accountId, 'period_ending' => $date])->first();
+        if ($existing?->status === 'closed') {
+            throw ValidationException::withMessages(['period_ending' => 'This period is locked. Reopen it with a reason before changing it.']);
+        }$base = FinanceLedgerEntry::where('school_id', $schoolId)->where('financial_account_id', $accountId)->whereIn('status', ['posted', 'reversed'])->whereDate('posted_at', '<=', $date);
+        $ledger = (float) $account->opening_balance + (float) (clone $base)->where('direction', 'credit')->sum('amount') - (float) (clone $base)->where('direction', 'debit')->sum('amount');
+
+        return FinanceReconciliation::updateOrCreate(['school_id' => $schoolId, 'financial_account_id' => $accountId, 'period_ending' => $date], ['statement_balance' => $statement, 'ledger_balance' => $ledger, 'difference' => $statement - $ledger, 'notes' => $notes, 'reconciled_by' => $userId, 'reconciled_at' => now(), 'status' => 'closed', 'closed_at' => now()]);
+    }
+
+    public function reopen(FinanceReconciliation $item, string $reason, int $userId): void
+    {
+        $item->update(['status' => 'open', 'reopened_by' => $userId, 'reopen_reason' => $reason, 'reopened_at' => now(), 'closed_at' => null]);
+    }
+
+    public function approveTransfer(FinancialAccountTransfer $transfer, int $userId): void
+    {
+        DB::transaction(function () use ($transfer, $userId) {
+            $transfer = FinancialAccountTransfer::lockForUpdate()->findOrFail($transfer->id);
+            if ($transfer->status !== 'pending') {
+                throw ValidationException::withMessages(['transfer' => 'Only pending transfers can be approved.']);
+            }if ($transfer->recorded_by === $userId) {
+                throw ValidationException::withMessages(['transfer' => 'A different authorized user must approve this transfer.']);
+            }
+            app(AccountingPostingService::class)->postTransfer($transfer, $userId);
+            $transfer->update(['status' => 'posted', 'approved_by' => $userId, 'approved_at' => now()]);
+            foreach ([[$transfer->from_account_id, 'debit', 'transfer_out'], [$transfer->to_account_id, 'credit', 'transfer_in']] as [$account,$direction,$type]) {
+                $entry = FinanceLedgerEntry::create(['school_id' => $transfer->school_id, 'financial_account_id' => $account, 'source_type' => $type, 'source_id' => $transfer->id, 'reference' => 'TRF-'.strtoupper($direction).'-'.$transfer->id, 'entry_type' => 'account_transfer', 'direction' => $direction, 'amount' => $transfer->amount, 'description' => 'Account transfer '.($transfer->reference ?: $transfer->id), 'status' => 'posted', 'recorded_by' => $transfer->recorded_by, 'approved_by' => $userId, 'approved_at' => now(), 'posted_at' => $transfer->transfer_date]);
+                CashPoolEntry::create(['school_id' => $transfer->school_id, 'financial_account_id' => $account, 'financial_account_transfer_id' => $transfer->id, 'finance_ledger_entry_id' => $entry->id, 'direction' => $direction, 'amount' => $transfer->amount, 'description' => $entry->description, 'transacted_at' => $transfer->transfer_date, 'recorded_by' => $userId]);
+            }
+        });
+    }
+
+    private function postToPool(FinanceLedgerEntry $entry, int $userId): CashPoolEntry
+    {
+        $links = ['fee_payment_id' => null, 'expense_id' => null, 'payroll_run_id' => null];
+        if ($entry->source_type === FeePayment::class) {
+            $links['fee_payment_id'] = $entry->source_id;
+        }if ($entry->source_type === Expense::class) {
+            $links['expense_id'] = $entry->source_id;
+        }if ($entry->source_type === PayrollRun::class) {
+            $links['payroll_run_id'] = $entry->source_id;
+        }
+
+        return CashPoolEntry::firstOrCreate(['finance_ledger_entry_id' => $entry->id], $links + ['school_id' => $entry->school_id, 'term_id' => $entry->term_id, 'financial_account_id' => $entry->financial_account_id, 'direction' => $entry->direction, 'amount' => $entry->amount, 'description' => $entry->description, 'transacted_at' => $entry->posted_at ?? now(), 'recorded_by' => $userId]);
+    }
+}

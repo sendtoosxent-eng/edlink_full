@@ -2,9 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\AccountingSetupService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Schema;
 
 class School extends Model
@@ -39,7 +43,12 @@ class School extends Model
             }
         });
         static::created(function (School $school): void {
-            if (Schema::hasTable('financial_accounts')) FinancialAccount::ensureDefaults($school);
+            if (Schema::hasTable('financial_accounts')) {
+                FinancialAccount::ensureDefaults($school);
+            }
+            if (Schema::hasTable('ledger_accounts')) {
+                app(AccountingSetupService::class)->activate($school);
+            }
         });
     }
 
@@ -128,6 +137,7 @@ class School extends Model
         return in_array($this->license_status, ['active', 'trial'], true)
             && (! $this->license_expires_at || $this->license_expires_at->isFuture());
     }
+
     public function isExpiredDemo(): bool
     {
         return $this->is_demo && $this->demo_expires_at && $this->demo_expires_at->isPast();

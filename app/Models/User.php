@@ -2,22 +2,23 @@
 
 namespace App\Models;
 
-use App\Notifications\QueuedVerifyEmail;
 use App\Notifications\QueuedResetPassword;
+use App\Notifications\QueuedVerifyEmail;
 use App\Support\TeacherAcademicScope;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     protected static function booted(): void
@@ -75,7 +76,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function canViewGroupDashboard(): bool
     {
-        if (! $this->school?->school_group_id) return false;
+        if (! $this->school?->school_group_id) {
+            return false;
+        }
+
         return $this->schoolAccesses()->where('school_group_id', $this->school->school_group_id)
             ->wherePivot('can_view_group', true)->exists();
     }
@@ -87,10 +91,18 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasModuleAccess(string $module): bool
     {
-        if ($this->isSuperadmin() || $this->role === 'admin') return true;
-        if (in_array($this->role, ['student', 'parent'], true)) return true;
-        if ($this->exists && TeacherAcademicScope::grantsMappedModule($this, $module)) return true;
-        if (! $this->designation_id) return false;
+        if ($this->isSuperadmin() || $this->role === 'admin') {
+            return true;
+        }
+        if (in_array($this->role, ['student', 'parent'], true)) {
+            return true;
+        }
+        if ($this->exists && TeacherAcademicScope::grantsMappedModule($this, $module)) {
+            return true;
+        }
+        if (! $this->designation_id) {
+            return false;
+        }
 
         return collect($this->designation?->permissions ?? [])
             ->contains(fn (string $permission) => $permission === $module || str_starts_with($permission, $module.'.'));
@@ -98,12 +110,26 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasPermission(string $permission): bool
     {
-        if ($this->isSuperadmin() || $this->role === 'admin') return true;
-        if ($this->exists && TeacherAcademicScope::grantsMappedPermission($this, $permission)) return true;
-        if (! $this->designation_id) return false;
+        if ($this->isSuperadmin()) {
+            return true;
+        }
+        if ($this->role === 'admin' && ! str_starts_with($permission, 'accounting.')) {
+            return true;
+        }
+        if ($this->role === 'admin' && in_array($permission, ['accounting.dashboard.view', 'accounting.accounts.view', 'accounting.accounts.manage', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.reports.export'], true)) {
+            return true;
+        }
+        if ($this->exists && TeacherAcademicScope::grantsMappedPermission($this, $permission)) {
+            return true;
+        }
+        if (! $this->designation_id) {
+            return false;
+        }
 
         $permissions = collect($this->designation?->permissions ?? []);
-        if ($permissions->contains($permission)) return true;
+        if ($permissions->contains($permission)) {
+            return true;
+        }
 
         $module = str($permission)->before('.')->toString();
         $hasGranularRights = $permissions->contains(fn (string $item) => str_starts_with($item, $module.'.'));
@@ -113,7 +139,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function portalHomeRoute(): string
     {
-        if (in_array($this->role, ['parent', 'student'], true)) return 'portal.home';
+        if (in_array($this->role, ['parent', 'student'], true)) {
+            return 'portal.home';
+        }
+
         return ($this->designation_id || in_array($this->role, ['teacher', 'bursar'], true)) ? 'workbench.home' : 'dashboard';
     }
 

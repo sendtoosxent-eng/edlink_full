@@ -20,7 +20,7 @@
 
             <div class="flex flex-col items-start gap-3 sm:items-end">
             @if($canApproveAdjustments)
-                <a href="{{ url('/finance/payments?screen=adjustments') }}" class="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-900 shadow-sm hover:bg-amber-400">
+                <a href="{{ route('fee-adjustments.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-900 shadow-sm hover:bg-amber-400">
                     Review Fee Adjustments
                     @if($pendingAdjustments->isNotEmpty())<span class="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] text-slate-950">{{ $pendingAdjustments->count() }}</span>@endif
                 </a>
@@ -239,6 +239,8 @@
                             <option value="other">Other</option>
                         </select>
                     </div>
+
+                    <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Deposit account</label><select wire:model="financialAccountId" class="w-full text-xs px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl"><option value="">Select mapped account</option>@foreach($method==='other'?$paymentAccounts:$paymentAccounts->where('type',$method==='mobile_money'?'mobile_money':$method) as $account)<option value="{{ $account->id }}">{{ $account->name }} · {{ $account->currency }}</option>@endforeach</select>@error('financialAccountId')<span class="text-rose-500 text-xs">{{ $message }}</span>@enderror</div>
 
                     @if($method==='mobile_money')
                         <div>

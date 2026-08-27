@@ -108,6 +108,8 @@ class PublicDemoSchoolsSeeder extends Seeder
             }
         }
 
+        $this->call(SchoolTypeAccountingDemoSeeder::class);
+
         $this->command?->info('Four public demo school types with two branches each are ready.');
     }
 

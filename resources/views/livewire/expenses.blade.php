@@ -78,7 +78,7 @@
             <div>
                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Term Expenditure</span>
                 <div class="flex items-baseline gap-2 mt-1">
-                    <span class="text-xs font-bold text-gray-400">UGX</span>
+                    <span class="text-xs font-bold text-gray-400">{{ $currency }}</span>
                     <span class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ number_format($total) }}</span>
                 </div>
             </div>
@@ -132,13 +132,26 @@
                     </div>
 
                     <div class="grid sm:grid-cols-2 gap-5">
+                        <div><label class="block text-xs font-medium text-gray-700 mb-1.5">Expense or asset account <span class="text-rose-500">*</span></label><select wire:model="expenseLedgerAccountId" class="w-full bg-gray-50/50 border border-gray-200 text-sm rounded-xl px-3.5 py-2.5"><option value="">Select posting account</option>@foreach($expenseAccounts as $account)<option value="{{ $account->id }}">{{ $account->code }} · {{ $account->name }}</option>@endforeach</select>@error('expenseLedgerAccountId')<span class="text-rose-500 text-xs">{{ $message }}</span>@enderror</div>
+                        <div><label class="block text-xs font-medium text-gray-700 mb-1.5">Settlement <span class="text-rose-500">*</span></label><select wire:model.live="settlementType" class="w-full bg-gray-50/50 border border-gray-200 text-sm rounded-xl px-3.5 py-2.5"><option value="immediate">Pay immediately</option><option value="credit">Supplier credit / payable</option></select></div>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-5">
+                        <div><label class="block text-xs font-medium text-gray-700 mb-1.5">{{ $settlementType==='credit'?'Supplier / payee':'Payee' }}</label><input wire:model="payee" class="w-full bg-gray-50/50 border border-gray-200 text-sm rounded-xl px-3.5 py-2.5" placeholder="Name of supplier or recipient"></div>
+                        @if($settlementType==='immediate')<div><label class="block text-xs font-medium text-gray-700 mb-1.5">Payment account <span class="text-rose-500">*</span></label><select wire:model="financialAccountId" class="w-full bg-gray-50/50 border border-gray-200 text-sm rounded-xl px-3.5 py-2.5"><option value="">Select cash, bank or mobile money</option>@foreach($financialAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }} · {{ $account->currency }}</option>@endforeach</select>@error('financialAccountId')<span class="text-rose-500 text-xs">{{ $message }}</span>@enderror</div>@else<div class="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Approval will credit Supplier Payables. Record the later supplier payment separately.</div>@endif
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-5">
+                        <div><label class="block text-xs font-medium text-gray-700 mb-1.5">Cost centre</label><select wire:model="costCentreId" class="w-full bg-gray-50/50 border border-gray-200 text-sm rounded-xl px-3.5 py-2.5"><option value="">General / none</option>@foreach($costCentres as $item)<option value="{{ $item->id }}">{{ $item->code }} · {{ $item->name }}</option>@endforeach</select></div>
+                        <div><label class="block text-xs font-medium text-gray-700 mb-1.5">Fund / project</label><select wire:model="fundId" class="w-full bg-gray-50/50 border border-gray-200 text-sm rounded-xl px-3.5 py-2.5"><option value="">General / none</option>@foreach($funds as $item)<option value="{{ $item->id }}">{{ $item->code }} · {{ $item->name }}</option>@endforeach</select></div>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1.5">Receipt / Voucher Number</label>
                             <input type="text" wire:model="reference_number" placeholder="e.g. PV-2026-001" autocomplete="off" class="w-full bg-gray-50/50 border border-gray-200 text-gray-800 text-sm font-mono uppercase rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-400/20 focus:outline-none transition placeholder:normal-case placeholder:font-sans">
                             @error('reference_number') <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1.5">Amount (UGX) <span class="text-rose-500">*</span></label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1.5">Amount ({{ $currency }}) <span class="text-rose-500">*</span></label>
                             <input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" class="w-full bg-gray-50/50 border border-gray-200 text-gray-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-400/20 focus:outline-none transition">
                             @error('amount') <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
@@ -184,7 +197,7 @@
                         <th class="px-6 py-3.5 font-semibold">Voucher Ref</th>
                         <th class="px-6 py-3.5 font-semibold">Category</th>
                         <th class="px-6 py-3.5 font-semibold">Description</th>
-                        <th class="px-6 py-3.5 font-semibold text-right">Amount (UGX)</th>
+                        <th class="px-6 py-3.5 font-semibold text-right">Amount ({{ $currency }})</th>
                         <th class="px-6 py-3.5 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>

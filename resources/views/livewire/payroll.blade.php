@@ -216,6 +216,8 @@
                             @error('method') <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-600"><svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</p> @enderror
                         </div>
 
+                        <div><label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Payment account</label><select wire:model="financialAccountId" class="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-sm"><option value="">Select mapped account</option>@foreach($paymentAccounts->where('type',$method) as $account)<option value="{{ $account->id }}">{{ $account->name }} · {{ $account->currency }}</option>@endforeach</select>@error('financialAccountId')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror</div>
+
                         @if ($method === 'mobile_money')
                             <div>
                                 <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Transaction ID</label>

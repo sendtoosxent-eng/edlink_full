@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\FinanceLedgerEntry;
 use App\Models\FinanceReconciliation;
 use App\Models\FinancialAccount;
 use App\Models\FinancialAccountTransfer;
-use App\Models\AuditLog;
 use App\Models\PrivacyRequest;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\SystemBackup;
 use App\Services\FinanceLedgerService;
@@ -39,7 +40,7 @@ class SchoolOperationsController extends Controller
             'entries' => FinanceLedgerEntry::where('school_id', $schoolId)->latest()->paginate(30),
             'reconciliations' => FinanceReconciliation::where('school_id', $schoolId)->latest('period_ending')->limit(12)->get(),
             'accounts' => FinancialAccount::where('school_id', $schoolId)->where('is_active', true)->orderBy('name')->get(),
-            'transfers' => FinancialAccountTransfer::with(['fromAccount','toAccount'])->where('school_id', $schoolId)->latest()->limit(20)->get(),
+            'transfers' => FinancialAccountTransfer::with(['fromAccount', 'toAccount'])->where('school_id', $schoolId)->latest()->limit(20)->get(),
         ]);
     }
 
@@ -60,6 +61,7 @@ class SchoolOperationsController extends Controller
         $data = $request->validate(['reason' => 'required|string|min:8|max:500']);
         $ledger->reject($entry, $data['reason'], auth()->id());
         AuditLog::record($entry->school_id, 'finance.ledger.rejected', $entry, ['reason' => $data['reason']]);
+
         return back()->with('status', 'Transaction rejected; it did not enter the cash pool.');
     }
 
@@ -92,40 +94,47 @@ class SchoolOperationsController extends Controller
     public function storeAccount(Request $request)
     {
         $this->authorizeLedgerAccess();
-        $data = $request->validate(['name'=>'required|string|max:100','type'=>'required|in:cash,bank,mobile_money,petty_cash','opening_balance'=>'required|numeric']);
-        $account = FinancialAccount::create($data + ['school_id'=>auth()->user()->school_id,'currency'=>'UGX']);
+        $data = $request->validate(['name' => 'required|string|max:100', 'type' => 'required|in:cash,bank,mobile_money,petty_cash', 'opening_balance' => 'required|numeric']);
+        $currency = (string) SchoolSetting::getValue(auth()->user()->school_id, 'currency', 'UGX');
+        $account = FinancialAccount::create($data + ['school_id' => auth()->user()->school_id, 'currency' => $currency]);
         AuditLog::record($account->school_id, 'finance.account.created', $account);
+
         return back()->with('status', 'Financial account created.');
     }
 
     public function storeTransfer(Request $request)
     {
         $this->authorizeLedgerAccess();
-        $data=$request->validate(['from_account_id'=>'required|different:to_account_id','to_account_id'=>'required','amount'=>'required|numeric|min:0.01','transfer_date'=>'required|date','reference'=>'nullable|string|max:100','notes'=>'nullable|string|max:500']);
-        $school=auth()->user()->school_id;
-        foreach (['from_account_id','to_account_id'] as $key) abort_unless(FinancialAccount::where('school_id',$school)->whereKey($data[$key])->exists(),404);
-        $transfer=FinancialAccountTransfer::create($data+['school_id'=>$school,'status'=>'pending','recorded_by'=>auth()->id()]);
-        AuditLog::record($school,'finance.transfer.recorded',$transfer);
-        return back()->with('status','Transfer recorded and awaiting approval by another user.');
+        $data = $request->validate(['from_account_id' => 'required|different:to_account_id', 'to_account_id' => 'required', 'amount' => 'required|numeric|min:0.01', 'transfer_date' => 'required|date', 'reference' => 'nullable|string|max:100', 'notes' => 'nullable|string|max:500']);
+        $school = auth()->user()->school_id;
+        foreach (['from_account_id', 'to_account_id'] as $key) {
+            abort_unless(FinancialAccount::where('school_id', $school)->whereKey($data[$key])->exists(), 404);
+        }
+        $transfer = FinancialAccountTransfer::create($data + ['school_id' => $school, 'status' => 'pending', 'recorded_by' => auth()->id()]);
+        AuditLog::record($school, 'finance.transfer.recorded', $transfer);
+
+        return back()->with('status', 'Transfer recorded and awaiting approval by another user.');
     }
 
     public function approveTransfer(FinancialAccountTransfer $transfer, FinanceLedgerService $ledger)
     {
         $this->authorizeLedgerAccess();
-        abort_unless($transfer->school_id===auth()->user()->school_id,404);
-        $ledger->approveTransfer($transfer,auth()->id());
-        AuditLog::record($transfer->school_id,'finance.transfer.approved',$transfer);
-        return back()->with('status','Transfer approved and both account balances updated.');
+        abort_unless($transfer->school_id === auth()->user()->school_id, 404);
+        $ledger->approveTransfer($transfer, auth()->id());
+        AuditLog::record($transfer->school_id, 'finance.transfer.approved', $transfer);
+
+        return back()->with('status', 'Transfer approved and both account balances updated.');
     }
 
     public function reopenReconciliation(Request $request, FinanceReconciliation $reconciliation, FinanceLedgerService $ledger)
     {
         $this->authorizeLedgerAccess();
-        abort_unless($reconciliation->school_id===auth()->user()->school_id,404);
-        $data=$request->validate(['reason'=>'required|string|min:8|max:500']);
-        $ledger->reopen($reconciliation,$data['reason'],auth()->id());
-        AuditLog::record($reconciliation->school_id,'finance.reconciliation.reopened',$reconciliation,['reason'=>$data['reason']]);
-        return back()->with('status','Reconciliation reopened. It may now be corrected and closed again.');
+        abort_unless($reconciliation->school_id === auth()->user()->school_id, 404);
+        $data = $request->validate(['reason' => 'required|string|min:8|max:500']);
+        $ledger->reopen($reconciliation, $data['reason'], auth()->id());
+        AuditLog::record($reconciliation->school_id, 'finance.reconciliation.reopened', $reconciliation, ['reason' => $data['reason']]);
+
+        return back()->with('status', 'Reconciliation reopened. It may now be corrected and closed again.');
     }
 
     public function privacy()
@@ -178,7 +187,7 @@ class SchoolOperationsController extends Controller
             $privacyRequest->update(['status' => 'completed', 'result' => ['delivered_at' => now()->toISOString()], 'completed_at' => now()]);
 
             return response()->streamDownload(
-                static fn () => print($json),
+                static fn () => print ($json),
                 'edlink-privacy-export.json',
                 ['Content-Type' => 'application/json', 'Cache-Control' => 'no-store, private'],
             );
@@ -239,7 +248,3 @@ class SchoolOperationsController extends Controller
         return $payload;
     }
 }
-
-
-
-

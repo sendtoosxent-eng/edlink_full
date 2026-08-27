@@ -2,12 +2,14 @@
 
 namespace App\Livewire;
 
-use App\Models\CashPoolEntry;
+use App\Models\FinancialAccount;
 use App\Models\PayrollRun;
+use App\Models\SchoolSetting;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -15,24 +17,41 @@ use Livewire\Component;
 class Payroll extends Component
 {
     public string $period = '';
+
     public string $search = '';
+
     public ?int $selectedStaffId = null;
+
     public string $paymentType = 'salary';
+
     public string $amount = '';
+
     public string $method = 'cash';
+
+    public string $financialAccountId = '';
+
     public string $transactionId = '';
+
     public string $bankSlipNumber = '';
+
     public string $notes = '';
+
     public string $paidOn = '';
 
     public function mount(): void
     {
         $this->period = now()->format('Y-m');
         $this->paidOn = now()->toDateString();
+        $this->syncFinancialAccount();
         $staffId = request()->integer('staff');
         if ($staffId) {
             $this->selectStaff($staffId);
         }
+    }
+
+    public function updatedMethod(): void
+    {
+        $this->syncFinancialAccount();
     }
 
     public function updatedPeriod(): void
@@ -84,6 +103,7 @@ class Payroll extends Component
             'paymentType' => ['required', 'in:salary,advance'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'method' => ['required', 'in:cash,mobile_money,bank'],
+            'financialAccountId' => ['required', Rule::exists('financial_accounts', 'id')->where('school_id', $school->id)->where('is_active', true)],
             'transactionId' => [$this->method === 'mobile_money' ? 'required' : 'nullable', 'string', 'max:100'],
             'bankSlipNumber' => [$this->method === 'bank' ? 'required' : 'nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -92,18 +112,22 @@ class Payroll extends Component
 
         $summary = $this->summaryFor($staff);
         if ((float) $this->amount > $summary['remaining']) {
-            $this->addError('amount', 'This amount exceeds the UGX '.number_format($summary['remaining']).' remaining for '.$this->period.'.');
+            $currency = (string) SchoolSetting::getValue($school->id, 'currency', 'UGX');
+            $this->addError('amount', 'This amount exceeds the '.$currency.' '.number_format($summary['remaining']).' remaining for '.$this->period.'.');
+
             return;
         }
 
         if ($summary['remaining'] <= 0) {
             $this->addError('amount', 'This employee has already received the full amount due for this period.');
+
             return;
         }
 
         DB::transaction(function () use ($school, $term, $staff): void {
             $run = PayrollRun::create([
                 'school_id' => $school->id,
+                'financial_account_id' => $this->financialAccountId,
                 'term_id' => $term?->id,
                 'period' => $this->period,
                 'user_id' => $staff->id,
@@ -120,7 +144,8 @@ class Payroll extends Component
         });
 
         $type = $this->paymentType === 'advance' ? 'Salary advance' : 'Salary payment';
-        session()->flash('status', $type.' of UGX '.number_format((float) $this->amount).' recorded for '.$staff->name.' and sent for approval.');
+        $currency = (string) SchoolSetting::getValue($school->id, 'currency', 'UGX');
+        session()->flash('status', $type.' of '.$currency.' '.number_format((float) $this->amount).' recorded for '.$staff->name.' and sent for approval.');
         $this->reset(['transactionId', 'bankSlipNumber', 'notes']);
         $this->method = 'cash';
         $this->paymentType = 'salary';
@@ -170,6 +195,7 @@ class Payroll extends Component
     {
         if (! $this->selectedStaffId) {
             $this->amount = '';
+
             return;
         }
 
@@ -206,6 +232,12 @@ class Payroll extends Component
             'recentPayments' => $recentPayments,
             'term' => $school->currentTerm(),
             'pageTitle' => 'Payroll',
+            'paymentAccounts' => FinancialAccount::where('school_id', $school->id)->where('is_active', true)->whereNotNull('ledger_account_id')->orderBy('name')->get(),
         ]);
+    }
+
+    private function syncFinancialAccount(): void
+    {
+        $this->financialAccountId = (string) FinancialAccount::where('school_id', Auth::user()->school_id)->where('type', $this->method)->where('is_active', true)->whereNotNull('ledger_account_id')->value('id');
     }
 }

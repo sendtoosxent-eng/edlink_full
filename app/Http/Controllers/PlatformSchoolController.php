@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PlatformAuditLog;
 use App\Models\DemoRegistration;
+use App\Models\PlatformAuditLog;
 use App\Models\School;
 use App\Models\User;
 use App\Support\SubscriptionPlans;
@@ -11,10 +11,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Validation\Rule;
-use Illuminate\View\View;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class PlatformSchoolController extends Controller
 {
@@ -31,7 +31,10 @@ class PlatformSchoolController extends Controller
         return view('platform.schools.index', compact('schools', 'search'));
     }
 
-    public function create(): View { return view('platform.schools.create', ['plans'=>SubscriptionPlans::PLANS]); }
+    public function create(): View
+    {
+        return view('platform.schools.create', ['plans' => SubscriptionPlans::PLANS]);
+    }
 
     public function store(Request $request): RedirectResponse
     {
@@ -102,6 +105,7 @@ class PlatformSchoolController extends Controller
     public function licences(): View
     {
         $schools = School::withCount(['students as active_students_count' => fn ($query) => $query->where('status', 'active')])->orderBy('name')->get();
+
         return view('platform.licences.index', ['schools' => $schools, 'plans' => SubscriptionPlans::PLANS]);
     }
 
@@ -199,6 +203,24 @@ class PlatformSchoolController extends Controller
             }
 
             // Users are nullable on school deletion, so remove tenant accounts explicitly.
+            // A deliberate platform-level demo purge may remove accounting evidence; normal
+            // operational deletion remains restricted so posted evidence cannot disappear.
+            DB::table('accounting_budget_lines')->whereIn('accounting_budget_id', DB::table('accounting_budgets')->where('school_id', $school->id)->select('id'))->delete();
+            DB::table('accounting_budgets')->where('school_id', $school->id)->delete();
+            DB::table('student_fee_assessments')->where('school_id', $school->id)->delete();
+            DB::table('accounting_journal_lines')->where('school_id', $school->id)->delete();
+            DB::table('accounting_journals')->where('school_id', $school->id)->whereNotNull('reversal_of_id')->delete();
+            DB::table('accounting_journals')->where('school_id', $school->id)->delete();
+            DB::table('account_mappings')->where('school_id', $school->id)->delete();
+            DB::table('financial_accounts')->where('school_id', $school->id)->update(['ledger_account_id' => null]);
+            while (DB::table('ledger_accounts')->where('school_id', $school->id)->exists()) {
+                DB::table('ledger_accounts')->where('school_id', $school->id)->whereNotIn('id', DB::table('ledger_accounts')->where('school_id', $school->id)->whereNotNull('parent_id')->select('parent_id'))->delete();
+            }
+            DB::table('cost_centres')->where('school_id', $school->id)->delete();
+            DB::table('accounting_funds')->where('school_id', $school->id)->delete();
+            DB::table('accounting_suppliers')->where('school_id', $school->id)->delete();
+            DB::table('accounting_periods')->where('school_id', $school->id)->delete();
+            DB::table('fiscal_years')->where('school_id', $school->id)->delete();
             $school->users()->delete();
             $school->delete();
 
@@ -251,6 +273,7 @@ class PlatformSchoolController extends Controller
                 'user_agent' => str($request->userAgent() ?? '')->limit(500)->toString() ?: null,
             ]);
         });
+
         return back()->with('status', $school->name.' licence was updated.');
     }
 }

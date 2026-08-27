@@ -88,7 +88,7 @@
     <!-- Sidebar -->
     <aside id="app-sidebar" class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden border-r border-white/5 shadow-2xl"
         :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        x-data="{ open: '' }">
+        x-data="{ open: 'students' }">
 
         <!-- Logo Container -->
         <div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed && 'justify-center px-0'">
@@ -171,6 +171,9 @@
                     ['label' => 'Expenses', 'route' => 'expenses.index'],
                     ['label' => 'Ledger & Reconciliation', 'route' => 'finance.ledger'],
                 ]],
+                'accounting' => ['label' => 'Accounting', 'icon' => 'M4 19.5h16M5.5 17V9.5m4 7.5V9.5m5 7.5V9.5m4 7.5V9.5M3 7l9-4 9 4H3z', 'routes' => ['accounting.index', 'accounting.exports'], 'items' => [
+                    ['label' => 'Accounting Workspace', 'route' => 'accounting.index'],
+                ]],
                 'exams' => ['label' => 'Exams', 'icon' => 'M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2h-2', 'routes' => ['exams.setup', 'exams.marks', 'exams.results'], 'items' => [
                     ['label' => 'Create Exam', 'route' => 'exams.setup'],
                     ['label' => 'Enter Marks', 'route' => 'exams.marks'],
@@ -216,7 +219,7 @@
                             @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
                             @php($requiredPermission = match($item['route']) {
                                 'students.index', 'graduates.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
-                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger',
+                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger', 'accounting.index' => 'accounting.dashboard.view',
                                 'attendance.index' => 'attendance.daily', 'attendance.subject' => 'attendance.subject', 'attendance.reports' => 'attendance.reports',
                                 'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
                                 'exams.setup' => 'exams.setup', 'exams.marks' => 'exams.marks', 'exams.results' => 'exams.results',
