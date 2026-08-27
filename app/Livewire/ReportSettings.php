@@ -14,6 +14,9 @@ class ReportSettings extends Component
     public string $stage = '';
     public string $passMark = '50';
     public string $bestSubjects = '8';
+    public string $calculationMethod = 'single_exam';
+    public string $missingAssessmentRule = 'incomplete';
+    public array $assessmentWeights = [];
     public string $showPosition = 'enabled';
     public string $showFees = 'enabled';
     public string $showAttendance = 'enabled';
@@ -46,6 +49,11 @@ class ReportSettings extends Component
             'stage' => 'required|in:primary,lower_secondary,advanced_level,kindergarten',
             'passMark' => 'required|numeric|min:0|max:100',
             'bestSubjects' => 'required|integer|min:1|max:20',
+            'calculationMethod' => 'required|in:single_exam,weighted,average,best_exam',
+            'missingAssessmentRule' => 'required|in:incomplete,zero,redistribute',
+            'assessmentWeights' => 'array|max:12',
+            'assessmentWeights.*.name' => 'required_if:calculationMethod,weighted|nullable|string|max:100',
+            'assessmentWeights.*.weight' => 'required_if:calculationMethod,weighted|nullable|numeric|min:0.01|max:100',
             'nextTermStarts' => 'nullable|date',
             'footer' => 'nullable|string|max:1000',
             'showMarks' => 'required|in:enabled,disabled',
@@ -56,10 +64,18 @@ class ReportSettings extends Component
             'showRemarks' => 'required|in:enabled,disabled',
         ]);
 
+        if ($this->calculationMethod === 'weighted' && abs(collect($this->assessmentWeights)->sum(fn ($row) => (float) ($row['weight'] ?? 0)) - 100) > 0.01) {
+            $this->addError('assessmentWeights', 'Assessment weights must add up to exactly 100%.');
+            return;
+        }
+
         $prefix = "report_{$this->stage}_";
         foreach ([
             'pass_mark' => $this->passMark,
             'best_subjects' => $this->bestSubjects,
+            'calculation_method' => $this->calculationMethod,
+            'missing_assessment_rule' => $this->missingAssessmentRule,
+            'assessment_weights' => json_encode(array_values($this->assessmentWeights)),
             'show_position' => $this->showPosition,
             'show_fees' => $this->showFees,
             'show_attendance' => $this->showAttendance,
@@ -89,6 +105,9 @@ class ReportSettings extends Component
         $defaults = SchoolAcademicSetup::defaultReportSettings($this->stage);
         $this->passMark = $values[$prefix.'pass_mark'] ?? (string) $defaults['pass_mark'];
         $this->bestSubjects = $values[$prefix.'best_subjects'] ?? (string) $defaults['best_subjects'];
+        $this->calculationMethod = $values[$prefix.'calculation_method'] ?? $defaults['calculation_method'];
+        $this->missingAssessmentRule = $values[$prefix.'missing_assessment_rule'] ?? $defaults['missing_assessment_rule'];
+        $this->assessmentWeights = json_decode($values[$prefix.'assessment_weights'] ?? $defaults['assessment_weights'], true) ?: [];
         $this->showPosition = $values[$prefix.'show_position'] ?? $defaults['show_position'];
         $this->showFees = $values[$prefix.'show_fees'] ?? $defaults['show_fees'];
         $this->showAttendance = $values[$prefix.'show_attendance'] ?? $defaults['show_attendance'];
@@ -101,6 +120,17 @@ class ReportSettings extends Component
         $this->showRemarks = $values[$prefix.'show_remarks'] ?? $defaults['show_remarks'];
         $this->nextTermStarts = $values[$prefix.'next_term_starts'] ?? $defaults['next_term_starts'];
         $this->footer = $values[$prefix.'footer'] ?? $defaults['footer'];
+    }
+
+    public function addAssessmentWeight(): void
+    {
+        $this->assessmentWeights[] = ['name' => '', 'weight' => ''];
+    }
+
+    public function removeAssessmentWeight(int $index): void
+    {
+        unset($this->assessmentWeights[$index]);
+        $this->assessmentWeights = array_values($this->assessmentWeights);
     }
 
     private function authorizeManagement(): void

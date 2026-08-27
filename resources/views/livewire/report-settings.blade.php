@@ -69,6 +69,36 @@
             </div>
 
             <!-- Show Class Position -->
+            <div class="sm:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">
+                <div class="border-b border-slate-200 bg-white px-5 py-4">
+                    <h3 class="text-sm font-extrabold text-slate-900">Result Calculation</h3>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Control how examinations are combined into the final subject result for this stage.</p>
+                </div>
+                <div class="grid gap-4 p-5 sm:grid-cols-2">
+                    <label><span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Calculation Method</span><select wire:model.live="calculationMethod" class="w-full rounded-xl border-slate-200 bg-white text-sm font-semibold focus:border-amber-500 focus:ring-amber-500/20"><option value="single_exam">Single selected examination</option><option value="weighted">Weighted examinations</option><option value="average">Average all examinations equally</option><option value="best_exam">Use best examination</option></select></label>
+                    <label><span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Missing Assessment</span><select wire:model="missingAssessmentRule" class="w-full rounded-xl border-slate-200 bg-white text-sm font-semibold focus:border-amber-500 focus:ring-amber-500/20"><option value="incomplete">Mark result incomplete</option><option value="zero">Treat missing score as zero</option><option value="redistribute">Redistribute available weights</option></select></label>
+                    @if($calculationMethod === 'weighted')
+                        <div class="sm:col-span-2 rounded-xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-extrabold text-slate-800">Assessment weights</p><p class="text-[11px] text-slate-400">Names must match the examination names created in Exam Setup.</p></div><button type="button" wire:click="addAssessmentWeight" class="rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white">Add assessment</button></div>
+                            <div class="mt-3 space-y-2">
+                                @forelse($assessmentWeights as $index => $assessment)
+                                    <div class="grid grid-cols-[1fr_110px_36px] gap-2" wire:key="assessment-weight-{{$index}}">
+                                        <input wire:model="assessmentWeights.{{$index}}.name" placeholder="e.g. Mid Term" class="rounded-xl border-slate-200 bg-slate-50 text-sm focus:border-amber-500 focus:ring-amber-500/20">
+                                        <div class="relative"><input wire:model="assessmentWeights.{{$index}}.weight" type="number" min="0.01" max="100" step="0.01" placeholder="Weight" class="w-full rounded-xl border-slate-200 bg-slate-50 pr-7 text-sm focus:border-amber-500 focus:ring-amber-500/20"><span class="pointer-events-none absolute right-3 top-2.5 text-xs font-bold text-slate-400">%</span></div>
+                                        <button type="button" wire:click="removeAssessmentWeight({{$index}})" class="rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50" aria-label="Remove assessment"><i class="fa fa-times"></i></button>
+                                    </div>
+                                @empty
+                                    <button type="button" wire:click="addAssessmentWeight" class="w-full rounded-xl border border-dashed border-slate-300 p-4 text-xs font-bold text-slate-500">Add the first assessment and its weight</button>
+                                @endforelse
+                            </div>
+                            <div class="mt-3 flex justify-between text-xs"><span class="text-slate-500">Weights must equal 100%.</span><b class="{{ abs(collect($assessmentWeights)->sum(fn($row)=>(float)($row['weight']??0))-100)<0.01?'text-emerald-600':'text-amber-700' }}">Total: {{number_format(collect($assessmentWeights)->sum(fn($row)=>(float)($row['weight']??0)),1)}}%</b></div>
+                            @error('assessmentWeights')<p class="mt-2 text-[11px] font-semibold text-rose-600">{{$message}}</p>@enderror
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Show Class Position -->
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Show Class Position</label>
                 <div class="relative">

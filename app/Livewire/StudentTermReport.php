@@ -8,12 +8,11 @@ use App\Models\GradingScale;
 use App\Models\Student;
 use App\Models\StudentEnrolment;
 use App\Models\Term;
-use App\Services\TermReportCalculator;
+use App\Services\StageAssessmentCalculator;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -140,38 +139,33 @@ class StudentTermReport extends Component
         };
     }
 
-    protected function gradesFor(Student $student, Exam $exam): Collection
+    protected function gradesFor(Student $student, Exam $exam, Term $term, array $settings): Collection
     {
         $scales = GradingScale::where('school_id', $student->school_id)->where('education_stage', $exam->schoolClass->education_stage)->orderByDesc('minimum_percentage')->get();
-
-        $query = DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
-            ->join('exam_paper_submissions', 'exam_paper_submissions.exam_paper_id', '=', 'exam_papers.id')
-            ->join('subjects', 'subjects.id', '=', 'exam_papers.subject_id')
-            ->where('exam_marks.student_id', $student->id)->where('exam_papers.exam_id', $exam->id)
-            ->where('exam_paper_submissions.status', 'approved')->whereNotNull('exam_marks.score')
-            ->select('subjects.id as subject_id', 'subjects.name as subject_name', 'exam_marks.score', 'exam_papers.maximum_score', 'exam_papers.weighting');
+        $marks = StageAssessmentCalculator::marks($student, $term, $settings, $exam);
         $user = Auth::user();
         if (TeacherAcademicScope::isTeacher($user) && ! TeacherAcademicScope::classIds($user)->contains($exam->school_class_id)) {
             $subjectIds = TeacherAcademicScope::subjectAssignments($user, $exam->term_id)
                 ->where('school_class_id', $exam->school_class_id)->pluck('subject_id');
-            $query->whereIn('subjects.id', $subjectIds);
+            $marks = $marks->whereIn('subject_id', $subjectIds);
         }
 
-        return $query->orderBy('subjects.name')->get()->map(function (object $row) use ($scales): object {
-                $percentage = (float) $row->maximum_score > 0 ? round((float) $row->score / (float) $row->maximum_score * 100, 2) : 0;
+        return $marks->map(function (array $row) use ($scales): object {
+                $percentage = $row['percentage'];
                 $scale = $scales->first(fn ($item) => $percentage >= (float) $item->minimum_percentage && $percentage <= (float) $item->maximum_percentage);
-                $grade = $scale?->grade ?? '—';
+                $grade = $row['incomplete'] ? 'Incomplete' : ($scale?->grade ?? '—');
                 return (object) [
-                    'subject' => (object) ['id' => $row->subject_id, 'name' => $row->subject_name],
-                    'subject_name' => $row->subject_name,
-                    'score' => (float) $row->score,
-                    'maximum_score' => (float) $row->maximum_score,
-                    'credit_hours' => max(1, (float) $row->weighting),
+                    'subject' => (object) ['id' => $row['subject_id'], 'name' => $row['subject']],
+                    'subject_name' => $row['subject'],
+                    'score' => $row['score'],
+                    'maximum_score' => $row['maximum'],
+                    'credit_hours' => 1,
                     'percentage' => $percentage,
                     'grade_name' => $grade,
                     'grade_point' => $this->gradePoint($grade),
-                    'aggregate_points' => $scale?->aggregate_points,
-                    'remarks' => $scale?->remark ?? 'Grade not configured',
+                    'aggregate_points' => $row['incomplete'] ? null : $scale?->aggregate_points,
+                    'remarks' => $row['incomplete'] ? 'One or more required assessments are missing.' : ($scale?->remark ?? 'Grade not configured'),
+                    'incomplete' => $row['incomplete'],
                 ];
             });
     }
@@ -193,31 +187,17 @@ class StudentTermReport extends Component
         return $daily->isNotEmpty() ? $daily : $base->whereNotNull('subject_id')->get();
     }
 
-    protected function positionFor(Student $student, Exam $exam, int $bestSubjects): ?int
+    protected function positionFor(Student $student, Exam $exam, Term $term, array $settings): ?int
     {
-        $rows = DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
-            ->join('exam_paper_submissions', 'exam_paper_submissions.exam_paper_id', '=', 'exam_papers.id')
-            ->join('students', 'students.id', '=', 'exam_marks.student_id')
-            ->leftJoin('student_enrolments', function ($join) use ($exam) {
-                $join->on('student_enrolments.student_id', '=', 'students.id')->where('student_enrolments.term_id', $exam->term_id);
-            })
-            ->where('exam_papers.exam_id', $exam->id)->where('exam_paper_submissions.status', 'approved')
-            ->where('students.school_id', $exam->school_id)
-            ->whereRaw('coalesce(student_enrolments.school_class_id, students.school_class_id) = ?', [$exam->school_class_id])
-            ->when($exam->stream_id, fn ($query) => $query->whereRaw('coalesce(student_enrolments.stream_id, students.stream_id) = ?', [$exam->stream_id]))
-            ->whereNotNull('exam_marks.score')
-            ->select(
-                'students.id',
-                'exam_papers.subject_id',
-                DB::raw('sum(exam_marks.score * exam_papers.weighting) / nullif(sum(exam_papers.maximum_score * exam_papers.weighting), 0) * 100 as percentage'),
-            )
-            ->groupBy('students.id', 'exam_papers.subject_id')
-            ->get()
-            ->groupBy('id')
-            ->map(fn (Collection $subjects, $studentId) => (object) [
-                'id' => (int) $studentId,
-                'average' => $subjects->sortByDesc('percentage')->take($bestSubjects)->avg('percentage'),
-            ])
+        $classmates = Student::where('school_id', $exam->school_id)->where('status', 'active')
+            ->where(function (Builder $query) use ($exam, $term): void {
+                $query->whereHas('enrolments', fn (Builder $enrolment) => $enrolment->where('term_id', $term->id)->where('school_class_id', $exam->school_class_id)->when($exam->stream_id, fn (Builder $stream) => $stream->where('stream_id', $exam->stream_id)))
+                    ->orWhere(fn (Builder $fallback) => $fallback->whereDoesntHave('enrolments', fn (Builder $enrolment) => $enrolment->where('term_id', $term->id))->where('school_class_id', $exam->school_class_id)->when($exam->stream_id, fn (Builder $stream) => $stream->where('stream_id', $exam->stream_id)));
+            })->get();
+        $rows = $classmates->map(function (Student $classmate) use ($term, $settings, $exam): object {
+            $marks = StageAssessmentCalculator::marks($classmate, $term, $settings, $exam)->reject('incomplete')->sortByDesc('percentage')->take($settings['best']);
+            return (object) ['id' => $classmate->id, 'average' => $marks->isEmpty() ? null : $marks->avg('percentage')];
+        })
             ->filter(fn (object $row) => $row->average !== null)
             ->sortByDesc('average')
             ->values();
@@ -254,15 +234,15 @@ class StudentTermReport extends Component
             }
             $student->setAttribute('section', $student->stream?->name ?? '—');
             $student->setAttribute('photo_url', $student->photoUrl());
-            $grades = $this->gradesFor($student, $exam);
-            $calculationGrades = $grades->sortByDesc('percentage')->take($settings['best']);
+            $grades = $this->gradesFor($student, $exam, $term, $settings);
+            $calculationGrades = $grades->where('incomplete', false)->sortByDesc('percentage')->take($settings['best']);
             $credits = $calculationGrades->sum('credit_hours');
             $gpa = $credits > 0 ? round($calculationGrades->sum(fn ($grade) => $grade->grade_point * $grade->credit_hours) / $credits, 2) : 0;
             $aggregate = $calculationGrades->sum(fn ($grade) => (int) ($grade->aggregate_points ?? 0));
             $attendance = $this->attendanceFor($student, $term);
             $canViewWholeClass = ! TeacherAcademicScope::isTeacher(Auth::user()) || TeacherAcademicScope::classIds(Auth::user())->contains($exam->school_class_id);
             $position = $settings['show_position'] && $canViewWholeClass
-                ? $this->positionFor($student, $exam, $settings['best'])
+                ? $this->positionFor($student, $exam, $term, $settings)
                 : null;
             if (! TeacherAcademicScope::isTeacher(Auth::user())) {
                 $fees = ['due' => $student->totalDue($term), 'paid' => $student->totalPaid($term), 'balance' => $student->balance($term)];

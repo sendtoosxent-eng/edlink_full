@@ -48,6 +48,7 @@
                     <h2 class="text-2xl font-black uppercase">{{$school->name}}</h2>
                     @if($school->motto)<p class="text-sm italic">{{$school->motto}}</p>@endif
                     <h3 class="mt-2 font-bold uppercase">Term report · {{$term->name}}, {{$term->year}}</h3>
+                    <p class="text-[10px] font-semibold uppercase text-slate-500">{{str($settings['calculation_method'])->replace('_',' ')->title()}} calculation</p>
                     <p class="text-xs text-slate-500">{{str($data['stage'])->replace('_',' ')->title()}} grading profile</p>
                 </div>
             </header>
@@ -74,7 +75,7 @@
 
             <table class="mt-4 w-full border-collapse text-center text-sm">
                 <thead><tr class="bg-slate-900 text-xs uppercase text-white">@if($settings['show_points'])<th class="border p-2">Aggregate</th>@endif<th class="border p-2">Average</th><th class="border p-2">Result</th>@if($settings['show_position'])<th class="border p-2">Position</th>@endif</tr></thead>
-                <tbody><tr class="font-black">@if($settings['show_points'])<td class="border p-2 text-lg">{{$data['aggregate']}}</td>@endif<td class="border p-2 text-lg">{{number_format($data['average'],1)}}%</td><td class="border p-2">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</td>@if($settings['show_position'])<td class="border p-2 text-lg">{{$positions[$student->id]??'—'}}</td>@endif</tr></tbody>
+                <tbody><tr class="font-black">@if($settings['show_points'])<td class="border p-2 text-lg">{{$data['aggregate']}}</td>@endif<td class="border p-2 text-lg">{{number_format($data['average'],1)}}%</td><td class="border p-2">{{$data['marks']->isEmpty()?'Pending':($data['marks']->contains('incomplete',true)?'Incomplete':($data['passed']?'Pass':'Below pass mark'))}}</td>@if($settings['show_position'])<td class="border p-2 text-lg">{{$positions[$student->id]??'—'}}</td>@endif</tr></tbody>
             </table>
             <p class="mt-1 text-center text-[10px] text-slate-500">Average and aggregate use the best {{$settings['best']}} subject{{$settings['best']===1?'':'s'}} · Pass mark {{number_format($settings['pass'],0)}}%</p>
 

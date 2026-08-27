@@ -102,7 +102,7 @@
 
                             <!-- MARKSHEET Banner -->
                             <div class="inline-block bg-yellow-400 text-slate-950 font-black uppercase tracking-widest px-8 py-1 mt-2 text-sm shadow-2xs">
-                                {{ $exam->name }} MARKSHEET
+                                {{ $settings['calculation_method'] === 'single_exam' ? $exam->name.' MARKSHEET' : 'COMBINED TERM REPORT' }}
                             </div>
                         </div>
 
@@ -196,7 +196,7 @@
                         <tbody><tr class="bg-yellow-50 font-mono text-lg font-black text-slate-950">
                             @if($settings['show_points'])<td class="border-r-2 border-slate-900 p-2">{{ $aggregate }}</td>@endif
                             <td class="border-r-2 border-slate-900 p-2">{{ number_format((float) $average, 1) }}%</td>
-                            <td class="border-r-2 border-slate-900 p-2 text-sm">{{ $grades->isEmpty() ? 'Pending' : ((float) $average >= $settings['pass'] ? 'Pass' : 'Below pass mark') }}</td>
+                            <td class="border-r-2 border-slate-900 p-2 text-sm">{{ $grades->isEmpty() ? 'Pending' : ($grades->contains('incomplete', true) ? 'Incomplete' : ((float) $average >= $settings['pass'] ? 'Pass' : 'Below pass mark')) }}</td>
                             @if($settings['show_position'])<td class="border-r-2 border-slate-900 p-2">{{ $position ?? '—' }}</td>@endif
                             @if($settings['show_attendance'])<td class="p-2">{{ $attendance_present }}/{{ $attendance_total }}</td>@endif
                         </tr></tbody>
