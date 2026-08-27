@@ -109,7 +109,7 @@ class Expenses extends Component
         $expense = Expense::where('school_id', Auth::user()->school_id)->where('term_id', $this->selectedTerm->id)->findOrFail($id);
         $ledger = FinanceLedgerEntry::where(['source_type' => Expense::class, 'source_id' => $expense->id])->first();
         if ($ledger && $ledger->status !== 'pending') {
-            session()->flash('error', 'Posted expenses cannot be deleted. Reverse the transaction from Ledger & Reconciliation.');
+            session()->flash('error', 'Posted expenses cannot be deleted. Reverse the transaction from Account Reconciliation.');
             $this->deletingId = null;
 
             return;

@@ -33,7 +33,7 @@ class DesignationPermissions
         return [
             'Class Teacher' => ['attendance.daily', 'attendance.reports', 'academics.events', 'exams.marks', 'exams.results', 'parents.communications', 'reports.view'],
             'Subject Teacher' => ['attendance.subject', 'academics.subjects', 'academics.timetable', 'exams.marks', 'exams.results', 'reports.view'],
-            'Bursar' => ['students.view', 'finance.payments', 'finance.adjustments', 'finance.expenses', 'finance.ledger', 'finance.reports', 'staff.payroll', 'reports.view', 'accounting.dashboard.view', 'accounting.accounts.view', 'accounting.journals.create', 'accounting.journals.submit', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.assets.view', 'accounting.assets.manage', 'accounting.assets.depreciate'],
+            'Bursar' => ['students.view', 'finance.payments', 'finance.adjustments', 'finance.expenses', 'finance.ledger', 'finance.reports', 'staff.payroll', 'reports.view', 'accounting.dashboard.view', 'accounting.accounts.view', 'accounting.journals.create', 'accounting.journals.submit', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.assets.view', 'accounting.assets.manage', 'accounting.assets.depreciate', 'accounting.reconciliations.manage'],
             'DOS' => ['students.view', 'students.manage', 'attendance.daily', 'attendance.subject', 'attendance.reports', 'academics.classes', 'academics.subjects', 'academics.timetable', 'academics.events', 'academics.promotions', 'exams.setup', 'exams.marks', 'exams.results', 'staff.directory', 'staff.attendance', 'reports.view'],
         ];
     }

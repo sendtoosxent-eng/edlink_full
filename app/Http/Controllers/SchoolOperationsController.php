@@ -18,12 +18,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SchoolOperationsController extends Controller
 {
     private function authorizeLedgerAccess(): void
     {
         abort_unless(auth()->user()?->hasPermission('finance.ledger'), 403);
+    }
+
+    private function authorizeReconciliationAccess(): void
+    {
+        abort_unless(auth()->user()?->hasPermission('accounting.reconciliations.manage'), 403);
     }
 
     private function authorizeAdmin(): void
@@ -33,12 +39,12 @@ class SchoolOperationsController extends Controller
 
     public function finance()
     {
-        $this->authorizeLedgerAccess();
+        $this->authorizeReconciliationAccess();
         $schoolId = auth()->user()->school_id;
 
         return view('operations.finance', [
             'entries' => FinanceLedgerEntry::where('school_id', $schoolId)->latest()->paginate(30),
-            'reconciliations' => FinanceReconciliation::where('school_id', $schoolId)->latest('period_ending')->limit(12)->get(),
+            'reconciliations' => FinanceReconciliation::with('account')->where('school_id', $schoolId)->latest('period_ending')->limit(12)->get(),
             'accounts' => FinancialAccount::where('school_id', $schoolId)->where('is_active', true)->orderBy('name')->get(),
             'transfers' => FinancialAccountTransfer::with(['fromAccount', 'toAccount'])->where('school_id', $schoolId)->latest()->limit(20)->get(),
         ]);
@@ -78,14 +84,15 @@ class SchoolOperationsController extends Controller
 
     public function reconcile(Request $request, FinanceLedgerService $ledger)
     {
-        $this->authorizeLedgerAccess();
+        $this->authorizeReconciliationAccess();
+        $schoolId = auth()->user()->school_id;
         $data = $request->validate([
-            'financial_account_id' => 'required|integer',
-            'period_ending' => 'required|date',
+            'financial_account_id' => ['required', 'integer', Rule::exists('financial_accounts', 'id')->where(fn ($query) => $query->where('school_id', $schoolId)->where('is_active', true))],
+            'period_ending' => ['required', 'date', 'before_or_equal:today'],
             'statement_balance' => 'required|numeric',
             'notes' => 'nullable|string|max:1000',
         ]);
-        $item = $ledger->reconcile(auth()->user()->school_id, (int) $data['financial_account_id'], $data['period_ending'], (float) $data['statement_balance'], $data['notes'] ?? null, auth()->id());
+        $item = $ledger->reconcile($schoolId, (int) $data['financial_account_id'], $data['period_ending'], (float) $data['statement_balance'], $data['notes'] ?? null, auth()->id());
         AuditLog::record($item->school_id, 'finance.reconciliation.closed', $item, ['difference' => $item->difference]);
 
         return back()->with('status', 'Reconciliation saved.');
@@ -128,7 +135,7 @@ class SchoolOperationsController extends Controller
 
     public function reopenReconciliation(Request $request, FinanceReconciliation $reconciliation, FinanceLedgerService $ledger)
     {
-        $this->authorizeLedgerAccess();
+        $this->authorizeReconciliationAccess();
         abort_unless($reconciliation->school_id === auth()->user()->school_id, 404);
         $data = $request->validate(['reason' => 'required|string|min:8|max:500']);
         $ledger->reopen($reconciliation, $data['reason'], auth()->id());

@@ -7,7 +7,7 @@
                 <div class="flex items-start gap-4">
                    
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Ledger Reconciliation</h1>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Account Reconciliation</h1>
                         <p class="mt-1 text-xs sm:text-sm text-slate-400 max-w-xl">
                             Compare bank and cash statement balances with posted general ledger records.
                         </p>
@@ -211,7 +211,7 @@
         @endif
 
         <!-- RECONCILIATION FORM CARD -->
-        <form method="POST" action="{{ route('finance.ledger.reconcile') }}" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+        <form method="POST" action="{{ route('accounting.reconciliations.store') }}" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
             @csrf
             <div class="border-b border-slate-100 pb-4 mb-5">
                 <h2 class="text-base font-extrabold text-slate-900">Reconcile Account Balance</h2>
@@ -323,7 +323,7 @@
                                         <div class="text-slate-900 font-semibold">{{ $reconciliation->account?->name }}</div>
                                         <div class="text-[11px] text-slate-400 capitalize">{{ $reconciliation->reconciled_at?->format('d M Y H:i') ?: 'Unclosed' }} · {{ $reconciliation->status }}</div>
                                         @if($reconciliation->status === 'closed')
-                                            <form method="POST" action="{{ route('finance.reconciliations.reopen',$reconciliation) }}" class="mt-2 flex items-center gap-1.5">
+                                            <form method="POST" action="{{ route('accounting.reconciliations.reopen',$reconciliation) }}" class="mt-2 flex items-center gap-1.5">
                                                 @csrf
                                                 <input name="reason" required minlength="8" placeholder="Reopen reason" class="text-xs px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-amber-500 font-medium">
                                                 <button class="rounded-lg bg-amber-100 hover:bg-amber-200 px-2.5 py-1 text-[11px] font-bold text-amber-900 transition">Reopen</button>

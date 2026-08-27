@@ -329,8 +329,9 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
         return view('finance.payment-receipt', ['payment' => $payment->load(['student.schoolClass', 'term', 'recordedBy']), 'school' => auth()->user()->school]);
     })->name('fee-payments.receipt');
     Route::get('finance/expenses', Expenses::class)->name('expenses.index');
-    Route::get('finance/ledger', [SchoolOperationsController::class, 'finance'])->name('finance.ledger');
+    Route::redirect('finance/ledger', '/accounting/reconciliation')->name('finance.ledger');
     Route::get('accounting', Accounting::class)->name('accounting.index');
+    Route::get('accounting/reconciliation', [SchoolOperationsController::class, 'finance'])->name('accounting.reconciliations');
     Route::get('accounting/assets', FixedAssets::class)->name('accounting.assets');
     Route::get('accounting/exports/{report}', AccountingExportController::class)->name('accounting.exports');
     Route::post('finance/ledger/{entry}/approve', [SchoolOperationsController::class, 'approve'])->name('finance.ledger.approve');
@@ -338,9 +339,9 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::post('finance/accounts', [SchoolOperationsController::class, 'storeAccount'])->name('finance.accounts.store');
     Route::post('finance/transfers', [SchoolOperationsController::class, 'storeTransfer'])->name('finance.transfers.store');
     Route::post('finance/transfers/{transfer}/approve', [SchoolOperationsController::class, 'approveTransfer'])->name('finance.transfers.approve');
-    Route::post('finance/reconciliations/{reconciliation}/reopen', [SchoolOperationsController::class, 'reopenReconciliation'])->name('finance.reconciliations.reopen');
+    Route::post('accounting/reconciliations/{reconciliation}/reopen', [SchoolOperationsController::class, 'reopenReconciliation'])->name('accounting.reconciliations.reopen');
     Route::post('finance/ledger/{entry}/reverse', [SchoolOperationsController::class, 'reverse'])->name('finance.ledger.reverse');
-    Route::post('finance/reconcile', [SchoolOperationsController::class, 'reconcile'])->name('finance.ledger.reconcile');
+    Route::post('accounting/reconciliations', [SchoolOperationsController::class, 'reconcile'])->name('accounting.reconciliations.store');
     Route::get('attendance', Attendance::class)->name('attendance.index');
     Route::get('attendance/reports', AttendanceReport::class)->name('attendance.reports');
     Route::get('attendance/subject', SubjectAttendance::class)->name('attendance.subject');

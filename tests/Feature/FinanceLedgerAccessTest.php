@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('allows administrators and assigned bursars to access the finance ledger', function () {
+it('allows administrators and bursars to access accounting reconciliation', function () {
     $school = School::create(['name' => 'Ledger School', 'slug' => 'ledger-school', 'status' => 'active', 'is_demo' => false]);
     $bursarDesignation = Designation::create([
         'school_id' => $school->id,
@@ -17,8 +17,24 @@ it('allows administrators and assigned bursars to access the finance ledger', fu
     $administrator = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
     $bursar = User::factory()->create(['school_id' => $school->id, 'role' => 'bursar', 'designation_id' => $bursarDesignation->id]);
 
-    $this->actingAs($administrator)->get(route('finance.ledger'))->assertOk();
-    $this->actingAs($bursar)->get(route('finance.ledger'))->assertOk();
+    $this->actingAs($administrator)->get(route('accounting.reconciliations'))->assertOk();
+    $this->actingAs($bursar)->get(route('accounting.reconciliations'))->assertOk();
+    $this->get(route('finance.ledger'))->assertRedirect('/accounting/reconciliation');
+});
+
+it('rejects foreign accounts and future reconciliation dates', function () {
+    $school = School::create(['name' => 'Validation School', 'slug' => 'validation-school', 'status' => 'active', 'is_demo' => false]);
+    $otherSchool = School::create(['name' => 'Foreign School', 'slug' => 'foreign-school', 'status' => 'active', 'is_demo' => false]);
+    $foreignAccount = \App\Models\FinancialAccount::where('school_id', $otherSchool->id)->firstOrFail();
+    $administrator = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+    $this->actingAs($administrator)->post(route('accounting.reconciliations.store'), [
+        'financial_account_id' => $foreignAccount->id,
+        'period_ending' => now()->addDay()->toDateString(),
+        'statement_balance' => 100,
+    ])->assertSessionHasErrors(['financial_account_id', 'period_ending']);
+
+    $this->assertDatabaseMissing('finance_reconciliations', ['school_id' => $school->id]);
 });
 
 it('denies the finance ledger to staff without its assigned permission', function () {
@@ -30,14 +46,14 @@ it('denies the finance ledger to staff without its assigned permission', functio
     ]);
     $teacher = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher', 'designation_id' => $teacherDesignation->id]);
 
-    $this->actingAs($teacher)->get(route('finance.ledger'))->assertForbidden();
+    $this->actingAs($teacher)->get(route('accounting.reconciliations'))->assertForbidden();
 });
 it('shows the saved reconciliation result and history', function () {
     $school = School::create(['name' => 'Reconciliation School', 'slug' => 'reconciliation-school', 'status' => 'active', 'is_demo' => false]);
     $account = \App\Models\FinancialAccount::where('school_id', $school->id)->where('type', 'cash')->firstOrFail();
     $administrator = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
 
-    $this->actingAs($administrator)->post(route('finance.ledger.reconcile'), [
+    $this->actingAs($administrator)->post(route('accounting.reconciliations.store'), [
         'financial_account_id' => $account->id,
         'period_ending' => '2026-07-30',
         'statement_balance' => 300000,
@@ -51,7 +67,7 @@ it('shows the saved reconciliation result and history', function () {
         'difference' => 300000,
     ]);
 
-    $this->actingAs($administrator)->get(route('finance.ledger'))
+    $this->actingAs($administrator)->get(route('accounting.reconciliations'))
         ->assertOk()
         ->assertSee('Reconciliation history')
         ->assertSee('UGX 300,000.00')
@@ -74,6 +90,3 @@ it('posts approved entries to the pool and reverses both records atomically', fu
     $reconciliation = $service->reconcile($school->id, $account->id, now()->toDateString(), 0, null, $approver->id);
     expect((float)$reconciliation->ledger_balance)->toBe(0.0)->and((float)$reconciliation->difference)->toBe(0.0);
 });
-
-
-

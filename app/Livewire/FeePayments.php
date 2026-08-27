@@ -113,7 +113,7 @@ class FeePayments extends Component
 
         $ledger = FinanceLedgerEntry::where(['source_type' => FeePayment::class, 'source_id' => $payment->id])->first();
         if ($ledger && $ledger->status !== 'pending') {
-            session()->flash('error', 'Posted payments cannot be deleted. Reverse the transaction from Ledger & Reconciliation.');
+            session()->flash('error', 'Posted payments cannot be deleted. Reverse the transaction from Account Reconciliation.');
             $this->deletingPaymentId = null;
 
             return;
