@@ -33,9 +33,17 @@
 
     @forelse($reports as $report)
         @php($student=$report['student']) @php($data=$report['data']) @php($settings=$data['settings'])
-        <article class="bulk-report mb-8 rounded-2xl border bg-white p-8 print:mb-0 print:rounded-none print:border-0">
+        <article class="bulk-report relative isolate mb-8 overflow-hidden rounded-2xl border bg-white p-8 print:mb-0 print:rounded-none print:border-0">
+            <div class="pointer-events-none absolute inset-0 z-0 flex items-center justify-center" aria-hidden="true">
+                @if($school->badgeUrl())
+                    <img src="{{ $school->badgeUrl() }}" class="h-72 w-72 object-contain opacity-[0.06] grayscale" alt="">
+                @else
+                    <span class="-rotate-45 text-6xl font-black uppercase tracking-widest text-slate-900 opacity-[0.04]">{{$school->name}}</span>
+                @endif
+            </div>
+            <div class="relative z-10">
             <header class="flex items-center gap-5 border-b-2 border-slate-900 pb-4">
-                @if($school->badge_path)<img src="{{ Storage::disk('public')->url($school->badge_path) }}" class="h-20 w-20 object-contain" alt="School badge">@endif
+                @if($school->badgeUrl())<img src="{{ $school->badgeUrl() }}" class="h-20 w-20 object-contain" alt="School badge">@endif
                 <div class="flex-1 text-center">
                     <h2 class="text-2xl font-black uppercase">{{$school->name}}</h2>
                     @if($school->motto)<p class="text-sm italic">{{$school->motto}}</p>@endif
@@ -54,22 +62,21 @@
             @endunless
 
             <table class="mt-5 w-full border-collapse text-sm">
-                <thead><tr class="bg-slate-900 text-white"><th class="border p-2 text-left">Subject</th><th class="border p-2">Score</th><th class="border p-2">%</th><th class="border p-2">Grade</th><th class="border p-2">Points</th><th class="border p-2 text-left">Remark</th></tr></thead>
+                <thead><tr class="bg-slate-900 text-white"><th class="border p-2 text-left">Subject</th><th class="border p-2">Marks scored</th><th class="border p-2">Maximum marks</th><th class="border p-2">%</th><th class="border p-2">Grade</th><th class="border p-2">Points</th><th class="border p-2 text-left">Remark</th></tr></thead>
                 <tbody>
                 @forelse($data['marks'] as $mark)
-                    <tr><td class="border p-2">{{$mark['subject']}}</td><td class="border p-2 text-center">{{number_format($mark['score'],1)}} / {{number_format($mark['maximum'],1)}}</td><td class="border p-2 text-center">{{number_format($mark['percentage'],1)}}</td><td class="border p-2 text-center font-bold">{{$mark['grade']}}</td><td class="border p-2 text-center">{{$mark['points'] ?? '—'}}</td><td class="border p-2">{{$mark['comment']}}</td></tr>
+                    <tr><td class="border p-2">{{$mark['subject']}}</td><td class="border p-2 text-center">{{number_format($mark['score'],1)}}</td><td class="border p-2 text-center">{{number_format($mark['maximum'],1)}}</td><td class="border p-2 text-center">{{number_format($mark['percentage'],1)}}</td><td class="border p-2 text-center font-bold">{{$mark['grade']}}</td><td class="border p-2 text-center">{{$mark['points'] ?? '—'}}</td><td class="border p-2">{{$mark['comment']}}</td></tr>
                 @empty
-                    <tr><td colspan="6" class="border p-6 text-center text-slate-500">No approved marks are available for this term.</td></tr>
+                    <tr><td colspan="7" class="border p-6 text-center text-slate-500">No approved marks are available for this term.</td></tr>
                 @endforelse
                 </tbody>
             </table>
 
-            <div class="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-                <div class="border p-2"><b class="block text-xs uppercase">Average</b><span class="text-lg font-black">{{number_format($data['average'],1)}}%</span><small class="block text-slate-500">Best {{$settings['best']}} subject{{$settings['best']===1?'':'s'}}</small></div>
-                <div class="border p-2"><b class="block text-xs uppercase">Result</b><span class="font-black">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</span><small class="block text-slate-500">Pass mark {{number_format($settings['pass'],0)}}%</small></div>
-                <div class="border p-2"><b class="block text-xs uppercase">Aggregate</b><span class="text-lg font-black">{{$data['aggregate']}}</span></div>
-                @if($settings['show_position'])<div class="border p-2"><b class="block text-xs uppercase">Position</b><span class="text-lg font-black">{{$positions[$student->id]??'—'}}</span></div>@endif
-            </div>
+            <table class="mt-4 w-full border-collapse text-center text-sm">
+                <thead><tr class="bg-slate-900 text-xs uppercase text-white"><th class="border p-2">Aggregate</th><th class="border p-2">Average</th><th class="border p-2">Result</th>@if($settings['show_position'])<th class="border p-2">Position</th>@endif</tr></thead>
+                <tbody><tr class="font-black"><td class="border p-2 text-lg">{{$data['aggregate']}}</td><td class="border p-2 text-lg">{{number_format($data['average'],1)}}%</td><td class="border p-2">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</td>@if($settings['show_position'])<td class="border p-2 text-lg">{{$positions[$student->id]??'—'}}</td>@endif</tr></tbody>
+            </table>
+            <p class="mt-1 text-center text-[10px] text-slate-500">Average and aggregate use the best {{$settings['best']}} subject{{$settings['best']===1?'':'s'}} · Pass mark {{number_format($settings['pass'],0)}}%</p>
 
             @if($settings['show_attendance'])
                 <p class="mt-4 border p-3 text-sm"><b>Attendance:</b> {{$data['attendance_present']}} of {{$data['attendance_total']}} recorded days present/late</p>
@@ -78,9 +85,11 @@
                 <div class="mt-3 grid grid-cols-3 border text-center text-sm"><p class="p-2"><b>Fees due</b><br>UGX {{number_format($data['fees']['due'])}}</p><p class="border-x p-2"><b>Paid</b><br>UGX {{number_format($data['fees']['paid'])}}</p><p class="p-2"><b>Balance</b><br>UGX {{number_format($data['fees']['balance'])}}</p></div>
             @endif
             @if($settings['show_promotion'])<p class="mt-3 border p-3 text-sm"><b>Promotion decision:</b> {{str($data['promotion']?:'pending')->title()}}</p>@endif
+            @if($settings['next_term_starts'])<p class="mt-3 border p-3 text-center text-sm"><b>Next term starts:</b> {{\Carbon\Carbon::parse($settings['next_term_starts'])->format('l, d F Y')}}</p>@endif
             @if($settings['footer'])<p class="mt-4 text-center text-sm italic">{{$settings['footer']}}</p>@endif
 
             <footer class="mt-10 grid grid-cols-2 gap-16 text-sm"><p class="border-t pt-2 text-center">Class teacher</p><p class="border-t pt-2 text-center">Head teacher</p></footer>
+            </div>
         </article>
     @empty
         <div class="rounded-2xl border bg-white p-10 text-center text-slate-500">Select a term and class containing active learners.</div>

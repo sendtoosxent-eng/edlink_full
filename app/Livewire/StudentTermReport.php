@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -277,7 +276,7 @@ class StudentTermReport extends Component
         $overallScale = $average !== null ? $gradingScales->first(fn ($scale) => $average >= (float) $scale->minimum_percentage && $average <= (float) $scale->maximum_percentage) : null;
         $teacherRemarks = $grades->isEmpty() ? 'No approved results are available for this examination.' : trim(($overallScale?->remark ?? 'Keep working consistently in every subject.').' Overall result: '.($average >= $settings['pass'] ? 'Pass.' : 'Below the configured pass mark.'));
         $issueDate = $term?->closed_at ?? now();
-        $school->setAttribute('logo_url', $school->badge_path ? Storage::disk('public')->url($school->badge_path) : null);
+        $school->setAttribute('logo_url', $school->badgeUrl());
         $report = (object) ['student' => $student, 'term' => $term, 'grades' => $grades, 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'gpa' => $gpa, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate];
 
         return view('livewire.student-term-report', compact('school', 'term', 'students', 'student', 'exams', 'exam', 'settings', 'gradingScales', 'grades', 'attendance', 'gpa', 'aggregate', 'average', 'position', 'fees', 'promotion', 'report') + ['terms' => Term::where('school_id', $school->id)->orderByDesc('year')->orderByDesc('id')->get(), 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate, 'pageTitle' => 'Student Term Report']);

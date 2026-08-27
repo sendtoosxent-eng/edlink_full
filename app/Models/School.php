@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class School extends Model
 {
@@ -34,6 +36,13 @@ class School extends Model
         'license_expires_at' => 'datetime',
         'license_started_at' => 'datetime',
     ];
+
+    public function badgeUrl(): ?string
+    {
+        return $this->badge_path && Storage::disk('public')->exists($this->badge_path)
+            ? URL::signedRoute('profile-photo.show', ['type' => 'school', 'person' => $this->id])
+            : null;
+    }
 
     protected static function booted(): void
     {

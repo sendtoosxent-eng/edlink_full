@@ -63,9 +63,17 @@
 
         <!-- DOUBLE BORDER WRAPPER -->
         <div class="border-4 border-slate-900 p-1.5 h-full">
-            <div class="border-2 border-slate-900 p-6 sm:p-8 h-full flex flex-col justify-between">
+            <div class="relative border-2 border-slate-900 p-6 sm:p-8 h-full flex flex-col justify-between overflow-hidden">
 
-                <div>
+                <div class="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden" aria-hidden="true">
+                    @if($school->logo_url ?? false)
+                        <img src="{{ asset($school->logo_url) }}" class="h-72 w-72 object-contain opacity-[0.06] grayscale">
+                    @else
+                        <span class="-rotate-45 text-6xl font-black uppercase tracking-widest text-slate-900 opacity-[0.04]">{{ $school->name }}</span>
+                    @endif
+                </div>
+
+                <div class="relative z-10">
                     <!-- 1. HEADER SECTION -->
                     <header class="relative flex items-center justify-between gap-4 mb-6">
                         <!-- School Logo -->
@@ -138,7 +146,8 @@
                                 <tr class="bg-slate-900 text-white font-extrabold uppercase border-b-2 border-slate-900 text-[11px]">
                                     <th class="p-2.5 border-r-2 border-slate-900 w-12 text-center">S.NO</th>
                                     <th class="p-2.5 border-r-2 border-slate-900">SUBJECT</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">SCORE</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MARKS SCORED</th>
+                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MAXIMUM MARKS</th>
                                     <th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE OBTAINED</th>
                                     <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">POINTS</th>
                                     <th class="p-2.5 text-center w-32">REMARKS</th>
@@ -149,7 +158,8 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">{{ $grade->subject->name ?? ($grade['subject_name'] ?? 'SUBJECT') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->score ?? ($grade['score'] ?? 0)), 2, '.', ''), '0'), '.') }} / {{ rtrim(rtrim(number_format((float) ($grade->maximum_score ?? ($grade['maximum_score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->score ?? ($grade['score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->maximum_score ?? ($grade['maximum_score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? '—') }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ $grade->aggregate_points ?? '—' }}</td>
                                     <td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'Grade not configured') }}</td>
@@ -158,6 +168,7 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">01</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">NO GRADES RECORDED</td>
+                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">—</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">—</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-black">—</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">0.00</td>
@@ -169,29 +180,37 @@
                     </div>
 
                     <!-- 4. ATTENDANCE & GPA SUMMARY BLOCK -->
-                    <div class="mt-4 border-2 border-slate-900 grid {{ $settings['show_attendance'] ? 'grid-cols-2' : 'grid-cols-1' }} text-center">
-                        @if($settings['show_attendance'])
-                        <div class="p-2 border-r-2 border-slate-900">
-                            <span class="block text-xs font-black uppercase text-slate-900 tracking-wider">ATTENDANCE</span>
-                            <span class="block text-lg font-black text-slate-900 font-mono mt-1">
-                                {{ $attendance_present ?? ($report->attendance_present ?? '70') }}/{{ $attendance_total ?? ($report->attendance_total ?? '105') }}
-                            </span>
-                        </div>
-                        @endif
-                        <div class="p-2 bg-yellow-50">
-                            <span class="block text-xs font-black uppercase text-slate-900 tracking-wider">AGGREGATE / AVERAGE</span>
-                            <span class="block text-xl font-black text-slate-950 font-mono mt-1">
-                                {{ $aggregate }} / {{ number_format((float) $average, 1) }}%
-                            </span>
-                            <small class="block text-slate-500">Best {{ $settings['best'] }} subject{{ $settings['best'] === 1 ? '' : 's' }} · Pass mark {{ number_format($settings['pass'], 0) }}%</small>
-                        </div>
-                    </div>
+                    <table class="mt-4 w-full border-2 border-slate-900 border-collapse text-center">
+                        <thead class="bg-slate-900 text-[10px] font-black uppercase tracking-wider text-white">
+                            <tr>
+                                <th class="border-r border-slate-600 p-2">Aggregate</th>
+                                <th class="border-r border-slate-600 p-2">Average</th>
+                                <th class="border-r border-slate-600 p-2">Result</th>
+                                @if($settings['show_position'])<th class="border-r border-slate-600 p-2">Position</th>@endif
+                                @if($settings['show_attendance'])<th class="p-2">Attendance</th>@endif
+                            </tr>
+                        </thead>
+                        <tbody><tr class="bg-yellow-50 font-mono text-lg font-black text-slate-950">
+                            <td class="border-r-2 border-slate-900 p-2">{{ $aggregate }}</td>
+                            <td class="border-r-2 border-slate-900 p-2">{{ number_format((float) $average, 1) }}%</td>
+                            <td class="border-r-2 border-slate-900 p-2 text-sm">{{ $grades->isEmpty() ? 'Pending' : ((float) $average >= $settings['pass'] ? 'Pass' : 'Below pass mark') }}</td>
+                            @if($settings['show_position'])<td class="border-r-2 border-slate-900 p-2">{{ $position ?? '—' }}</td>@endif
+                            @if($settings['show_attendance'])<td class="p-2">{{ $attendance_present }}/{{ $attendance_total }}</td>@endif
+                        </tr></tbody>
+                    </table>
+                    <p class="mt-1 text-center text-[10px] text-slate-500">Average and aggregate use the best {{ $settings['best'] }} subject{{ $settings['best'] === 1 ? '' : 's' }} · Pass mark {{ number_format($settings['pass'], 0) }}%</p>
 
-                    @if($settings['show_position'] || $settings['show_fees'] || $settings['show_promotion'])
+                    @if($settings['show_fees'] || $settings['show_promotion'])
                     <div class="mt-3 grid gap-2 text-center text-xs sm:grid-cols-3">
-                        @if($settings['show_position'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Position</b><span class="font-mono text-base font-black">{{ $position ?? '—' }}</span></div>@endif
                         @if($settings['show_fees'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Fees balance</b><span class="font-mono text-base font-black">{{ number_format($fees['balance'], 0) }}</span><small class="block text-slate-500">Paid {{ number_format($fees['paid'], 0) }} / Due {{ number_format($fees['due'], 0) }}</small></div>@endif
                         @if($settings['show_promotion'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Promotion</b><span class="text-base font-black uppercase">{{ $promotion ?: 'Pending' }}</span></div>@endif
+                    </div>
+                    @endif
+
+                    @if($settings['next_term_starts'])
+                    <div class="mt-3 border-2 border-slate-900 p-2 text-center text-xs">
+                        <b class="uppercase">Next term starts:</b>
+                        <span class="font-black">{{ \Carbon\Carbon::parse($settings['next_term_starts'])->format('l, d F Y') }}</span>
                     </div>
                     @endif
 
@@ -207,7 +226,7 @@
                 </div>
 
                 <!-- 6. BOTTOM SIGNATURES & GRADING SCALE -->
-                <div class="mt-8">
+                <div class="relative z-10 mt-8">
                     <!-- Issue Date & Signatures -->
                     <div class="grid grid-cols-4 gap-4 text-center text-xs font-bold text-slate-900 mb-6">
                         <div class="text-left">

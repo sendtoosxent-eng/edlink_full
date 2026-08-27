@@ -18,6 +18,7 @@ class ReportSettings extends Component
     public string $showFees = 'enabled';
     public string $showAttendance = 'enabled';
     public string $showPromotion = 'disabled';
+    public string $nextTermStarts = '';
     public string $footer = '';
 
     public function mount(): void
@@ -39,6 +40,7 @@ class ReportSettings extends Component
             'stage' => 'required|in:primary,lower_secondary,advanced_level,kindergarten',
             'passMark' => 'required|numeric|min:0|max:100',
             'bestSubjects' => 'required|integer|min:1|max:20',
+            'nextTermStarts' => 'nullable|date',
             'footer' => 'nullable|string|max:1000',
         ]);
 
@@ -50,6 +52,7 @@ class ReportSettings extends Component
             'show_fees' => $this->showFees,
             'show_attendance' => $this->showAttendance,
             'show_promotion' => $this->showPromotion,
+            'next_term_starts' => $this->nextTermStarts,
             'footer' => $this->footer,
         ] as $key => $value) {
             SchoolSetting::updateOrCreate(
@@ -72,6 +75,7 @@ class ReportSettings extends Component
         $this->showFees = $values[$prefix.'show_fees'] ?? $defaults['show_fees'];
         $this->showAttendance = $values[$prefix.'show_attendance'] ?? $defaults['show_attendance'];
         $this->showPromotion = $values[$prefix.'show_promotion'] ?? $defaults['show_promotion'];
+        $this->nextTermStarts = $values[$prefix.'next_term_starts'] ?? $defaults['next_term_starts'];
         $this->footer = $values[$prefix.'footer'] ?? $defaults['footer'];
     }
 

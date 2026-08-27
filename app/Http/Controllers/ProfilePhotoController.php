@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,7 @@ class ProfilePhotoController extends Controller
         $path = match ($type) {
             'student' => Student::findOrFail($person)->photo_path,
             'user' => User::findOrFail($person)->avatar_path,
+            'school' => School::findOrFail($person)->badge_path,
             default => abort(404),
         };
         abort_unless($path && Storage::disk('public')->exists($path), 404);

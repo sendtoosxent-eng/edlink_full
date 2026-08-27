@@ -147,7 +147,7 @@ Route::prefix('platform')->name('platform.')->group(function () {
 });
 Route::get('/', LandingPageController::class)->name('home');
 Route::get('profile-photo/{type}/{person}', ProfilePhotoController::class)
-    ->middleware('signed')->whereIn('type', ['student', 'user'])->whereNumber('person')->name('profile-photo.show');
+    ->middleware('signed')->whereIn('type', ['student', 'user', 'school'])->whereNumber('person')->name('profile-photo.show');
 Route::view('privacy', 'legal.privacy')->name('privacy');
 Route::view('terms', 'legal.terms')->name('terms');
 Route::post('contact', function (Request $request) {

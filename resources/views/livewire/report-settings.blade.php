@@ -124,6 +124,13 @@
 
             <!-- Report Footer -->
             <div class="sm:col-span-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Next Term Starts</label>
+                <input wire:model="nextTermStarts" type="date" class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-bold text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
+                <span class="block mt-1 text-[11px] text-slate-400">This reopening date will appear on report cards for the selected education stage.</span>
+            </div>
+
+            <!-- Report Footer -->
+            <div class="sm:col-span-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Report Footer Note</label>
                 <textarea wire:model="footer" rows="3" placeholder="Enter custom message to display at the bottom of reports..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10 placeholder:text-slate-400"></textarea>
             </div>

@@ -79,8 +79,7 @@ class SchoolSettingsV2 extends SchoolSettings
     public function render()
     {
         $school = Auth::user()->school;
-        $currentBadgeUrl = $school->badge_path && Storage::disk('public')->exists($school->badge_path)
-            ? Storage::disk('public')->url($school->badge_path) : null;
+        $currentBadgeUrl = $school->badgeUrl();
 
         return view('livewire.school-settings', compact('currentBadgeUrl') + ['pageTitle' => 'System Settings']);
     }

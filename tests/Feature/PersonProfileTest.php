@@ -39,3 +39,12 @@ it('keeps profile screens isolated by branch and role', function () {
     $this->get(route('parents.profile', $parent))->assertOk()->assertSee('Parent Profile');
     $this->get(route('staff.profile', $parent))->assertNotFound();
 });
+
+it('serves a saved school badge without relying on the public storage link', function () {
+    Storage::fake('public');
+    $path = UploadedFile::fake()->image('badge.png', 300, 300)->store('school-badges', 'public');
+    $school = School::create(['name' => 'Badge School', 'slug' => 'badge-school', 'badge_path' => $path]);
+
+    expect($school->badgeUrl())->not->toBeNull();
+    $this->get($school->badgeUrl())->assertOk();
+});
