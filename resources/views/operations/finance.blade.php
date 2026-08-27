@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto w-full max-w-7xl space-y-6">
+    <div class="space-y-6">
 
         <!-- HEADER BANNER -->
         <header class="relative overflow-hidden rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl">
