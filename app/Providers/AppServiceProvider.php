@@ -12,6 +12,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Livewire::setUpdateRoute(function ($handle, $path) {
+            return Route::post($path, $handle)
+                ->middleware(['web', 'auth', 'branch.context', 'active.user'])
+                ->name('school.livewire.update');
+        });
+
         // Some deployments retain the previous route cache after pulling new code.
         // Keep this newly introduced finance screen reachable until that cache is rebuilt.
         if ($this->app->routesAreCached() && ! Route::has('fee-adjustments.index')) {

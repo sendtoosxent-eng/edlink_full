@@ -4,9 +4,18 @@ use App\Livewire\Reports;
 use App\Models\{Designation, PlatformAdmin, School, SchoolGroup, Student, User};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
+
+it('resolves the selected branch on livewire form submissions', function () {
+    $route = collect(Route::getRoutes()->getRoutes())
+        ->first(fn ($route) => $route->getName() === 'school.livewire.update');
+
+    expect($route)->not->toBeNull()
+        ->and($route->middleware())->toContain('branch.context');
+});
 
 function branchSchool(array $attributes = []): School
 {
@@ -55,7 +64,7 @@ it('lets platform owners create groups and grant a director all branch access', 
 
     $this->actingAs($director)->get(route('group-dashboard'))
         ->assertOk()
-        ->assertSee('Read-only group reporting')
+        ->assertSee('A consolidated view of every branch')
         ->assertSee($first->name)
         ->assertSee($second->name);
 
