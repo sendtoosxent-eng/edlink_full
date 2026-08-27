@@ -1,8 +1,10 @@
 <x-app-layout>
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">School ID Cards</h2></x-slot>
-    <div class="mx-auto max-w-7xl space-y-6">
+    <x-slot name="header"><h2 class="font-semibold text-xl text-amber-300 leading-tight">School ID Cards</h2></x-slot>
+    <div class="space-y-6">
         <header class="relative overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-8">
-            <div class="relative z-10 max-w-2xl"><p class="text-xs font-bold uppercase tracking-[0.22em] text-amber-300">Print-ready identification</p><h1 class="mt-2 text-2xl font-extrabold sm:text-3xl">Create school ID cards</h1><p class="mt-2 text-sm leading-6 text-slate-300">Choose students or staff, narrow the list, select the people you need, then generate branded portrait cards.</p></div>
+            <div class="relative z-10 max-w-2xl">
+                <h1 class="mt-2 text-2xl font-extrabold sm:text-3xl text-amber-300">Create school ID cards</h1>
+                <p class="mt-2 text-sm leading-6 text-slate-300">Choose students or staff, narrow the list, select the people you need, then generate branded portrait cards.</p></div>
             <div class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-amber-400/15 blur-3xl"></div>
         </header>
         <div class="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:w-[430px]">
