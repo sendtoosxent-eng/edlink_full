@@ -59,8 +59,13 @@ it('always lets bursar and admin demo roles view asset management', function () 
     $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin', 'designation_id' => null]);
 
     expect($bursar->hasModuleAccess('accounting'))->toBeTrue()
+        ->and($bursar->hasPermission('accounting.dashboard.view'))->toBeTrue()
         ->and($bursar->hasPermission('accounting.assets.view'))->toBeTrue()
         ->and($admin->hasPermission('accounting.assets.view'))->toBeTrue();
+
+    $this->actingAs($bursar)->get(route('accounting.index'))
+        ->assertOk()
+        ->assertSee('Accounting');
 
     $this->actingAs($bursar)->get(route('accounting.assets'))
         ->assertOk()
