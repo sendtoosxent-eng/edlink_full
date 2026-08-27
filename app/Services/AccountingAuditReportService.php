@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\AccountingJournal;
 use App\Models\AuditLog;
 use App\Models\Expense;
+use App\Models\FixedAsset;
+use App\Models\FixedAssetDepreciation;
 use App\Models\LedgerAccount;
 use App\Models\School;
 use Illuminate\Support\Collection;
@@ -18,6 +20,7 @@ class AccountingAuditReportService
         'financial-position' => 'Statement of Financial Position', 'cashbook' => 'Cashbook',
         'receivables-aging' => 'Student Receivables', 'expense-analysis' => 'Expense Analysis',
         'chart-of-accounts' => 'Chart of Accounts', 'audit-trail' => 'Audit Trail',
+        'fixed-asset-register' => 'Fixed Asset Register', 'depreciation-schedule' => 'Depreciation Schedule',
     ];
 
     public function __construct(private readonly AccountingReportService $reports) {}
@@ -36,6 +39,8 @@ class AccountingAuditReportService
             'expense-analysis' => $this->expenses($school->id, $filters),
             'chart-of-accounts' => $this->chart($school->id),
             'audit-trail' => $this->auditTrail($school->id, $filters),
+            'fixed-asset-register' => $this->fixedAssets($school->id),
+            'depreciation-schedule' => $this->depreciationSchedule($school->id, $filters),
         };
 
         return [
@@ -70,6 +75,7 @@ class AccountingAuditReportService
     {
         $rows = $this->reports->trialBalance($schoolId, $filters)->whereIn('account_class', ['income', 'expense'])->map(fn ($r) => [$r->code, $r->name, ucfirst($r->account_class), $r->account_class === 'income' ? -(float) $r->balance : (float) $r->balance]);
         $summary = $this->reports->summary($schoolId, $filters);
+
         return $rows->push(['', 'Surplus / (Deficit)', 'Result', (float) $summary['surplus']]);
     }
 
@@ -77,6 +83,7 @@ class AccountingAuditReportService
     {
         $rows = $this->reports->trialBalance($schoolId, $filters)->whereIn('account_class', ['asset', 'liability', 'equity'])->map(fn ($r) => [$r->code, $r->name, ucfirst($r->account_class), $r->account_class === 'asset' ? (float) $r->balance : -(float) $r->balance]);
         $summary = $this->reports->summary($schoolId, $filters);
+
         return $rows->push(['', 'Current period surplus / (deficit)', 'Equity', (float) $summary['surplus']]);
     }
 
@@ -111,6 +118,16 @@ class AccountingAuditReportService
             ->latest()->get()->map(fn ($r) => [$r->created_at->format('Y-m-d H:i:s'), $r->user?->name ?: 'System', str($r->event)->headline()->toString(), class_basename($r->subject_type ?: ''), $r->subject_id, $r->ip_address, $r->metadata ? json_encode($r->metadata, JSON_UNESCAPED_SLASHES) : '']);
     }
 
+    private function fixedAssets(int $schoolId): Collection
+    {
+        return FixedAsset::where('school_id', $schoolId)->with(['category', 'custodian'])->orderBy('asset_tag')->get()->map(fn ($r) => [$r->asset_tag, $r->name, $r->category->name, $r->acquisition_date->toDateString(), $r->location, $r->custodian?->name, (float) $r->cost, $r->accumulatedDepreciation(), $r->carryingValue(), str($r->status)->headline()->toString()]);
+    }
+
+    private function depreciationSchedule(int $schoolId, array $filters): Collection
+    {
+        return FixedAssetDepreciation::where('school_id', $schoolId)->with('asset')->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('period_ending', '>=', $v))->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('period_ending', '<=', $v))->orderBy('period_ending')->get()->map(fn ($r) => [$r->asset->asset_tag, $r->asset->name, $r->period_ending->toDateString(), (float) $r->opening_carrying_value, (float) $r->depreciation_amount, (float) $r->closing_carrying_value, ucfirst($r->status)]);
+    }
+
     private function columns(string $report): array
     {
         return match ($report) {
@@ -123,6 +140,8 @@ class AccountingAuditReportService
             'expense-analysis' => ['Date', 'Reference', 'Category', 'Payee', 'Settlement', 'Narration', 'Amount'],
             'chart-of-accounts' => ['Code', 'Account', 'Class', 'Subtype', 'Normal balance', 'Posting', 'Status'],
             'audit-trail' => ['Timestamp', 'User', 'Event', 'Record type', 'Record ID', 'IP address', 'Details'],
+            'fixed-asset-register' => ['Asset tag', 'Asset', 'Category', 'Acquired', 'Location', 'Custodian', 'Cost', 'Accumulated depreciation', 'Carrying value', 'Status'],
+            'depreciation-schedule' => ['Asset tag', 'Asset', 'Period ending', 'Opening carrying value', 'Depreciation', 'Closing carrying value', 'Status'],
         };
     }
 
@@ -131,7 +150,7 @@ class AccountingAuditReportService
         return match ($report) {
             'trial-balance' => [3, 4, 5], 'general-ledger' => [6, 7], 'journal-register' => [6],
             'income-expenditure', 'financial-position' => [3], 'cashbook' => [4, 5],
-            'receivables-aging' => [2], 'expense-analysis' => [6], default => [],
+            'receivables-aging' => [2], 'expense-analysis' => [6], 'fixed-asset-register' => [6, 7, 8], 'depreciation-schedule' => [3, 4, 5], default => [],
         };
     }
 }

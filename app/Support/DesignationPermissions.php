@@ -14,6 +14,7 @@ class DesignationPermissions
                 'accounting.mappings.manage' => 'Manage posting rules', 'accounting.journals.create' => 'Create manual journals', 'accounting.journals.submit' => 'Submit journals',
                 'accounting.journals.approve' => 'Approve journals', 'accounting.journals.post' => 'Post journals', 'accounting.journals.reverse' => 'Reverse journals',
                 'accounting.ledger.view' => 'View general ledger', 'accounting.reports.view' => 'View financial reports', 'accounting.reports.export' => 'Export financial reports',
+                'accounting.assets.view' => 'View fixed asset register', 'accounting.assets.manage' => 'Register assets and categories', 'accounting.assets.depreciate' => 'Prepare depreciation', 'accounting.assets.approve' => 'Approve asset postings',
                 'accounting.periods.manage' => 'Manage accounting periods', 'accounting.periods.reopen' => 'Reopen accounting periods', 'accounting.budgets.manage' => 'Manage budgets',
                 'accounting.reconciliations.manage' => 'Reconcile bank accounts', 'accounting.opening_balances.manage' => 'Manage opening balances',
             ]],
@@ -32,7 +33,7 @@ class DesignationPermissions
         return [
             'Class Teacher' => ['attendance.daily', 'attendance.reports', 'academics.events', 'exams.marks', 'exams.results', 'parents.communications', 'reports.view'],
             'Subject Teacher' => ['attendance.subject', 'academics.subjects', 'academics.timetable', 'exams.marks', 'exams.results', 'reports.view'],
-            'Bursar' => ['students.view', 'finance.payments', 'finance.adjustments', 'finance.expenses', 'finance.ledger', 'finance.reports', 'staff.payroll', 'reports.view', 'accounting.dashboard.view', 'accounting.accounts.view', 'accounting.journals.create', 'accounting.journals.submit', 'accounting.ledger.view', 'accounting.reports.view'],
+            'Bursar' => ['students.view', 'finance.payments', 'finance.adjustments', 'finance.expenses', 'finance.ledger', 'finance.reports', 'staff.payroll', 'reports.view', 'accounting.dashboard.view', 'accounting.accounts.view', 'accounting.journals.create', 'accounting.journals.submit', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.assets.view', 'accounting.assets.manage', 'accounting.assets.depreciate'],
             'DOS' => ['students.view', 'students.manage', 'attendance.daily', 'attendance.subject', 'attendance.reports', 'academics.classes', 'academics.subjects', 'academics.timetable', 'academics.events', 'academics.promotions', 'exams.setup', 'exams.marks', 'exams.results', 'staff.directory', 'staff.attendance', 'reports.view'],
         ];
     }

@@ -205,6 +205,9 @@ class PlatformSchoolController extends Controller
             // Users are nullable on school deletion, so remove tenant accounts explicitly.
             // A deliberate platform-level demo purge may remove accounting evidence; normal
             // operational deletion remains restricted so posted evidence cannot disappear.
+            DB::table('fixed_asset_depreciations')->where('school_id', $school->id)->delete();
+            DB::table('fixed_assets')->where('school_id', $school->id)->delete();
+            DB::table('fixed_asset_categories')->where('school_id', $school->id)->delete();
             DB::table('accounting_budget_lines')->whereIn('accounting_budget_id', DB::table('accounting_budgets')->where('school_id', $school->id)->select('id'))->delete();
             DB::table('accounting_budgets')->where('school_id', $school->id)->delete();
             DB::table('student_fee_assessments')->where('school_id', $school->id)->delete();

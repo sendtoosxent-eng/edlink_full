@@ -171,8 +171,9 @@
                     ['label' => 'Expenses', 'route' => 'expenses.index'],
                     ['label' => 'Ledger & Reconciliation', 'route' => 'finance.ledger'],
                 ]],
-                'accounting' => ['label' => 'Accounting', 'icon' => 'M4 19.5h16M5.5 17V9.5m4 7.5V9.5m5 7.5V9.5m4 7.5V9.5M3 7l9-4 9 4H3z', 'routes' => ['accounting.index', 'accounting.exports'], 'items' => [
+                'accounting' => ['label' => 'Accounting', 'icon' => 'M4 19.5h16M5.5 17V9.5m4 7.5V9.5m5 7.5V9.5m4 7.5V9.5M3 7l9-4 9 4H3z', 'routes' => ['accounting.index', 'accounting.exports', 'accounting.assets'], 'items' => [
                     ['label' => 'Accounting Workspace', 'route' => 'accounting.index'],
+                    ['label' => 'Asset Management', 'route' => 'accounting.assets'],
                 ]],
                 'exams' => ['label' => 'Exams', 'icon' => 'M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2h-2', 'routes' => ['exams.setup', 'exams.marks', 'exams.results'], 'items' => [
                     ['label' => 'Create Exam', 'route' => 'exams.setup'],
@@ -219,7 +220,7 @@
                             @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
                             @php($requiredPermission = match($item['route']) {
                                 'students.index', 'graduates.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
-                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger', 'accounting.index' => 'accounting.dashboard.view',
+                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'finance.ledger' => 'finance.ledger', 'accounting.index' => 'accounting.dashboard.view', 'accounting.assets' => 'accounting.assets.view',
                                 'attendance.index' => 'attendance.daily', 'attendance.subject' => 'attendance.subject', 'attendance.reports' => 'attendance.reports',
                                 'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
                                 'exams.setup' => 'exams.setup', 'exams.marks' => 'exams.marks', 'exams.results' => 'exams.results',

@@ -32,6 +32,7 @@ use App\Livewire\ExamSetup;
 use App\Livewire\Expenses;
 use App\Livewire\FeeAdjustments;
 use App\Livewire\FeePayments;
+use App\Livewire\FixedAssets;
 use App\Livewire\FeeStructures;
 use App\Livewire\GradingScales;
 use App\Livewire\Graduates;
@@ -330,6 +331,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('finance/expenses', Expenses::class)->name('expenses.index');
     Route::get('finance/ledger', [SchoolOperationsController::class, 'finance'])->name('finance.ledger');
     Route::get('accounting', Accounting::class)->name('accounting.index');
+    Route::get('accounting/assets', FixedAssets::class)->name('accounting.assets');
     Route::get('accounting/exports/{report}', AccountingExportController::class)->name('accounting.exports');
     Route::post('finance/ledger/{entry}/approve', [SchoolOperationsController::class, 'approve'])->name('finance.ledger.approve');
     Route::post('finance/ledger/{entry}/reject', [SchoolOperationsController::class, 'reject'])->name('finance.ledger.reject');

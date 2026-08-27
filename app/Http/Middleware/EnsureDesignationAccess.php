@@ -23,7 +23,7 @@ class EnsureDesignationAccess
             'finance.ledger', 'finance.ledger.approve', 'finance.ledger.reject', 'finance.ledger.reverse',
             'finance.ledger.reconcile', 'finance.accounts.store', 'finance.transfers.store',
             'finance.transfers.approve', 'finance.reconciliations.reopen' => 'finance.ledger',
-            'accounting.index' => 'accounting.dashboard.view', 'accounting.exports' => 'accounting.reports.export',
+            'accounting.index' => 'accounting.dashboard.view', 'accounting.exports' => 'accounting.reports.export', 'accounting.assets' => 'accounting.assets.view',
             'attendance.index' => 'attendance.daily',
             'attendance.subject' => 'attendance.subject',
             'attendance.reports' => 'attendance.reports',

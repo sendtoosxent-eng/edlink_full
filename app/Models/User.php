@@ -116,7 +116,7 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->role === 'admin' && ! str_starts_with($permission, 'accounting.')) {
             return true;
         }
-        if ($this->role === 'admin' && in_array($permission, ['accounting.dashboard.view', 'accounting.accounts.view', 'accounting.accounts.manage', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.reports.export'], true)) {
+        if ($this->role === 'admin' && in_array($permission, ['accounting.dashboard.view', 'accounting.accounts.view', 'accounting.accounts.manage', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.reports.export', 'accounting.assets.view', 'accounting.assets.manage', 'accounting.assets.depreciate', 'accounting.assets.approve'], true)) {
             return true;
         }
         if ($this->exists && TeacherAcademicScope::grantsMappedPermission($this, $permission)) {
