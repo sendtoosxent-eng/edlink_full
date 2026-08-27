@@ -32,6 +32,8 @@ class Accounting extends Component
 
     public string $to = '';
 
+    public string $search = '';
+
     public string $accountCode = '';
 
     public string $accountName = '';
@@ -82,6 +84,11 @@ class Accounting extends Component
     {
         abort_unless(in_array($tab, ['dashboard', 'accounts', 'journals', 'reports', 'settings', 'periods'], true), 404);
         $this->tab = $tab;
+        $this->resetPage();
+    }
+
+    public function updatingSearch(): void
+    {
         $this->resetPage();
     }
 
@@ -340,13 +347,20 @@ class Accounting extends Component
         $filters = ['from' => $this->from, 'to' => $this->to];
         $trial = $reports->trialBalance($schoolId, $filters);
         $summary = $reports->summary($schoolId, $filters);
+        $search = trim($this->search);
+        $accounts = LedgerAccount::where('school_id', $schoolId)->with('parent')
+            ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('code', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")->orWhere('subtype', 'like', "%{$search}%")))
+            ->orderBy('code')->get();
+        $journals = AccountingJournal::where('school_id', $schoolId)->with(['lines.account'])
+            ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('number', 'like', "%{$search}%")->orWhere('reference', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")->orWhere('journal_type', 'like', "%{$search}%")->orWhere('status', 'like', "%{$search}%")))
+            ->latest('journal_date')->latest('id')->paginate(15);
 
         return view('livewire.accounting', [
-            'accounts' => LedgerAccount::where('school_id', $schoolId)->with('parent')->orderBy('code')->get(),
+            'accounts' => $accounts,
             'postingAccounts' => LedgerAccount::where('school_id', $schoolId)->where('is_active', true)->where('accepts_postings', true)->orderBy('code')->get(),
             'financialAccounts' => FinancialAccount::where('school_id', $schoolId)->orderBy('name')->get(),
             'periods' => AccountingPeriod::where('school_id', $schoolId)->latest('starts_on')->limit(24)->get(),
-            'journals' => AccountingJournal::where('school_id', $schoolId)->with(['lines.account'])->latest('journal_date')->latest('id')->paginate(15),
+            'journals' => $journals,
             'trialBalance' => $trial, 'summary' => $summary, 'receivables' => $reports->receivablesByStudent($schoolId, $filters),
             'recent' => AccountingJournal::where('school_id', $schoolId)->where('status', 'posted')->latest('posted_at')->limit(8)->get(),
             'pageTitle' => 'Accounting', 'currency' => $this->currency(),

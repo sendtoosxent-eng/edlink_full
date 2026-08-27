@@ -67,6 +67,8 @@ class FixedAssets extends Component
 
     public string $depreciationDate = '';
 
+    public string $search = '';
+
     public function mount(FixedAssetSetupService $setup): void
     {
         $this->authorizeAccess('accounting.assets.view');
@@ -80,6 +82,11 @@ class FixedAssets extends Component
     {
         abort_unless(in_array($tab, ['register', 'categories', 'depreciation'], true), 404);
         $this->tab = $tab;
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function saveCategory(): void
@@ -134,7 +141,11 @@ class FixedAssets extends Component
     public function render()
     {
         $school = Auth::user()->school_id;
+        $search = trim($this->search);
+        $assets = FixedAsset::where('school_id', $school)->with(['category', 'custodian', 'acquisitionJournal'])
+            ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('asset_tag', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")->orWhere('serial_number', 'like', "%{$search}%")->orWhere('location', 'like', "%{$search}%")->orWhere('status', 'like', "%{$search}%")->orWhereHas('category', fn ($category) => $category->where('name', 'like', "%{$search}%"))->orWhereHas('custodian', fn ($custodian) => $custodian->where('name', 'like', "%{$search}%"))))
+            ->latest()->paginate(20);
 
-        return view('livewire.fixed-assets', ['assets' => FixedAsset::where('school_id', $school)->with(['category', 'custodian', 'acquisitionJournal'])->latest()->paginate(20), 'categories' => FixedAssetCategory::where('school_id', $school)->with(['assetAccount', 'accumulatedAccount', 'expenseAccount'])->orderBy('name')->get(), 'financialAccounts' => FinancialAccount::where('school_id', $school)->whereNotNull('ledger_account_id')->where('is_active', true)->get(), 'assetAccounts' => LedgerAccount::where('school_id', $school)->where('account_class', 'asset')->where('accepts_postings', true)->get(), 'expenseAccounts' => LedgerAccount::where('school_id', $school)->where('account_class', 'expense')->where('accepts_postings', true)->get(), 'staff' => User::where('school_id', $school)->whereNotIn('role', ['student', 'parent'])->orderBy('name')->get(), 'pendingDepreciations' => FixedAssetDepreciation::where('school_id', $school)->where('status', 'submitted')->with('asset')->latest()->get(), 'pageTitle' => 'Accounting · Asset Management']);
+        return view('livewire.fixed-assets', ['assets' => $assets, 'categories' => FixedAssetCategory::where('school_id', $school)->with(['assetAccount', 'accumulatedAccount', 'expenseAccount'])->orderBy('name')->get(), 'financialAccounts' => FinancialAccount::where('school_id', $school)->whereNotNull('ledger_account_id')->where('is_active', true)->get(), 'assetAccounts' => LedgerAccount::where('school_id', $school)->where('account_class', 'asset')->where('accepts_postings', true)->get(), 'expenseAccounts' => LedgerAccount::where('school_id', $school)->where('account_class', 'expense')->where('accepts_postings', true)->get(), 'staff' => User::where('school_id', $school)->whereNotIn('role', ['student', 'parent'])->orderBy('name')->get(), 'pendingDepreciations' => FixedAssetDepreciation::where('school_id', $school)->where('status', 'submitted')->with('asset')->latest()->get(), 'pageTitle' => 'Accounting · Asset Management']);
     }
 }
