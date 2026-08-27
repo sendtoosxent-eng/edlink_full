@@ -346,7 +346,7 @@
             <!-- Greeting card -->
             <div class="rounded-2xl p-6 lg:p-8 mb-8 relative overflow-hidden shadow-lg ring-2 ring-yellow-400/20" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
                 <div class="relative z-10">
-                    <h2 class="text-white text-2xl font-semibold mb-1">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} 👋</h2>
+                    <h2 class="text-amber-300 text-2xl font-semibold mb-1">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} 👋</h2>
                     <p class="text-gray-300 text-sm">Here's what's happening at {{ $school->name ?? 'your school' }} today.</p>
                     <p class="text-yellow-400 text-xs font-medium mt-3" id="greetingDateTime">Loading...</p>
                 </div>
