@@ -26,5 +26,5 @@ class SchoolAcademicSetup
   };
   foreach($bands as[$grade,$min,$max,$points,$remark])GradingScale::create(['school_id'=>$school->id,'education_stage'=>$stage,'grade'=>$grade,'minimum_percentage'=>$min,'maximum_percentage'=>$max,'aggregate_points'=>$points,'remark'=>$remark]);
  }
- public static function defaultReportSettings(string $stage):array{return['pass_mark'=>50,'best_subjects'=>$stage==='lower_secondary'?8:20,'show_position'=>'enabled','show_fees'=>'enabled','show_attendance'=>'enabled','show_promotion'=>'disabled','next_term_starts'=>'','footer'=>''];}
+ public static function defaultReportSettings(string $stage):array{return['pass_mark'=>50,'best_subjects'=>$stage==='lower_secondary'?8:20,'show_position'=>'enabled','show_fees'=>'enabled','show_attendance'=>'enabled','show_promotion'=>'disabled','show_marks'=>'enabled','show_maximum'=>'enabled','show_percentage'=>'enabled','show_grade'=>'enabled','show_points'=>$stage==='lower_secondary'?'enabled':'disabled','show_remarks'=>'enabled','next_term_starts'=>'','footer'=>''];}
 }

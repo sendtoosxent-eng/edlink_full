@@ -62,19 +62,19 @@
             @endunless
 
             <table class="mt-5 w-full border-collapse text-sm">
-                <thead><tr class="bg-slate-900 text-white"><th class="border p-2 text-left">Subject</th><th class="border p-2">Marks scored</th><th class="border p-2">Maximum marks</th><th class="border p-2">%</th><th class="border p-2">Grade</th><th class="border p-2">Points</th><th class="border p-2 text-left">Remark</th></tr></thead>
+                <thead><tr class="bg-slate-900 text-white"><th class="border p-2 text-left">Subject</th>@if($settings['show_marks'])<th class="border p-2">Marks scored</th>@endif @if($settings['show_maximum'])<th class="border p-2">Maximum marks</th>@endif @if($settings['show_percentage'])<th class="border p-2">%</th>@endif @if($settings['show_grade'])<th class="border p-2">Grade</th>@endif @if($settings['show_points'])<th class="border p-2">Points</th>@endif @if($settings['show_remarks'])<th class="border p-2 text-left">Remark</th>@endif</tr></thead>
                 <tbody>
                 @forelse($data['marks'] as $mark)
-                    <tr><td class="border p-2">{{$mark['subject']}}</td><td class="border p-2 text-center">{{number_format($mark['score'],1)}}</td><td class="border p-2 text-center">{{number_format($mark['maximum'],1)}}</td><td class="border p-2 text-center">{{number_format($mark['percentage'],1)}}</td><td class="border p-2 text-center font-bold">{{$mark['grade']}}</td><td class="border p-2 text-center">{{$mark['points'] ?? '—'}}</td><td class="border p-2">{{$mark['comment']}}</td></tr>
+                    <tr><td class="border p-2">{{$mark['subject']}}</td>@if($settings['show_marks'])<td class="border p-2 text-center">{{number_format($mark['score'],1)}}</td>@endif @if($settings['show_maximum'])<td class="border p-2 text-center">{{number_format($mark['maximum'],1)}}</td>@endif @if($settings['show_percentage'])<td class="border p-2 text-center">{{number_format($mark['percentage'],1)}}%</td>@endif @if($settings['show_grade'])<td class="border p-2 text-center font-bold">{{$mark['grade']}}</td>@endif @if($settings['show_points'])<td class="border p-2 text-center">{{$mark['points'] ?? '—'}}</td>@endif @if($settings['show_remarks'])<td class="border p-2">{{$mark['comment']}}</td>@endif</tr>
                 @empty
-                    <tr><td colspan="7" class="border p-6 text-center text-slate-500">No approved marks are available for this term.</td></tr>
+                    <tr><td colspan="{{1 + collect(['show_marks','show_maximum','show_percentage','show_grade','show_points','show_remarks'])->filter(fn($key) => $settings[$key])->count()}}" class="border p-6 text-center text-slate-500">No approved marks are available for this term.</td></tr>
                 @endforelse
                 </tbody>
             </table>
 
             <table class="mt-4 w-full border-collapse text-center text-sm">
-                <thead><tr class="bg-slate-900 text-xs uppercase text-white"><th class="border p-2">Aggregate</th><th class="border p-2">Average</th><th class="border p-2">Result</th>@if($settings['show_position'])<th class="border p-2">Position</th>@endif</tr></thead>
-                <tbody><tr class="font-black"><td class="border p-2 text-lg">{{$data['aggregate']}}</td><td class="border p-2 text-lg">{{number_format($data['average'],1)}}%</td><td class="border p-2">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</td>@if($settings['show_position'])<td class="border p-2 text-lg">{{$positions[$student->id]??'—'}}</td>@endif</tr></tbody>
+                <thead><tr class="bg-slate-900 text-xs uppercase text-white">@if($settings['show_points'])<th class="border p-2">Aggregate</th>@endif<th class="border p-2">Average</th><th class="border p-2">Result</th>@if($settings['show_position'])<th class="border p-2">Position</th>@endif</tr></thead>
+                <tbody><tr class="font-black">@if($settings['show_points'])<td class="border p-2 text-lg">{{$data['aggregate']}}</td>@endif<td class="border p-2 text-lg">{{number_format($data['average'],1)}}%</td><td class="border p-2">{{$data['marks']->isEmpty()?'Pending':($data['passed']?'Pass':'Below pass mark')}}</td>@if($settings['show_position'])<td class="border p-2 text-lg">{{$positions[$student->id]??'—'}}</td>@endif</tr></tbody>
             </table>
             <p class="mt-1 text-center text-[10px] text-slate-500">Average and aggregate use the best {{$settings['best']}} subject{{$settings['best']===1?'':'s'}} · Pass mark {{number_format($settings['pass'],0)}}%</p>
 

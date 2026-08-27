@@ -18,6 +18,12 @@ class ReportSettings extends Component
     public string $showFees = 'enabled';
     public string $showAttendance = 'enabled';
     public string $showPromotion = 'disabled';
+    public string $showMarks = 'enabled';
+    public string $showMaximum = 'enabled';
+    public string $showPercentage = 'enabled';
+    public string $showGrade = 'enabled';
+    public string $showPoints = 'disabled';
+    public string $showRemarks = 'enabled';
     public string $nextTermStarts = '';
     public string $footer = '';
 
@@ -42,6 +48,12 @@ class ReportSettings extends Component
             'bestSubjects' => 'required|integer|min:1|max:20',
             'nextTermStarts' => 'nullable|date',
             'footer' => 'nullable|string|max:1000',
+            'showMarks' => 'required|in:enabled,disabled',
+            'showMaximum' => 'required|in:enabled,disabled',
+            'showPercentage' => 'required|in:enabled,disabled',
+            'showGrade' => 'required|in:enabled,disabled',
+            'showPoints' => 'required|in:enabled,disabled',
+            'showRemarks' => 'required|in:enabled,disabled',
         ]);
 
         $prefix = "report_{$this->stage}_";
@@ -52,6 +64,12 @@ class ReportSettings extends Component
             'show_fees' => $this->showFees,
             'show_attendance' => $this->showAttendance,
             'show_promotion' => $this->showPromotion,
+            'show_marks' => $this->showMarks,
+            'show_maximum' => $this->showMaximum,
+            'show_percentage' => $this->showPercentage,
+            'show_grade' => $this->showGrade,
+            'show_points' => $this->showPoints,
+            'show_remarks' => $this->showRemarks,
             'next_term_starts' => $this->nextTermStarts,
             'footer' => $this->footer,
         ] as $key => $value) {
@@ -75,6 +93,12 @@ class ReportSettings extends Component
         $this->showFees = $values[$prefix.'show_fees'] ?? $defaults['show_fees'];
         $this->showAttendance = $values[$prefix.'show_attendance'] ?? $defaults['show_attendance'];
         $this->showPromotion = $values[$prefix.'show_promotion'] ?? $defaults['show_promotion'];
+        $this->showMarks = $values[$prefix.'show_marks'] ?? $defaults['show_marks'];
+        $this->showMaximum = $values[$prefix.'show_maximum'] ?? $defaults['show_maximum'];
+        $this->showPercentage = $values[$prefix.'show_percentage'] ?? $defaults['show_percentage'];
+        $this->showGrade = $values[$prefix.'show_grade'] ?? $defaults['show_grade'];
+        $this->showPoints = $values[$prefix.'show_points'] ?? $defaults['show_points'];
+        $this->showRemarks = $values[$prefix.'show_remarks'] ?? $defaults['show_remarks'];
         $this->nextTermStarts = $values[$prefix.'next_term_starts'] ?? $defaults['next_term_starts'];
         $this->footer = $values[$prefix.'footer'] ?? $defaults['footer'];
     }

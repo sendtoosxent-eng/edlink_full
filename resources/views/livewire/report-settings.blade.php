@@ -57,6 +57,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Pass Mark (%)</label>
                 <input wire:model="passMark" type="number" min="0" max="100" class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-bold text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
                 <span class="block mt-1 text-[11px] text-slate-400">Average required for a pass recommendation.</span>
+                @error('passMark')<span class="mt-1 block text-[11px] font-semibold text-rose-600">{{ $message }}</span>@enderror
             </div>
 
             <!-- Best Subjects Used -->
@@ -64,6 +65,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Best Subjects Used</label>
                 <input wire:model="bestSubjects" type="number" min="1" max="20" class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-bold text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
                 <span class="block mt-1 text-[11px] text-slate-400">Set 20 to use all available subjects.</span>
+                @error('bestSubjects')<span class="mt-1 block text-[11px] font-semibold text-rose-600">{{ $message }}</span>@enderror
             </div>
 
             <!-- Show Class Position -->
@@ -122,26 +124,60 @@
                 </div>
             </div>
 
-            <!-- Report Footer -->
+            <div class="sm:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">
+                <div class="border-b border-slate-200 bg-white px-5 py-4">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700"><i class="fa fa-table-columns text-xs"></i></span>
+                        <div><h3 class="text-sm font-extrabold text-slate-900">Report Table Columns</h3><p class="mt-0.5 text-[11px] text-slate-500">Choose what appears for {{ str($stage)->replace('_',' ')->title() }}. Subject is always shown.</p></div>
+                    </div>
+                </div>
+                <div class="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach([
+                        'showMarks' => 'Marks Scored',
+                        'showMaximum' => 'Maximum Marks',
+                        'showPercentage' => 'Percentage',
+                        'showGrade' => 'Grade',
+                        'showPoints' => 'Points / Aggregates',
+                        'showRemarks' => 'Remarks',
+                    ] as $property => $label)
+                        <label class="group rounded-xl border border-slate-200 bg-white p-3.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-slate-300 hover:shadow-sm">
+                            <span class="mb-2 block">{{ $label }}</span>
+                            <span class="relative block">
+                                <select wire:model="{{ $property }}" class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pr-9 text-xs font-semibold text-slate-800 transition hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
+                                    <option value="enabled">Show on report</option>
+                                    <option value="disabled">Hide from report</option>
+                                </select>
+                                <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+                <p class="px-5 pb-4 text-[11px] text-slate-400">Points and the aggregate summary are hidden by default outside lower secondary, but you can enable them here.</p>
+            </div>
+
+            <!-- Next Term Date -->
             <div class="sm:col-span-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Next Term Starts</label>
                 <input wire:model="nextTermStarts" type="date" class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-bold text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
                 <span class="block mt-1 text-[11px] text-slate-400">This reopening date will appear on report cards for the selected education stage.</span>
+                @error('nextTermStarts')<span class="mt-1 block text-[11px] font-semibold text-rose-600">{{ $message }}</span>@enderror
             </div>
 
             <!-- Report Footer -->
             <div class="sm:col-span-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Report Footer Note</label>
                 <textarea wire:model="footer" rows="3" placeholder="Enter custom message to display at the bottom of reports..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10 placeholder:text-slate-400"></textarea>
+                <div class="mt-1 flex items-center justify-between gap-3"><span class="text-[11px] text-slate-400">Optional message printed near the bottom of every report.</span>@error('footer')<span class="text-[11px] font-semibold text-rose-600">{{ $message }}</span>@enderror</div>
             </div>
 
         </div>
 
         <!-- Submit Button -->
         <div class="mt-8 pt-5 border-t border-slate-100 flex items-center justify-end">
-            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-950 transition duration-150 hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-400/20 shadow-md">
+            <button type="submit" wire:loading.attr="disabled" wire:target="save" class="inline-flex min-w-48 items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-950 transition duration-150 hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-400/20 shadow-md disabled:cursor-wait disabled:opacity-60">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                <span>Save Stage Settings</span>
+                <span wire:loading.remove wire:target="save">Save Stage Settings</span>
+                <span wire:loading wire:target="save">Saving Settings…</span>
             </button>
         </div>
 

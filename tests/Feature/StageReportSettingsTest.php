@@ -22,7 +22,9 @@ it('loads only the saved settings for the requested education stage', function (
     expect($lower['pass'])->toBe(45.0)
         ->and($lower['best'])->toBe(8)
         ->and($lower['show_fees'])->toBeFalse()
+        ->and($lower['show_points'])->toBeTrue()
         ->and($lower['next_term_starts'])->toBe('2026-09-14')
         ->and($advanced['pass'])->toBe(60.0)
+        ->and($advanced['show_points'])->toBeFalse()
         ->and($advanced['show_fees'])->toBeTrue();
 });

@@ -146,11 +146,12 @@
                                 <tr class="bg-slate-900 text-white font-extrabold uppercase border-b-2 border-slate-900 text-[11px]">
                                     <th class="p-2.5 border-r-2 border-slate-900 w-12 text-center">S.NO</th>
                                     <th class="p-2.5 border-r-2 border-slate-900">SUBJECT</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MARKS SCORED</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MAXIMUM MARKS</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE OBTAINED</th>
-                                    <th class="p-2.5 border-r-2 border-slate-900 text-center w-24">POINTS</th>
-                                    <th class="p-2.5 text-center w-32">REMARKS</th>
+                                    @if($settings['show_marks'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MARKS SCORED</th>@endif
+                                    @if($settings['show_maximum'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MAXIMUM MARKS</th>@endif
+                                    @if($settings['show_percentage'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-20">%</th>@endif
+                                    @if($settings['show_grade'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE</th>@endif
+                                    @if($settings['show_points'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">POINTS</th>@endif
+                                    @if($settings['show_remarks'])<th class="p-2.5 text-center w-32">REMARKS</th>@endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y-2 divide-slate-900 font-semibold text-slate-900 uppercase">
@@ -158,21 +159,23 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">{{ $grade->subject->name ?? ($grade['subject_name'] ?? 'SUBJECT') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->score ?? ($grade['score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->maximum_score ?? ($grade['maximum_score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? '—') }}</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ $grade->aggregate_points ?? '—' }}</td>
-                                    <td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'Grade not configured') }}</td>
+                                    @if($settings['show_marks'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->score ?? ($grade['score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>@endif
+                                    @if($settings['show_maximum'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->maximum_score ?? ($grade['maximum_score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>@endif
+                                    @if($settings['show_percentage'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ number_format((float) $grade->percentage, 1) }}%</td>@endif
+                                    @if($settings['show_grade'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-black text-slate-900">{{ $grade->grade_name ?? ($grade['grade_name'] ?? '—') }}</td>@endif
+                                    @if($settings['show_points'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ $grade->aggregate_points ?? '—' }}</td>@endif
+                                    @if($settings['show_remarks'])<td class="p-2.5 text-center font-medium text-slate-700">{{ $grade->remarks ?? ($grade['remarks'] ?? 'Grade not configured') }}</td>@endif
                                 </tr>
                                 @empty
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">01</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">NO GRADES RECORDED</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">—</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono">—</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-black">—</td>
-                                    <td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">0.00</td>
-                                    <td class="p-2.5 text-center font-medium text-slate-700">—</td>
+                                    @if($settings['show_marks'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
+                                    @if($settings['show_maximum'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
+                                    @if($settings['show_percentage'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
+                                    @if($settings['show_grade'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
+                                    @if($settings['show_points'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
+                                    @if($settings['show_remarks'])<td class="p-2.5 text-center">—</td>@endif
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -183,7 +186,7 @@
                     <table class="mt-4 w-full border-2 border-slate-900 border-collapse text-center">
                         <thead class="bg-slate-900 text-[10px] font-black uppercase tracking-wider text-white">
                             <tr>
-                                <th class="border-r border-slate-600 p-2">Aggregate</th>
+                                @if($settings['show_points'])<th class="border-r border-slate-600 p-2">Aggregate</th>@endif
                                 <th class="border-r border-slate-600 p-2">Average</th>
                                 <th class="border-r border-slate-600 p-2">Result</th>
                                 @if($settings['show_position'])<th class="border-r border-slate-600 p-2">Position</th>@endif
@@ -191,7 +194,7 @@
                             </tr>
                         </thead>
                         <tbody><tr class="bg-yellow-50 font-mono text-lg font-black text-slate-950">
-                            <td class="border-r-2 border-slate-900 p-2">{{ $aggregate }}</td>
+                            @if($settings['show_points'])<td class="border-r-2 border-slate-900 p-2">{{ $aggregate }}</td>@endif
                             <td class="border-r-2 border-slate-900 p-2">{{ number_format((float) $average, 1) }}%</td>
                             <td class="border-r-2 border-slate-900 p-2 text-sm">{{ $grades->isEmpty() ? 'Pending' : ((float) $average >= $settings['pass'] ? 'Pass' : 'Below pass mark') }}</td>
                             @if($settings['show_position'])<td class="border-r-2 border-slate-900 p-2">{{ $position ?? '—' }}</td>@endif
