@@ -175,13 +175,13 @@
                                     @if($canManageStudents)
                                     <div class="inline-flex items-center gap-2">
                                         <!-- Edit Button -->
-                                        <button onclick="Livewire.dispatch('edit-student', { studentId: {{ $student->id }} })" 
+                                        <a href="{{ route('students.profile', $student) }}" wire:navigate
                                                 title="Edit Profile" 
                                                 class="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
-                                        </button>
+                                        </a>
                                         
                                         <!-- Toggle Status Button -->
                                         @if($student->status !== 'graduated')<button wire:click="toggleStatus({{ $student->id }})"

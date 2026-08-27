@@ -14,6 +14,8 @@ use App\Http\Controllers\PlatformSchoolGroupController;
 use App\Http\Controllers\PlatformSchoolImportController;
 use App\Http\Controllers\PlatformSchoolSmsController;
 use App\Http\Controllers\PlatformSupportController;
+use App\Http\Controllers\PersonProfileController;
+use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\SchoolOperationsController;
 use App\Http\Controllers\StudentActivityExportController;
@@ -144,6 +146,8 @@ Route::prefix('platform')->name('platform.')->group(function () {
     });
 });
 Route::get('/', LandingPageController::class)->name('home');
+Route::get('profile-photo/{type}/{person}', ProfilePhotoController::class)
+    ->middleware('signed')->whereIn('type', ['student', 'user'])->whereNumber('person')->name('profile-photo.show');
 Route::view('privacy', 'legal.privacy')->name('privacy');
 Route::view('terms', 'legal.terms')->name('terms');
 Route::post('contact', function (Request $request) {
@@ -307,6 +311,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     })->name('homework.submission.download');
     Route::get('students/register', StudentRegister::class)->name('students.register');
     Route::get('students', StudentsIndex::class)->name('students.index');
+    Route::get('students/{student}/profile', [PersonProfileController::class, 'student'])->name('students.profile');
+    Route::patch('students/{student}/profile', [PersonProfileController::class, 'updateStudent'])->name('students.profile.update');
     Route::get('students/graduates', Graduates::class)->name('graduates.index');
     Route::get('students/graduates/{graduationRecord}/certificate', GraduationCertificateController::class)->name('graduates.certificate');
     Route::get('students/id-cards', [StudentIdCardController::class, 'index'])->name('students.id-cards');
@@ -347,6 +353,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('attendance/subject', SubjectAttendance::class)->name('attendance.subject');
     Route::get('academics/classes', ClassesAndStreams::class)->name('classes.index');
     Route::get('staff', StaffManagement::class)->name('staff.index');
+    Route::get('staff/{user}/profile', [PersonProfileController::class, 'staff'])->name('staff.profile');
+    Route::patch('staff/{user}/profile', [PersonProfileController::class, 'updateStaff'])->name('staff.profile.update');
     Route::get('staff/register', StaffRegister::class)->name('staff.register');
     Route::get('staff/attendance', StaffAttendance::class)->name('staff.attendance');
     Route::get('staff/payroll', Payroll::class)->name('payroll.index');
@@ -365,6 +373,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('students/portal-access', PortalAccess::class)->name('students.portal-access');
     Route::get('parents/register', ParentRegister::class)->name('parents.register');
     Route::get('parents', ParentsIndex::class)->name('parents.index');
+    Route::get('parents/{user}/profile', [PersonProfileController::class, 'parent'])->name('parents.profile');
+    Route::patch('parents/{user}/profile', [PersonProfileController::class, 'updateParent'])->name('parents.profile.update');
     Route::get('academics/timetable', Timetable::class)->name('timetable.index');
     Route::get('academics/events', Events::class)->name('events.index');
     Route::get('parents/communications', Communications::class)->name('communications.index');

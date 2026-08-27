@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class Student extends Model
 {
@@ -110,7 +111,9 @@ class Student extends Model
 
     public function photoUrl(): ?string
     {
-        return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
+        return $this->photo_path && Storage::disk('public')->exists($this->photo_path)
+            ? URL::signedRoute('profile-photo.show', ['type' => 'student', 'person' => $this->id])
+            : null;
     }
 
     /**

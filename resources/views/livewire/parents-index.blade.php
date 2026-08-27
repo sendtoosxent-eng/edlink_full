@@ -55,6 +55,7 @@
                         <th class="py-3.5 px-6">Contact Info</th>
                         <th class="py-3.5 px-6">Linked Learners</th>
                         <th class="py-3.5 px-6 text-center">Status</th>
+                        <th class="py-3.5 px-6 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium">
@@ -64,8 +65,8 @@
                             <!-- Name & Avatar -->
                             <td class="py-4 px-6">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-800 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
-                                        {{ substr($parent->name, 0, 2) }}
+                                    <div class="w-10 h-10 overflow-hidden rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-800 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
+                                        @if($parent->avatarUrl())<img src="{{ $parent->avatarUrl() }}" alt="{{ $parent->name }}" class="h-full w-full object-cover">@else{{ substr($parent->name, 0, 2) }}@endif
                                     </div>
                                     <div>
                                         <p class="font-bold text-slate-900">{{ $parent->name }}</p>
@@ -113,11 +114,12 @@
                                     <span>Active</span>
                                 </span>
                             </td>
+                            <td class="py-4 px-6 text-right"><a href="{{ route('parents.profile', $parent) }}" wire:navigate class="text-xs font-bold text-amber-700 hover:text-amber-900">Edit</a></td>
                         </tr>
                     @empty
                         <!-- Empty State -->
                         <tr>
-                            <td colspan="4" class="py-12 px-6 text-center">
+                            <td colspan="5" class="py-12 px-6 text-center">
                                 <div class="max-w-xs mx-auto text-center space-y-2">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto">
                                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
