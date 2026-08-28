@@ -13,7 +13,7 @@ class EnsureDesignationAccess
     {
         $route = $request->route()?->getName() ?? '';
         $permission = match ($route) {
-            'students.index', 'graduates.index', 'graduates.certificate' => 'students.view',
+            'students.index', 'graduates.index', 'graduates.certificate', 'graduates.recommendation' => 'students.view',
             'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage',
             'students.activities', 'students.activities.export' => null,
             'fee-payments.index' => null,

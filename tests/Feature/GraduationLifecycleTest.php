@@ -57,6 +57,7 @@ it('allows graduation only after term three and preserves a permanent record', f
 
     $this->get(route('graduates.index'))->assertOk();
     $this->get(route('graduates.certificate', $record))->assertOk()->assertHeader('content-type', 'application/pdf');
+    $this->get(route('graduates.recommendation', $record))->assertOk()->assertHeader('content-type', 'application/pdf');
 });
 
 it('rejects graduation before term three', function () {

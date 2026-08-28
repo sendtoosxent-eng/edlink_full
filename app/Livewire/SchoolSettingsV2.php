@@ -26,6 +26,17 @@ class SchoolSettingsV2 extends SchoolSettings
             'leave_types' => 'standard', 'leave_approval_rule' => 'admin',
             'otp_enabled' => 'enabled', 'audit_retention' => '12 months',
             'timezone' => 'Africa/Kampala', 'date_format' => 'd M Y', 'language' => 'English',
+            'certificate_title' => 'Certificate of Completion',
+            'certificate_subtitle' => 'Awarded with distinction and pride',
+            'certificate_intro' => 'This certificate is proudly presented to',
+            'certificate_achievement' => 'For successfully completing the prescribed course of study with dedication and commitment.',
+            'certificate_signatory_name' => $this->principal_name,
+            'certificate_signatory_title' => 'Head Teacher',
+            'certificate_number_prefix' => 'CERT',
+            'recommendation_title' => 'Letter of Recommendation',
+            'recommendation_intro' => 'To Whom It May Concern',
+            'recommendation_body' => 'We are pleased to recommend this graduate, who completed their studies at our institution with commitment, discipline, and good standing.',
+            'recommendation_closing' => 'We confidently recommend them for further study and suitable opportunities.',
         ];
         foreach ($defaults as $key => $value) if (blank($this->settings[$key] ?? null)) $this->settings[$key] = $value;
     }
@@ -42,6 +53,17 @@ class SchoolSettingsV2 extends SchoolSettings
             'website' => ['nullable', 'url', 'max:255'],
             'principal_name' => ['nullable', 'string', 'max:255'],
             'badge' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'settings.certificate_title' => ['required', 'string', 'max:100'],
+            'settings.certificate_subtitle' => ['nullable', 'string', 'max:150'],
+            'settings.certificate_intro' => ['required', 'string', 'max:180'],
+            'settings.certificate_achievement' => ['required', 'string', 'max:500'],
+            'settings.certificate_signatory_name' => ['nullable', 'string', 'max:100'],
+            'settings.certificate_signatory_title' => ['nullable', 'string', 'max:100'],
+            'settings.certificate_number_prefix' => ['required', 'string', 'max:20'],
+            'settings.recommendation_title' => ['required', 'string', 'max:100'],
+            'settings.recommendation_intro' => ['required', 'string', 'max:180'],
+            'settings.recommendation_body' => ['required', 'string', 'max:1500'],
+            'settings.recommendation_closing' => ['required', 'string', 'max:750'],
         ]);
 
         $school = Auth::user()->school;

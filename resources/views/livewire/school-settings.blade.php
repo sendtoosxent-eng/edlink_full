@@ -28,6 +28,7 @@
             @foreach([
                 'profile' => ['label' => 'School profile', 'icon' => 'fa-school'],
                 'academic' => ['label' => 'Academic', 'icon' => 'fa-graduation-cap'],
+                'documents' => ['label' => 'Certificates', 'icon' => 'fa-certificate'],
                 'finance' => ['label' => 'Finance', 'icon' => 'fa-wallet'],
                 'staff' => ['label' => 'Staff', 'icon' => 'fa-users'],
                 'communication' => ['label' => 'Communication', 'icon' => 'fa-bullhorn'],
@@ -150,6 +151,38 @@
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Grading scale note</label>
                     <select wire:model="settings.grading_scale" class="w-full rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium"><option value="stage_scales">Use saved education-stage grading scales</option><option value="grades_aggregates">Show grades and aggregates</option><option value="grades_averages">Show grades and averages</option><option value="competency_descriptors">Use competency descriptors</option></select>
                     <span class="block text-[11px] text-slate-400 mt-1">Actual grade bands are managed in Grading Scales.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CERTIFICATES & RECOMMENDATIONS -->
+        <section x-show="tab==='documents'" class="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1.5 before:bg-yellow-400" style="display: none;">
+            <div class="mb-5 border-b border-slate-100 pb-4">
+                <h2 class="text-sm font-bold text-slate-900">Certificates & recommendations</h2>
+                <p class="mt-0.5 text-xs text-slate-500">Customize the wording and signatory used on graduate documents. The school badge and profile details are added automatically.</p>
+            </div>
+            <div class="grid gap-6 xl:grid-cols-2">
+                <div class="space-y-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-5">
+                    <div><h3 class="text-xs font-black uppercase tracking-wider text-amber-800">Graduation certificate</h3><p class="mt-1 text-[11px] text-slate-500">Navy-and-gold landscape design.</p></div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="text-xs font-semibold text-slate-700">Certificate title<input wire:model="settings.certificate_title" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"><span class="text-rose-600">@error('settings.certificate_title'){{ $message }}@enderror</span></label>
+                        <label class="text-xs font-semibold text-slate-700">Subtitle<input wire:model="settings.certificate_subtitle" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></label>
+                    </div>
+                    <label class="block text-xs font-semibold text-slate-700">Presentation line<input wire:model="settings.certificate_intro" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></label>
+                    <label class="block text-xs font-semibold text-slate-700">Achievement wording<textarea wire:model="settings.certificate_achievement" rows="3" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></textarea></label>
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <label class="text-xs font-semibold text-slate-700 sm:col-span-1">Number prefix<input wire:model="settings.certificate_number_prefix" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs" placeholder="CERT"></label>
+                        <label class="text-xs font-semibold text-slate-700">Signatory<input wire:model="settings.certificate_signatory_name" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs" placeholder="Head teacher name"></label>
+                        <label class="text-xs font-semibold text-slate-700">Designation<input wire:model="settings.certificate_signatory_title" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs" placeholder="Head Teacher"></label>
+                    </div>
+                </div>
+                <div class="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div><h3 class="text-xs font-black uppercase tracking-wider text-slate-700">Recommendation letter</h3><p class="mt-1 text-[11px] text-slate-500">Formal A4 letter generated for each graduate.</p></div>
+                    <label class="block text-xs font-semibold text-slate-700">Document title<input wire:model="settings.recommendation_title" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></label>
+                    <label class="block text-xs font-semibold text-slate-700">Salutation<input wire:model="settings.recommendation_intro" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></label>
+                    <label class="block text-xs font-semibold text-slate-700">Main recommendation<textarea wire:model="settings.recommendation_body" rows="5" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></textarea></label>
+                    <label class="block text-xs font-semibold text-slate-700">Closing endorsement<textarea wire:model="settings.recommendation_closing" rows="3" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs"></textarea></label>
+                    <p class="rounded-xl bg-white p-3 text-[11px] leading-5 text-slate-500">Graduate name, class, completion year, final average, certificate number, school contacts, and signatory are inserted automatically.</p>
                 </div>
             </div>
         </section>

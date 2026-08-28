@@ -315,6 +315,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::patch('students/{student}/profile', [PersonProfileController::class, 'updateStudent'])->name('students.profile.update');
     Route::get('students/graduates', Graduates::class)->name('graduates.index');
     Route::get('students/graduates/{graduationRecord}/certificate', GraduationCertificateController::class)->name('graduates.certificate');
+    Route::get('students/graduates/{graduationRecord}/recommendation', [GraduationCertificateController::class, 'recommendation'])->name('graduates.recommendation');
     Route::get('students/id-cards', [StudentIdCardController::class, 'index'])->name('students.id-cards');
     Route::post('students/id-cards', [StudentIdCardController::class, 'generate'])->name('students.id-cards.generate');
     Route::get('students/categories', StudentCategories::class)->name('student-categories.index');
