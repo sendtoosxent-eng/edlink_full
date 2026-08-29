@@ -6,6 +6,7 @@ use App\Models\DemoRegistration;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -46,6 +47,24 @@ it('permanently removes a demo school and audits the action', function () {
     $this->assertDatabaseMissing('users', ['school_id' => $school->id]);
     $this->assertDatabaseMissing('demo_registrations', ['email' => $user->email]);
     expect(PlatformAuditLog::where('event', 'platform.school.deleted')->exists())->toBeTrue();
+});
+
+it('permanently removes a demo school with populated accounting dependencies', function () {
+    $admin = platformSchoolAdmin();
+    $school = School::create(['name' => 'Finance Demo', 'slug' => 'finance-demo', 'school_type' => 'secondary', 'license_plan' => 'basic', 'license_status' => 'trial', 'is_demo' => true]);
+    $termId = DB::table('terms')->insertGetId(['school_id' => $school->id, 'name' => 'Term 1', 'year' => now()->year, 'term_number' => 1, 'is_current' => true, 'status' => 'open', 'created_at' => now(), 'updated_at' => now()]);
+    $supplierId = DB::table('accounting_suppliers')->insertGetId(['school_id' => $school->id, 'name' => 'Demo Supplier', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+    $accountId = DB::table('financial_accounts')->where('school_id', $school->id)->value('id');
+    $ledgerId = DB::table('ledger_accounts')->where('school_id', $school->id)->where('code', '5400')->value('id');
+    $costCentreId = DB::table('cost_centres')->where('school_id', $school->id)->value('id');
+    $fundId = DB::table('accounting_funds')->where('school_id', $school->id)->value('id');
+    DB::table('expenses')->insert(['school_id' => $school->id, 'term_id' => $termId, 'financial_account_id' => $accountId, 'supplier_id' => $supplierId, 'expense_ledger_account_id' => $ledgerId, 'cost_centre_id' => $costCentreId, 'fund_id' => $fundId, 'settlement_type' => 'immediate', 'category' => 'Utilities', 'amount' => 100, 'expense_date' => now()->toDateString(), 'created_at' => now(), 'updated_at' => now()]);
+
+    $this->actingAs($admin, 'platform')->withSession(['platform_mfa_passed' => true, 'platform_last_activity' => now()->timestamp])
+        ->delete(route('platform.schools.destroy', $school), ['school_number' => $school->school_number])
+        ->assertRedirect(route('platform.schools'));
+
+    $this->assertDatabaseMissing('schools', ['id' => $school->id]);
 });
 
 it('protects active customer schools from deletion', function () {

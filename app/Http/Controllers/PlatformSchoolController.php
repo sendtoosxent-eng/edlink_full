@@ -205,6 +205,16 @@ class PlatformSchoolController extends Controller
             // Users are nullable on school deletion, so remove tenant accounts explicitly.
             // A deliberate platform-level demo purge may remove accounting evidence; normal
             // operational deletion remains restricted so posted evidence cannot disappear.
+            // Operational finance rows use restrictive links to cash accounts and accounting
+            // dimensions. Remove those children before their parent ledgers and dimensions.
+            DB::table('cash_pool_entries')->where('school_id', $school->id)->delete();
+            DB::table('finance_reconciliations')->where('school_id', $school->id)->delete();
+            DB::table('finance_ledger_entries')->where('school_id', $school->id)->update(['reversal_of_id' => null]);
+            DB::table('finance_ledger_entries')->where('school_id', $school->id)->delete();
+            DB::table('financial_account_transfers')->where('school_id', $school->id)->delete();
+            DB::table('expenses')->where('school_id', $school->id)->delete();
+            DB::table('fee_payments')->where('school_id', $school->id)->delete();
+            DB::table('payroll_runs')->where('school_id', $school->id)->delete();
             DB::table('fixed_asset_depreciations')->where('school_id', $school->id)->delete();
             DB::table('fixed_assets')->where('school_id', $school->id)->delete();
             DB::table('fixed_asset_categories')->where('school_id', $school->id)->delete();
