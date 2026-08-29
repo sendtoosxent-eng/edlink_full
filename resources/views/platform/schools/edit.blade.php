@@ -1,7 +1,7 @@
 @extends('layouts.platform', ['title' => 'Edit '.$school->name])
 
 @section('content')
-<div class="mx-auto max-w-5xl space-y-6">
+<div class="space-y-6">
     <a href="{{ route('platform.schools.show', $school) }}" class="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-amber-600">← Back to school details</a>
 
     <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm sm:p-8">

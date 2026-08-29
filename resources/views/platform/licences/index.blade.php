@@ -1,7 +1,7 @@
 @extends('layouts.platform', ['title' => 'Licences & Plans'])
 
 @section('content')
-<div class="space-y-6 pb-12">
+<div class="space-y-6">
     <!-- Header Block with Dark Gradient Background & Ambient Glow -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div class="relative z-10 max-w-2xl">

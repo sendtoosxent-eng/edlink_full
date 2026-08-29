@@ -1,7 +1,7 @@
 @extends('layouts.platform', ['title' => 'Platform Dashboard'])
 
 @section('content')
-<div class="space-y-6 pb-12">
+<div class="space-y-6">
     <!-- Dark Gradient Hero Banner with Glow -->
     <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

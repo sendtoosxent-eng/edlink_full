@@ -1,13 +1,13 @@
 @extends('layouts.platform', ['title' => 'Platform Administrators'])
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+<div class="space-y-6">
 
     <!-- Page Header & Action Title -->
-    <div class="sm:flex sm:items-center sm:justify-between border-b border-slate-200 pb-6">
+    <div class="sm:flex sm:items-center sm:justify-between border-b border-slate-900 pb-6">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Platform Administrators</h1>
-            <p class="mt-1 text-sm text-slate-500">Manage administrative privileges, credentials, and access roles across the platform.</p>
+            <h1 class="text-2xl font-bold text-amber-300 tracking-tight">Platform Administrators</h1>
+            <p class="mt-1 text-sm text-slate-200">Manage administrative privileges, credentials, and access roles across the platform.</p>
         </div>
     </div>
 

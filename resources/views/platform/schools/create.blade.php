@@ -1,7 +1,7 @@
 @extends('layouts.platform', ['title' => 'Add school'])
 
 @section('content')
-<div class="mx-auto max-w-5xl space-y-6">
+<div class="space-y-6">
     <div>
         <p class="text-xs font-black uppercase tracking-[0.22em] text-amber-600">School onboarding</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">Set up a new school</h1>

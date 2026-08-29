@@ -2,8 +2,7 @@
 @section('content')
 <div class="space-y-6">
     @if(session('status'))<div class="rounded-xl bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{{ session('status') }}</div>@endif
-    <section class="rounded-3xl bg-slate-900 p-7 text-white"><p class="text-xs font-black uppercase tracking-widest text-amber-300">Multi-school management</p><h1 class="mt-2 text-3xl font-black">School groups & branches</h1><p class="mt-2 text-sm text-slate-300">Join existing school tenants under one director account while each branch keeps isolated operational data and licensing.</p></section>
-    <div class="grid gap-6 lg:grid-cols-[1fr_380px]">
+     <div class="grid gap-6 lg:grid-cols-[1fr_380px]">
         <section class="overflow-hidden rounded-2xl border bg-white"><div class="border-b p-5"><h2 class="font-black">Registered groups</h2></div><div class="divide-y">
             @forelse($groups as $group)<a href="{{ route('platform.groups.show', $group) }}" class="flex items-center justify-between p-5 hover:bg-slate-50"><div><b>{{ $group->name }}</b><p class="text-xs text-slate-400">{{ $group->code }} · {{ $group->schools->pluck('name')->join(', ') }}</p></div><span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">{{ $group->schools_count }} branches</span></a>@empty<p class="p-8 text-center text-sm text-slate-400">No school groups yet.</p>@endforelse
         </div></section>
