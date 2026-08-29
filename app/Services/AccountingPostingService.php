@@ -70,7 +70,8 @@ class AccountingPostingService
     {
         $debit = $expense->expense_ledger_account_id
             ? $this->validAccount(LedgerAccount::where('school_id', $expense->school_id)->find($expense->expense_ledger_account_id), $expense->school_id, null, 'The selected expense account is unavailable.')
-            : ($this->sourceMapping($expense->school_id, 'expense_category', Expense::class, $expense->category)
+            : ($this->mappingOrNull($expense->school_id, 'expense_category:'.str($expense->category)->slug(), 'expense')
+            ?? $this->sourceMapping($expense->school_id, 'expense_category', Expense::class, $expense->category)
             ?? $this->mapping($expense->school_id, 'default_expense', 'expense'));
         $credit = $expense->settlement_type === 'credit'
             ? $this->mapping($expense->school_id, 'supplier_payable', 'liability')
@@ -86,14 +87,16 @@ class AccountingPostingService
     {
         $cash = $this->financialAccount($run->school_id, $run->financial_account_id);
         if ($run->payment_type === 'advance') {
-            $advance = $this->accountByCode($run->school_id, '1230', 'asset');
+            $advance = $this->mapping($run->school_id, 'staff_advance', 'asset');
 
             return $this->postSource($run, 'payroll_advance', $run->paid_at?->toDateString() ?? now()->toDateString(), 'Staff advance for employee #'.$run->user_id, [
                 $this->line($advance->id, $run->amount, 0, $run->term_id, null, 'Staff advance', $run->user_id),
                 $this->line($cash->ledger_account_id, 0, $run->amount, $run->term_id, null, 'Paid from '.$cash->name, $run->user_id),
             ], $run->recorded_by, $approverId);
         }
-        $salaryExpense = $this->mapping($run->school_id, 'non_teaching_salary_expense', 'expense');
+        $staff = $run->staff;
+        $isTeaching = $staff && ($staff->role === 'teacher' || str_contains(strtolower((string) $staff->job_title), 'teach'));
+        $salaryExpense = $this->mapping($run->school_id, $isTeaching ? 'teaching_salary_expense' : 'non_teaching_salary_expense', 'expense');
         $salaryPayable = $this->mapping($run->school_id, 'salaries_payable', 'liability');
         $this->postSource($run, 'payroll_accrual', $run->paid_at?->toDateString() ?? now()->toDateString(), 'Payroll accrual for employee #'.$run->user_id, [
             $this->line($salaryExpense->id, $run->amount, 0, $run->term_id, null, 'Salary expense', $run->user_id),
@@ -165,6 +168,13 @@ class AccountingPostingService
         $mapping = AccountMapping::with('account')->where('school_id', $schoolId)->where('mapping_type', $type)->where('source_type', $sourceType)->where('source_id', (string) $sourceId)->first();
 
         return $mapping ? $this->validAccount($mapping->account, $schoolId, null, 'The configured source posting account is unavailable.') : null;
+    }
+
+    private function mappingOrNull(int $schoolId, string $type, ?string $class = null): ?LedgerAccount
+    {
+        $mapping = AccountMapping::with('account')->where('school_id', $schoolId)->where('mapping_type', $type)->whereNull('source_type')->whereNull('source_id')->first();
+
+        return $mapping ? $this->validAccount($mapping->account, $schoolId, $class, "The '{$type}' posting rule is unavailable.") : null;
     }
 
     private function financialAccount(int $schoolId, ?int $id): FinancialAccount

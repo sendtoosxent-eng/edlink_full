@@ -6,6 +6,8 @@ use App\Models\AccountingJournal;
 use App\Models\AccountingPeriod;
 use App\Models\AccountMapping;
 use App\Models\AuditLog;
+use App\Models\Expense;
+use App\Models\FeeStructure;
 use App\Models\FinancialAccount;
 use App\Models\LedgerAccount;
 use App\Models\SchoolSetting;
@@ -273,7 +275,12 @@ class Accounting extends Component
         $schoolId = Auth::user()->school_id;
         DB::transaction(function () use ($schoolId) {
             foreach ($this->mappings as $type => $accountId) {
-                $account = LedgerAccount::where('school_id', $schoolId)->where('is_active', true)->where('accepts_postings', true)->findOrFail($accountId);
+                if (! $accountId) {
+                    throw ValidationException::withMessages(["mappings.{$type}" => 'Select a ledger account for every posting rule.']);
+                }
+                $expectedClass = $this->mappingAccountClass($type);
+                $account = LedgerAccount::where('school_id', $schoolId)->where('is_active', true)->where('accepts_postings', true)
+                    ->when($expectedClass, fn ($query) => $query->where('account_class', $expectedClass))->findOrFail($accountId);
                 $mapping = AccountMapping::where('school_id', $schoolId)->where('mapping_type', $type)->whereNull('source_type')->whereNull('source_id')->first();
                 $old = $mapping?->ledger_account_id;
                 $mapping = AccountMapping::updateOrCreate(['school_id' => $schoolId, 'mapping_type' => $type, 'source_type' => null, 'source_id' => null], ['ledger_account_id' => $account->id, 'updated_by' => Auth::id()]);
@@ -318,7 +325,31 @@ class Accounting extends Component
     private function loadMappings(): void
     {
         $this->mappings = AccountMapping::where('school_id', Auth::user()->school_id)->whereNull('source_type')->pluck('ledger_account_id', 'mapping_type')->map(fn ($id) => (string) $id)->all();
+        foreach (Expense::CATEGORIES as $category) {
+            $this->mappings['expense_category:'.str($category)->slug()] ??= $this->mappings['default_expense'] ?? '';
+        }
+        $termId = Auth::user()->school->currentTerm()?->id;
+        if ($termId) {
+            foreach (FeeStructure::where('school_id', Auth::user()->school_id)->where('term_id', $termId)->pluck('id') as $id) {
+                $this->mappings['fee_structure:'.$id] ??= $this->mappings['default_fee_income'] ?? '';
+            }
+        }
         $this->financialMappings = FinancialAccount::where('school_id', Auth::user()->school_id)->pluck('ledger_account_id', 'id')->map(fn ($id) => (string) $id)->all();
+    }
+
+    private function mappingAccountClass(string $type): ?string
+    {
+        if (str_starts_with($type, 'expense_category:')) return 'expense';
+        if (str_starts_with($type, 'fee_structure:')) return 'income';
+
+        return match ($type) {
+            'student_receivable', 'staff_advance' => 'asset',
+            'fees_received_in_advance', 'supplier_payable', 'salaries_payable', 'statutory_deductions_payable' => 'liability',
+            'default_fee_income', 'fee_discount' => 'income',
+            'scholarship', 'bad_debt', 'default_expense', 'teaching_salary_expense', 'non_teaching_salary_expense', 'staff_benefits_expense', 'bank_charges', 'rounding_differences' => 'expense',
+            'opening_balance', 'retained_surplus' => 'equity',
+            default => null,
+        };
     }
 
     private function journal(int $id): AccountingJournal
@@ -359,6 +390,7 @@ class Accounting extends Component
             'accounts' => $accounts,
             'postingAccounts' => LedgerAccount::where('school_id', $schoolId)->where('is_active', true)->where('accepts_postings', true)->orderBy('code')->get(),
             'financialAccounts' => FinancialAccount::where('school_id', $schoolId)->orderBy('name')->get(),
+            'feeStructures' => ($term = Auth::user()->school->currentTerm()) ? FeeStructure::with(['schoolClass', 'studentCategory'])->where('school_id', $schoolId)->where('term_id', $term->id)->orderBy('school_class_id')->get() : collect(),
             'periods' => AccountingPeriod::where('school_id', $schoolId)->latest('starts_on')->limit(24)->get(),
             'journals' => $journals,
             'trialBalance' => $trial, 'summary' => $summary, 'receivables' => $reports->receivablesByStudent($schoolId, $filters),

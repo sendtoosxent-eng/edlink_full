@@ -150,11 +150,8 @@
     @endif
 
     @if($tab==='settings')
-        @php($mappingGroups = [
-            'Fees & receivables' => ['student_receivable', 'default_fee_income', 'fees_received_in_advance', 'fee_discount', 'scholarship', 'bad_debt'],
-            'Expenses & payroll' => ['default_expense', 'supplier_payable', 'teaching_salary_expense', 'non_teaching_salary_expense', 'staff_benefits_expense', 'salaries_payable', 'statutory_deductions_payable'],
-            'Balances & controls' => ['bank_charges', 'rounding_differences', 'opening_balance', 'retained_surplus'],
-        ])
+        @php($mappingGroups = ['Fees & receivables' => ['student_receivable', 'default_fee_income', 'fees_received_in_advance', 'fee_discount', 'scholarship', 'bad_debt'], 'Payroll & liabilities' => ['staff_advance', 'teaching_salary_expense', 'non_teaching_salary_expense', 'staff_benefits_expense', 'salaries_payable', 'statutory_deductions_payable', 'supplier_payable'], 'Balances & controls' => ['default_expense', 'bank_charges', 'rounding_differences', 'opening_balance', 'retained_surplus']])
+        @php($mappingClasses = ['student_receivable'=>'asset','staff_advance'=>'asset','default_fee_income'=>'income','fees_received_in_advance'=>'liability','fee_discount'=>'income','scholarship'=>'expense','bad_debt'=>'expense','supplier_payable'=>'liability','teaching_salary_expense'=>'expense','non_teaching_salary_expense'=>'expense','staff_benefits_expense'=>'expense','salaries_payable'=>'liability','statutory_deductions_payable'=>'liability','default_expense'=>'expense','bank_charges'=>'expense','rounding_differences'=>'expense','opening_balance'=>'equity','retained_surplus'=>'equity'])
         <form wire:submit="saveMappings" class="space-y-6">
             <section class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ring-4 ring-yellow-400/10">
                 <div class="border-b border-gray-100 bg-slate-50/50 px-6 py-5">
@@ -180,24 +177,24 @@
                 </div>
             </section>
 
-            <section class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-gray-100 bg-slate-50/50 px-6 py-5">
                     <p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-600">Automation setup</p>
-                    <h2 class="mt-1 text-lg font-black text-darken">Posting rules</h2>
-                    <p class="mt-1 text-xs text-gray-400">Choose the ledger used automatically when operational transactions are approved.</p>
+                    <h2 class="mt-1 text-lg font-black text-darken">Ledger allocation settings</h2>
+                    <p class="mt-1 text-xs text-gray-400">Map each operational transaction to an editable account in the Chart of Accounts.</p>
                 </div>
                 <div class="space-y-7 p-6 lg:p-8">
                     @foreach($mappingGroups as $groupLabel => $mappingTypes)
                         <div>
                             <div class="mb-4 flex items-center gap-3"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-yellow-400 text-xs font-black text-darken">{{ $loop->iteration }}</span><div><h3 class="text-sm font-black text-darken">{{ $groupLabel }}</h3><p class="text-[10px] text-gray-400">Automatic debit and credit destinations</p></div><div class="h-px flex-1 bg-gray-100"></div></div>
-                            <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                            <div class="overflow-hidden rounded-xl border border-slate-200">
                                 @foreach($mappingTypes as $type)
                                     @continue(! array_key_exists($type, $mappings))
-                                    <div>
-                                        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">{{ str($type)->headline() }}</label>
-                                        <select wire:model="mappings.{{ $type }}" class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
-                                            <option value="">Select posting account</option>
-                                            @foreach($postingAccounts as $account)<option value="{{ $account->id }}">{{ $account->code }} · {{ $account->name }}</option>@endforeach
+                                    <div class="grid items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 md:grid-cols-[minmax(220px,.8fr)_minmax(320px,1.2fr)]">
+                                        <label class="text-xs font-bold text-slate-700">{{ str($type)->replace('_',' ')->headline() }}</label>
+                                        <select wire:model="mappings.{{ $type }}" class="w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-amber-400">
+                                            <option value="">Select {{ $mappingClasses[$type] ?? '' }} ledger…</option>
+                                            @foreach($postingAccounts->where('account_class', $mappingClasses[$type] ?? null) as $account)<option value="{{ $account->id }}">{{ $account->code }} : {{ $account->name }}</option>@endforeach
                                         </select>
                                         @error("mappings.{$type}")<span class="mt-1.5 block text-xs font-medium text-red-500">{{ $message }}</span>@enderror
                                     </div>
@@ -205,6 +202,28 @@
                             </div>
                         </div>
                     @endforeach
+
+                    <div>
+                        <div class="mb-4 flex items-center gap-3"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-yellow-400 text-xs font-black text-darken">4</span><div><h3 class="text-sm font-black text-darken">Expense categories</h3><p class="text-[10px] text-gray-400">The selected ledger becomes the default when that expense category is chosen.</p></div><div class="h-px flex-1 bg-gray-100"></div></div>
+                        <div class="overflow-hidden rounded-xl border border-slate-200">
+                            @foreach(\App\Models\Expense::CATEGORIES as $category)
+                                @php($key = 'expense_category:'.str($category)->slug())
+                                <div class="grid items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 md:grid-cols-[minmax(220px,.8fr)_minmax(320px,1.2fr)]"><label class="text-xs font-bold text-slate-700">{{ $category }}</label><select wire:model="mappings.{{ $key }}" class="w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-amber-400"><option value="">Select expense ledger…</option>@foreach($postingAccounts->where('account_class','expense') as $account)<option value="{{ $account->id }}">{{ $account->code }} : {{ $account->name }}</option>@endforeach</select></div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    @if($feeStructures->isNotEmpty())
+                        <div>
+                            <div class="mb-4 flex items-center gap-3"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-yellow-400 text-xs font-black text-darken">5</span><div><h3 class="text-sm font-black text-darken">Current-term fee income</h3><p class="text-[10px] text-gray-400">Allocate each class and student-category tuition assessment to an income ledger.</p></div><div class="h-px flex-1 bg-gray-100"></div></div>
+                            <div class="overflow-hidden rounded-xl border border-slate-200">
+                                @foreach($feeStructures as $structure)
+                                    @php($key = 'fee_structure:'.$structure->id)
+                                    <div class="grid items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 md:grid-cols-[minmax(220px,.8fr)_minmax(320px,1.2fr)]"><label class="text-xs font-bold text-slate-700">{{ $structure->schoolClass?->name }} · {{ $structure->studentCategory?->name }}</label><select wire:model="mappings.{{ $key }}" class="w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-amber-400"><option value="">Select income ledger…</option>@foreach($postingAccounts->where('account_class','income') as $account)<option value="{{ $account->id }}">{{ $account->code }} : {{ $account->name }}</option>@endforeach</select></div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
                 <div class="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                     <p class="max-w-2xl text-xs leading-5 text-gray-500"><span class="font-bold text-darken">Important:</span> New rules apply to future postings. Existing posted journals are never rewritten.</p>

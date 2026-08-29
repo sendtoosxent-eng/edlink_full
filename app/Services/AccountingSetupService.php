@@ -32,7 +32,7 @@ class AccountingSetupService
     ];
 
     public const DEFAULT_MAPPINGS = [
-        'student_receivable' => '1210', 'default_fee_income' => '4100', 'fees_received_in_advance' => '2130', 'fee_discount' => '4950', 'scholarship' => '5700', 'bad_debt' => '5710', 'supplier_payable' => '2100', 'teaching_salary_expense' => '5100', 'non_teaching_salary_expense' => '5110', 'staff_benefits_expense' => '5120', 'salaries_payable' => '2110', 'statutory_deductions_payable' => '2120', 'bank_charges' => '5520', 'rounding_differences' => '5795', 'opening_balance' => '3100', 'retained_surplus' => '3200', 'default_expense' => '5500',
+        'student_receivable' => '1210', 'staff_advance' => '1230', 'default_fee_income' => '4100', 'fees_received_in_advance' => '2130', 'fee_discount' => '4950', 'scholarship' => '5700', 'bad_debt' => '5710', 'supplier_payable' => '2100', 'teaching_salary_expense' => '5100', 'non_teaching_salary_expense' => '5110', 'staff_benefits_expense' => '5120', 'salaries_payable' => '2110', 'statutory_deductions_payable' => '2120', 'bank_charges' => '5520', 'rounding_differences' => '5795', 'opening_balance' => '3100', 'retained_surplus' => '3200', 'default_expense' => '5500',
     ];
 
     public function activate(School $school, ?int $userId = null): void

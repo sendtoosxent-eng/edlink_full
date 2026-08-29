@@ -3,6 +3,7 @@
 use App\Livewire\Accounting as AccountingWorkspace;
 use App\Models\AccountingJournal;
 use App\Models\AccountingPeriod;
+use App\Models\AccountMapping;
 use App\Models\FeePayment;
 use App\Models\FinanceLedgerEntry;
 use App\Models\FinancialAccount;
@@ -149,7 +150,19 @@ it('prepares one balanced opening journal and requires independent approval', fu
 it('lets an administrator maintain the chart without bypassing maker-checker controls', function () {
     $school = School::create(['name' => 'Controlled Admin School', 'slug' => 'controlled-admin-school']);
     $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
-    expect($admin->hasPermission('accounting.dashboard.view'))->toBeTrue()->and($admin->hasPermission('accounting.accounts.manage'))->toBeTrue()->and($admin->hasPermission('accounting.journals.approve'))->toBeFalse()->and($admin->hasPermission('accounting.periods.reopen'))->toBeFalse();
+    expect($admin->hasPermission('accounting.dashboard.view'))->toBeTrue()->and($admin->hasPermission('accounting.accounts.manage'))->toBeTrue()->and($admin->hasPermission('accounting.mappings.manage'))->toBeTrue()->and($admin->hasPermission('accounting.journals.approve'))->toBeFalse()->and($admin->hasPermission('accounting.periods.reopen'))->toBeFalse();
+});
+
+it('lets administrators map expense categories to editable chart accounts', function () {
+    $school = School::create(['name' => 'Mapping School', 'slug' => 'mapping-school']);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+    $utilities = LedgerAccount::where('school_id', $school->id)->where('code', '5400')->firstOrFail();
+
+    Livewire::actingAs($admin)->test(AccountingWorkspace::class)
+        ->set('mappings.expense_category:utilities', (string) $utilities->id)
+        ->call('saveMappings')->assertHasNoErrors();
+
+    expect(AccountMapping::where('school_id', $school->id)->where('mapping_type', 'expense_category:utilities')->value('ledger_account_id'))->toBe($utilities->id);
 });
 
 it('deletes only unused custom ledger accounts', function () {

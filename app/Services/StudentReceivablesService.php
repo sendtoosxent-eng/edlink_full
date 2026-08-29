@@ -23,13 +23,13 @@ class StudentReceivablesService
         abort_unless((int) $term->school_id === (int) $school->id, 404);
         $this->setup->activate($school, $userId);
         $receivable = $this->mapping($school->id, 'student_receivable');
-        $income = $this->mapping($school->id, 'default_fee_income');
+        $defaultIncome = $this->mapping($school->id, 'default_fee_income');
         $created = 0;
         $existing = 0;
         StudentEnrolment::where('school_id', $school->id)->where('term_id', $term->id)->where('status', 'active')->where('base_fee_amount', '>', 0)
-            ->orderBy('id')->chunkById(100, function ($enrolments) use ($school, $term, $userId, $receivable, $income, &$created, &$existing) {
+            ->orderBy('id')->chunkById(100, function ($enrolments) use ($school, $term, $userId, $receivable, $defaultIncome, &$created, &$existing) {
                 foreach ($enrolments as $enrolment) {
-                    DB::transaction(function () use ($enrolment, $school, $term, $userId, $receivable, $income, &$created, &$existing) {
+                    DB::transaction(function () use ($enrolment, $school, $term, $userId, $receivable, $defaultIncome, &$created, &$existing) {
                         $key = 'enrolment:'.$enrolment->id.':tuition';
                         $assessment = StudentFeeAssessment::where('school_id', $school->id)->where('idempotency_key', $key)->lockForUpdate()->first();
                         if ($assessment) {
@@ -37,6 +37,9 @@ class StudentReceivablesService
 
                             return;
                         }
+                        $income = $enrolment->fee_structure_id
+                            ? $this->optionalMapping($school->id, 'fee_structure:'.$enrolment->fee_structure_id) ?? $defaultIncome
+                            : $defaultIncome;
                         $assessment = StudentFeeAssessment::create(['school_id' => $school->id, 'student_id' => $enrolment->student_id, 'term_id' => $term->id, 'fee_structure_id' => $enrolment->fee_structure_id, 'fee_item_code' => 'tuition', 'description' => 'Tuition fee assessment - '.$term->name, 'amount' => $enrolment->base_fee_amount, 'status' => 'draft', 'idempotency_key' => $key, 'created_by' => $userId]);
                         $journalDate = (int) $term->year === (int) now()->year ? now()->toDateString() : $term->year.'-01-01';
                         $this->setup->ensurePeriods($school, (int) $term->year);
@@ -79,5 +82,13 @@ class StudentReceivablesService
     private function currency(int $schoolId): string
     {
         return strtoupper((string) SchoolSetting::getValue($schoolId, 'accounting_currency', SchoolSetting::getValue($schoolId, 'currency', 'UGX')));
+    }
+
+    private function optionalMapping(int $schoolId, string $type): ?LedgerAccount
+    {
+        $account = AccountMapping::with('account')->where('school_id', $schoolId)->where('mapping_type', $type)->whereNull('source_type')->whereNull('source_id')->first()?->account;
+        if ($account && $account->is_active && $account->accepts_postings && $account->account_class === 'income' && $account->currency === $this->currency($schoolId)) return $account;
+
+        return null;
     }
 }

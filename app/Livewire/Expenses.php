@@ -59,6 +59,14 @@ class Expenses extends Component
         $this->expenseLedgerAccountId = (string) AccountMapping::where('school_id', $schoolId)->where('mapping_type', 'default_expense')->value('ledger_account_id');
     }
 
+    public function updatedCategory(): void
+    {
+        $schoolId = Auth::user()->school_id;
+        $this->expenseLedgerAccountId = (string) (AccountMapping::where('school_id', $schoolId)
+            ->where('mapping_type', 'expense_category:'.str($this->category)->slug())->value('ledger_account_id')
+            ?: AccountMapping::where('school_id', $schoolId)->where('mapping_type', 'default_expense')->value('ledger_account_id'));
+    }
+
     #[Computed]
     public function selectedTerm(): ?Term
     {
