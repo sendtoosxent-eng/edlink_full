@@ -33,7 +33,11 @@ it('emails and stores a platform support reply', function () {
 
     $this->post(route('platform.support.reply',$message),['subject'=>'Re: Pricing enquiry','message'=>'Thank you for contacting Edlink. We recommend the Basic package.'])->assertRedirect();
 
-    Mail::assertSent(ContactMessageReplyMail::class,fn($mail)=>$mail->hasTo('john@example.com'));
+    Mail::assertSent(ContactMessageReplyMail::class,function($mail){
+        $envelope=$mail->envelope();
+        return $mail->hasTo('john@example.com')
+            && $envelope->replyTo[0]->address === \App\Support\MailIdentity::supportAddress();
+    });
     expect(ContactMessageReply::where('contact_message_id',$message->id)->where('platform_admin_id',$admin->id)->where('delivery_status','sent')->exists())->toBeTrue()
         ->and($message->fresh()->status)->toBe('replied')
         ->and(PlatformAuditLog::where('event','platform.support.replied')->exists())->toBeTrue();
