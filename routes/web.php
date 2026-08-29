@@ -118,6 +118,8 @@ Route::prefix('platform')->name('platform.')->group(function () {
             Route::get('schools/{school}', [PlatformSchoolController::class, 'show'])->name('schools.show');
             Route::get('schools/{school}/edit', [PlatformSchoolController::class, 'edit'])->name('schools.edit');
             Route::put('schools/{school}', [PlatformSchoolController::class, 'update'])->name('schools.update');
+            Route::post('schools/{school}/users/{user}/password-reset', [PlatformSchoolController::class, 'sendPasswordReset'])
+                ->middleware('throttle:5,1')->name('schools.users.password-reset');
             Route::put('schools/{school}/sms-configuration', [PlatformSchoolSmsController::class, 'update'])->name('schools.sms-configuration.update');
             Route::delete('schools/{school}', [PlatformSchoolController::class, 'destroy'])->middleware('platform.role:platform_owner')->name('schools.destroy');
             Route::post('schools/{school}/imports/students', [PlatformSchoolImportController::class, 'students'])->name('schools.imports.students');

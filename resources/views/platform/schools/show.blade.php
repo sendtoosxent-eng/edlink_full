@@ -117,9 +117,11 @@
                 <h2 class="text-sm font-black text-slate-900">Recent staff accounts</h2>
                 <div class="mt-4 divide-y divide-slate-100">
                     @forelse($school->users as $user)
-                        <div class="py-3">
-                            <p class="truncate text-xs font-bold text-slate-800">{{ $user->name }}</p>
-                            <p class="mt-0.5 truncate text-[10px] text-slate-400">{{ $user->email }} · {{ ucfirst($user->role) }}</p>
+                        <div class="flex items-center justify-between gap-3 py-3">
+                            <div class="min-w-0"><p class="truncate text-xs font-bold text-slate-800">{{ $user->name }}</p><p class="mt-0.5 truncate text-[10px] text-slate-400">{{ $user->email }} · {{ ucfirst($user->role) }}</p></div>
+                            @if($user->email)
+                                <form method="POST" action="{{ route('platform.schools.users.password-reset', [$school, $user]) }}" onsubmit="return confirm('Send a secure password-reset link to {{ addslashes($user->email) }}?')">@csrf<button class="shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-black text-amber-800 hover:bg-amber-100">Send reset link</button></form>
+                            @endif
                         </div>
                     @empty
                         <p class="py-5 text-xs text-slate-400">No staff accounts.</p>

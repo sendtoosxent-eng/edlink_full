@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -169,6 +170,31 @@ class PlatformSchoolController extends Controller
         ]);
 
         return redirect()->route('platform.schools.show', $school)->with('status', $school->name.' details were updated.');
+    }
+
+    public function sendPasswordReset(Request $request, School $school, User $user): RedirectResponse
+    {
+        abort_unless((int) $user->school_id === (int) $school->id, 404);
+        abort_if(! $user->email, 422, 'This account has no email address for password recovery.');
+
+        $status = Password::broker()->sendResetLink([
+            'school_id' => $school->id,
+            'email' => strtolower(trim($user->email)),
+        ]);
+
+        PlatformAuditLog::create([
+            'platform_admin_id' => Auth::guard('platform')->id(),
+            'event' => 'platform.school_user.password_reset_requested',
+            'metadata' => ['school_id' => $school->id, 'school' => $school->name, 'user_id' => $user->id, 'user_email' => $user->email, 'delivery_status' => $status],
+            'ip_address' => $request->ip(),
+            'user_agent' => str($request->userAgent() ?? '')->limit(500)->toString() ?: null,
+        ]);
+
+        $message = $status === Password::RESET_LINK_SENT
+            ? 'A secure password-reset link was sent to '.$user->email.'.'
+            : 'A reset email was requested recently. Please wait before sending another one.';
+
+        return back()->with('status', $message);
     }
 
     public function destroy(Request $request, School $school): RedirectResponse

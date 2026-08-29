@@ -5,8 +5,10 @@ use App\Models\PlatformAuditLog;
 use App\Models\DemoRegistration;
 use App\Models\School;
 use App\Models\User;
+use App\Notifications\QueuedResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -31,6 +33,34 @@ it('shows a platform school profile', function () {
         ->assertSee('Demo Academy')
         ->assertSee($school->school_number)
         ->assertSee('School information');
+});
+
+it('sends and audits a school scoped password reset from the platform', function () {
+    Notification::fake();
+    $admin = platformSchoolAdmin();
+    $school = School::create(['name' => 'Onboarding Demo', 'slug' => 'onboarding-demo', 'license_status' => 'trial', 'is_demo' => true]);
+    $user = User::factory()->create(['school_id' => $school->id, 'email' => 'admin@onboarding.test']);
+
+    $this->actingAs($admin, 'platform')->withSession(['platform_mfa_passed' => true, 'platform_last_activity' => now()->timestamp])
+        ->post(route('platform.schools.users.password-reset', [$school, $user]))
+        ->assertRedirect()->assertSessionHas('status');
+
+    Notification::assertSentTo($user, QueuedResetPassword::class);
+    expect(PlatformAuditLog::where('event', 'platform.school_user.password_reset_requested')->where('metadata->school_id', $school->id)->exists())->toBeTrue();
+});
+
+it('does not send a platform password reset across schools', function () {
+    Notification::fake();
+    $admin = platformSchoolAdmin();
+    $school = School::create(['name' => 'First Demo', 'slug' => 'first-demo', 'license_status' => 'trial', 'is_demo' => true]);
+    $other = School::create(['name' => 'Other Demo', 'slug' => 'other-demo', 'license_status' => 'trial', 'is_demo' => true]);
+    $otherUser = User::factory()->create(['school_id' => $other->id]);
+
+    $this->actingAs($admin, 'platform')->withSession(['platform_mfa_passed' => true, 'platform_last_activity' => now()->timestamp])
+        ->post(route('platform.schools.users.password-reset', [$school, $otherUser]))
+        ->assertNotFound();
+
+    Notification::assertNothingSent();
 });
 
 it('permanently removes a demo school and audits the action', function () {
