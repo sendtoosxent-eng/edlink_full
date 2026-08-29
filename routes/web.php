@@ -129,6 +129,7 @@ Route::prefix('platform')->name('platform.')->group(function () {
             Route::put('website', [PlatformLandingPageController::class, 'update'])->name('website.update');
             Route::get('billing', [PlatformOperationsController::class, 'billing'])->name('billing');
             Route::get('audit', [PlatformOperationsController::class, 'audit'])->name('audit');
+            Route::get('backups', [PlatformOperationsController::class, 'backups'])->name('backups');
             Route::get('settings', [PlatformOperationsController::class, 'settings'])->name('settings');
             Route::put('settings', [PlatformOperationsController::class, 'updateSettings'])->name('settings.update');
         });

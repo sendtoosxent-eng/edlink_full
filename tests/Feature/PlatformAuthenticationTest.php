@@ -92,6 +92,7 @@ it('requires a valid TOTP before entering the platform dashboard', function () {
     $this->get(route('platform.licences'))->assertOk()->assertSeeText('Packages & School Capacity');
     $this->get(route('platform.billing'))->assertOk()->assertSeeText('Billing & renewal control');
     $this->get(route('platform.audit'))->assertOk()->assertSeeText('Platform audit trail');
+    $this->get(route('platform.backups'))->assertOk()->assertSeeText('Database backup centre')->assertSeeText('No automated backup has run yet');
     $this->get(route('platform.website.edit'))->assertOk()->assertSee('Landing Page Content');
     expect(PlatformAuditLog::where('event','platform.login.succeeded')->where('platform_admin_id',$admin->id)->exists())->toBeTrue();
 });
