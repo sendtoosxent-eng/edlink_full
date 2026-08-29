@@ -23,14 +23,17 @@
                 </p>
             </div>
 
-            <!-- Manage Subscriptions Link Button -->
-            <a href="{{ route('platform.licences') }}" 
-               class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-extrabold text-xs px-5 py-3 transition shadow-md hover:shadow-lg shrink-0">
+            <div class="flex flex-wrap gap-3">
+            <a href="{{ route('platform.schools.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-white/15">
+                <span class="text-base leading-none">+</span><span>Add school</span>
+            </a>
+            <a href="{{ route('platform.licences') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-extrabold text-xs px-5 py-3 transition shadow-md hover:shadow-lg shrink-0">
                 <svg class="w-4 h-4 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5z" />
                 </svg>
                 <span>Manage Subscriptions</span>
             </a>
+            </div>
         </div>
         
         <!-- Decorative Ambient Glow -->

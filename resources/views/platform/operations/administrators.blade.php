@@ -2,165 +2,49 @@
 
 @section('content')
 <div class="space-y-6">
+    <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm sm:p-8">
+        <div class="relative z-10 max-w-2xl"><span class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Privileged access</span><h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">Platform administrators</h1><p class="mt-1.5 text-sm font-medium leading-relaxed text-slate-400">Control platform-wide roles, account status, and secure administrative access.</p></div>
+        <div class="pointer-events-none absolute -bottom-20 -right-12 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl"></div>
+    </section>
 
-    <!-- Page Header & Action Title -->
-    <div class="sm:flex sm:items-center sm:justify-between border-b border-slate-900 pb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-amber-300 tracking-tight">Platform Administrators</h1>
-            <p class="mt-1 text-sm text-slate-200">Manage administrative privileges, credentials, and access roles across the platform.</p>
-        </div>
-    </div>
+    @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{{ session('status') }}</div>@endif
+    @if($errors->any())<div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">{{ $errors->first() }}</div>@endif
 
-    <!-- ================= TOP STATS HEADER CARDS ================= -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <!-- Total Administrators Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Administrators</p>
-                <p class="text-2xl font-bold text-slate-900 mt-1">{{ $admins->count() }}</p>
-            </div>
-            <div class="h-11 w-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-            </div>
-        </div>
+    <section class="grid gap-4 sm:grid-cols-3">
+        @foreach([['Total administrators', $admins->count(), 'All privileged accounts'], ['Active accounts', $admins->where('is_active', true)->count(), 'Allowed to authenticate'], ['Platform owners', $admins->where('role', 'platform_owner')->count(), 'Highest access level']] as [$label, $value, $note])
+            <article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs"><p class="text-[10px] font-black uppercase tracking-wider text-slate-400">{{ $label }}</p><p class="mt-2 text-3xl font-black text-slate-900">{{ number_format($value) }}</p><p class="mt-3 text-[11px] font-semibold text-slate-500">{{ $note }}</p></article>
+        @endforeach
+    </section>
 
-        <!-- Active Users Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Accounts</p>
-                <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $admins->where('is_active', true)->count() }}</p>
-            </div>
-            <div class="h-11 w-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-        </div>
-
-        <!-- Platform Owners Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Platform Owners</p>
-                <p class="text-2xl font-bold text-indigo-600 mt-1">{{ $admins->where('role', 'platform_owner')->count() }}</p>
-            </div>
-            <div class="h-11 w-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Section: List & Creation Form -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        <!-- Left: Administrator List (2 Columns) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h2 class="text-base font-semibold text-slate-800">Active Administrators</h2>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                    {{ $admins->count() }} {{ Str::plural('User', $admins->count()) }}
-                </span>
-            </div>
-
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <div class="border-b border-slate-100 p-5"><h2 class="text-base font-black text-slate-900">Administrator directory</h2><p class="mt-1 text-xs text-slate-500">Role and status updates take effect on the next request.</p></div>
             <div class="divide-y divide-slate-100">
                 @forelse($admins as $admin)
-                    <div class="px-6 py-4 flex items-center justify-between hover:bg-slate-50/60 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <div class="h-10 w-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-indigo-600 text-sm">
-                                {{ strtoupper(substr($admin->name, 0, 2)) }}
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-slate-900">{{ $admin->name }}</h3>
-                                <p class="text-xs text-slate-500">{{ $admin->email ?? 'No email provided' }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-3">
-                            <!-- Role Badge -->
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 capitalize border border-slate-200/60">
-                                {{ str_replace('_', ' ', $admin->role) }}
-                            </span>
-
-                            <!-- Status Badge -->
-                            @if($admin->is_active)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                    Active
-                                </span>
-                            @else
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200/60">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                                    Inactive
-                                </span>
-                            @endif
-                        </div>
-                    </div>
+                    <form method="POST" action="{{ route('platform.administrators.update', $admin) }}" class="grid gap-4 p-5 transition hover:bg-slate-50/70 lg:grid-cols-[minmax(180px,1fr)_200px_120px_auto] lg:items-center">
+                        @csrf @method('PATCH')
+                        <div class="flex min-w-0 items-center gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-xs font-black text-amber-300">{{ strtoupper(substr($admin->name, 0, 2)) }}</span><div class="min-w-0"><p class="truncate text-sm font-bold text-slate-900">{{ $admin->name }}</p><p class="mt-0.5 truncate text-[10px] text-slate-400">{{ $admin->email }}</p></div></div>
+                        <label><span class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-400">Access role</span><select name="role" class="w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 focus:border-amber-400 focus:bg-white focus:ring-amber-400"><option value="operations_admin" @selected($admin->role === 'operations_admin')>Operations admin</option><option value="support_admin" @selected($admin->role === 'support_admin')>Support admin</option><option value="platform_owner" @selected($admin->role === 'platform_owner')>Platform owner</option></select></label>
+                        <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($admin->is_active) class="rounded border-slate-300 text-amber-500 focus:ring-amber-400"><span class="text-xs font-bold text-slate-700">Active</span></label>
+                        <button class="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white transition hover:bg-slate-800">Save</button>
+                    </form>
                 @empty
-                    <div class="px-6 py-12 text-center text-slate-500 text-sm">
-                        No administrators found. Create one using the form.
-                    </div>
+                    <div class="px-6 py-16 text-center text-sm font-semibold text-slate-400">No platform administrators found.</div>
                 @endforelse
             </div>
-        </div>
+        </section>
 
-        <!-- Right: Add Administrator Form (1 Column) -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
-            <div class="mb-6">
-                <h2 class="text-lg font-bold text-slate-900">Add Administrator</h2>
-                <p class="text-xs text-slate-500 mt-1">Grant new user access to the platform management dashboard.</p>
-            </div>
-
-            <form method="POST" action="{{ route('platform.administrators.store') }}" class="space-y-4">
-                @csrf
-
-                <div>
-                    <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Full Name</label>
-                    <input type="text" id="name" name="name" required placeholder="e.g. Sarah Jenkins"
-                        class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                </div>
-
-                <div>
-                    <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Email Address</label>
-                    <input type="email" id="email" name="email" required placeholder="sarah@edlink.com"
-                        class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                </div>
-
-                <div>
-                    <label for="role" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Access Role</label>
-                    <select id="role" name="role" required
-                        class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                        <option value="operations_admin">Operations Admin</option>
-                        <option value="support_admin">Support Admin</option>
-                        <option value="platform_owner">Platform Owner</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                        <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
-                        <input type="password" id="password" name="password" required placeholder="••••••••"
-                            class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                    </div>
-
-                    <div>
-                        <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Confirm</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation" required placeholder="••••••••"
-                            class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                    </div>
-                </div>
-
-                <div class="pt-4">
-                    <button type="submit" 
-                        class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 active:scale-[0.98] transition-all shadow-sm">
-                        Add Administrator
-                    </button>
-                </div>
+        <section class="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <div class="border-b border-slate-100 p-5"><p class="text-[10px] font-black uppercase tracking-wider text-amber-700">New account</p><h2 class="mt-1 text-lg font-black text-slate-900">Add administrator</h2><p class="mt-1 text-xs leading-5 text-slate-500">Create a privileged account with a temporary secure password.</p></div>
+            <form method="POST" action="{{ route('platform.administrators.store') }}" class="space-y-4 p-5">@csrf
+                <label class="block"><span class="text-xs font-bold text-slate-700">Full name</span><input name="name" value="{{ old('name') }}" required placeholder="e.g. Sarah Kato" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label>
+                <label class="block"><span class="text-xs font-bold text-slate-700">Email address</span><input type="email" name="email" value="{{ old('email') }}" required placeholder="sarah@edlink.space" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label>
+                <label class="block"><span class="text-xs font-bold text-slate-700">Access role</span><select name="role" required class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold focus:border-amber-400 focus:bg-white focus:ring-amber-400"><option value="operations_admin" @selected(old('role') === 'operations_admin')>Operations administrator</option><option value="support_admin" @selected(old('role') === 'support_admin')>Support administrator</option><option value="platform_owner" @selected(old('role') === 'platform_owner')>Platform owner</option></select></label>
+                <div class="grid gap-4 sm:grid-cols-2"><label class="block"><span class="text-xs font-bold text-slate-700">Password</span><input type="password" name="password" required minlength="12" autocomplete="new-password" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label><label class="block"><span class="text-xs font-bold text-slate-700">Confirm</span><input type="password" name="password_confirmation" required minlength="12" autocomplete="new-password" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label></div>
+                <p class="rounded-xl bg-amber-50 p-3 text-[10px] leading-5 text-amber-800 ring-1 ring-inset ring-amber-200">Use at least 12 characters. The administrator will enrol MFA after their first password sign-in.</p>
+                <button class="w-full rounded-xl bg-amber-400 px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-amber-300">Create administrator</button>
             </form>
-        </div>
-
+        </section>
     </div>
 </div>
 @endsection

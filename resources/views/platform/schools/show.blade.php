@@ -3,7 +3,7 @@
 @section('content')
 <div class="space-y-6">
     <a href="{{ route('platform.schools') }}" class="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-amber-600">
-        <span>â†</span> Back to schools
+        <span>←</span> Back to schools
     </a>
 
     @if($errors->any())
@@ -28,7 +28,7 @@
                         <span class="rounded-full border border-amber-300/20 bg-amber-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">{{ $school->license_status }}</span>
                     </div>
                     <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">{{ $school->name }}</h1>
-                    <p class="mt-1 font-mono text-xs font-semibold text-slate-400">{{ $school->school_number }} Â· {{ ucfirst($school->school_type) }}</p>
+                    <p class="mt-1 font-mono text-xs font-semibold text-slate-400">{{ $school->school_number }} · {{ ucfirst($school->school_type) }}</p>
                 </div>
             </div>
             <div class="flex flex-wrap gap-3">
@@ -119,7 +119,7 @@
                     @forelse($school->users as $user)
                         <div class="py-3">
                             <p class="truncate text-xs font-bold text-slate-800">{{ $user->name }}</p>
-                            <p class="mt-0.5 truncate text-[10px] text-slate-400">{{ $user->email }} Â· {{ ucfirst($user->role) }}</p>
+                            <p class="mt-0.5 truncate text-[10px] text-slate-400">{{ $user->email }} · {{ ucfirst($user->role) }}</p>
                         </div>
                     @empty
                         <p class="py-5 text-xs text-slate-400">No staff accounts.</p>
