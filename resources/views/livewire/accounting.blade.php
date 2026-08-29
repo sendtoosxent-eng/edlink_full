@@ -58,72 +58,58 @@
     @endif
 
     @if($tab==='accounts')
-        <section class="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
-            <form id="account-editor" wire:submit="{{ $editingAccountId ? 'saveAccount' : 'addAccount' }}" class="h-fit space-y-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-100 pb-4">
-                    <p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-600">Account setup</p>
-                    <h2 class="mt-1 text-lg font-black text-slate-900">{{ $editingAccountId ? 'Edit ledger account' : 'Add ledger account' }}</h2>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Create a posting account or a parent heading for your chart.</p>
-                </div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Account to edit
-                    <select wire:change="editAccount($event.target.value)" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm font-semibold text-slate-800 transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
-                        <option value="">New account</option>
-                        @foreach($accounts as $account)<option value="{{ $account->id }}">{{ $account->code }} · {{ $account->name }}</option>@endforeach
-                    </select>
-                </label>
-                <div class="grid grid-cols-[110px_1fr] gap-3">
-                    <label class="text-xs font-bold text-slate-600">Code<input wire:model="accountCode" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 font-mono text-sm font-bold transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30" placeholder="5800" /></label>
-                    <label class="text-xs font-bold text-slate-600">Account name<input wire:model="accountName" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30" placeholder="Account name" /></label>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="text-xs font-bold text-slate-600">Class<select wire:model.live="accountClass" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30">@foreach(['asset','liability','equity','income','expense'] as $class)<option value="{{ $class }}">{{ ucfirst($class) }}</option>@endforeach</select></label>
-                    <label class="text-xs font-bold text-slate-600">Normal balance<select wire:model="normalBalance" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30"><option>debit</option><option>credit</option></select></label>
-                </div>
-                <label class="block text-xs font-bold text-slate-600">Subtype<input wire:model="accountSubtype" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30" placeholder="e.g. utilities" /></label>
-                <label class="block text-xs font-bold text-slate-600">Parent account<select wire:model="parentId" class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition-all focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30"><option value="">No parent (top level)</option>@foreach($accounts as $account)<option value="{{ $account->id }}">{{ $account->code }} · {{ $account->name }}</option>@endforeach</select></label>
-                <label class="flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-700"><input type="checkbox" wire:model="acceptsPostings" class="rounded border-slate-300 text-amber-500 focus:ring-amber-500"> Accept direct postings</label>
-                <div class="flex gap-2 border-t border-slate-100 pt-4">
-                    <button class="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white hover:bg-slate-800">{{ $editingAccountId ? 'Save changes' : 'Add account' }}</button>
-                    @if($editingAccountId)<button type="button" wire:click="cancelAccountEdit" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">Cancel</button>@endif
-                </div>
-                @if($editingAccountId)
-                    <div class="rounded-2xl border border-red-100 bg-red-50 p-3">
-                        @if($editingAccountIsSystem)
-                            <p class="text-xs font-semibold leading-5 text-red-700">This is a protected system ledger. It can be edited, but it cannot be deleted.</p>
-                        @else
-                            <button type="button" wire:click="deleteAccount" wire:confirm="Delete this ledger account permanently? This is only allowed when the account has no transactions, subaccounts, mappings or other links." class="w-full rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-black text-red-700 hover:bg-red-100">Delete ledger account</button>
-                            <p class="mt-2 text-[10px] leading-4 text-red-600">Deletion is permanent and only works for completely unused accounts. Use Archive when history must be retained.</p>
-                        @endif
-                    </div>
-                @endif
-            </form>
+        @php
+            $accountClasses = ['asset' => ['Assets', 'blue'], 'liability' => ['Liabilities', 'rose'], 'equity' => ['Equity & funds', 'violet'], 'income' => ['Income', 'emerald'], 'expense' => ['Expenses', 'amber']];
+            $accountsByParent = $accounts->groupBy(fn ($account) => $account->parent_id ?: 0);
+        @endphp
 
-            <div class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-                <div class="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div><h2 class="text-lg font-black text-slate-900">Chart of accounts</h2><p class="mt-1 text-xs text-slate-500">{{ $accounts->count() }} accounts organised by code and reporting class. @if(auth()->user()->hasPermission('accounting.accounts.manage'))Tap any row to edit it.@endif</p></div>
-                    <div class="flex gap-2 text-[10px] font-bold uppercase tracking-wider"><span class="rounded-full bg-white px-3 py-1.5 text-slate-600 ring-1 ring-slate-200">{{ $accounts->where('accepts_postings', true)->count() }} posting</span><span class="rounded-full bg-violet-50 px-3 py-1.5 text-violet-700 ring-1 ring-violet-100">{{ $accounts->where('is_control_account', true)->count() }} control</span></div>
+        <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm">
+            <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">Ledger structure</p><h2 class="mt-2 text-2xl font-black text-white">Chart of accounts</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-slate-400">Organise every posting account, control ledger, and reporting heading into a clear financial hierarchy.</p></div><div class="flex flex-wrap gap-2"><span class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold text-slate-300"><b class="mr-1 text-white">{{ $accounts->count() }}</b> total</span><span class="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[10px] font-bold text-emerald-300"><b class="mr-1">{{ $accounts->where('accepts_postings', true)->count() }}</b> posting</span><span class="rounded-xl border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-[10px] font-bold text-violet-300"><b class="mr-1">{{ $accounts->where('is_control_account', true)->count() }}</b> control</span></div></div>
+            <div class="pointer-events-none absolute -bottom-16 -right-10 h-48 w-48 rounded-full bg-amber-400/10 blur-3xl"></div>
+        </section>
+
+        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            @foreach($accountClasses as $classKey => [$classLabel, $tone])
+                @php($classTotal = $accounts->where('account_class', $classKey)->count())
+                <article class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs"><div class="flex items-center justify-between"><div><p class="text-[10px] font-black uppercase tracking-wider text-slate-400">{{ $classLabel }}</p><p class="mt-1.5 text-2xl font-black text-slate-900">{{ $classTotal }}</p></div><span class="h-9 w-1.5 rounded-full {{ ['blue'=>'bg-blue-500','rose'=>'bg-rose-500','violet'=>'bg-violet-500','emerald'=>'bg-emerald-500','amber'=>'bg-amber-400'][$tone] }}"></span></div></article>
+            @endforeach
+        </section>
+
+        <section class="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs" x-data="{ accountClass: 'asset' }">
+                <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="text-base font-black text-slate-900">Account hierarchy</h3><p class="mt-1 text-xs text-slate-500">Expand headings to inspect subaccounts. @if(auth()->user()->hasPermission('accounting.accounts.manage'))Select a row to edit it.@endif</p></div><button type="button" wire:click="cancelAccountEdit" x-on:click="document.getElementById('account-editor')?.scrollIntoView({ behavior: 'smooth' })" class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-300"><span class="text-base leading-none">+</span> New account</button></div>
+                <div class="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-5">
+                    @foreach($accountClasses as $classKey => [$classLabel, $tone])
+                        <button type="button" x-on:click="accountClass = '{{ $classKey }}'" :class="accountClass === '{{ $classKey }}' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-amber-300'" class="whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-black transition">{{ $classLabel }} <span class="ml-1 opacity-60">{{ $accounts->where('account_class', $classKey)->count() }}</span></button>
+                    @endforeach
                 </div>
-                @php($accountsByParent = $accounts->groupBy(fn ($account) => $account->parent_id ?: 0))
-                <div x-data="{ accountClass: 'asset' }">
-                    <div class="flex gap-2 overflow-x-auto border-b border-slate-100 px-4 py-3 sm:px-6">
-                        @foreach(['asset' => 'Assets', 'liability' => 'Liabilities', 'equity' => 'Equity & funds', 'income' => 'Income', 'expense' => 'Expenses'] as $classKey => $classLabel)
-                            <button type="button" x-on:click="accountClass = '{{ $classKey }}'" :class="accountClass === '{{ $classKey }}' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-black transition">
-                                {{ $classLabel }} <span class="ml-1 opacity-60">{{ $accounts->where('account_class', $classKey)->count() }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-                    <div class="grid min-w-[760px] grid-cols-[minmax(330px,1fr)_110px_120px_180px] border-b border-slate-100 bg-slate-50 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        <span>Account hierarchy</span><span>Normal</span><span>Usage</span><span class="text-right">Status & action</span>
-                    </div>
-                    @foreach(['asset', 'liability', 'equity', 'income', 'expense'] as $classKey)
-                        <div x-show="accountClass === '{{ $classKey }}'" x-cloak class="min-w-[760px] divide-y divide-slate-100">
-                            @foreach($accountsByParent->get(0, collect())->where('account_class', $classKey) as $account)
+                <div class="overflow-x-auto">
+                    <div class="grid min-w-[800px] grid-cols-[minmax(360px,1fr)_110px_120px_190px] border-b border-slate-100 bg-slate-50/60 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400"><span>Code & account</span><span>Balance</span><span>Type</span><span class="text-right">Status & action</span></div>
+                    @foreach(array_keys($accountClasses) as $classKey)
+                        <div x-show="accountClass === '{{ $classKey }}'" x-cloak class="min-w-[800px] divide-y divide-slate-100">
+                            @forelse($accountsByParent->get(0, collect())->where('account_class', $classKey) as $account)
                                 @include('livewire.partials.account-tree-row', ['account' => $account, 'accountsByParent' => $accountsByParent, 'depth' => 0])
-                            @endforeach
+                            @empty
+                                <div class="px-6 py-14 text-center"><p class="text-sm font-bold text-slate-700">No {{ strtolower($accountClasses[$classKey][0]) }} found</p><p class="mt-1 text-xs text-slate-400">Create an account in this class using the editor.</p></div>
+                            @endforelse
                         </div>
                     @endforeach
                 </div>
             </div>
+
+            <form id="account-editor" wire:submit="{{ $editingAccountId ? 'saveAccount' : 'addAccount' }}" class="h-fit overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs 2xl:sticky 2xl:top-24">
+                <div class="border-b border-slate-100 p-5"><p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-700">{{ $editingAccountId ? 'Selected ledger' : 'Account setup' }}</p><h3 class="mt-1 text-lg font-black text-slate-900">{{ $editingAccountId ? 'Edit ledger account' : 'Create ledger account' }}</h3><p class="mt-1 text-xs leading-5 text-slate-500">{{ $editingAccountId ? 'Changes are audited and preserve posted history.' : 'Add a posting account or a parent heading.' }}</p></div>
+                <div class="space-y-4 p-5">
+                    <label class="block"><span class="text-xs font-bold text-slate-700">Select account</span><select wire:change="editAccount($event.target.value)" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-800 focus:border-amber-400 focus:bg-white focus:ring-amber-400"><option value="">Create a new account</option>@foreach($accounts as $account)<option value="{{ $account->id }}">{{ $account->code }} · {{ $account->name }}</option>@endforeach</select></label>
+                    <div class="grid grid-cols-[110px_1fr] gap-3"><label><span class="text-xs font-bold text-slate-700">Code</span><input wire:model="accountCode" placeholder="5800" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-3 font-mono text-sm font-black text-slate-800 placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label><label><span class="text-xs font-bold text-slate-700">Account name</span><input wire:model="accountName" placeholder="e.g. Utilities" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label></div>
+                    <div class="grid grid-cols-2 gap-3"><label><span class="text-xs font-bold text-slate-700">Class</span><select wire:model.live="accountClass" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold capitalize focus:border-amber-400 focus:bg-white focus:ring-amber-400">@foreach(array_keys($accountClasses) as $class)<option value="{{ $class }}">{{ ucfirst($class) }}</option>@endforeach</select></label><label><span class="text-xs font-bold text-slate-700">Normal balance</span><select wire:model="normalBalance" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold capitalize focus:border-amber-400 focus:bg-white focus:ring-amber-400"><option value="debit">Debit</option><option value="credit">Credit</option></select></label></div>
+                    <label class="block"><span class="text-xs font-bold text-slate-700">Subtype</span><input wire:model="accountSubtype" placeholder="e.g. utilities" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:ring-amber-400"></label>
+                    <label class="block"><span class="text-xs font-bold text-slate-700">Parent account</span><select wire:model="parentId" class="mt-2 w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold focus:border-amber-400 focus:bg-white focus:ring-amber-400"><option value="">No parent — top level</option>@foreach($accounts as $account)<option value="{{ $account->id }}">{{ $account->code }} · {{ $account->name }}</option>@endforeach</select></label>
+                    <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4"><input type="checkbox" wire:model="acceptsPostings" class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400"><span><b class="block text-xs text-slate-800">Accept direct postings</b><span class="mt-1 block text-[10px] leading-4 text-slate-400">Turn off for parent headings that only group subaccounts.</span></span></label>
+                    <div class="flex gap-2 border-t border-slate-100 pt-4"><button class="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-xs font-black text-white hover:bg-slate-800">{{ $editingAccountId ? 'Save account changes' : 'Create account' }}</button>@if($editingAccountId)<button type="button" wire:click="cancelAccountEdit" class="rounded-xl border border-slate-200 px-4 py-3 text-xs font-black text-slate-600 hover:bg-slate-50">Cancel</button>@endif</div>
+                    @if($editingAccountId)<div class="rounded-xl border border-rose-200 bg-rose-50 p-3">@if($editingAccountIsSystem)<p class="text-xs font-semibold leading-5 text-rose-700">Protected system ledger: editing is allowed, but deletion is blocked.</p>@else<button type="button" wire:click="deleteAccount" wire:confirm="Delete this ledger account permanently? This is only allowed when the account has no transactions, subaccounts, mappings or other links." class="w-full rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-xs font-black text-rose-700 hover:bg-rose-100">Delete unused account</button><p class="mt-2 text-[10px] leading-4 text-rose-600">Archive accounts with financial history instead of deleting them.</p>@endif</div>@endif
+                </div>
+            </form>
         </section>
     @endif
 
