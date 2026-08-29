@@ -83,6 +83,8 @@ it('permanently removes a demo school with populated accounting dependencies', f
     $admin = platformSchoolAdmin();
     $school = School::create(['name' => 'Finance Demo', 'slug' => 'finance-demo', 'school_type' => 'secondary', 'license_plan' => 'basic', 'license_status' => 'trial', 'is_demo' => true]);
     $termId = DB::table('terms')->insertGetId(['school_id' => $school->id, 'name' => 'Term 1', 'year' => now()->year, 'term_number' => 1, 'is_current' => true, 'status' => 'open', 'created_at' => now(), 'updated_at' => now()]);
+    $classId = DB::table('school_classes')->insertGetId(['school_id' => $school->id, 'name' => 'Primary One', 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('students')->insert(['school_id' => $school->id, 'school_class_id' => $classId, 'term_id' => $termId, 'name' => 'Demo Learner', 'admission_no' => 'DEMO-001', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
     $supplierId = DB::table('accounting_suppliers')->insertGetId(['school_id' => $school->id, 'name' => 'Demo Supplier', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
     $accountId = DB::table('financial_accounts')->where('school_id', $school->id)->value('id');
     $ledgerId = DB::table('ledger_accounts')->where('school_id', $school->id)->where('code', '5400')->value('id');

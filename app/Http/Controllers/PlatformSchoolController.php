@@ -251,6 +251,7 @@ class PlatformSchoolController extends Controller
             DB::table('accounting_budgets')->where('school_id', $school->id)->delete();
             DB::table('student_fee_assessments')->where('school_id', $school->id)->delete();
             DB::table('accounting_journal_lines')->where('school_id', $school->id)->delete();
+            DB::table('students')->where('school_id', $school->id)->delete();
             DB::table('accounting_journals')->where('school_id', $school->id)->whereNotNull('reversal_of_id')->delete();
             DB::table('accounting_journals')->where('school_id', $school->id)->delete();
             DB::table('account_mappings')->where('school_id', $school->id)->delete();
