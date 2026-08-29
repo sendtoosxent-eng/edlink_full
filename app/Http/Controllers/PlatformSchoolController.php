@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\SubscriptionPlans;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -194,7 +195,8 @@ class PlatformSchoolController extends Controller
             'users' => $school->users()->count(),
         ];
 
-        DB::transaction(function () use ($school, $request, $snapshot): void {
+        try {
+            DB::transaction(function () use ($school, $request, $snapshot): void {
             $tenantEmails = $school->users()->whereNotNull('email')->pluck('email');
 
             // Releasing these claims lets a deliberately removed demo register again.
@@ -215,6 +217,7 @@ class PlatformSchoolController extends Controller
             DB::table('expenses')->where('school_id', $school->id)->delete();
             DB::table('fee_payments')->where('school_id', $school->id)->delete();
             DB::table('payroll_runs')->where('school_id', $school->id)->delete();
+            DB::table('graduation_records')->where('school_id', $school->id)->delete();
             DB::table('fixed_asset_depreciations')->where('school_id', $school->id)->delete();
             DB::table('fixed_assets')->where('school_id', $school->id)->delete();
             DB::table('fixed_asset_categories')->where('school_id', $school->id)->delete();
@@ -244,7 +247,15 @@ class PlatformSchoolController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => str($request->userAgent() ?? '')->limit(500)->toString() ?: null,
             ]);
-        });
+            });
+        } catch (QueryException $exception) {
+            report($exception);
+            $constraint = str($exception->getMessage())->match('/CONSTRAINT [`"]([^`"]+)/i')->toString();
+
+            return back()->withErrors([
+                'school_number' => 'The school could not be removed because tenant records are still linked to it. No data was deleted.'.($constraint ? ' Blocking database constraint: '.$constraint.'.' : ' The technical details were recorded in the server log.'),
+            ]);
+        }
 
         return redirect()->route('platform.schools')->with('status', $snapshot['school'].' and its tenant data were permanently removed.');
     }
