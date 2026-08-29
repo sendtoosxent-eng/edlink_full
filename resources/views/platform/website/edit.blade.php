@@ -1,7 +1,7 @@
 @extends('layouts.platform', ['title' => 'Website Content Management'])
 
 @section('content')
-<div class="mx-auto max-w-6xl space-y-6 pb-20">
+<div class="space-y-6">
     <!-- Header Block with Dark Gradient Background & Ambient Glow -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
