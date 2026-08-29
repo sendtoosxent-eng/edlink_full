@@ -24,7 +24,14 @@
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([['Active subscriptions', $activeCount, 'Currently in good standing', 'emerald'], ['Renewing in 30 days', $renewalCount, 'Require follow-up soon', 'amber'], ['Trial accounts', $trialCount, 'Conversion opportunities', 'sky'], ['Expired / overdue', $expiredCount, 'Require immediate review', 'rose']] as [$label, $value, $note, $tone])
-            @php($styles = ['emerald' => 'bg-emerald-50 text-emerald-700 border-emerald-200', 'amber' => 'bg-amber-50 text-amber-800 border-amber-200', 'sky' => 'bg-sky-50 text-sky-700 border-sky-200', 'rose' => 'bg-rose-50 text-rose-700 border-rose-200'][$tone])
+            @php
+                $styles = [
+                    'emerald' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    'amber' => 'bg-amber-50 text-amber-800 border-amber-200',
+                    'sky' => 'bg-sky-50 text-sky-700 border-sky-200',
+                    'rose' => 'bg-rose-50 text-rose-700 border-rose-200',
+                ][$tone];
+            @endphp
             <article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
                 <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] font-black uppercase tracking-wider text-slate-400">{{ $label }}</p><p class="mt-2 text-3xl font-black text-slate-900">{{ number_format($value) }}</p></div><span class="flex h-10 w-10 items-center justify-center rounded-xl border {{ $styles }}"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span></div>
                 <p class="mt-4 text-[11px] font-semibold text-slate-500">{{ $note }}</p>
