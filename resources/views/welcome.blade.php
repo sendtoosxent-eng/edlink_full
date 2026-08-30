@@ -370,10 +370,7 @@
 	<section id="about" class="mobile-section py-24 relative overflow-hidden">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
 			<div data-aos="fade-right" class="relative mx-auto w-full max-w-xl">
-				<div class="absolute -inset-4 bg-gradient-to-tr from-teal-300/30 to-yellow-300/30 dark:from-teal-500/10 dark:to-yellow-500/10 rounded-[2rem] blur-xl"></div>
-				<div class="relative aspect-[4/3] overflow-hidden rounded-[2rem] bg-slate-100 shadow-2xl shadow-slate-300/40 dark:bg-white/5 dark:shadow-black/20">
-					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'about_image') }}" class="h-full w-full object-cover object-center" alt="Teacher using Edlink in the classroom">
-				</div>
+				<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'about_image') }}" class="w-full object-cover object-center" alt="Teacher using Edlink in the classroom">
 			</div>
 			<div data-aos="fade-left">
 				<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">About us</span>
