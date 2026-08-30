@@ -120,3 +120,29 @@
   One current weakness is that the exam setup subject dropdown shows every subject registered by the school, rather than
   only subjects assigned to the selected class. That should be tightened to prevent an administrator from accidentally
   adding an unrelated subject paper.
+
+
+1. Change Package to:
+      - Basic: up to 500 learners
+      - Premium: up to 1,000 learners
+      - Enterprise: unlimited capacity
+
+  2. Change Status from Expired or Trial to Active.
+  3. Set the Start Date.
+  4. Set a future Expiration Date.
+  5. Click Save Subscription.
+
+  When a demo school is activated, the system automatically:
+
+  - Changes the school from demo to active.
+  - Removes the expired-demo restriction.
+  - Clears the old demo expiration date.
+  - Applies the selected package and learner limit.
+  - Preserves the school’s users, students, settings, and existing data.
+  - Records the change in the platform audit log.
+
+  I also confirmed there is an automated test specifically covering conversion of an expired demo school into
+  an active Premium school with new licence dates.
+
+  For your next meeting, I recommend activating the school, setting its expiry date, resetting the
+  administrator’s password from the platform if necessary, and testing their login before the demonstration.
