@@ -8,12 +8,12 @@
 
                     <div>
                         <div class="flex flex-wrap items-center gap-3">
-                            <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">Accounting Workspace</h1>
+                            <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">{{ $ledgerSettingsPage ? 'Ledger Mapping Settings' : 'Accounting Workspace' }}</h1>
                             <span class="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Double-entry enabled
                             </span>
                         </div>
-                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Manage the chart of accounts, controlled journals, reporting periods and financial statements for {{ auth()->user()->school?->name }}.</p>
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{{ $ledgerSettingsPage ? 'Choose where fees, expenses, payroll and money accounts post in the general ledger.' : 'Manage the chart of accounts, controlled journals, reporting periods and financial statements for '.auth()->user()->school?->name.'.' }}</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3 sm:flex">
@@ -28,17 +28,25 @@
                 </div>
             </div>
         </div>
+        @if($ledgerSettingsPage)
+        <div class="border-t border-white/10 bg-slate-950/30 px-4 py-3 sm:px-6">
+            <a href="{{ route('settings.index') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white">&larr; Back to System Settings</a>
+        </div>
+        @else
         <div class="flex gap-1 overflow-x-auto border-t border-white/10 bg-slate-950/30 px-4 py-2 sm:px-6">
             @foreach(['dashboard'=>'Dashboard','accounts'=>'Chart of accounts','journals'=>'Journals','reports'=>'Reports','settings'=>'Posting rules','periods'=>'Periods'] as $key=>$label)
                 <button wire:click="setTab('{{ $key }}')" class="whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition {{ $tab===$key?'bg-amber-400 text-slate-950 shadow-sm':'text-slate-300 hover:bg-white/10 hover:text-white' }}">{{ $label }}</button>
             @endforeach
         </div>
+        @endif
     </header>
 
+    @unless($ledgerSettingsPage)
     <div class="relative max-w-xl">
         <svg class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
         <input wire:model.live.debounce.300ms="search" type="search" placeholder="Search account code, account name, journal, reference or status..." class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm shadow-sm transition focus:border-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-400/20">
     </div>
+    @endunless
 
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><ul class="list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

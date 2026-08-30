@@ -165,6 +165,24 @@ it('lets administrators map expense categories to editable chart accounts', func
     expect(AccountMapping::where('school_id', $school->id)->where('mapping_type', 'expense_category:utilities')->value('ledger_account_id'))->toBe($utilities->id);
 });
 
+it('provides ledger mappings from system settings', function () {
+    $school = School::create(['name' => 'Settings Mapping School', 'slug' => 'settings-mapping-school']);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->get(route('settings.index'))
+        ->assertOk()
+        ->assertSee('Configure ledger mappings');
+
+    $this->actingAs($admin)
+        ->get(route('settings.ledger-mappings'))
+        ->assertOk()
+        ->assertSee('Ledger Mapping Settings')
+        ->assertSee('Fees &amp; receivables', false)
+        ->assertSee('Expense categories')
+        ->assertDontSee('Chart of accounts');
+});
+
 it('deletes only unused custom ledger accounts', function () {
     $school = School::create(['name' => 'Ledger Maintenance School', 'slug' => 'ledger-maintenance-school']);
     $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);

@@ -70,11 +70,16 @@ class Accounting extends Component
 
     public ?int $selectedAccountId = null;
 
+    public bool $ledgerSettingsPage = false;
+
     public function mount(AccountingSetupService $setup): void
     {
         $this->authorizePermission('accounting.dashboard.view');
         $setup->activate(Auth::user()->school, Auth::id());
-        $this->tab = in_array(request('tab'), ['dashboard', 'accounts', 'journals', 'reports', 'settings', 'periods'], true) ? request('tab') : 'dashboard';
+        $this->ledgerSettingsPage = request()->routeIs('settings.ledger-mappings');
+        $this->tab = $this->ledgerSettingsPage
+            ? 'settings'
+            : (in_array(request('tab'), ['dashboard', 'accounts', 'journals', 'reports', 'settings', 'periods'], true) ? request('tab') : 'dashboard');
         $this->from = now()->startOfYear()->toDateString();
         $this->to = now()->toDateString();
         $this->journalDate = now()->toDateString();
@@ -84,6 +89,7 @@ class Accounting extends Component
 
     public function setTab(string $tab): void
     {
+        abort_if($this->ledgerSettingsPage, 404);
         abort_unless(in_array($tab, ['dashboard', 'accounts', 'journals', 'reports', 'settings', 'periods'], true), 404);
         $this->tab = $tab;
         $this->resetPage();
@@ -339,8 +345,12 @@ class Accounting extends Component
 
     private function mappingAccountClass(string $type): ?string
     {
-        if (str_starts_with($type, 'expense_category:')) return 'expense';
-        if (str_starts_with($type, 'fee_structure:')) return 'income';
+        if (str_starts_with($type, 'expense_category:')) {
+            return 'expense';
+        }
+        if (str_starts_with($type, 'fee_structure:')) {
+            return 'income';
+        }
 
         return match ($type) {
             'student_receivable', 'staff_advance' => 'asset',

@@ -194,6 +194,17 @@
                 <p class="text-xs text-slate-500 mt-0.5">Controls payment information, financial policy, and document text.</p>
             </div>
             <div class="grid gap-5 md:grid-cols-2">
+                @if(auth()->user()->hasPermission('accounting.mappings.manage'))
+                <div class="md:col-span-2 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900">Ledger mapping settings</h3>
+                        <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-600">Map fee income, expense categories, payroll, cash, bank and mobile-money accounts to the correct general-ledger accounts.</p>
+                    </div>
+                    <a href="{{ route('settings.ledger-mappings') }}" wire:navigate class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-xs font-black text-white transition hover:bg-slate-800">
+                        Configure ledger mappings <span aria-hidden="true">&rarr;</span>
+                    </a>
+                </div>
+                @endif
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Currency</label>
                     <input wire:model="settings.currency" class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="e.g. UGX">
