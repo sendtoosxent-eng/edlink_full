@@ -16,6 +16,7 @@ uses(RefreshDatabase::class);
 function auditedUser(string $role): User
 {
     $school = School::create(['name' => ucfirst($role).' Audit School', 'slug' => $role.'-audit-school-'.uniqid()]);
+
     return User::factory()->create(['school_id' => $school->id, 'role' => $role]);
 }
 
@@ -78,12 +79,19 @@ it('recognises the named Livewire update route and records the real method', fun
 it('allows only administrators to review the school audit trail', function () {
     $admin = auditedUser('admin');
     AuditLog::create(['school_id' => $admin->school_id, 'user_id' => $admin->id, 'event' => 'page.viewed', 'metadata' => ['route' => 'dashboard']]);
+    AuditLog::create(['school_id' => $admin->school_id, 'user_id' => $admin->id, 'event' => 'livewire.action', 'metadata' => ['component' => 'school-settings-v2', 'action' => '$set']]);
+    AuditLog::create(['school_id' => $admin->school_id, 'user_id' => $admin->id, 'event' => 'page.viewed', 'metadata' => ['action' => 'App\\Livewire\\PortalAccess', 'path' => '/students/portal-access']]);
+    AuditLog::create(['school_id' => $admin->school_id, 'user_id' => $admin->id, 'event' => 'audit_trail.viewed', 'metadata' => ['route' => 'settings.audit-trail']]);
 
     Livewire::actingAs($admin)->test(AuditTrail::class)
         ->assertSee('Audit Trail')
-        ->assertSee('page.viewed')
+        ->assertSee('Dashboard')
+        ->assertSee('School Settings')
+        ->assertSee('Portal Access')
+        ->assertSee('Viewed screen')
+        ->assertSee('Made a change')
         ->set('search', 'dashboard')
-        ->assertSee('page.viewed');
+        ->assertSee('Dashboard');
 
     $teacher = auditedUser('teacher');
     Livewire::actingAs($teacher)->test(AuditTrail::class)->assertForbidden();

@@ -8,7 +8,7 @@
                     Audit Trail
                 </h1>
                 <p class="mt-1 text-sm text-slate-400 max-w-xl">
-                    Review page visits, Livewire actions, and important system operations performed by staff.
+                    See which screens staff visited and the activities they performed.
                 </p>
             </div>
 
@@ -51,7 +51,7 @@
                 <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Search Logs</label>
                 <input wire:model.live.debounce.350ms="search" 
                        type="text" 
-                       placeholder="Search event, staff, route or IP..." 
+                       placeholder="Search screen, staff or IP..."
                        class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10 placeholder:text-slate-400">
             </div>
 
@@ -129,8 +129,8 @@
                     <tr>
                         <th class="px-6 py-3.5">Date &amp; Time</th>
                         <th class="px-6 py-3.5">Staff Member</th>
-                        <th class="px-6 py-3.5">Event</th>
-                        <th class="px-6 py-3.5">Location / Action</th>
+                        <th class="px-6 py-3.5">Screen Visited</th>
+                        <th class="px-6 py-3.5">Activity</th>
                         <th class="px-6 py-3.5">IP Address</th>
                         <th class="px-6 py-3.5 text-right">Action</th>
                     </tr>
@@ -148,23 +148,12 @@
                                 <span class="block text-xs font-normal capitalize text-slate-400 mt-0.5">{{ str_replace('_',' ',$log->user?->role ?: 'system') }}</span>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold
-                                    {{ $log->event==='livewire.action' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20' : '' }}
-                                    {{ str_contains($log->event,'deleted') ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-600/20' : '' }}
-                                    {{ str_contains($log->event,'recorded') || str_contains($log->event,'created') ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : '' }}
-                                    {{ !in_array($log->event, ['livewire.action']) && !str_contains($log->event,'deleted') && !str_contains($log->event,'recorded') && !str_contains($log->event,'created') ? 'bg-slate-100 text-slate-700' : '' }}">
-                                    <span class="h-1.5 w-1.5 rounded-full 
-                                        {{ $log->event==='livewire.action' ? 'bg-blue-500' : '' }}
-                                        {{ str_contains($log->event,'deleted') ? 'bg-rose-500' : '' }}
-                                        {{ str_contains($log->event,'recorded') || str_contains($log->event,'created') ? 'bg-emerald-500' : '' }}
-                                        {{ !in_array($log->event, ['livewire.action']) && !str_contains($log->event,'deleted') && !str_contains($log->event,'recorded') && !str_contains($log->event,'created') ? 'bg-slate-400' : '' }}"></span>
-                                    {{ $log->event }}
-                                </span>
+                                <b class="text-slate-900">{{ $this->screenName($log) }}</b>
                             </td>
-                            <td class="max-w-xs px-6 py-4">
-                                <b class="block truncate font-bold text-slate-800">{{ data_get($meta,'action') ?: data_get($meta,'route') ?: class_basename($log->subject_type ?: '') ?: '—' }}</b>
-                                <span class="block truncate text-xs font-normal text-slate-400 mt-0.5" title="{{ data_get($meta,'component') ?: data_get($meta,'path') ?: ($log->subject_type ? $log->subject_type.' #'.$log->subject_id : 'No additional location') }}">
-                                    {{ data_get($meta,'component') ?: data_get($meta,'path') ?: ($log->subject_type ? $log->subject_type.' #'.$log->subject_id : 'No additional location') }}
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                                    {{ $this->activityLabel($log) }}
                                 </span>
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 font-mono text-xs text-slate-500">

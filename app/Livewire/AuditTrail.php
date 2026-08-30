@@ -15,11 +15,17 @@ class AuditTrail extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $userId = '';
+
     public string $role = '';
+
     public string $event = '';
+
     public string $fromDate = '';
+
     public string $toDate = '';
+
     public ?int $selectedLogId = null;
 
     public function mount(): void
@@ -30,12 +36,14 @@ class AuditTrail extends Component
 
     public function updated($property): void
     {
-        if (in_array($property, ['search','userId','role','event','fromDate','toDate'], true)) $this->resetPage();
+        if (in_array($property, ['search', 'userId', 'role', 'event', 'fromDate', 'toDate'], true)) {
+            $this->resetPage();
+        }
     }
 
     public function clearFilters(): void
     {
-        $this->reset(['search','userId','role','event','fromDate','toDate']);
+        $this->reset(['search', 'userId', 'role', 'event', 'fromDate', 'toDate']);
         $this->resetPage();
     }
 
@@ -50,6 +58,51 @@ class AuditTrail extends Component
         $this->selectedLogId = null;
     }
 
+    public function screenName(AuditLog $log): string
+    {
+        $metadata = $log->metadata ?? [];
+        $location = data_get($metadata, 'component')
+            ?: data_get($metadata, 'route')
+            ?: data_get($metadata, 'path')
+            ?: $log->subject_type;
+
+        if (! $location) {
+            return 'System';
+        }
+
+        $location = class_basename((string) $location);
+        $location = trim($location, '/');
+        $parts = preg_split('/[.\/]/', $location);
+        $name = end($parts) ?: $location;
+        $name = preg_replace('/^App\\\\Livewire\\\\/', '', $name);
+        $name = preg_replace('/[-_]/', ' ', $name);
+        $name = preg_replace('/(?<=[a-z])(?=[A-Z])/', ' ', $name);
+        $name = preg_replace('/\\s+v?\\d+$/i', '', $name);
+
+        return str($name)->trim()->title()->toString() ?: 'System';
+    }
+
+    public function activityLabel(AuditLog $log): string
+    {
+        if ($log->event === 'page.viewed' || str_ends_with($log->event, '.viewed')) {
+            return 'Viewed screen';
+        }
+
+        if ($log->event === 'livewire.action' || str_starts_with($log->event, 'request.')) {
+            return 'Made a change';
+        }
+
+        if (str_contains($log->event, 'deleted')) {
+            return 'Deleted a record';
+        }
+
+        if (str_contains($log->event, 'created') || str_contains($log->event, 'recorded')) {
+            return 'Added a record';
+        }
+
+        return str($log->event)->replace(['.', '_'], ' ')->title()->toString();
+    }
+
     public function render()
     {
         $schoolId = Auth::user()->school_id;
@@ -61,18 +114,19 @@ class AuditTrail extends Component
             ->when($this->toDate, fn ($q) => $q->whereDate('created_at', '<=', $this->toDate))
             ->when($this->search, function ($q): void {
                 $term = '%'.$this->search.'%';
-                $q->where(fn ($scope) => $scope->where('event','like',$term)->orWhere('metadata','like',$term)->orWhere('ip_address','like',$term)->orWhereHas('user',fn($u)=>$u->where('name','like',$term)->orWhere('email','like',$term)));
+                $q->where(fn ($scope) => $scope->where('event', 'like', $term)->orWhere('metadata', 'like', $term)->orWhere('ip_address', 'like', $term)->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term)->orWhere('email', 'like', $term)));
             });
         $today = now()->toDateString();
-        $selectedLog = $this->selectedLogId ? AuditLog::with('user:id,name,email,role')->where('school_id',$schoolId)->find($this->selectedLogId) : null;
+        $selectedLog = $this->selectedLogId ? AuditLog::with('user:id,name,email,role')->where('school_id', $schoolId)->find($this->selectedLogId) : null;
+
         return view('livewire.audit-trail', [
             'logs' => $query->latest()->paginate(40),
-            'users' => User::where('school_id',$schoolId)->whereIn('role',['admin','superadmin','academic_admin','registrar','teacher','bursar'])->orderBy('name')->get(['id','name','role']),
-            'events' => AuditLog::where('school_id',$schoolId)->distinct()->orderBy('event')->pluck('event'),
+            'users' => User::where('school_id', $schoolId)->whereIn('role', ['admin', 'superadmin', 'academic_admin', 'registrar', 'teacher', 'bursar'])->orderBy('name')->get(['id', 'name', 'role']),
+            'events' => AuditLog::where('school_id', $schoolId)->distinct()->orderBy('event')->pluck('event'),
             'selectedLog' => $selectedLog,
-            'todayCount' => AuditLog::where('school_id',$schoolId)->whereDate('created_at',$today)->count(),
-            'actionCount' => AuditLog::where('school_id',$schoolId)->whereIn('event',['livewire.action','request.post','request.put','request.patch','request.delete'])->whereDate('created_at',$today)->count(),
-            'activeUsers' => AuditLog::where('school_id',$schoolId)->whereDate('created_at',$today)->whereNotNull('user_id')->distinct()->count('user_id'),
+            'todayCount' => AuditLog::where('school_id', $schoolId)->whereDate('created_at', $today)->count(),
+            'actionCount' => AuditLog::where('school_id', $schoolId)->whereIn('event', ['livewire.action', 'request.post', 'request.put', 'request.patch', 'request.delete'])->whereDate('created_at', $today)->count(),
+            'activeUsers' => AuditLog::where('school_id', $schoolId)->whereDate('created_at', $today)->whereNotNull('user_id')->distinct()->count('user_id'),
             'pageTitle' => 'Audit Trail',
         ]);
     }
