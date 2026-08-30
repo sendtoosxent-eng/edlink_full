@@ -172,7 +172,8 @@ it('provides ledger mappings from system settings', function () {
     $this->actingAs($admin)
         ->get(route('settings.index'))
         ->assertOk()
-        ->assertSee('Configure ledger mappings');
+        ->assertSee('Configure ledger mappings')
+        ->assertSee(route('accounting.index', ['tab' => 'settings']), false);
 
     $this->actingAs($admin)
         ->get(route('settings.ledger-mappings'))

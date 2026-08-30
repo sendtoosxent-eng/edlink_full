@@ -200,7 +200,7 @@
                         <h3 class="text-sm font-black text-slate-900">Ledger mapping settings</h3>
                         <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-600">Map fee income, expense categories, payroll, cash, bank and mobile-money accounts to the correct general-ledger accounts.</p>
                     </div>
-                    <a href="{{ route('settings.ledger-mappings') }}" wire:navigate class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-xs font-black text-white transition hover:bg-slate-800">
+                    <a href="{{ route('accounting.index', ['tab' => 'settings']) }}" wire:navigate class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-xs font-black text-white transition hover:bg-slate-800">
                         Configure ledger mappings <span aria-hidden="true">&rarr;</span>
                     </a>
                 </div>
