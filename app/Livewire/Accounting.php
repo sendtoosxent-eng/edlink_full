@@ -9,10 +9,12 @@ use App\Models\AuditLog;
 use App\Models\Expense;
 use App\Models\FeeStructure;
 use App\Models\FinancialAccount;
+use App\Models\FiscalYear;
 use App\Models\LedgerAccount;
 use App\Models\SchoolSetting;
 use App\Services\AccountingReportService;
 use App\Services\AccountingSetupService;
+use App\Services\AccountingYearEndService;
 use App\Services\DoubleEntryService;
 use App\Services\StudentReceivablesService;
 use Illuminate\Support\Facades\Auth;
@@ -328,6 +330,22 @@ class Accounting extends Component
         $this->actionReason = '';
     }
 
+    public function prepareYearEnd(int $id, AccountingYearEndService $service): void
+    {
+        $this->authorizePermission('accounting.periods.manage');
+        $year = FiscalYear::where('school_id', Auth::user()->school_id)->findOrFail($id);
+        $journal = $service->prepareClosingJournal($year, Auth::id());
+        session()->flash('status', "Year-end journal {$journal->number} prepared and submitted for independent approval.");
+    }
+
+    public function finalizeYearEnd(int $id, AccountingYearEndService $service): void
+    {
+        $this->authorizePermission('accounting.periods.manage');
+        $year = FiscalYear::where('school_id', Auth::user()->school_id)->findOrFail($id);
+        $service->finalize($year, Auth::id());
+        session()->flash('status', "Financial year {$year->name} finalized. All its accounting periods are now locked.");
+    }
+
     private function loadMappings(): void
     {
         $this->mappings = AccountMapping::where('school_id', Auth::user()->school_id)->whereNull('source_type')->pluck('ledger_account_id', 'mapping_type')->map(fn ($id) => (string) $id)->all();
@@ -395,6 +413,8 @@ class Accounting extends Component
         $journals = AccountingJournal::where('school_id', $schoolId)->with(['lines.account'])
             ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('number', 'like', "%{$search}%")->orWhere('reference', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")->orWhere('journal_type', 'like', "%{$search}%")->orWhere('status', 'like', "%{$search}%")))
             ->latest('journal_date')->latest('id')->paginate(15);
+        $fiscalYears = FiscalYear::where('school_id', $schoolId)->latest('starts_on')->get();
+        $yearEndJournals = AccountingJournal::where('school_id', $schoolId)->where('journal_type', 'year_end')->get()->keyBy('idempotency_key');
 
         return view('livewire.accounting', [
             'accounts' => $accounts,
@@ -402,6 +422,8 @@ class Accounting extends Component
             'financialAccounts' => FinancialAccount::where('school_id', $schoolId)->orderBy('name')->get(),
             'feeStructures' => ($term = Auth::user()->school->currentTerm()) ? FeeStructure::with(['schoolClass', 'studentCategory'])->where('school_id', $schoolId)->where('term_id', $term->id)->orderBy('school_class_id')->get() : collect(),
             'periods' => AccountingPeriod::where('school_id', $schoolId)->latest('starts_on')->limit(24)->get(),
+            'fiscalYears' => $fiscalYears,
+            'yearEndJournals' => $yearEndJournals,
             'journals' => $journals,
             'trialBalance' => $trial, 'summary' => $summary, 'receivables' => $reports->receivablesByStudent($schoolId, $filters),
             'recent' => AccountingJournal::where('school_id', $schoolId)->where('status', 'posted')->latest('posted_at')->limit(8)->get(),

@@ -242,6 +242,34 @@
     @endif
 
     @if($tab==='periods')
-        <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="flex items-end gap-3"><div><h2 class="font-black">Accounting periods</h2><p class="text-sm text-slate-500">Soft-closed and locked periods reject all postings.</p></div><label class="ml-auto text-xs font-bold">Reopening reason<input wire:model="actionReason" class="mt-1 block rounded-xl border-slate-300 text-sm"></label></div><div class="mt-4 overflow-x-auto"><table class="min-w-full text-sm"><thead class="text-left text-xs uppercase text-slate-500"><tr><th class="py-2">Period</th><th>Dates</th><th>Status</th><th></th></tr></thead><tbody>@foreach($periods as $period)<tr class="border-t"><td class="py-3 font-bold">{{ $period->name }}</td><td>{{ $period->starts_on->format('d M') }} – {{ $period->ends_on->format('d M Y') }}</td><td>{{ str($period->status)->headline() }}</td><td class="text-right space-x-2">@if($period->status==='open')<button wire:click="changePeriodStatus({{ $period->id }},'soft_closed')" class="font-bold">Soft close</button><button wire:click="changePeriodStatus({{ $period->id }},'locked')" class="font-bold text-red-700">Lock</button>@else<button wire:click="changePeriodStatus({{ $period->id }},'open')" class="font-bold text-emerald-700">Reopen</button>@endif</td></tr>@endforeach</tbody></table></div></div>
+        <div class="space-y-6">
+            <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                <div class="border-b border-slate-100 p-5"><h2 class="font-black text-slate-900">Financial year-end</h2><p class="mt-1 text-sm text-slate-500">Clear income and expense balances into retained surplus, then permanently lock the year.</p></div>
+                <div class="divide-y divide-slate-100">
+                    @foreach($fiscalYears as $year)
+                        @php($closingJournal = $yearEndJournals->get('year_end:'.$year->id))
+                        <div class="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+                            <div><p class="font-black text-slate-900">{{ $year->name }}</p><p class="mt-1 text-xs text-slate-500">{{ $year->starts_on->format('d M Y') }} – {{ $year->ends_on->format('d M Y') }}</p></div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $year->status === 'closed' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-800' }}">{{ str($year->status)->headline() }}</span>
+                                @if($year->status === 'open' && !$closingJournal && auth()->user()->hasPermission('accounting.periods.manage'))
+                                    <button wire:click="prepareYearEnd({{ $year->id }})" wire:confirm="Prepare the closing journal for {{ $year->name }}? All ordinary journals for this year must be completed first." class="rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950">Prepare closing journal</button>
+                                @elseif($year->status === 'open' && $closingJournal?->status === 'posted' && auth()->user()->hasPermission('accounting.periods.manage'))
+                                    <button wire:click="finalizeYearEnd({{ $year->id }})" wire:confirm="Finalize {{ $year->name }}? This will lock every accounting period in the year." class="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-black text-white">Finalize and lock year</button>
+                                @elseif($year->status === 'open' && $closingJournal)
+                                    <span class="text-xs font-semibold text-slate-600">Closing journal {{ $closingJournal->number }}: {{ str($closingJournal->status)->headline() }}</span>
+                                    <button wire:click="setTab('journals')" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-black text-slate-700">Review journal</button>
+                                @else
+                                    <span class="text-xs font-semibold text-slate-500">Finalized {{ $year->closed_at?->format('d M Y') }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="border-t border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900"><b>Controlled workflow:</b> prepare the closing journal, have a different authorized staff member approve and post it, then return here to finalize the year.</div>
+            </section>
+
+            <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div class="flex items-end gap-3"><div><h2 class="font-black">Accounting periods</h2><p class="text-sm text-slate-500">Soft-closed and locked periods reject all postings.</p></div><label class="ml-auto text-xs font-bold">Reopening reason<input wire:model="actionReason" class="mt-1 block rounded-xl border-slate-300 text-sm"></label></div><div class="mt-4 overflow-x-auto"><table class="min-w-full text-sm"><thead class="text-left text-xs uppercase text-slate-500"><tr><th class="py-2">Period</th><th>Dates</th><th>Status</th><th></th></tr></thead><tbody>@foreach($periods as $period)<tr class="border-t"><td class="py-3 font-bold">{{ $period->name }}</td><td>{{ $period->starts_on->format('d M') }} – {{ $period->ends_on->format('d M Y') }}</td><td>{{ str($period->status)->headline() }}</td><td class="text-right space-x-2">@if($period->status==='open')<button wire:click="changePeriodStatus({{ $period->id }},'soft_closed')" class="font-bold">Soft close</button><button wire:click="changePeriodStatus({{ $period->id }},'locked')" class="font-bold text-red-700">Lock</button>@else<button wire:click="changePeriodStatus({{ $period->id }},'open')" class="font-bold text-emerald-700">Reopen</button>@endif</td></tr>@endforeach</tbody></table></div></div>
+        </div>
     @endif
 </div>

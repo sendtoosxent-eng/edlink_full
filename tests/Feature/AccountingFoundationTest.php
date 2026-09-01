@@ -7,6 +7,7 @@ use App\Models\AccountMapping;
 use App\Models\FeePayment;
 use App\Models\FinanceLedgerEntry;
 use App\Models\FinancialAccount;
+use App\Models\FiscalYear;
 use App\Models\LedgerAccount;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -18,6 +19,7 @@ use App\Models\User;
 use App\Services\AccountingMigrationService;
 use App\Services\AccountingReportService;
 use App\Services\AccountingSetupService;
+use App\Services\AccountingYearEndService;
 use App\Services\DoubleEntryService;
 use App\Services\FinanceLedgerService;
 use App\Services\StudentReceivablesService;
@@ -133,6 +135,7 @@ it('renders the tenant accounting workspace without exposing another school', fu
     $this->actingAs($admin)->get(route('accounting.index'))->assertOk()->assertSee('Double-entry enabled')->assertSee('Accounting Workspace')->assertDontSee('Secret foreign account');
     $this->get(route('accounting.index', ['tab' => 'accounts']))->assertOk()->assertSee('Chart of accounts')->assertSee('Account setup')->assertSee('Assets')->assertSee('Liabilities')->assertSee('Cash and Cash Equivalents')->assertSee('subaccounts')->assertDontSee('Secret foreign account');
     $this->get(route('accounting.index', ['tab' => 'settings']))->assertOk()->assertSee('Cash integration')->assertSee('Automation setup')->assertSee('Automatic debit and credit destinations')->assertDontSee('Secret foreign account');
+    $this->get(route('accounting.index', ['tab' => 'periods']))->assertOk()->assertSee('Financial year-end')->assertSee('Prepare closing journal');
     $cash = LedgerAccount::where('school_id', $school->id)->where('code', '1110')->firstOrFail();
     Livewire::actingAs($admin)->test(AccountingWorkspace::class)->call('setTab', 'accounts')->call('editAccount', $cash->id)->assertSet('editingAccountId', $cash->id)->assertSet('accountCode', '1110')->assertSet('accountName', 'Cash on Hand');
 });
@@ -147,10 +150,44 @@ it('prepares one balanced opening journal and requires independent approval', fu
     expect($journal->status)->toBe('submitted')->and($again->id)->toBe($journal->id)->and((float) $journal->lines()->sum('debit'))->toBe((float) $journal->lines()->sum('credit'));
 });
 
+it('closes income and expenses into retained surplus before locking the financial year', function () {
+    $school = School::create(['name' => 'Year End School', 'slug' => 'year-end-school']);
+    $maker = User::factory()->create(['school_id' => $school->id]);
+    $checker = User::factory()->create(['school_id' => $school->id]);
+    $year = FiscalYear::where('school_id', $school->id)->where('status', 'open')->firstOrFail();
+    $cash = LedgerAccount::where('school_id', $school->id)->where('code', '1110')->value('id');
+    $income = LedgerAccount::where('school_id', $school->id)->where('code', '4100')->value('id');
+    $expense = LedgerAccount::where('school_id', $school->id)->where('code', '5400')->value('id');
+
+    $receipt = app(DoubleEntryService::class)->createAndPost([
+        'school_id' => $school->id, 'journal_date' => $year->starts_on->addMonth()->toDateString(), 'description' => 'Year income', 'currency' => 'UGX',
+    ], [['ledger_account_id' => $cash, 'debit' => 100, 'credit' => 0], ['ledger_account_id' => $income, 'debit' => 0, 'credit' => 100]], $maker->id, $checker->id);
+    expect($receipt->status)->toBe('posted');
+    app(DoubleEntryService::class)->createAndPost([
+        'school_id' => $school->id, 'journal_date' => $year->starts_on->addMonths(2)->toDateString(), 'description' => 'Year expense', 'currency' => 'UGX',
+    ], [['ledger_account_id' => $expense, 'debit' => 40, 'credit' => 0], ['ledger_account_id' => $cash, 'debit' => 0, 'credit' => 40]], $maker->id, $checker->id);
+
+    $closing = app(AccountingYearEndService::class)->prepareClosingJournal($year, $maker->id);
+    $sameClosing = app(AccountingYearEndService::class)->prepareClosingJournal($year, $maker->id);
+    expect($closing->status)->toBe('submitted')
+        ->and($sameClosing->id)->toBe($closing->id)
+        ->and((float) $closing->lines()->sum('debit'))->toBe((float) $closing->lines()->sum('credit'));
+
+    app(DoubleEntryService::class)->approve($closing->fresh(), $checker->id);
+    app(DoubleEntryService::class)->post($closing->fresh(), $checker->id);
+    app(AccountingYearEndService::class)->finalize($year->fresh(), $checker->id);
+
+    $closedSummary = app(AccountingReportService::class)->summary($school->id, ['from' => $year->starts_on->toDateString(), 'to' => $year->ends_on->toDateString()]);
+    expect($closedSummary['income'])->toBe(0.0)
+        ->and($closedSummary['expenses'])->toBe(0.0)
+        ->and($year->fresh()->status)->toBe('closed')
+        ->and($year->periods()->where('status', '!=', 'locked')->count())->toBe(0);
+});
+
 it('lets an administrator maintain the chart without bypassing maker-checker controls', function () {
     $school = School::create(['name' => 'Controlled Admin School', 'slug' => 'controlled-admin-school']);
     $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
-    expect($admin->hasPermission('accounting.dashboard.view'))->toBeTrue()->and($admin->hasPermission('accounting.accounts.manage'))->toBeTrue()->and($admin->hasPermission('accounting.mappings.manage'))->toBeTrue()->and($admin->hasPermission('accounting.journals.approve'))->toBeFalse()->and($admin->hasPermission('accounting.periods.reopen'))->toBeFalse();
+    expect($admin->hasPermission('accounting.dashboard.view'))->toBeTrue()->and($admin->hasPermission('accounting.accounts.manage'))->toBeTrue()->and($admin->hasPermission('accounting.mappings.manage'))->toBeTrue()->and($admin->hasPermission('accounting.periods.manage'))->toBeTrue()->and($admin->hasPermission('accounting.journals.approve'))->toBeFalse()->and($admin->hasPermission('accounting.periods.reopen'))->toBeFalse();
 });
 
 it('lets administrators map expense categories to editable chart accounts', function () {

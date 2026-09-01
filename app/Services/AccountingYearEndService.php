@@ -24,6 +24,11 @@ class AccountingYearEndService
             if ($existing) {
                 return $existing;
             }
+            if (AccountingJournal::where('school_id', $year->school_id)
+                ->whereBetween('journal_date', [$year->starts_on, $year->ends_on])
+                ->whereIn('status', ['draft', 'submitted', 'approved'])->exists()) {
+                throw ValidationException::withMessages(['fiscal_year' => 'Complete, reject, or remove every unfinished journal in this financial year before preparing year-end.']);
+            }
             $rows = $this->reports->trialBalance($year->school_id, ['from' => $year->starts_on->toDateString(), 'to' => $year->ends_on->toDateString()])->whereIn('account_class', ['income', 'expense'])->filter(fn ($row) => (float) $row->balance !== 0.0);
             if ($rows->isEmpty()) {
                 throw ValidationException::withMessages(['fiscal_year' => 'There are no posted income or expense balances to close.']);
@@ -54,7 +59,8 @@ class AccountingYearEndService
             $journal = AccountingJournal::where('school_id', $year->school_id)->where('idempotency_key', 'year_end:'.$year->id)->first();
             if (! $journal || $journal->status !== 'posted') {
                 throw ValidationException::withMessages(['fiscal_year' => 'Post the approved year-end journal before finalizing the year.']);
-            }$year->periods()->where('status', '!=', 'locked')->update(['status' => 'locked', 'status_reason' => 'Financial year finalized', 'status_changed_by' => $userId, 'status_changed_at' => now()]);
+            }
+            $year->periods()->where('status', '!=', 'locked')->update(['status' => 'locked', 'status_reason' => 'Financial year finalized', 'status_changed_by' => $userId, 'status_changed_at' => now()]);
             $year->update(['status' => 'closed', 'closed_at' => now(), 'closed_by' => $userId]);
         });
     }
