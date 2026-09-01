@@ -2,52 +2,77 @@
 
 namespace App\Livewire;
 
-use App\Models\User;
 use App\Models\Designation;
 use App\Models\SchoolClass;
 use App\Models\Subject;
+use App\Models\User;
+use App\Services\PublicImageStorage;
 use App\Services\StaffNumberGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 use Throwable;
 
 #[Layout('layouts.app')]
 class StaffManagement extends Component
 {
     public string $name = '';
+
     public string $email = '';
+
     public string $phone = '';
+
     public string $job_title = 'Teacher';
+
     public string $role = 'teacher';
+
     public string $base_salary = '0';
+
     public string $joined_at = '';
+
     public string $password = '';
+
     public string $designationId = '';
+
     public bool $showInactive = false;
+
     public ?int $editingId = null;
+
     public string $editName = '';
+
     public string $editEmail = '';
+
     public string $editPhone = '';
+
     public string $editJobTitle = '';
+
     public string $editRole = 'teacher';
+
     public string $editDesignationId = '';
+
     public string $editBaseSalary = '0';
+
     public string $editJoinedAt = '';
+
     public string $editEmploymentStatus = 'active';
+
     public string $editPassword = '';
+
     public string $editClassTeacherClassId = '';
+
     public array $editSubjectAssignments = [];
+
     public $editPhoto = null;
 
-    public function mount(): void { $this->joined_at = now()->toDateString(); }
+    public function mount(): void
+    {
+        $this->joined_at = now()->toDateString();
+    }
 
     public function add(): void
     {
@@ -68,13 +93,19 @@ class StaffManagement extends Component
         try {
             if ($this->role === 'admin' && ! in_array(Auth::user()->role, ['admin', 'superadmin'], true)) {
                 $this->addError('role', 'Only a school administrator may create another administrator.');
+
                 return;
             }
-            if ($this->designationId && ! Designation::where('school_id', $school->id)->whereKey($this->designationId)->exists()) { $this->addError('designationId', 'Choose a designation created for this school.'); return; }
+            if ($this->designationId && ! Designation::where('school_id', $school->id)->whereKey($this->designationId)->exists()) {
+                $this->addError('designationId', 'Choose a designation created for this school.');
+
+                return;
+            }
             $staff = DB::transaction(function () use ($school): User {
                 $staff = User::create(['school_id' => $school->id, 'designation_id' => $this->designationId ?: null, 'name' => $this->name, 'email' => $this->email, 'phone' => $this->phone ?: null, 'job_title' => $this->job_title, 'role' => $this->role, 'base_salary' => $this->base_salary, 'employment_status' => 'active', 'joined_at' => $this->joined_at, 'password' => Hash::make($this->password)]);
                 $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
                 $this->syncSchoolAccess($staff, $school);
+
                 return $staff;
             });
             try {
@@ -121,7 +152,11 @@ class StaffManagement extends Component
         $this->authorizeStaffManagement();
         $user = User::where('school_id', Auth::user()->school_id)->findOrFail($id);
         $this->authorizePrivilegedTarget($user);
-        if ($user->id === Auth::id()) { session()->flash('error', 'You cannot deactivate your own account.'); return; }
+        if ($user->id === Auth::id()) {
+            session()->flash('error', 'You cannot deactivate your own account.');
+
+            return;
+        }
         $user->update(['employment_status' => $user->employment_status === 'active' ? 'inactive' : 'active']);
         if ($user->employment_status === 'inactive') {
             $user->tokens()->delete();
@@ -136,10 +171,12 @@ class StaffManagement extends Component
         $this->authorizePrivilegedTarget($staff);
         if ($designationId === '' && $staff->role !== 'admin') {
             session()->flash('error', 'Non-admin staff must have an access designation.');
+
             return;
         }
         if ($designationId !== '' && ! Designation::where('school_id', Auth::user()->school_id)->whereKey($designationId)->exists()) {
             session()->flash('error', 'That designation does not belong to this school.');
+
             return;
         }
         $staff->update(['designation_id' => $designationId ?: null]);
@@ -178,7 +215,7 @@ class StaffManagement extends Component
         $this->resetValidation();
     }
 
-    public function updateStaff(): void
+    public function updateStaff(PublicImageStorage $images): void
     {
         abort_unless(Auth::user()->hasPermission('staff.manage'), 403);
         $staff = User::where('school_id', Auth::user()->school_id)->findOrFail($this->editingId);
@@ -202,24 +239,33 @@ class StaffManagement extends Component
         $school = Auth::user()->school;
         if ($this->editRole === 'admin' && ! in_array(Auth::user()->role, ['admin', 'superadmin'], true)) {
             $this->addError('editRole', 'Only a school administrator may grant administrator access.');
+
             return;
         }
         if ($this->editClassTeacherClassId && ! SchoolClass::where('school_id', $school->id)->whereKey($this->editClassTeacherClassId)->exists()) {
             $this->addError('editClassTeacherClassId', 'Choose a class belonging to this school.');
+
             return;
         }
-        $pairs = collect($this->editSubjectAssignments)->map(function ($assignment) { [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null); return ['class_id' => (int) $classId, 'subject_id' => (int) $subjectId]; })->filter(fn ($pair) => $pair['class_id'] && $pair['subject_id'])->values();
+        $pairs = collect($this->editSubjectAssignments)->map(function ($assignment) {
+            [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null);
+
+            return ['class_id' => (int) $classId, 'subject_id' => (int) $subjectId];
+        })->filter(fn ($pair) => $pair['class_id'] && $pair['subject_id'])->values();
         if ($pairs->isNotEmpty() && (SchoolClass::where('school_id', $school->id)->whereIn('id', $pairs->pluck('class_id'))->count() !== $pairs->pluck('class_id')->unique()->count() || Subject::where('school_id', $school->id)->whereIn('id', $pairs->pluck('subject_id'))->count() !== $pairs->pluck('subject_id')->unique()->count())) {
             $this->addError('editSubjectAssignments', 'Choose only classes and subjects belonging to this school.');
+
             return;
         }
 
         if ($this->editDesignationId !== '' && ! Designation::where('school_id', Auth::user()->school_id)->whereKey($this->editDesignationId)->exists()) {
             $this->addError('editDesignationId', 'Choose a designation created for this school.');
+
             return;
         }
         if ($staff->id === Auth::id() && ($this->editRole !== $staff->role || $this->editEmploymentStatus !== 'active')) {
             $this->addError('editRole', 'You cannot change your own account role or deactivate your own account.');
+
             return;
         }
 
@@ -230,11 +276,13 @@ class StaffManagement extends Component
             'base_salary' => $this->editBaseSalary, 'joined_at' => $this->editJoinedAt ?: null,
             'employment_status' => $this->editEmploymentStatus,
         ];
-        if ($this->editPassword !== '') $data['password'] = Hash::make($this->editPassword);
+        if ($this->editPassword !== '') {
+            $data['password'] = Hash::make($this->editPassword);
+        }
         if ($this->editPhoto) {
             $oldAvatar = $staff->avatar_path;
-            $data['avatar_path'] = $this->editPhoto->store('avatars/'.$staff->school_id, 'public');
-            if ($oldAvatar) Storage::disk('public')->delete($oldAvatar);
+            $data['avatar_path'] = $images->store($this->editPhoto, 'avatars/'.$staff->school_id);
+            $images->deleteReplacement($oldAvatar, $data['avatar_path']);
         }
         $staff->update($data);
         if ($staff->employment_status === 'inactive') {
@@ -250,19 +298,26 @@ class StaffManagement extends Component
     public function render()
     {
         $school = Auth::user()->school;
+
         return view('livewire.staff-management', ['staff' => User::with('designation')->where('school_id', $school->id)->when(! $this->showInactive, fn ($query) => $query->where('employment_status', 'active'))->orderBy('name')->get(), 'designations' => Designation::where('school_id', $school->id)->orderBy('name')->get(), 'classes' => SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(), 'currentTerm' => $school->currentTerm(), 'pageTitle' => 'Staff']);
     }
 
     private function syncTeachingAssignments(User $staff, $school, string $classTeacherId, array $assignments): void
     {
         SchoolClass::where('school_id', $school->id)->where('class_teacher_user_id', $staff->id)->update(['class_teacher_user_id' => null]);
-        if ($classTeacherId) SchoolClass::where('school_id', $school->id)->whereKey($classTeacherId)->update(['class_teacher_user_id' => $staff->id]);
+        if ($classTeacherId) {
+            SchoolClass::where('school_id', $school->id)->whereKey($classTeacherId)->update(['class_teacher_user_id' => $staff->id]);
+        }
         $term = $school->currentTerm();
-        if (! $term) return;
+        if (! $term) {
+            return;
+        }
         DB::table('staff_subjects')->where('school_id', $school->id)->where('term_id', $term->id)->where('user_id', $staff->id)->delete();
         foreach ($assignments as $assignment) {
             [$classId, $subjectId] = array_pad(explode(':', (string) $assignment, 2), 2, null);
-            if (! $classId || ! $subjectId) continue;
+            if (! $classId || ! $subjectId) {
+                continue;
+            }
             DB::table('class_subjects')->updateOrInsert(['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => (int) $classId, 'subject_id' => (int) $subjectId], ['updated_at' => now(), 'created_at' => now()]);
             DB::table('staff_subjects')->updateOrInsert(['school_id' => $school->id, 'term_id' => $term->id, 'user_id' => $staff->id, 'school_class_id' => (int) $classId, 'subject_id' => (int) $subjectId], ['updated_at' => now(), 'created_at' => now()]);
         }
@@ -270,7 +325,9 @@ class StaffManagement extends Component
 
     private function syncSchoolAccess(User $staff, $school): void
     {
-        if (! Schema::hasTable('school_user_access')) return;
+        if (! Schema::hasTable('school_user_access')) {
+            return;
+        }
 
         DB::table('school_user_access')->updateOrInsert(
             ['school_id' => $school->id, 'user_id' => $staff->id],

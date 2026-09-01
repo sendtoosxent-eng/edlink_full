@@ -4,49 +4,65 @@ namespace App\Livewire;
 
 use App\Models\FeeStructure;
 use App\Models\SchoolClass;
+use App\Models\Stream;
 use App\Models\Student;
 use App\Models\StudentCategory;
 use App\Models\StudentGuardian;
-use App\Models\Stream;
+use App\Services\PublicImageStorage;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Illuminate\Validation\Rule;
 
 class StudentEditModal extends Component
 {
     use WithFileUploads;
 
     public bool $isOpen = false;
+
     public ?int $studentId = null;
 
     // Bio
     public string $name = '';
+
     public string $admission_no = '';
+
     public string $date_of_birth = '';
+
     public string $gender = '';
+
     public $photo = null;
 
     // Class
     public string $school_class_id = '';
+
     public string $stream_id = '';
+
     public string $student_category_id = '';
 
     // Guardian (primary)
     public ?int $guardianId = null;
+
     public string $guardian_name = '';
+
     public string $guardian_relationship = '';
+
     public string $guardian_phone = '';
+
     public string $guardian_email = '';
+
     public string $guardian_address = '';
 
     // Social
     public string $nationality = '';
+
     public string $religion = '';
+
     public string $blood_group = '';
+
     public string $home_address = '';
+
     public string $medical_notes = '';
 
     #[On('edit-student')]
@@ -94,6 +110,7 @@ class StudentEditModal extends Component
         if (! $this->school_class_id) {
             return collect();
         }
+
         return Stream::where('school_id', Auth::user()->school_id)->where('school_class_id', $this->school_class_id)->orderBy('name')->get();
     }
 
@@ -109,10 +126,11 @@ class StudentEditModal extends Component
         if (! $class || ! $category || ! $term) {
             return null;
         }
+
         return FeeStructure::amountFor($class, $category, $term);
     }
 
-    public function save(): void
+    public function save(PublicImageStorage $images): void
     {
         abort_unless(Auth::user()->hasPermission('students.manage'), 403);
         $student = Student::where('school_id', Auth::user()->school_id)->findOrFail($this->studentId);
@@ -145,10 +163,8 @@ class StudentEditModal extends Component
 
         if ($this->photo) {
             $oldPhoto = $student->photo_path;
-            $student->photo_path = $this->photo->store('students/'.$student->school_id, 'public');
-            if ($oldPhoto && $oldPhoto !== $student->photo_path) {
-                Storage::disk('public')->delete($oldPhoto);
-            }
+            $student->photo_path = $images->store($this->photo, 'students/'.$student->school_id);
+            $images->deleteReplacement($oldPhoto, $student->photo_path);
         }
 
         $student->save();

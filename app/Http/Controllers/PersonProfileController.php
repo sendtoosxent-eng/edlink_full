@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\User;
+use App\Services\PublicImageStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -25,7 +25,7 @@ class PersonProfileController extends Controller
         ]);
     }
 
-    public function updateStudent(Request $request, Student $student): RedirectResponse
+    public function updateStudent(Request $request, Student $student, PublicImageStorage $images): RedirectResponse
     {
         $this->authorizeStudent($student);
         abort_unless($request->user()->hasPermission('students.manage'), 403);
@@ -42,8 +42,8 @@ class PersonProfileController extends Controller
         unset($data['photo']);
         if ($photo) {
             $oldPath = $student->photo_path;
-            $data['photo_path'] = $photo->store('students/'.$student->school_id, 'public');
-            if ($oldPath) Storage::disk('public')->delete($oldPath);
+            $data['photo_path'] = $images->store($photo, 'students/'.$student->school_id);
+            $images->deleteReplacement($oldPath, $data['photo_path']);
         }
         $student->update($data);
 
@@ -67,16 +67,18 @@ class PersonProfileController extends Controller
     public function updateStaff(Request $request, User $user): RedirectResponse
     {
         $this->authorizeUser($user, ['admin', 'superadmin', 'teacher', 'bursar', 'registrar', 'academic_admin'], 'staff.manage');
-        return $this->updateUser($request, $user, true);
+
+        return $this->updateUser($request, $user, true, app(PublicImageStorage::class));
     }
 
     public function updateParent(Request $request, User $user): RedirectResponse
     {
         $this->authorizeUser($user, ['parent'], 'parents.manage');
-        return $this->updateUser($request, $user, false);
+
+        return $this->updateUser($request, $user, false, app(PublicImageStorage::class));
     }
 
-    private function updateUser(Request $request, User $user, bool $staff): RedirectResponse
+    private function updateUser(Request $request, User $user, bool $staff, PublicImageStorage $images): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -87,11 +89,13 @@ class PersonProfileController extends Controller
         ]);
         $photo = $data['photo'] ?? null;
         unset($data['photo']);
-        if (! $staff) unset($data['job_title']);
+        if (! $staff) {
+            unset($data['job_title']);
+        }
         if ($photo) {
             $oldPath = $user->avatar_path;
-            $data['avatar_path'] = $photo->store('avatars/'.$user->school_id, 'public');
-            if ($oldPath) Storage::disk('public')->delete($oldPath);
+            $data['avatar_path'] = $images->store($photo, 'avatars/'.$user->school_id);
+            $images->deleteReplacement($oldPath, $data['avatar_path']);
         }
         $user->update($data);
 

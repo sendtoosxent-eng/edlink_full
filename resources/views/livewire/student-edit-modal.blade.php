@@ -36,7 +36,7 @@
                             <label class="inline-block cursor-pointer text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 shadow-sm transition">
                                 <span wire:loading.remove wire:target="photo">Change photo</span>
                                 <span wire:loading wire:target="photo" class="inline-flex items-center space-x-1.5"><x-edlink-loader size="12" /><span>Uploading…</span></span>
-                                <input type="file" wire:model="photo" accept="image/*" class="hidden" x-on:change="setPhotoPreview($event)">
+                                <input type="file" wire:model="photo" accept="image/jpeg,image/png,image/webp" class="hidden" x-on:change="setPhotoPreview($event)">
                             </label>
                             @error('photo') <span class="text-rose-600 text-xs block">{{ $message }}</span> @enderror
                         </div>

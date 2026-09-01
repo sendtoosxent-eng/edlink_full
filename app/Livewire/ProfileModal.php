@@ -2,9 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Services\PublicImageStorage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\On;
@@ -19,12 +19,16 @@ class ProfileModal extends Component
 
     // Profile details
     public string $name = '';
+
     public string $email = '';
+
     public $photo = null; // temporary uploaded file
 
     // Password change
     public string $current_password = '';
+
     public string $new_password = '';
+
     public string $new_password_confirmation = '';
 
     #[On('open-profile-modal')]
@@ -43,7 +47,7 @@ class ProfileModal extends Component
         $this->isOpen = false;
     }
 
-    public function updateProfile(): void
+    public function updateProfile(PublicImageStorage $images): void
     {
         $user = Auth::user();
 
@@ -59,11 +63,9 @@ class ProfileModal extends Component
         $user->email = $validated['email'];
 
         if ($this->photo) {
-            // Remove the old photo if one exists, then store the new one.
-            if ($user->avatar_path) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
-            $user->avatar_path = $this->photo->store('avatars/'.$user->school_id, 'public');
+            $oldPath = $user->avatar_path;
+            $user->avatar_path = $images->store($this->photo, 'avatars/'.$user->school_id);
+            $images->deleteReplacement($oldPath, $user->avatar_path);
         }
 
         if ($emailChanged) {
@@ -95,6 +97,7 @@ class ProfileModal extends Component
 
         if (! Hash::check($validated['current_password'], $user->password)) {
             $this->addError('current_password', 'Your current password is incorrect.');
+
             return;
         }
 

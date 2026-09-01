@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\SchoolSetting;
+use App\Services\PublicImageStorage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
@@ -38,11 +39,16 @@ class SchoolSettingsV2 extends SchoolSettings
             'recommendation_body' => 'We are pleased to recommend this graduate, who completed their studies at our institution with commitment, discipline, and good standing.',
             'recommendation_closing' => 'We confidently recommend them for further study and suitable opportunities.',
         ];
-        foreach ($defaults as $key => $value) if (blank($this->settings[$key] ?? null)) $this->settings[$key] = $value;
+        foreach ($defaults as $key => $value) {
+            if (blank($this->settings[$key] ?? null)) {
+                $this->settings[$key] = $value;
+            }
+        }
     }
 
     public function save(): void
     {
+        $images = app(PublicImageStorage::class);
         $this->authorizeManagement();
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -68,14 +74,16 @@ class SchoolSettingsV2 extends SchoolSettings
 
         $school = Auth::user()->school;
         $oldBadge = $school->badge_path;
-        $newBadge = $this->badge ? $this->badge->store('school-badges/'.$school->id, 'public') : $oldBadge;
+        $newBadge = $this->badge ? $images->store($this->badge, 'school-badges/'.$school->id) : $oldBadge;
         $school->update([
             'name' => trim($this->name), 'email' => trim($this->email) ?: null,
             'phone' => trim($this->phone) ?: null, 'address' => trim($this->address) ?: null,
             'motto' => trim($this->motto) ?: null, 'website' => trim($this->website) ?: null,
             'principal_name' => trim($this->principal_name) ?: null, 'badge_path' => $newBadge,
         ]);
-        if ($this->badge && $oldBadge && $oldBadge !== $newBadge) Storage::disk('public')->delete($oldBadge);
+        if ($this->badge) {
+            $images->deleteReplacement($oldBadge, $newBadge);
+        }
 
         foreach ($this->keys as $key) {
             SchoolSetting::updateOrCreate(['school_id' => $school->id, 'key' => $key], ['value' => $this->settings[$key] ?? null]);
@@ -92,7 +100,9 @@ class SchoolSettingsV2 extends SchoolSettings
         $school = Auth::user()->school;
         $oldBadge = $school->badge_path;
         $school->update(['badge_path' => null]);
-        if ($oldBadge) Storage::disk('public')->delete($oldBadge);
+        if ($oldBadge) {
+            Storage::disk('public')->delete($oldBadge);
+        }
         $this->reset('badge');
         Auth::user()->setRelation('school', $school->fresh());
         session()->flash('status', 'School badge removed.');

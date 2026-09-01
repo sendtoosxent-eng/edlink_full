@@ -4,11 +4,13 @@ namespace App\Livewire;
 
 use App\Models\FeeStructure;
 use App\Models\SchoolClass;
+use App\Models\Stream;
 use App\Models\Student;
 use App\Models\StudentCategory;
-use App\Models\StudentGuardian;
 use App\Models\StudentEnrolment;
-use App\Models\Stream;
+use App\Models\StudentGuardian;
+use App\Services\AdmissionNumberGenerator;
+use App\Services\PublicImageStorage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -25,28 +27,42 @@ class StudentRegister extends Component
 
     // Step 1 — Bio data
     public string $name = '';
+
     public string $date_of_birth = '';
+
     public string $gender = '';
+
     public string $admission_date = '';
+
     public $photo = null;
 
     // Step 2 — Class data
     public string $school_class_id = '';
+
     public string $stream_id = '';
+
     public string $student_category_id = '';
 
     // Step 3 — Parents data
     public string $guardian_name = '';
+
     public string $guardian_relationship = 'Parent';
+
     public string $guardian_phone = '';
+
     public string $guardian_email = '';
+
     public string $guardian_address = '';
 
     // Step 4 — Social data
     public string $nationality = '';
+
     public string $religion = '';
+
     public string $blood_group = '';
+
     public string $home_address = '';
+
     public string $medical_notes = '';
 
     public function mount(): void
@@ -121,7 +137,7 @@ class StudentRegister extends Component
         return Stream::where('school_id', Auth::user()->school_id)->where('school_class_id', $this->school_class_id)->orderBy('name')->get();
     }
 
-    public function register(): void
+    public function register(PublicImageStorage $images): void
     {
         $this->validate([
             'nationality' => ['nullable', 'string', 'max:255'],
@@ -140,20 +156,24 @@ class StudentRegister extends Component
         $term = $school->currentTerm();
         if (! $school->isLicenceUsable()) {
             $this->addError('school_class_id', 'Student registration is unavailable because the school licence is not active.');
+
             return;
         }
 
         if (! $school->hasStudentCapacity()) {
             $this->addError('school_class_id', 'This school has reached its '.number_format((int) $school->license_student_limit).'-student subscription limit. Ask Edlink to upgrade the package.');
+
             return;
         }
 
         if (! $term || ! $term->isOpen()) {
             $this->addError('school_class_id', 'Students can only be enrolled during an open current term.');
+
             return;
         }
 
-        $student = DB::transaction(function () use ($school, $term) {
+        $photoPath = $this->photo ? $images->store($this->photo, 'students/'.$school->id) : null;
+        $student = DB::transaction(function () use ($school, $term, $photoPath) {
             $student = Student::create([
                 'school_id' => $school->id,
                 'school_class_id' => $this->school_class_id,
@@ -166,7 +186,7 @@ class StudentRegister extends Component
                 'date_of_birth' => $this->date_of_birth ?: null,
                 'gender' => $this->gender ?: null,
                 'admission_date' => $this->admission_date,
-                'photo_path' => $this->photo ? $this->photo->store('students/'.$school->id, 'public') : null,
+                'photo_path' => $photoPath,
                 'nationality' => $this->nationality ?: null,
                 'religion' => $this->religion ?: null,
                 'blood_group' => $this->blood_group ?: null,
@@ -175,7 +195,7 @@ class StudentRegister extends Component
             ]);
 
             $student->update([
-                'admission_no' => app(\App\Services\AdmissionNumberGenerator::class)->generateForStudent($school, $student),
+                'admission_no' => app(AdmissionNumberGenerator::class)->generateForStudent($school, $student),
             ]);
 
             StudentGuardian::create([
@@ -229,7 +249,6 @@ class StudentRegister extends Component
 
         $this->redirect(route('students.index'), navigate: true);
     }
-
 
     public function render()
     {

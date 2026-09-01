@@ -79,7 +79,7 @@
 
         <!-- INPUT CONTROL & HELP TEXT -->
         <div class="flex-1 min-w-0">
-            <input wire:model="badge" type="file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer transition">
+            <input wire:model="badge" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs text-slate-500 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer transition">
             @if($currentBadgeUrl)<button type="button" wire:click="removeBadge" wire:confirm="Remove the current school badge?" class="mt-2 text-[11px] font-bold text-rose-600">Remove current badge</button>@endif
             @error('badge')<span class="block text-[11px] text-rose-600 mt-1">{{$message}}</span>@enderror
             <div wire:loading wire:target="badge" class="mt-1 text-[11px] text-amber-700">Loading badge preview…</div>

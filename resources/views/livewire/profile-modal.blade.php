@@ -62,7 +62,7 @@
                                 <label class="inline-block cursor-pointer text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 hover:border-gray-300 shadow-sm transition">
                                     <span wire:loading.remove wire:target="photo">Change Photo</span>
                                     <span wire:loading wire:target="photo" class="inline-flex items-center space-x-1.5"><x-edlink-loader size="12" /><span>Uploading…</span></span>
-                                    <input type="file" wire:model="photo" accept="image/*" class="hidden" x-on:change="setPhotoPreview($event)">
+                                    <input type="file" wire:model="photo" accept="image/jpeg,image/png,image/webp" class="hidden" x-on:change="setPhotoPreview($event)">
                                 </label>
                                 <p class="text-[11px] text-gray-400 mt-1.5">JPG or PNG up to 2MB</p>
                                 @error('photo') <span class="text-rose-600 text-xs block mt-1 font-medium">{{ $message }}</span> @enderror

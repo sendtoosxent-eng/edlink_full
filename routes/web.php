@@ -5,6 +5,7 @@ use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\GraduationCertificateController;
 use App\Http\Controllers\GroupDashboardController;
+use App\Http\Controllers\LandingAssetController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\PersonProfileController;
 use App\Http\Controllers\PlatformAuthController;
@@ -149,6 +150,7 @@ Route::prefix('platform')->name('platform.')->group(function () {
     });
 });
 Route::get('/', LandingPageController::class)->name('home');
+Route::get('media/landing/{key}', LandingAssetController::class)->name('media.landing');
 Route::get('profile-photo/{type}/{person}', ProfilePhotoController::class)
     ->middleware('signed')->whereIn('type', ['student', 'user', 'school'])->whereNumber('person')->name('profile-photo.show');
 Route::view('privacy', 'legal.privacy')->name('privacy');

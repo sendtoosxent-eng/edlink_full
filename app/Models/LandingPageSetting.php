@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 
 class LandingPageSetting extends Model
@@ -47,6 +46,7 @@ class LandingPageSetting extends Model
     public static function assetUrl(array $settings, string $key): string
     {
         $path = $settings[$key] ?? self::DEFAULTS[$key] ?? '';
-        return str_starts_with($path, 'landing-page/') ? Storage::disk('public')->url($path) : asset($path);
+
+        return str_starts_with($path, 'landing-page/') ? url('/media/landing/'.$key).'?v='.substr(sha1($path), 0, 12) : asset($path);
     }
 }
