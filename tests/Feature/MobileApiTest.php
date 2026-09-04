@@ -60,6 +60,28 @@ it('rejects hostile learner identifiers in teacher attendance writes', function 
     $this->postJson('/api/v1/attendance',$payload)->assertForbidden();
 });
 
+it('gives a class teacher a daily register and permits saving only that class', function () {
+    $data=mobileFixture();
+    $data['class']->update(['class_teacher_user_id'=>$data['teacher']->id]);
+    Sanctum::actingAs($data['teacher'],['mobile']);
+
+    $this->getJson('/api/v1/teaching-assignments')->assertOk()
+        ->assertJsonFragment(['school_class_id'=>$data['class']->id,'subject_id'=>null,'attendance_type'=>'daily']);
+
+    $payload=['school_class_id'=>$data['class']->id,'subject_id'=>null,'attendance_date'=>today()->toDateString(),'session_key'=>'daily','records'=>[['student_id'=>$data['student']->id,'status'=>'present']]];
+    $this->postJson('/api/v1/attendance',$payload)->assertOk()->assertJsonPath('data.saved',1);
+    $this->assertDatabaseHas('attendance_records',['student_id'=>$data['student']->id,'session_key'=>'daily','recorded_by'=>$data['teacher']->id]);
+});
+
+it('protects mobile payment information by learner linkage', function () {
+    $data=mobileFixture(); Sanctum::actingAs($data['parent'],['mobile']);
+    $this->getJson('/api/v1/payments?student_id='.$data['student']->id)->assertOk()
+        ->assertJsonPath('data.student.id',$data['student']->id)
+        ->assertJsonStructure(['data'=>['summary'=>['due','paid','balance'],'payments']]);
+    $this->getJson('/api/v1/payments?student_id='.$data['unlinked']->id)->assertNotFound();
+    $this->getJson('/api/v1/payments?student_id='.$data['foreign']->id)->assertNotFound();
+});
+
 it('rejects marks outside the assigned paper and maximum score', function () {
     $data=mobileFixture(); Sanctum::actingAs($data['teacher'],['mobile']);
     $this->putJson('/api/v1/exam-papers/'.$data['paper']->id.'/marks',['marks'=>[['student_id'=>$data['student']->id,'score'=>101]]])->assertUnprocessable();

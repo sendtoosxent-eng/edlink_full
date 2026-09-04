@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
-import { RoleIcon } from '../../components/RoleIcons';
-import { colors, radius } from '../../theme';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+
+const LOGO_IMAGE = require('../../../assets/img/edlink-logo.png');
 
 export function SplashScreen() {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -16,8 +16,7 @@ export function SplashScreen() {
   return (
     <View style={styles.screen}>
       <Animated.View style={[styles.lockup, { opacity, transform: [{ scale }] }]}>
-        <View style={styles.mark}><RoleIcon role="student" /></View>
-        <Text style={styles.name}>Edlink</Text>
+        <Image accessibilityLabel="Edlink" source={LOGO_IMAGE} resizeMode="contain" style={styles.logo} />
         <Text style={styles.tagline}>Your school day, simplified.</Text>
       </Animated.View>
     </View>
@@ -25,9 +24,8 @@ export function SplashScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#efb000' },
   lockup: { alignItems: 'center' },
-  mark: { width: 96, height: 96, borderRadius: radius.large, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 16, elevation: 4 },
-  name: { marginTop: 22, color: colors.navy, fontSize: 38, fontWeight: '800', letterSpacing: -1 },
-  tagline: { marginTop: 24, color: colors.muted, fontSize: 17 },
+  logo: { width: 340, height: 250 },
+  tagline: { marginTop: -54, color: '#0B132B', fontSize: 17, fontWeight: '800' },
 });

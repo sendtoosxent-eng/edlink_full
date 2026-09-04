@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { RoleIcon } from '../../components/RoleIcons';
+import { BrandLogo } from '../../components/BrandLogo';
 import { colors, radius } from '../../theme';
 import type { Role } from '../../types';
 
@@ -16,7 +16,7 @@ export function LoginScreen({ role, school, email, password, error, busy, onEmai
 
   return (
     <View style={styles.screen}>
-      <View style={styles.logo}><RoleIcon role="student" /></View>
+      <BrandLogo />
 
       <Text style={styles.title}>Login</Text>
       <Text style={styles.lead}>Access your Edlink account to manage classes and connect with your school.</Text>
@@ -56,7 +56,6 @@ export function LoginScreen({ role, school, email, password, error, busy, onEmai
 
 const styles = StyleSheet.create({
   screen: { width: '100%', minHeight: 760, paddingBottom: 4 },
-  logo: { width: 72, height: 72, borderRadius: 22, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, elevation: 3 },
   title: { marginTop: 24, color: colors.navy, fontSize: 34, fontWeight: '800', textAlign: 'center', letterSpacing: -0.7 },
   lead: { alignSelf: 'center', maxWidth: 330, marginTop: 10, color: colors.muted, fontSize: 15, lineHeight: 22, textAlign: 'center' },
   rolePill: { alignSelf: 'center', marginTop: 20, marginBottom: 28, minHeight: 48, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: radius.pill, backgroundColor: colors.surfaceLow, borderWidth: 1, borderColor: colors.outline },

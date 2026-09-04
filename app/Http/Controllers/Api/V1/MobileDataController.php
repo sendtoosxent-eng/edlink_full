@@ -29,6 +29,9 @@ class MobileDataController extends ApiController
         $homework = $this->homeworkQuery($request, $student)->orderBy('due_at')->limit(4)->get();
         $attendance = $student ? DB::table('attendance_records')->where('school_id', $user->school_id)
             ->where('student_id', $student->id)->selectRaw('status, count(*) total')->groupBy('status')->pluck('total', 'status') : collect();
+        $analytics = $student
+            ? $this->studentAnalytics($request, $user, $student, $term)
+            : $this->teacherAnalytics($request, $user, $term);
 
         return $this->ok([
             'date' => today()->toDateString(),
@@ -38,7 +41,80 @@ class MobileDataController extends ApiController
             'homework' => $homework,
             'attendance' => $attendance,
             'events' => DB::table('school_events')->where('school_id', $user->school_id)->whereDate('event_date', '>=', today())->orderBy('event_date')->limit(4)->get(),
+            'analytics' => $analytics,
         ], ['generated_at' => now()->toISOString()]);
+    }
+
+    private function studentAnalytics(Request $request, $user, $student, $term): array
+    {
+        $days = collect(range(6, 0))->map(fn ($offset) => now()->subDays($offset));
+        $attendance = DB::table('attendance_records')->where('school_id', $user->school_id)
+            ->where('student_id', $student->id)
+            ->when($term, fn ($query) => $query->where('term_id', $term->id))
+            ->whereDate('attendance_date', '>=', $days->first()->toDateString())
+            ->get(['attendance_date', 'status']);
+        $performance = $term ? DB::table('exam_marks')
+            ->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
+            ->join('exams', 'exams.id', '=', 'exam_papers.exam_id')
+            ->join('subjects', 'subjects.id', '=', 'exam_papers.subject_id')
+            ->where('exam_marks.student_id', $student->id)
+            ->where('exams.school_id', $user->school_id)
+            ->where('exams.term_id', $term->id)
+            ->whereNotNull('exams.published_at')
+            ->whereNotNull('exam_marks.score')
+            ->selectRaw('subjects.name, ROUND(AVG(exam_marks.score / exam_papers.maximum_score * 100), 1) as average')
+            ->groupBy('subjects.id', 'subjects.name')->orderByDesc('average')->limit(6)->get() : collect();
+
+        return [
+            'attendance_labels' => $days->map(fn ($day) => $day->format('D'))->values(),
+            'present_series' => $days->map(fn ($day) => $attendance->where('attendance_date', $day->toDateString())->whereIn('status', ['present', 'late'])->count())->values(),
+            'absent_series' => $days->map(fn ($day) => $attendance->where('attendance_date', $day->toDateString())->where('status', 'absent')->count())->values(),
+            'performance_labels' => $performance->pluck('name')->values(),
+            'performance_series' => $performance->pluck('average')->map(fn ($value) => (float) $value)->values(),
+            'stats' => [
+                'lessons_today' => $this->slotQuery($request, $student)->where('day_of_week', now()->format('l'))->count(),
+                'homework' => $this->homeworkQuery($request, $student)->count(),
+                'published_results' => DB::table('exams')->where('school_id', $user->school_id)->where('school_class_id', $student->school_class_id)->whereNotNull('published_at')->count(),
+                'upcoming_events' => DB::table('school_events')->where('school_id', $user->school_id)->whereDate('event_date', '>=', today())->count(),
+            ],
+        ];
+    }
+
+    private function teacherAnalytics(Request $request, $user, $term): array
+    {
+        $assignments = TeacherAcademicScope::subjectAssignments($user, $term?->id);
+        $classIds = $assignments->pluck('school_class_id')->filter()->unique()->values();
+        $days = collect(range(6, 0))->map(fn ($offset) => now()->subDays($offset));
+        $attendance = DB::table('attendance_records')->where('school_id', $user->school_id)
+            ->where('recorded_by', $user->id)
+            ->when($term, fn ($query) => $query->where('term_id', $term->id))
+            ->whereDate('attendance_date', '>=', $days->first()->toDateString())
+            ->get(['attendance_date', 'status']);
+        $performance = $term ? DB::table('exam_marks')
+            ->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
+            ->join('exams', 'exams.id', '=', 'exam_papers.exam_id')
+            ->join('subjects', 'subjects.id', '=', 'exam_papers.subject_id')
+            ->where('exams.school_id', $user->school_id)->where('exams.term_id', $term->id)
+            ->whereIn('exam_papers.subject_id', $assignments->pluck('subject_id')->unique())
+            ->whereIn('exams.school_class_id', $classIds)
+            ->whereNotNull('exam_marks.score')
+            ->selectRaw('subjects.name, ROUND(AVG(exam_marks.score / exam_papers.maximum_score * 100), 1) as average')
+            ->groupBy('subjects.id', 'subjects.name')->orderByDesc('average')->limit(6)->get() : collect();
+
+        return [
+            'attendance_labels' => $days->map(fn ($day) => $day->format('D'))->values(),
+            'present_series' => $days->map(fn ($day) => $attendance->where('attendance_date', $day->toDateString())->whereIn('status', ['present', 'late'])->count())->values(),
+            'absent_series' => $days->map(fn ($day) => $attendance->where('attendance_date', $day->toDateString())->where('status', 'absent')->count())->values(),
+            'performance_labels' => $performance->pluck('name')->values(),
+            'performance_series' => $performance->pluck('average')->map(fn ($value) => (float) $value)->values(),
+            'stats' => [
+                'classes' => $classIds->count(),
+                'subjects' => $assignments->pluck('subject_id')->unique()->count(),
+                'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $user->school_id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
+                'lessons_today' => $this->slotQuery($request, null)->where('day_of_week', now()->format('l'))->count(),
+                'homework' => $this->homeworkQuery($request, null)->count(),
+            ],
+        ];
     }
 
     public function timetable(Request $request)
@@ -91,6 +167,25 @@ class MobileDataController extends ApiController
         return $this->ok($exams);
     }
 
+    public function payments(Request $request)
+    {
+        $student = MobileAccess::student($request->user(), $request->integer('student_id') ?: null);
+        $term = $request->user()->school->currentTerm();
+        $payments = $term ? $student->postedFeePayments()->where('term_id', $term->id)
+            ->latest('paid_at')->get(['id', 'amount', 'method', 'transaction_id', 'bank_slip_number', 'paid_at']) : collect();
+
+        return $this->ok([
+            'student' => $this->studentPayload($student),
+            'term' => $term?->name,
+            'summary' => [
+                'due' => $student->totalDue($term),
+                'paid' => $student->totalPaid($term),
+                'balance' => $student->balance($term),
+            ],
+            'payments' => $payments,
+        ]);
+    }
+
     public function activities(Request $request)
     {
         $user = $request->user();
@@ -108,14 +203,22 @@ class MobileDataController extends ApiController
         $termId = $user->school->currentTerm()?->id;
         $classes = DB::table('school_classes')->where('school_id', $user->school_id)->pluck('name', 'id');
         $subjects = DB::table('subjects')->where('school_id', $user->school_id)->pluck('name', 'id');
+        $daily = TeacherAcademicScope::classIds($user)->map(fn ($classId) => (object) [
+            'school_class_id' => (int) $classId,
+            'class_name' => $classes[$classId] ?? null,
+            'subject_id' => null,
+            'subject_name' => 'Daily register',
+            'attendance_type' => 'daily',
+        ]);
         $assigned = TeacherAcademicScope::subjectAssignments($user, $termId)->map(fn ($assignment) => (object) [
             'school_class_id' => (int) $assignment->school_class_id,
             'class_name' => $classes[$assignment->school_class_id] ?? null,
             'subject_id' => (int) $assignment->subject_id,
             'subject_name' => $subjects[$assignment->subject_id] ?? null,
+            'attendance_type' => 'subject',
         ]);
 
-        return $this->ok($assigned);
+        return $this->ok($daily->concat($assigned)->values());
     }
 
     private function slotQuery(Request $request, $student)
