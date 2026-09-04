@@ -40,6 +40,13 @@ class AppServiceProvider extends ServiceProvider
                 ->prefix('api/v1')->get('payments', [MobileDataController::class, 'payments'])
                 ->name('api.mobile.payments');
         }
+        if ($this->app->routesAreCached() && ! Route::has('api.mobile.leave.index')) {
+            Route::middleware(['api', 'throttle:api', 'auth:sanctum', EnsureMobileAccess::class])
+                ->prefix('api/v1')->group(function (): void {
+                    Route::get('leave-requests', [MobileDataController::class, 'leaveRequests'])->name('api.mobile.leave.index');
+                    Route::post('leave-requests', [MobileDataController::class, 'storeLeaveRequest'])->name('api.mobile.leave.store');
+                });
+        }
 
         // Some deployments retain the previous route cache after pulling new code.
         // Keep this newly introduced finance screen reachable until that cache is rebuilt.

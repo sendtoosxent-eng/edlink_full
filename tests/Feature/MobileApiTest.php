@@ -82,6 +82,16 @@ it('protects mobile payment information by learner linkage', function () {
     $this->getJson('/api/v1/payments?student_id='.$data['foreign']->id)->assertNotFound();
 });
 
+it('allows teachers to request their own leave and blocks portal roles', function () {
+    $data=mobileFixture(); $payload=['type'=>'Sick leave','starts_on'=>today()->addDay()->toDateString(),'ends_on'=>today()->addDays(2)->toDateString(),'reason'=>'Medical appointment'];
+    Sanctum::actingAs($data['teacher'],['mobile']);
+    $this->postJson('/api/v1/leave-requests',$payload)->assertOk()->assertJsonPath('data.status','pending');
+    $this->assertDatabaseHas('staff_leaves',['school_id'=>$data['school']->id,'user_id'=>$data['teacher']->id,'status'=>'pending']);
+
+    Sanctum::actingAs($data['parent'],['mobile']);
+    $this->postJson('/api/v1/leave-requests',$payload)->assertForbidden();
+});
+
 it('rejects marks outside the assigned paper and maximum score', function () {
     $data=mobileFixture(); Sanctum::actingAs($data['teacher'],['mobile']);
     $this->putJson('/api/v1/exam-papers/'.$data['paper']->id.'/marks',['marks'=>[['student_id'=>$data['student']->id,'score'=>101]]])->assertUnprocessable();

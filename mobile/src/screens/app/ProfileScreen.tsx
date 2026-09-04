@@ -4,6 +4,7 @@ import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, 
 import { api, ApiError } from '../../api';
 import { colors, radius, shadows } from '../../theme/index';
 import type { User } from '../../types';
+import type { AppTab } from './DashboardScreens';
 
 type TimetableItem = { id: number; day_of_week: string; starts_at: string; ends_at: string; subject?: string | null; label?: string | null; class_name?: string | null };
 type AnnouncementItem = { id: number; title?: string; subject?: string; message?: string; body?: string };
@@ -13,9 +14,10 @@ type Props = {
   user: User;
   studentId?: number;
   onSignOut: () => Promise<void>;
+  navigate: (tab: AppTab) => void;
 };
 
-export function ProfileScreen({ token, user, studentId, onSignOut }: Props) {
+export function ProfileScreen({ token, user, studentId, onSignOut, navigate }: Props) {
   const [timetable, setTimetable] = useState<TimetableItem[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -119,6 +121,8 @@ export function ProfileScreen({ token, user, studentId, onSignOut }: Props) {
         {!announcements.length && <View style={styles.card}><EmptyRow icon="notifications-off-outline" text="You're all caught up." /></View>}
       </View>
 
+      {user.role === 'teacher' && <Pressable accessibilityRole="button" onPress={() => navigate('leave')} style={styles.leaveButton}><Ionicons name="calendar-number-outline" size={20} color={colors.primary} /><Text style={styles.leaveText}>Request leave</Text></Pressable>}
+
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Log out of Edlink"
@@ -182,6 +186,7 @@ const styles = StyleSheet.create({
   emptyRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   emptyText: { color: colors.textMuted, fontSize: 13 },
   logoutButton: { minHeight: 54, marginTop: 28, borderRadius: radius.md, borderWidth: 1, borderColor: '#F5B8B8', backgroundColor: '#FFF5F5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  leaveButton: { minHeight: 54, marginTop: 28, borderRadius: radius.md, backgroundColor: colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, leaveText: { color: colors.primary, fontSize: 15, fontWeight: '900' },
   logoutText: { color: '#B91C1C', fontSize: 15, fontWeight: '900' },
   pressed: { opacity: 0.62 },
   version: { color: colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 16 },

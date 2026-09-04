@@ -8,6 +8,7 @@ export type AttendanceRecord = { id: number; attendance_date: string; status: At
 export type Dashboard = {
   date: string; student: Student | null;
   today_timetable: Array<{ id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; class_name?: string | null }>;
+  next_lesson?: { id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; class_name?: string | null } | null;
   homework: Array<{ id: number; title: string; due_at?: string; subject?: { name: string } }>;
   attendance: Record<string, number>;
   events: Array<{ id: number; title?: string; name?: string; event_date: string }>;

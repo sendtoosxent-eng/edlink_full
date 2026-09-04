@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -13,6 +14,7 @@ import { ProfileScreen } from './src/screens/app/ProfileScreen';
 import { BrandLogo } from './src/components/BrandLogo';
 import { PageIntro as ScreenHeader } from './src/components/PageIntro';
 import { PaymentsScreen } from './src/screens/app/PaymentsScreen';
+import { LeaveRequestScreen, NotificationsScreen, TeacherToolPlaceholder } from './src/screens/app/TeacherToolsScreens';
 
 const TOKEN_KEY = 'edlink.mobile.token';
 const STATUSES: AttendanceStatus[] = ['present', 'absent', 'late', 'excused'];
@@ -26,8 +28,9 @@ export default function App() {
     if (token) try { setSession({ token, user: (await api.me(token)).data }); } catch { await SecureStore.deleteItemAsync(TOKEN_KEY); }
     setBooting(false);
   })(); }, []);
-  const signIn = async (school_number: string, email: string, password: string) => {
+  const signIn = async (school_number: string, email: string, password: string, expectedRole: User['role']) => {
     const { data } = await api.login({ school_number, email, password, device_name: `${Platform.OS} Edlink app` });
+    if (data.user.role !== expectedRole) { await api.logout(data.token).catch(() => undefined); throw new ApiError(`These credentials belong to a ${data.user.role} account. Choose the correct role and try again.`, 403); }
     await SecureStore.setItemAsync(TOKEN_KEY, data.token); setSession(data);
   };
   const signOut = async () => { if (session) await api.logout(session.token).catch(() => undefined); await SecureStore.deleteItemAsync(TOKEN_KEY); setSession(undefined); };
@@ -44,7 +47,21 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
   return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
     {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
-    <View style={styles.screen}>{tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}{tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}{tab === 'homework' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}{tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}{tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}{tab === 'more' && <ProfileScreen token={token} user={user} studentId={studentId} onSignOut={onSignOut} />}</View>
+    <View style={styles.screen}>
+      {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}
+      {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
+      {tab === 'homework' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'more' && <ProfileScreen token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
+      {tab === 'notifications' && <NotificationsScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'add_marks' && <TeacherToolPlaceholder title="Add marks" description="Select an assigned exam paper and enter learner marks." icon="create-outline" onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'view_marks' && <TeacherToolPlaceholder title="View marks" description="Review marks for your assigned classes and subjects." icon="reader-outline" onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'teacher_results' && <TeacherToolPlaceholder title="Results" description="Review published results for learners within your academic scope." icon="trophy-outline" onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'add_homework' && <TeacherToolPlaceholder title="Add homework" description="Create and publish homework for an assigned class and subject." icon="add-circle-outline" onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'homework' && <Pressable accessibilityRole="button" accessibilityLabel="Add homework" onPress={() => setTab('add_homework')} style={styles.floatingAdd}><Ionicons name="add" size={30} color={colors.gold} /></Pressable>}
+    </View>
     <BottomTabBar tabs={tabs} activeTab={tab} onSelect={setTab} />
   </SafeAreaView>;
 }
@@ -55,7 +72,7 @@ function Home({ token, user, studentId, navigate, onSignOut }: { token: string; 
   useEffect(() => { void load(); }, [load]);
   if (loading && !data) return <InlineLoading />; if (error && !data) return <ErrorState message={error} retry={load} />; if (!data) return <Empty message="Choose a learner to view their dashboard." />;
   const total = Object.values(data.attendance).reduce((sum, value) => sum + Number(value), 0); const rate = total ? Math.round(Number(data.attendance.present ?? 0) / total * 100) : null;
-  const props = { data, user: { ...user, onSignOut }, attendanceRate: rate, navigate, refreshing: loading, onRefresh: load };
+  const props = { data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson }, attendanceRate: rate, navigate, refreshing: loading, onRefresh: load };
   if (user.role === 'teacher') return <TeacherDashboardScreen {...props} />;
   if (user.role === 'parent') return <ParentDashboardScreen {...props} />;
   return <StudentDashboardScreen {...props} />;
@@ -107,6 +124,7 @@ function InlineLoading() { return <View style={styles.center}><ActivityIndicator
 function messageFor(error: unknown) { return error instanceof ApiError ? error.message : 'Cannot reach the Edlink server. Check your connection.'; } function firstName(name: string) { return name.trim().split(/\s+/)[0] || 'there'; } function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase(); } function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); } function shortTime(value: string) { return value?.slice(0, 5) ?? ''; } function formatDate(value: string) { const date = new Date(value.length === 10 ? `${value}T12:00:00` : value); return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); } function average(exam: ExamResult) { const papers = exam.papers.filter(paper => paper.score != null && paper.maximum_score > 0); return papers.length ? Math.round(papers.reduce((sum, paper) => sum + Number(paper.score) / paper.maximum_score * 100, 0) / papers.length) : 0; }
 
 const styles = StyleSheet.create({
+  floatingAdd: { position: 'absolute', right: 22, bottom: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center', elevation: 8 },
   termRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14, marginBottom: 4 },
   flex: { flex: 1 }, safe: { flex: 1, backgroundColor: colors.background }, screen: { flex: 1, backgroundColor: colors.background }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 28 }, muted: { color: colors.muted, textAlign: 'center', lineHeight: 21 },
   figmaAuthWrap: { flexGrow: 1, padding: 0 }, splashScreen: { minHeight: '100%', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, roleScreen: { minHeight: '100%', alignItems: 'center', paddingTop: 55, overflow: 'hidden' }, yellowCurve: { position: 'absolute', top: -145, width: 540, height: 300, borderRadius: 270, backgroundColor: '#FFCC33' }, navyFooter: { position: 'absolute', bottom: -115, width: 480, height: 190, borderRadius: 240, backgroundColor: '#231E34', alignItems: 'center', paddingTop: 28 }, copyright: { color: 'white', fontSize: 10 }, brandLockup: { alignItems: 'center' }, brandMark: { width: 78, height: 78, borderRadius: 39, borderWidth: 5, borderColor: '#231E34', backgroundColor: '#FFCC33', alignItems: 'center', justifyContent: 'center' }, brandMarkLarge: { width: 130, height: 130, borderRadius: 65, borderWidth: 7 }, brandPencil: { color: '#231E34', fontSize: 48, fontWeight: '900' }, brandPencilLarge: { fontSize: 78 }, brandName: { color: '#231E34', fontSize: 30, fontWeight: '900', marginTop: 8 }, brandNameLarge: { fontSize: 42 }, roleTitle: { color: '#231E34', fontSize: 18, fontWeight: '800', marginTop: 42, marginBottom: 28 }, roleGrid: { width: 285, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 30 }, roleOption: { width: 95, alignItems: 'center', gap: 9 }, roleIcon: { width: 82, height: 82, borderRadius: 12, backgroundColor: '#231E34', alignItems: 'center', justifyContent: 'center' }, roleIconText: { color: 'white', fontSize: 40, fontWeight: '900' }, roleLabel: { color: '#231E34', fontSize: 14 },

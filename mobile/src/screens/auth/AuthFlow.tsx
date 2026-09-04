@@ -10,7 +10,7 @@ import { SplashScreen } from './SplashScreen';
 import { ConnectOnboardingScreen, InformOnboardingScreen, ProgressOnboardingScreen } from './OnboardingScreens';
 
 type Step = 'splash' | 'connect' | 'inform' | 'progress' | 'role' | 'school' | 'login';
-export function AuthFlow({ onSignIn, messageFor }: { onSignIn: (school: string, email: string, password: string) => Promise<void>; messageFor: (error: unknown) => string }) {
+export function AuthFlow({ onSignIn, messageFor }: { onSignIn: (school: string, email: string, password: string, role: Role) => Promise<void>; messageFor: (error: unknown) => string }) {
   const [step, setStep] = useState<Step>('splash'); const [role, setRole] = useState<Role>('student'); const [school, setSchool] = useState(''); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const opacity = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
@@ -32,7 +32,7 @@ export function AuthFlow({ onSignIn, messageFor }: { onSignIn: (school: string, 
   }, [opacity, step, translateX]);
   useEffect(() => { if (step !== 'splash') return; const timer = setTimeout(() => goTo('connect'), 1800); return () => clearTimeout(timer); }, [goTo, step]);
   const clear = () => setError(''); const continueToLogin = () => { if (!school.trim()) return setError('Enter the school number provided by your school.'); clear(); goTo('login'); };
-  const submit = async () => { if (!email.trim() || !password) return setError('Enter your email address and password.'); setBusy(true); clear(); try { await onSignIn(school.trim(), email.trim(), password); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } };
+  const submit = async () => { if (!email.trim() || !password) return setError('Enter your email address and password.'); setBusy(true); clear(); try { await onSignIn(school.trim(), email.trim(), password, role); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } };
   let content;
   if (step === 'splash') content = <View style={styles.bleed}><StatusBar style="dark" /><SplashScreen /></View>;
   else if (step === 'connect') content = <View style={styles.bleed}><StatusBar style="dark" /><ConnectOnboardingScreen onNext={() => goTo('inform')} onSkip={() => goTo('role')} /></View>;

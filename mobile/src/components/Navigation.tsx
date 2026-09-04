@@ -20,6 +20,12 @@ const TAB_CONFIG: Record<AppTab, { label: string; activeIcon: IoniconsName; inac
   results: { label: 'Results', activeIcon: 'trophy', inactiveIcon: 'trophy-outline' },
   payments: { label: 'Payments', activeIcon: 'wallet', inactiveIcon: 'wallet-outline' },
   more: { label: 'Profile', activeIcon: 'person', inactiveIcon: 'person-outline' },
+  notifications: { label: 'Notices', activeIcon: 'notifications', inactiveIcon: 'notifications-outline' },
+  leave: { label: 'Leave', activeIcon: 'calendar-number', inactiveIcon: 'calendar-number-outline' },
+  add_marks: { label: 'Add marks', activeIcon: 'create', inactiveIcon: 'create-outline' },
+  view_marks: { label: 'Marks', activeIcon: 'reader', inactiveIcon: 'reader-outline' },
+  teacher_results: { label: 'Results', activeIcon: 'trophy', inactiveIcon: 'trophy-outline' },
+  add_homework: { label: 'Add work', activeIcon: 'add-circle', inactiveIcon: 'add-circle-outline' },
 };
 
 export function BottomTabBar({ tabs, activeTab, onSelect }: TabBarProps) {

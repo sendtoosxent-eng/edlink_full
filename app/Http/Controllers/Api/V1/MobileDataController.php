@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Announcement;
 use App\Models\Exam;
 use App\Models\HomeworkAssignment;
+use App\Models\StaffLeave;
+use App\Models\AuditLog;
 use App\Services\StudentSubjectSelectionService;
 use App\Support\MobileAccess;
 use App\Support\TeacherAcademicScope;
@@ -194,6 +196,30 @@ class MobileDataController extends ApiController
         $clubs = DB::table('student_clubs')->where('school_id', $user->school_id)->where('patron_user_id', $user->id)->get();
 
         return $this->ok(['houses' => $houses, 'clubs' => $clubs]);
+    }
+
+    public function leaveRequests(Request $request)
+    {
+        abort_unless(TeacherAcademicScope::isTeacher($request->user()), 403);
+        return $this->ok(StaffLeave::where('school_id', $request->user()->school_id)
+            ->where('user_id', $request->user()->id)->latest()->get());
+    }
+
+    public function storeLeaveRequest(Request $request)
+    {
+        abort_unless(TeacherAcademicScope::isTeacher($request->user()), 403);
+        $data = $request->validate([
+            'type' => ['required', 'string', 'max:80'],
+            'starts_on' => ['required', 'date', 'after_or_equal:today'],
+            'ends_on' => ['required', 'date', 'after_or_equal:starts_on'],
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $overlap = StaffLeave::where('school_id', $request->user()->school_id)->where('user_id', $request->user()->id)
+            ->whereIn('status', ['pending', 'approved'])->whereDate('starts_on', '<=', $data['ends_on'])->whereDate('ends_on', '>=', $data['starts_on'])->exists();
+        abort_if($overlap, 422, 'You already have a pending or approved leave request for these dates.');
+        $leave = StaffLeave::create($data + ['school_id' => $request->user()->school_id, 'user_id' => $request->user()->id, 'status' => 'pending']);
+        AuditLog::record($request->user()->school_id, 'mobile.leave.requested', $leave);
+        return $this->ok($leave);
     }
 
     public function teachingAssignments(Request $request)
