@@ -83,7 +83,7 @@ class MobileDataController extends ApiController
     private function teacherAnalytics(Request $request, $user, $term): array
     {
         $assignments = TeacherAcademicScope::subjectAssignments($user, $term?->id);
-        $classIds = $assignments->pluck('school_class_id')->filter()->unique()->values();
+        $classIds = TeacherAcademicScope::academicClassIds($user, $term?->id);
         $days = collect(range(6, 0))->map(fn ($offset) => now()->subDays($offset));
         $attendance = DB::table('attendance_records')->where('school_id', $user->school_id)
             ->where('recorded_by', $user->id)
