@@ -18,7 +18,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('events', [MobileDataController::class, 'events']);
         Route::get('announcements', [MobileDataController::class, 'announcements']);
         Route::get('results', [MobileDataController::class, 'results']);
-        Route::get('payments', [MobileDataController::class, 'payments']);
+        Route::get('payments', [MobileDataController::class, 'payments'])->name('api.mobile.payments');
         Route::get('children', [MobileDataController::class, 'children']);
         Route::get('activities', [MobileDataController::class, 'activities']);
         Route::get('teaching-assignments', [MobileDataController::class, 'teachingAssignments']);

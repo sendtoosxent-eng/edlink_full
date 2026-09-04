@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Livewire\FeeAdjustments;
 use App\Http\Controllers\PersonProfileController;
 use App\Http\Controllers\ProfilePhotoController;
+use App\Http\Controllers\Api\V1\MobileDataController;
+use App\Http\Middleware\EnsureMobileAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,6 +32,14 @@ class AppServiceProvider extends ServiceProvider
                 ->middleware(['web', 'branch.context', 'active.user'])
                 ->name('school.livewire.update');
         });
+
+        // Keep newly added mobile endpoints reachable while Hostinger still has
+        // the previous cached route collection loaded.
+        if ($this->app->routesAreCached() && ! Route::has('api.mobile.payments')) {
+            Route::middleware(['api', 'throttle:api', 'auth:sanctum', EnsureMobileAccess::class])
+                ->prefix('api/v1')->get('payments', [MobileDataController::class, 'payments'])
+                ->name('api.mobile.payments');
+        }
 
         // Some deployments retain the previous route cache after pulling new code.
         // Keep this newly introduced finance screen reachable until that cache is rebuilt.
