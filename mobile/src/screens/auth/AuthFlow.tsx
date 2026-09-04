@@ -42,6 +42,7 @@ export function AuthFlow({ onSignIn, onVerifyOtp, onBiometricSignIn, biometricAv
   else content = <SchoolScreen school={school} error={error} busy={busy} onChange={setSchool} onBack={() => goTo('role', -1)} onContinue={() => void continueToLogin()} />;
 
   const formStep = ['school', 'login', 'otp', 'recovery'].includes(step);
-  return <SafeAreaView style={styles.safe}><StatusBar style="dark" /><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><Animated.View style={[styles.flex, { opacity, transform: [{ translateX }] }]}>{formStep ? <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>{content}</ScrollView> : content}</Animated.View></KeyboardAvoidingView></SafeAreaView>;
+  if (!formStep) return <Animated.View style={[styles.flex, { opacity, transform: [{ translateX }] }]}><StatusBar style="dark" />{content}</Animated.View>;
+  return <SafeAreaView edges={[]} style={styles.safe}><StatusBar style="dark" /><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}><Animated.View style={[styles.flex, { opacity, transform: [{ translateX }] }]}><ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>{content}</ScrollView></Animated.View></KeyboardAvoidingView></SafeAreaView>;
 }
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: '#FFCE4B' }, bleed: { flex: 1, backgroundColor: '#F9F9FF' }, flex: { flex: 1 }, form: { flexGrow: 1 } });
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: '#FFFFFF' }, bleed: { flex: 1, backgroundColor: '#F9F9FF' }, flex: { flex: 1 }, form: { flexGrow: 1, backgroundColor: '#FFFFFF' } });
