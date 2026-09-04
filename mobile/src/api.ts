@@ -1,4 +1,4 @@
-import type { User } from './types';
+import type { AuthSuccess, LoginResult, Role, SchoolIdentity, User } from './types';
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://edlink.space/api/v1').replace(/\/$/, '');
 type Envelope<T> = { data: T; meta?: Record<string, unknown> };
@@ -28,7 +28,12 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
 }
 
 export const api = {
-  login: (body: { school_number: string; email: string; password: string; device_name: string }) => request<{ token: string; user: User }>('/auth/login', undefined, { method: 'POST', body: JSON.stringify(body) }),
+  school: (school_number: string) => request<SchoolIdentity>('/auth/school', undefined, { method: 'POST', body: JSON.stringify({ school_number }) }),
+  login: (body: { school_number: string; email: string; password: string; device_name: string; expected_role: Role }) => request<LoginResult>('/auth/login', undefined, { method: 'POST', body: JSON.stringify(body) }),
+  verifyOtp: (body: { challenge_token: string; code: string; device_name: string }) => request<AuthSuccess>('/auth/otp/verify', undefined, { method: 'POST', body: JSON.stringify(body) }),
+  resendOtp: (challenge_token: string) => request<{ sent: boolean; masked_email: string }>('/auth/otp/resend', undefined, { method: 'POST', body: JSON.stringify({ challenge_token }) }),
+  forgotPassword: (school_number: string, email: string) => request<{ message: string }>('/auth/password/forgot', undefined, { method: 'POST', body: JSON.stringify({ school_number, email }) }),
+  resetPassword: (body: { token: string; school_number: string; email: string; password: string; password_confirmation: string }) => request<{ reset: boolean }>('/auth/password/reset', undefined, { method: 'POST', body: JSON.stringify(body) }),
   me: (token: string) => request<User>('/auth/me', token),
   logout: (token: string) => request<{ logged_out: boolean }>('/auth/logout', token, { method: 'POST' }),
   get: <T>(path: string, token: string) => request<T>(path, token),

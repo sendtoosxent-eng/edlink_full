@@ -1,5 +1,9 @@
 export type Role = 'teacher' | 'student' | 'parent';
+export type SchoolIdentity = { number: string; name: string; logo_url?: string | null; is_demo: boolean };
 export type User = { id: number; name: string; email: string; role: Role; avatar_url?: string | null; school: { id: number; number: string; name: string }; permissions: string[] };
+export type AuthSuccess = { otp_required: false; token: string; user: User };
+export type OtpChallenge = { otp_required: true; challenge_token: string; masked_email: string; expires_in: number };
+export type LoginResult = AuthSuccess | OtpChallenge;
 export type Student = { id: number; name: string; admission_no: string; photo_url?: string | null; class?: string | null; stream?: string | null };
 export type Assignment = { school_class_id: number; class_name: string; subject_id: number | null; subject_name: string; attendance_type: 'daily' | 'subject' };
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';

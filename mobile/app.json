@@ -33,11 +33,19 @@
     },
     "plugins": [
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Edlink to use Face ID for secure quick login."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#efb000",
+          "image": "./assets/splash-icon.png",
           "dark": {
-            "backgroundColor": "#efb000"
+            "backgroundColor": "#efb000",
+            "image": "./assets/splash-icon.png"
           }
         }
       ]

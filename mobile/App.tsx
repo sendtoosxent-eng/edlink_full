@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -6,7 +7,7 @@ import { ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollVi
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { api, ApiError } from './src/api';
 import { AuthFlow } from './src/screens/auth/AuthFlow';
-import type { Assignment, AttendanceRecord, AttendanceRow, AttendanceStatus, Dashboard, ExamResult, Student, User } from './src/types';
+import type { Assignment, AttendanceRecord, AttendanceRow, AttendanceStatus, AuthSuccess, Dashboard, ExamResult, LoginResult, Role, Student, User } from './src/types';
 import { colors, radius } from './src/theme';
 import { ParentDashboardScreen, StudentDashboardScreen, TeacherDashboardScreen, type AppTab } from './src/screens/app/DashboardScreens';
 import { BottomTabBar } from './src/components/Navigation';
@@ -17,26 +18,55 @@ import { PaymentsScreen } from './src/screens/app/PaymentsScreen';
 import { LeaveRequestScreen, NotificationsScreen, TeacherToolPlaceholder } from './src/screens/app/TeacherToolsScreens';
 
 const TOKEN_KEY = 'edlink.mobile.token';
+const BIOMETRIC_KEY = 'edlink.mobile.biometric-enabled';
 const STATUSES: AttendanceStatus[] = ['present', 'absent', 'late', 'excused'];
 type Tab = AppTab;
 
 export default function App() {
   const [session, setSession] = useState<{ token: string; user: User }>();
+  const [lockedToken, setLockedToken] = useState<string>();
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [booting, setBooting] = useState(true);
   useEffect(() => { void (async () => {
     const token = await SecureStore.getItemAsync(TOKEN_KEY);
-    if (token) try { setSession({ token, user: (await api.me(token)).data }); } catch { await SecureStore.deleteItemAsync(TOKEN_KEY); }
+    const hardware = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = hardware && await LocalAuthentication.isEnrolledAsync();
+    setBiometricAvailable(enrolled);
+    if (token) try {
+      const biometricEnabled = await SecureStore.getItemAsync(BIOMETRIC_KEY) === 'true';
+      if (biometricEnabled && enrolled) {
+        setLockedToken(token);
+        const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock Edlink', cancelLabel: 'Use password', disableDeviceFallback: false });
+        if (!result.success) { setBooting(false); return; }
+      }
+      setSession({ token, user: (await api.me(token)).data });
+    } catch { await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); }
     setBooting(false);
   })(); }, []);
-  const signIn = async (school_number: string, email: string, password: string, expectedRole: User['role']) => {
-    const { data } = await api.login({ school_number, email, password, device_name: `${Platform.OS} Edlink app` });
-    if (data.user.role !== expectedRole) { await api.logout(data.token).catch(() => undefined); throw new ApiError(`These credentials belong to a ${data.user.role} account. Choose the correct role and try again.`, 403); }
-    await SecureStore.setItemAsync(TOKEN_KEY, data.token); setSession(data);
+  const acceptSession = async (data: AuthSuccess) => {
+    await SecureStore.setItemAsync(TOKEN_KEY, data.token); setLockedToken(data.token); setSession(data);
+    if (!biometricAvailable || await SecureStore.getItemAsync(BIOMETRIC_KEY) === 'true') return;
+    Alert.alert('Enable quick login?', 'Use fingerprint, Face ID, or your device passcode to unlock Edlink next time.', [
+      { text: 'Later', style: 'cancel' },
+      { text: 'Enable', onPress: () => { void LocalAuthentication.authenticateAsync({ promptMessage: 'Enable biometric login', disableDeviceFallback: false }).then(async result => { if (result.success) await SecureStore.setItemAsync(BIOMETRIC_KEY, 'true'); }); } },
+    ]);
   };
-  const signOut = async () => { if (session) await api.logout(session.token).catch(() => undefined); await SecureStore.deleteItemAsync(TOKEN_KEY); setSession(undefined); };
+  const signIn = async (school_number: string, email: string, password: string, expectedRole: Role): Promise<LoginResult> => {
+    const { data } = await api.login({ school_number, email, password, expected_role: expectedRole, device_name: `${Platform.OS} Edlink app` });
+    if (!data.otp_required) await acceptSession(data);
+    return data;
+  };
+  const verifyOtp = async (challengeToken: string, code: string) => { const { data } = await api.verifyOtp({ challenge_token: challengeToken, code, device_name: `${Platform.OS} Edlink app` }); await acceptSession(data); };
+  const unlockWithBiometrics = async () => {
+    if (!lockedToken) throw new ApiError('Sign in once with your school password before using quick login.', 401);
+    const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock Edlink', cancelLabel: 'Cancel', disableDeviceFallback: false });
+    if (!result.success) throw new ApiError('Device verification was cancelled.', 401);
+    setSession({ token: lockedToken, user: (await api.me(lockedToken)).data });
+  };
+  const signOut = async () => { if (session) await api.logout(session.token).catch(() => undefined); await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); setLockedToken(undefined); setSession(undefined); };
   return (
     <SafeAreaProvider>
-      {booting ? <LoadingScreen /> : !session ? <AuthFlow onSignIn={signIn} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} />}
+      {booting ? <LoadingScreen /> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} />}
     </SafeAreaProvider>
   );
 }

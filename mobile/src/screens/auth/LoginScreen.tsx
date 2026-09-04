@@ -1,74 +1,24 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { BrandLogo } from '../../components/BrandLogo';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, radius } from '../../theme';
-import type { Role } from '../../types';
+import type { Role, SchoolIdentity } from '../../types';
+import { AuthLayout } from './AuthLayout';
 
-type Props = {
-  role: Role; school: string; email: string; password: string; error: string; busy: boolean;
-  onEmailChange: (value: string) => void; onPasswordChange: (value: string) => void;
-  onBack: () => void; onChangeSchool: () => void; onChangeRole: () => void; onSubmit: () => void;
-};
-
-export function LoginScreen({ role, school, email, password, error, busy, onEmailChange, onPasswordChange, onChangeSchool, onChangeRole, onSubmit }: Props) {
-  const [showPassword, setShowPassword] = useState(false);
-  const roleLabel = role === 'parent' ? 'Parent or Guardian' : role.charAt(0).toUpperCase() + role.slice(1);
-
-  return (
-    <View style={styles.screen}>
-      <BrandLogo />
-
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.lead}>Access your Edlink account to manage classes and connect with your school.</Text>
-
-      <Pressable onPress={onChangeRole} style={styles.rolePill}><Text style={styles.roleIcon}>♙</Text><Text style={styles.roleText}>{roleLabel}</Text><Text style={styles.chevron}>⌄</Text></Pressable>
-
-      <Text style={styles.label}>School Number</Text>
-      <Pressable onPress={onChangeSchool} style={styles.field}>
-        <Text style={styles.fieldIcon}>▦</Text>
-        <Text style={[styles.fieldText, !school && styles.placeholderText]}>{school || 'e.g. 10245'}</Text>
-      </Pressable>
-
-      <Text style={styles.label}>Email Address</Text>
-      <View style={styles.field}>
-        <Text style={styles.fieldIcon}>✉</Text>
-        <TextInput value={email} onChangeText={onEmailChange} placeholder="teacher@school.edu" placeholderTextColor="#85838B" keyboardType="email-address" autoCapitalize="none" autoComplete="email" style={styles.input} />
-      </View>
-
-      <Text style={styles.label}>Password</Text>
-      <View style={styles.field}>
-        <Text style={styles.fieldIcon}>▣</Text>
-        <TextInput value={password} onChangeText={onPasswordChange} placeholder="••••••••" placeholderTextColor="#85838B" secureTextEntry={!showPassword} autoCapitalize="none" autoComplete="password" returnKeyType="done" onSubmitEditing={onSubmit} style={styles.input} />
-        <Pressable onPress={() => setShowPassword(value => !value)} hitSlop={12}><Text style={styles.eye}>{showPassword ? '◉' : '◎'}</Text></Pressable>
-      </View>
-
-      <Pressable onPress={() => Alert.alert('Forgot password', 'Please contact your school administrator to reset your Edlink password.')} style={styles.forgot}><Text style={styles.forgotText}>Forgot Password?</Text></Pressable>
-      {!!error && <Text style={styles.error}>{error}</Text>}
-
-      <Pressable disabled={busy} onPress={onSubmit} style={({ pressed }) => [styles.loginButton, (pressed || busy) && styles.mutedButton]}>
-        <Text style={styles.loginText}>{busy ? 'Signing in…' : 'Login  →'}</Text>
-      </Pressable>
-
-      <Pressable onPress={onChangeRole} style={styles.changeRole}><Text style={styles.changeRoleText}>Not a {role}?  <Text style={styles.changeRoleStrong}>Change role</Text></Text></Pressable>
-    </View>
-  );
+export function LoginScreen({ role, school, email, password, error, busy, biometricAvailable, onEmailChange, onPasswordChange, onChangeSchool, onChangeRole, onForgotPassword, onBiometricSignIn, onSubmit }: { role: Role; school: SchoolIdentity; email: string; password: string; error: string; busy: boolean; biometricAvailable: boolean; onEmailChange: (value: string) => void; onPasswordChange: (value: string) => void; onChangeSchool: () => void; onChangeRole: () => void; onForgotPassword: () => void; onBiometricSignIn: () => void; onSubmit: () => void }) {
+  const [showPassword, setShowPassword] = useState(false); const roleLabel = role === 'parent' ? 'Parent or guardian' : `${role.charAt(0).toUpperCase()}${role.slice(1)}`;
+  return <AuthLayout eyebrow="Welcome back" school={school}>
+    <View style={styles.headingRow}><Pressable accessibilityLabel="Change school" onPress={onChangeSchool} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable><Pressable onPress={onChangeRole} style={styles.role}><Ionicons name="person-circle-outline" size={20} color={colors.navy} /><Text style={styles.roleText}>{roleLabel}</Text><Ionicons name="chevron-down" size={15} color={colors.navy} /></Pressable></View>
+    <Text style={styles.title}>Log in</Text><Text style={styles.lead}>Use the account details registered at {school.name}.</Text>
+    <Text style={styles.label}>Email address</Text><View style={[styles.field, !!error && styles.fieldError]}><Ionicons name="mail-outline" size={21} color={colors.navy} /><TextInput value={email} onChangeText={onEmailChange} placeholder="you@school.com" placeholderTextColor="#85838B" keyboardType="email-address" autoCapitalize="none" autoComplete="email" style={styles.input} /></View>
+    <Text style={styles.label}>Password</Text><View style={[styles.field, !!error && styles.fieldError]}><Ionicons name="lock-closed-outline" size={21} color={colors.navy} /><TextInput value={password} onChangeText={onPasswordChange} placeholder="Enter your password" placeholderTextColor="#85838B" secureTextEntry={!showPassword} autoCapitalize="none" autoComplete="password" returnKeyType="done" onSubmitEditing={onSubmit} style={styles.input} /><Pressable accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} onPress={() => setShowPassword(value => !value)} hitSlop={10}><Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={21} color={colors.navy} /></Pressable></View>
+    <Pressable onPress={onForgotPassword} style={styles.forgot}><Text style={styles.forgotText}>Forgot password?</Text></Pressable>
+    {!!error && <View style={styles.errorRow}><Ionicons name="alert-circle" size={16} color={colors.danger} /><Text style={styles.error}>{error}</Text></View>}
+    <Pressable disabled={busy} onPress={onSubmit} style={({ pressed }) => [styles.button, (busy || pressed) && styles.buttonMuted]}>{busy ? <ActivityIndicator color={colors.gold} /> : <><Text style={styles.buttonText}>Log in to Edlink</Text><Ionicons name="arrow-forward-circle" size={23} color={colors.gold} /></>}</Pressable>
+    {biometricAvailable && <Pressable onPress={onBiometricSignIn} style={styles.biometric}><Ionicons name="finger-print" size={25} color={colors.navy} /><Text style={styles.biometricText}>Unlock with device biometrics</Text></Pressable>}
+  </AuthLayout>;
 }
 
 const styles = StyleSheet.create({
-  screen: { width: '100%', minHeight: 760, paddingBottom: 4 },
-  title: { marginTop: 24, color: colors.navy, fontSize: 34, fontWeight: '800', textAlign: 'center', letterSpacing: -0.7 },
-  lead: { alignSelf: 'center', maxWidth: 330, marginTop: 10, color: colors.muted, fontSize: 15, lineHeight: 22, textAlign: 'center' },
-  rolePill: { alignSelf: 'center', marginTop: 20, marginBottom: 28, minHeight: 48, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: radius.pill, backgroundColor: colors.surfaceLow, borderWidth: 1, borderColor: colors.outline },
-  roleIcon: { color: colors.navy, fontSize: 19 }, roleText: { color: colors.ink, fontSize: 16, fontWeight: '800' }, chevron: { color: colors.muted, fontSize: 19 },
-  label: { marginTop: 14, marginBottom: 7, color: colors.ink, fontSize: 14, fontWeight: '700' },
-  field: { minHeight: 58, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.card, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, shadowColor: colors.navy, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
-  fieldIcon: { width: 24, color: '#7E7C84', fontSize: 22, textAlign: 'center' },
-  fieldText: { flex: 1, color: colors.ink, fontSize: 16 }, placeholderText: { color: '#85838B' },
-  input: { flex: 1, height: 56, padding: 0, color: colors.ink, fontSize: 16 },
-  eye: { color: '#77757D', fontSize: 23 },
-  forgot: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center' }, forgotText: { color: colors.navy, fontSize: 14, fontWeight: '600' },
-  error: { color: colors.danger, fontSize: 13, lineHeight: 19, marginBottom: 8 },
-  loginButton: { minHeight: 58, marginTop: 72, borderRadius: radius.card, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', shadowColor: colors.goldDark, shadowOpacity: 0.2, shadowRadius: 12, elevation: 3 },
-  loginText: { color: colors.goldDark, fontSize: 17, fontWeight: '800' }, mutedButton: { opacity: 0.6 },
-  changeRole: { minHeight: 48, marginTop: 18, alignItems: 'center', justifyContent: 'center' }, changeRoleText: { color: colors.muted, fontSize: 14 }, changeRoleStrong: { color: colors.navy, fontWeight: '800' },
+  headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, back: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.navy, alignItems: 'center', justifyContent: 'center' }, role: { minHeight: 42, borderRadius: 21, paddingHorizontal: 13, backgroundColor: colors.surfaceLow, borderWidth: 1, borderColor: colors.navy, flexDirection: 'row', alignItems: 'center', gap: 7 }, roleText: { color: colors.navy, fontSize: 12, fontWeight: '900' }, title: { color: colors.navy, fontSize: 31, fontWeight: '900', marginTop: 18 }, lead: { color: colors.muted, fontSize: 14, lineHeight: 20, marginTop: 4 }, label: { color: colors.ink, fontSize: 13, fontWeight: '800', marginTop: 18, marginBottom: 7 }, field: { minHeight: 56, borderRadius: radius.card, borderWidth: 2, borderColor: colors.navy, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }, fieldError: { borderColor: colors.danger }, input: { flex: 1, height: 54, color: colors.ink, fontSize: 15 }, forgot: { alignSelf: 'flex-end', minHeight: 40, justifyContent: 'center' }, forgotText: { color: colors.goldDark, fontSize: 13, fontWeight: '900' }, errorRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 }, error: { flex: 1, color: colors.danger, fontSize: 12, lineHeight: 17 }, button: { minHeight: 58, marginTop: 15, borderRadius: radius.card, backgroundColor: colors.navy, flexDirection: 'row', gap: 10, justifyContent: 'center', alignItems: 'center' }, buttonText: { color: '#FFFFFF', fontWeight: '900', fontSize: 16 }, buttonMuted: { opacity: 0.65 }, biometric: { minHeight: 52, marginTop: 13, borderRadius: radius.card, borderWidth: 2, borderColor: colors.navy, flexDirection: 'row', gap: 9, alignItems: 'center', justifyContent: 'center' }, biometricText: { color: colors.navy, fontSize: 13, fontWeight: '900' },
 });

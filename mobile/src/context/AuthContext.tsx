@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { api } from '../api';
-import type { User } from '../types';
+import type { Role, User } from '../types';
 
 const TOKEN_KEY = 'edlink.mobile.token';
 
@@ -10,7 +10,7 @@ interface AuthContextType {
   token?: string;
   user?: User;
   booting: boolean;
-  signIn: (school_number: string, email: string, password: string) => Promise<void>;
+  signIn: (school_number: string, email: string, password: string, expected_role: Role) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -42,13 +42,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => { isMounted = false; };
   }, []);
 
-  const signIn = async (school_number: string, email: string, password: string) => {
+  const signIn = async (school_number: string, email: string, password: string, expected_role: Role) => {
     const { data } = await api.login({
       school_number,
       email,
       password,
       device_name: `${Platform.OS} Edlink App`,
+      expected_role,
     });
+    if (data.otp_required) throw new Error('OTP verification must be completed in the authentication flow.');
     await SecureStore.setItemAsync(TOKEN_KEY, data.token);
     setToken(data.token);
     setUser(data.user);

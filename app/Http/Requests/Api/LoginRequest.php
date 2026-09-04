@@ -15,6 +15,7 @@ class LoginRequest extends FormRequest
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string'],
             'device_name' => ['required', 'string', 'max:120'],
+            'expected_role' => ['nullable', 'in:teacher,student,parent'],
         ];
     }
 }

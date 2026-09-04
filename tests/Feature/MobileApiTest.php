@@ -13,6 +13,8 @@ use App\Models\Term;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -45,6 +47,32 @@ it('issues and revokes a device-specific sanctum token', function () {
     $token=$response->assertOk()->assertJsonPath('data.user.role','teacher')->json('data.token');
     $this->withToken($token)->postJson('/api/v1/auth/logout')->assertOk();
     $this->assertDatabaseCount('personal_access_tokens', 0);
+});
+
+it('looks up an active school before asking for account details', function () {
+    $data=mobileFixture();
+    $this->postJson('/api/v1/auth/school',['school_number'=>'edl-mob01'])
+        ->assertOk()->assertJsonPath('data.number','EDL-MOB01')->assertJsonPath('data.name',$data['school']->name);
+    $this->postJson('/api/v1/auth/school',['school_number'=>'EDL-MISSING'])->assertUnprocessable();
+});
+
+it('requires and verifies a six digit otp for a real school', function () {
+    Notification::fake(); Config::set('app.otp_force',true); $data=mobileFixture();
+    $login=$this->postJson('/api/v1/auth/login',['school_number'=>$data['school']->school_number,'email'=>$data['teacher']->email,'password'=>'password','device_name'=>'Pixel 8','expected_role'=>'teacher'])
+        ->assertOk()->assertJsonPath('data.otp_required',true)->assertJsonMissingPath('data.token');
+    $challenge=$login->json('data.challenge_token'); $code=$data['teacher']->fresh()->getRawOriginal('otp_code');
+    $this->postJson('/api/v1/auth/otp/verify',['challenge_token'=>$challenge,'code'=>'000000','device_name'=>'Pixel 8'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/otp/verify',['challenge_token'=>$challenge,'code'=>$code,'device_name'=>'Pixel 8'])
+        ->assertOk()->assertJsonPath('data.otp_required',false)->assertJsonPath('data.user.role','teacher')->assertJsonStructure(['data'=>['token']]);
+    expect($data['teacher']->fresh()->getRawOriginal('otp_code'))->toBeNull();
+});
+
+it('keeps mobile password recovery school scoped and non revealing', function () {
+    Notification::fake(); $data=mobileFixture();
+    $this->postJson('/api/v1/auth/password/forgot',['school_number'=>$data['school']->school_number,'email'=>$data['teacher']->email])
+        ->assertOk()->assertJsonPath('data.message','If those details match an Edlink account, a password reset link has been sent by email.');
+    $this->postJson('/api/v1/auth/password/forgot',['school_number'=>'EDL-NONE','email'=>'missing@example.test'])
+        ->assertOk()->assertJsonPath('data.message','If those details match an Edlink account, a password reset link has been sent by email.');
 });
 
 it('does not allow a parent to select an unlinked or cross-school learner', function () {
