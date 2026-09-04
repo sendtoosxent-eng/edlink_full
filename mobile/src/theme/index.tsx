@@ -12,8 +12,8 @@ export const colors = {
   textPrimary: '#0B132B',
   textSecondary: '#6C7A9C',
   textMuted: '#6C7A9C',
-  border: '#E6ECE8',
-  borderDark: '#D9E1F1',
+  border: '#0B132B',
+  borderDark: '#0B132B',
   
   // Status Colors
   status: {

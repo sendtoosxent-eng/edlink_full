@@ -15,7 +15,7 @@ export function PageIntro({ title, description, subtitle }: { title: string; des
 }
 
 const styles = StyleSheet.create({
-  card: { minHeight: 150, borderRadius: radius.lg, backgroundColor: colors.primaryCard, padding: 20, justifyContent: 'center', overflow: 'hidden' },
+  card: { minHeight: 150, borderRadius: radius.lg, backgroundColor: colors.primaryCard, borderWidth: 1.5, borderColor: colors.primary, padding: 20, justifyContent: 'center', overflow: 'hidden' },
   glow: { position: 'absolute', width: 190, height: 190, borderRadius: 95, right: -80, top: -92, backgroundColor: colors.primary, opacity: 0.72 },
   copy: { flex: 1 },
   eyebrow: { color: colors.secondary, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },

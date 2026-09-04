@@ -43,7 +43,8 @@ export default function App() {
 
 function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: User; onSignOut: () => Promise<void> }) {
   const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
-  const [tab, setTab] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
+  const [tab, setTab] = useState<Tab>('home'); const [activeRoot, setActiveRoot] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
+  useEffect(() => { if (tabs.includes(tab)) setActiveRoot(tab); }, [tab]);
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
   return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
     {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
@@ -62,7 +63,7 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
       {user.role === 'teacher' && tab === 'add_homework' && <TeacherToolPlaceholder title="Add homework" description="Create and publish homework for an assigned class and subject." icon="add-circle-outline" onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'homework' && <Pressable accessibilityRole="button" accessibilityLabel="Add homework" onPress={() => setTab('add_homework')} style={styles.floatingAdd}><Ionicons name="add" size={30} color={colors.gold} /></Pressable>}
     </View>
-    <BottomTabBar tabs={tabs} activeTab={tab} onSelect={setTab} />
+    <BottomTabBar tabs={tabs} activeTab={activeRoot} onSelect={setTab} />
   </SafeAreaView>;
 }
 

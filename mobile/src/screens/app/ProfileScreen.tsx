@@ -155,7 +155,7 @@ function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).ma
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  hero: { minHeight: 258, borderRadius: radius.lg, backgroundColor: colors.primaryCard, alignItems: 'center', padding: 24, overflow: 'hidden' },
+  hero: { minHeight: 258, borderRadius: radius.lg, backgroundColor: colors.primaryCard, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', padding: 24, overflow: 'hidden' },
   heroGlow: { position: 'absolute', width: 260, height: 260, borderRadius: 130, backgroundColor: colors.primary, opacity: 0.45, top: -130, right: -80 },
   avatarRing: { width: 88, height: 88, borderRadius: 44, borderWidth: 4, borderColor: colors.secondary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   avatarImage: { width: '100%', height: '100%' },
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 10 },
   sectionTitle: { color: colors.textDark, fontSize: 17, fontWeight: '900', marginTop: 24, marginBottom: 10 },
   sectionMeta: { color: colors.textMuted, fontSize: 12, marginTop: 24 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E3E8F2' },
+  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 16, borderWidth: 1.5, borderColor: colors.primary },
   infoRow: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 13 },
   infoIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#EEF1F7', alignItems: 'center', justifyContent: 'center' },
   rowLabel: { color: colors.textMuted, fontSize: 12, lineHeight: 17 },
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   countBadge: { minWidth: 28, height: 28, borderRadius: 14, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', marginTop: 14 },
   countText: { color: colors.primary, fontSize: 12, fontWeight: '900' },
   noticeStack: { gap: 10 },
-  noticeCard: { minHeight: 88, flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: '#FFF8E8', borderRadius: radius.md, padding: 15, borderWidth: 1, borderColor: '#F2DFB6' },
+  noticeCard: { minHeight: 88, flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: '#FFF8E8', borderRadius: radius.md, padding: 15, borderWidth: 1.5, borderColor: colors.primary },
   noticeIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   noticeBody: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 4 },
   emptyRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
