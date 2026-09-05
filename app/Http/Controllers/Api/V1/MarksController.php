@@ -38,6 +38,7 @@ class MarksController extends ApiController
     public function update(MarksUpdateRequest $request,int $paper)
     {
         $paper=$this->paper($request,$paper); $data=$request->validated();
+        abort_unless($paper->exam->term->isOpen(), 403, 'This term is closed for marks entry.');
         $submission=DB::table('exam_paper_submissions')->where('exam_paper_id',$paper->id)->first();
         abort_if($submission && $submission->status!=='draft',409,'Submitted marks are read-only.');
         $allowed=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id,$paper->exam->term_id)->pluck('id');
@@ -51,6 +52,12 @@ class MarksController extends ApiController
     public function submit(Request $request,int $paper)
     {
         $paper=$this->paper($request,$paper);
+        abort_unless($paper->exam->term->isOpen(), 403, 'This term is closed for marks entry.');
+        $submission = DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->first();
+        abort_if($submission && $submission->status !== 'draft', 409, 'Submitted marks are read-only.');
+        $students = MobileAccess::teacherStudentQuery($request->user(), $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id)->pluck('id');
+        $scored = DB::table('exam_marks')->where('exam_paper_id', $paper->id)->whereNotNull('score')->pluck('student_id');
+        abort_if($students->isEmpty() || $students->diff($scored)->isNotEmpty(), 422, 'Enter a score for every learner before submitting.');
         DB::table('exam_paper_submissions')->updateOrInsert(['exam_paper_id'=>$paper->id],['status'=>'submitted','submitted_by'=>$request->user()->id,'submitted_at'=>now(),'created_at'=>now(),'updated_at'=>now()]);
         AuditLog::record($request->user()->school_id,'mobile.marks.submitted',$paper);
         return $this->ok(['status'=>'submitted']);

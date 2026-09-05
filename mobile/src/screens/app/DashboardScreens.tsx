@@ -1,8 +1,9 @@
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { colors, radius, shadows } from '../../theme/index';
+import { API_URL } from '../../api';
 import type { Dashboard, User } from '../../types';
 
 export type AppTab = 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
@@ -71,7 +72,38 @@ function EmptyInline({ icon, text }: { icon: IconName; text: string }) { return 
 
 export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
   const stats = data.analytics?.stats ?? {};
-  return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}><TopBar user={user} /><GreetingCard user={user} title={`${firstName(user.name)}, ready to teach?`} subtitle="Your classes, learners, and academic activity in one place." /><StatGrid items={[{ icon: 'people-outline', label: 'Learners', value: stats.learners ?? 0, tone: 'blue' }, { icon: 'easel-outline', label: 'Classes', value: stats.classes ?? 0 }, { icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? data.today_timetable.length, tone: 'green' }]} /><SectionHeader title="Quick actions" /><QuickActions role="teacher" navigate={navigate} /><SectionHeader title="Class attendance" subtitle="Recorded from your assigned classes" /><AttendanceChart data={data} rate={attendanceRate} onPress={() => navigate('attendance')} /><SectionHeader title="Subject insights" /><PerformanceChart data={data} /><SectionHeader title="Today’s timetable" /><Schedule data={data} /><SectionHeader title="Homework activity" /><HomeworkList data={data} navigate={navigate} /><SectionHeader title="Upcoming events" /><Events data={data} /></DashboardScroll>;
+  const workspace = data.teacher_workspace;
+  const openTool = async (tool: NonNullable<Dashboard['teacher_workspace']>['tools'][number]) => {
+    if (tool.native) { navigate(tool.native as AppTab); return; }
+    try { await Linking.openURL(`${API_URL.replace(/\/api\/v1$/, '')}${tool.path}`); }
+    catch { Alert.alert('Unable to open tool', 'Please try again.'); }
+  };
+  return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
+    <TopBar user={user} />
+    <GreetingCard user={user} title={`Welcome, ${firstName(user.name)}`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
+    {workspace && <View style={[styles.listCard, { marginTop: 14, paddingVertical: 14 }]}>
+      <Text style={styles.cardTitle}>{workspace.class_teacher_classes.length ? 'My class responsibility' : 'My teaching assignments'}</Text>
+      {!!workspace.class_teacher_classes.length && <Text style={styles.bodyCopy}>{workspace.class_teacher_classes.map(item => item.name).join(' · ')} — daily register and class learner tools</Text>}
+      <Text style={styles.bodyCopy}>{workspace.subject_assignments.length ? workspace.subject_assignments.map(item => `${item.subject_name} · ${item.class_name}`).join('\n') : 'No subject assignments yet. Your school administrator can assign your teaching subjects.'}</Text>
+    </View>}
+    <StatGrid items={[{ icon: 'people-outline', label: 'Learners', value: stats.learners ?? 0, tone: 'blue' }, { icon: 'easel-outline', label: 'Classes', value: stats.classes ?? 0 }, { icon: 'book-outline', label: 'Subjects', value: stats.subjects ?? 0, tone: 'green' }]} />
+    <StatGrid items={[{ icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? 0 }, { icon: 'checkbox-outline', label: 'Recorded today', value: stats.attendance_today ?? 0, tone: 'green' }, { icon: 'document-text-outline', label: 'Pending marks', value: stats.pending_marks ?? 0, tone: 'blue' }]} />
+    <SectionHeader title="Teacher workspace" subtitle="Tools available for your assignments and school permissions" />
+    {workspace ? [...new Set(workspace.tools.map(tool => tool.group))].map(group => <View key={group} style={{ marginBottom: 16 }}>
+      <Text style={[styles.cardTitle, { marginBottom: 9 }]}>{group}</Text>
+      <View style={styles.quickRow}>{workspace.tools.filter(tool => tool.group === group).map(tool => <Pressable accessibilityRole="button" key={tool.id} onPress={() => void openTool(tool)} style={styles.quickAction}>
+        <View style={styles.quickIcon}><Ionicons name={tool.native ? 'apps-outline' : 'open-outline'} size={21} color={colors.primary} /></View>
+        <Text style={styles.quickLabel}>{tool.label}</Text>
+        {!tool.native && <Text style={styles.webLabel}>Website</Text>}
+      </Pressable>)}</View>
+    </View>) : <QuickActions role="teacher" navigate={navigate} />}
+    {workspace && <Text style={styles.bodyCopy}>Website tools open in your browser and may ask you to sign in.</Text>}
+    <SectionHeader title="My attendance activity" subtitle="Registers you recorded over the last seven days" /><AttendanceChart data={data} rate={attendanceRate} onPress={() => navigate('attendance')} />
+    <SectionHeader title="Subject insights" /><PerformanceChart data={data} />
+    <SectionHeader title="Today’s timetable" /><Schedule data={data} />
+    <SectionHeader title="Homework activity" /><HomeworkList data={data} navigate={navigate} />
+    <SectionHeader title="Upcoming events" /><Events data={data} />
+  </DashboardScroll>;
 }
 
 export function StudentDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
@@ -97,6 +129,7 @@ function eventDate(value: string, part: 'day' | 'month') { const date = new Date
 function nextLessonCopy(lesson: Lesson | undefined, now: number) { if (!lesson) return 'No more lessons scheduled today'; const day = new Date(); const [startHour, startMinute] = lesson.starts_at.slice(0, 5).split(':').map(Number); const [endHour, endMinute] = lesson.ends_at.slice(0, 5).split(':').map(Number); const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), startHour, startMinute).getTime(); const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), endHour, endMinute).getTime(); const name = lesson.subject ?? lesson.label ?? 'Next lesson'; if (now >= start && now < end) return `${name} is going on · ends ${shortTime(lesson.ends_at)}`; const minutes = Math.max(0, Math.ceil((start - now) / 60_000)); const countdown = minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes} min`; return `${name} starts in ${countdown}`; }
 
 const styles = StyleSheet.create({
+  bodyCopy: { color: colors.textMuted, fontSize: 12, lineHeight: 21, marginTop: 7 }, webLabel: { color: colors.textMuted, fontSize: 9, marginTop: 3, marginBottom: 8 },
   screen: { flex: 1, backgroundColor: colors.background }, content: { paddingHorizontal: 18, paddingBottom: 34 },
   topBar: { minHeight: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, topLogo: { width: 142, height: 62, marginLeft: 10 }, topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 }, bellButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.secondary, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }, logoutButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.secondary, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   avatar: { backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 2, borderColor: colors.surface }, avatarImage: { resizeMode: 'cover' }, avatarText: { color: colors.primary, fontWeight: '900', fontSize: 15 },

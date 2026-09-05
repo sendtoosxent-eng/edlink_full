@@ -19,7 +19,7 @@ import { BottomTabBar } from './src/components/Navigation';
 import { ProfileScreen } from './src/screens/app/ProfileScreen';
 import { PageIntro as ScreenHeader } from './src/components/PageIntro';
 import { PaymentsScreen } from './src/screens/app/PaymentsScreen';
-import { LeaveRequestScreen, NotificationsScreen, TeacherToolPlaceholder } from './src/screens/app/TeacherToolsScreens';
+import { LeaveRequestScreen, NotificationsScreen, TeacherMarksScreen, AddHomeworkScreen, TeacherReportsScreen, TeacherHomeworkScreen } from './src/screens/app/TeacherToolsScreens';
 
 const TOKEN_KEY = 'edlink.mobile.token';
 const BIOMETRIC_KEY = 'edlink.mobile.biometric-enabled';
@@ -86,16 +86,17 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
     <TabTransition screen={tab} order={tabs}>
       {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}
       {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
-      {tab === 'homework' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
+      {tab === 'homework' && user.role !== 'teacher' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'more' && <ProfileScreen token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
       {tab === 'notifications' && <NotificationsScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
-      {user.role === 'teacher' && tab === 'add_marks' && <TeacherToolPlaceholder title="Add marks" description="Select an assigned exam paper and enter learner marks." icon="create-outline" onBack={() => setTab('home')} />}
-      {user.role === 'teacher' && tab === 'view_marks' && <TeacherToolPlaceholder title="View marks" description="Review marks for your assigned classes and subjects." icon="reader-outline" onBack={() => setTab('home')} />}
-      {user.role === 'teacher' && tab === 'teacher_results' && <TeacherToolPlaceholder title="Results" description="Review published results for learners within your academic scope." icon="trophy-outline" onBack={() => setTab('home')} />}
-      {user.role === 'teacher' && tab === 'add_homework' && <TeacherToolPlaceholder title="Add homework" description="Create and publish homework for an assigned class and subject." icon="add-circle-outline" onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'view_marks' && <TeacherMarksScreen token={token} readOnly onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'teacher_results' && <TeacherReportsScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'add_homework' && <AddHomeworkScreen token={token} onBack={() => setTab('homework')} />}
       {user.role === 'teacher' && tab === 'homework' && <Pressable accessibilityRole="button" accessibilityLabel="Add homework" onPress={() => setTab('add_homework')} style={styles.floatingAdd}><Ionicons name="add" size={30} color={colors.gold} /></Pressable>}
     </TabTransition>
     <BottomTabBar tabs={tabs} activeTab={activeRoot} onSelect={setTab} />

@@ -8,7 +8,7 @@ import { BrandLogo } from '../../components/BrandLogo';
 import { colors } from '../../theme';
 import type { AccountIdentity, SchoolIdentity } from '../../types';
 
-export function AuthLayout({ children, school, account, eyebrow, heroTitle, heroSubtitle }: { children: ReactNode; school?: SchoolIdentity; account?: AccountIdentity; eyebrow: string; heroTitle?: string; heroSubtitle?: string }) {
+export function AuthLayout({ children, navigation, school, account, eyebrow, heroTitle, heroSubtitle }: { children: ReactNode; navigation?: ReactNode; school?: SchoolIdentity; account?: AccountIdentity; eyebrow: string; heroTitle?: string; heroSubtitle?: string }) {
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
   const expandedHeight = (school || heroTitle ? 342 : 255) + insets.top;
@@ -27,7 +27,7 @@ export function AuthLayout({ children, school, account, eyebrow, heroTitle, hero
         </Animated.View>
       </>}
     </Animated.View>
-    <View style={styles.sheet}><KeyboardAwareScrollView bottomOffset={24} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.sheetScroll, { paddingBottom: Math.max(insets.bottom, 24) }]}><View style={styles.sheetContent}>{children}</View><AuthFooter /></KeyboardAwareScrollView></View>
+    <View style={styles.sheet}>{navigation && <View style={styles.sheetNavigation}>{navigation}</View>}<KeyboardAwareScrollView bottomOffset={24} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.sheetScroll, !!navigation && styles.scrollWithNavigation, { paddingBottom: Math.max(insets.bottom, 24) }]}><View style={styles.sheetContent}>{children}</View><AuthFooter /></KeyboardAwareScrollView></View>
   </View>;
 }
 
@@ -86,6 +86,8 @@ const styles = StyleSheet.create({
   schoolCode: { color: colors.navy, fontSize: 11, lineHeight: 18, fontWeight: '600', letterSpacing: 1, marginTop: 6 },
   horizontalSchool: { position: 'absolute', top: 28, left: 84, right: 0, minHeight: 68, justifyContent: 'center' },
   compactSchoolName: { color: colors.navy, fontSize: 18, lineHeight: 24, fontWeight: '700' },
+  sheetNavigation: { flexShrink: 0, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 4, backgroundColor: colors.surface, zIndex: 1 },
+  scrollWithNavigation: { paddingTop: 0 },
   sheet: { flex: 1, minHeight: 0, overflow: 'hidden', marginTop: -24, backgroundColor: colors.surface, borderTopLeftRadius: 32, borderTopRightRadius: 32, borderWidth: 2, borderBottomWidth: 0, borderColor: colors.navy, }, sheetScroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 27 }, avatarImage: { width: '100%', height: '100%' }, sheetContent: { flexGrow: 1 },
   footer: { alignItems: 'center', marginTop: 28, paddingTop: 17 }, footerLine: { width: 36, height: 3, borderRadius: 2, backgroundColor: colors.gold, marginBottom: 10 }, footerBrand: { color: colors.navy, fontSize: 12, fontWeight: '800', letterSpacing: 0.4 }, footerVersion: { color: colors.muted, fontWeight: '500' }, footerCompany: { color: colors.muted, fontSize: 10, fontWeight: '500', marginTop: 3 },
 });

@@ -160,3 +160,37 @@ it('looks up only an active school account and returns just its display identity
     $data['school']->update(['license_status' => 'expired', 'license_expires_at' => now()->subDay()]);
     $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
 });
+
+it('varies the mobile workspace by actual class responsibility', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $workspace = $this->getJson('/api/v1/dashboard')->assertOk()->json('data.teacher_workspace');
+    expect($workspace['role_label'])->toBe('Subject teacher');
+    expect(collect($workspace['tools'])->pluck('id')->all())->toContain('attendance.subject', 'exams.marks')->not->toContain('attendance.index', 'students.index');
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    $workspace = $this->getJson('/api/v1/dashboard')->assertOk()->json('data.teacher_workspace');
+    expect($workspace['role_label'])->toBe('Class teacher');
+    expect(collect($workspace['tools'])->pluck('id')->all())->toContain('attendance.index', 'students.index', 'attendance.subject');
+    expect($workspace['class_teacher_classes'][0]['id'])->toBe($data['class']->id);
+});
+
+it('rejects incomplete marks submissions and protects approved sheets', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->postJson('/api/v1/exam-papers/'.$data['paper']->id.'/submit')->assertUnprocessable();
+    DB::table('exam_paper_submissions')->insert(['exam_paper_id' => $data['paper']->id, 'status' => 'approved', 'created_at' => now(), 'updated_at' => now()]);
+    $this->postJson('/api/v1/exam-papers/'.$data['paper']->id.'/submit')->assertConflict();
+    $this->assertDatabaseHas('exam_paper_submissions', ['exam_paper_id' => $data['paper']->id, 'status' => 'approved']);
+});
+
+it('does not combine unrelated class and subject assignments in dashboard averages', function () {
+    $data = mobileFixture();
+    $secondClass = SchoolClass::create(['school_id' => $data['school']->id, 'name' => 'S3', 'education_stage' => 'secondary', 'sort_order' => 2]);
+    $secondSubject = Subject::create(['school_id' => $data['school']->id, 'name' => 'English', 'code' => 'ENG']);
+    DB::table('staff_subjects')->insert(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'user_id' => $data['teacher']->id, 'subject_id' => $secondSubject->id, 'school_class_id' => $secondClass->id, 'created_at' => now(), 'updated_at' => now()]);
+    $exam = Exam::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'school_class_id' => $secondClass->id, 'name' => 'Unassigned maths', 'published_at' => now()]);
+    $paper = ExamPaper::create(['exam_id' => $exam->id, 'subject_id' => $data['subject']->id, 'maximum_score' => 100, 'weighting' => 1]);
+    DB::table('exam_marks')->insert(['exam_paper_id' => $paper->id, 'student_id' => $data['student']->id, 'score' => 99, 'entered_by' => $data['teacher']->id, 'created_at' => now(), 'updated_at' => now()]);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonPath('data.analytics.performance_labels', []);
+});

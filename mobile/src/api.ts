@@ -38,5 +38,6 @@ export const api = {
   me: (token: string) => request<User>('/auth/me', token),
   logout: (token: string) => request<{ logged_out: boolean }>('/auth/logout', token, { method: 'POST' }),
   get: <T>(path: string, token: string) => request<T>(path, token),
+  put: <T>(path: string, token: string, body: unknown) => request<T>(path, token, { method: 'PUT', body: JSON.stringify(body) }),
   post: <T>(path: string, token: string, body: unknown) => request<T>(path, token, { method: 'POST', body: JSON.stringify(body) }),
 };

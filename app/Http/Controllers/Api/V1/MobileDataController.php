@@ -44,6 +44,7 @@ class MobileDataController extends ApiController
             'attendance' => $attendance,
             'events' => DB::table('school_events')->where('school_id', $user->school_id)->whereDate('event_date', '>=', today())->orderBy('event_date')->limit(4)->get(),
             'analytics' => $analytics,
+            'teacher_workspace' => TeacherAcademicScope::isTeacher($user) ? \App\Support\MobileTeacherWorkspace::forUser($user) : null,
         ], ['generated_at' => now()->toISOString()]);
     }
 
@@ -97,11 +98,22 @@ class MobileDataController extends ApiController
             ->join('exams', 'exams.id', '=', 'exam_papers.exam_id')
             ->join('subjects', 'subjects.id', '=', 'exam_papers.subject_id')
             ->where('exams.school_id', $user->school_id)->where('exams.term_id', $term->id)
-            ->whereIn('exam_papers.subject_id', $assignments->pluck('subject_id')->unique())
-            ->whereIn('exams.school_class_id', $classIds)
+            ->where(function ($query) use ($assignments) {
+                $query->whereRaw('1 = 0');
+                foreach ($assignments as $assignment) {
+                    $query->orWhere(fn ($pair) => $pair->where('exams.school_class_id', $assignment->school_class_id)->where('exam_papers.subject_id', $assignment->subject_id));
+                }
+            })
+            ->whereNotNull('exams.published_at')
             ->whereNotNull('exam_marks.score')
             ->selectRaw('subjects.name, ROUND(AVG(exam_marks.score / exam_papers.maximum_score * 100), 1) as average')
             ->groupBy('subjects.id', 'subjects.name')->orderByDesc('average')->limit(6)->get() : collect();
+
+        $pendingPapers = \App\Models\ExamPaper::with('exam')
+            ->whereHas('exam', fn ($query) => $query->where('school_id', $user->school_id)->where('term_id', $term?->id))
+            ->whereDoesntHave('exam', fn ($query) => $query->whereNotNull('published_at'))
+            ->whereNotIn('id', DB::table('exam_paper_submissions')->whereIn('status', ['submitted', 'approved'])->select('exam_paper_id'))
+            ->get()->filter(fn ($paper) => TeacherAcademicScope::canEnterPaper($user, $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id))->count();
 
         return [
             'attendance_labels' => $days->map(fn ($day) => $day->format('D'))->values(),
@@ -112,6 +124,8 @@ class MobileDataController extends ApiController
             'stats' => [
                 'classes' => $classIds->count(),
                 'subjects' => $assignments->pluck('subject_id')->unique()->count(),
+                'attendance_today' => $attendance->where('attendance_date', today()->toDateString())->count(),
+                'pending_marks' => $pendingPapers,
                 'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $user->school_id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
                 'lessons_today' => $this->slotQuery($request, null)->where('day_of_week', now()->format('l'))->count(),
                 'homework' => $this->homeworkQuery($request, null)->count(),

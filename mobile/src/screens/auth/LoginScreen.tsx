@@ -33,11 +33,11 @@ export function LoginScreen({ role, school, email, password, error, busy, biomet
       if (version === lookupVersion.current) setEmailError(caught instanceof Error ? caught.message : 'Could not check your account. Please try again.');
     } finally { if (version === lookupVersion.current) setChecking(false); }
   };
-  return <AuthLayout eyebrow="Welcome back" school={school} account={stage === 'password' ? account : undefined}>
+  return <AuthLayout eyebrow="Welcome back" school={school} account={stage === 'password' ? account : undefined} navigation={
     <View style={styles.headingRow}>
       <Pressable disabled={busy || checking} accessibilityLabel={stage === 'email' ? 'Change school' : 'Back to email'} onPress={() => stage === 'email' ? onChangeSchool() : changeStage('email')} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable>
       <AuthProgress step={stage === 'email' ? 2 : 3} />
-    </View>
+    </View>}>
     <View style={styles.slider} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
       <Animated.View style={[styles.track, { width: width ? width * 2 : '200%' }, slide]}>
         <View style={[styles.panel, { width: width || '50%' }]} pointerEvents={stage === 'email' ? 'auto' : 'none'} accessibilityElementsHidden={stage !== 'email'} importantForAccessibility={stage === 'email' ? 'auto' : 'no-hide-descendants'}>
