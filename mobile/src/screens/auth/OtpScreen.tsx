@@ -1,6 +1,7 @@
+import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../../theme';
 import type { SchoolIdentity } from '../../types';
 import { AuthLayout } from './AuthLayout';
@@ -8,7 +9,7 @@ import { AuthLayout } from './AuthLayout';
 export function OtpScreen({ school, maskedEmail, code, error, busy, onCodeChange, onBack, onVerify, onResend }: { school: SchoolIdentity; maskedEmail: string; code: string; error: string; busy: boolean; onCodeChange: (value: string) => void; onBack: () => void; onVerify: () => void; onResend: () => Promise<void> }) {
   const input = useRef<TextInput>(null); const [seconds, setSeconds] = useState(60); const [resent, setResent] = useState(false);
   useEffect(() => { if (!seconds) return; const timer = setInterval(() => setSeconds(value => Math.max(0, value - 1)), 1000); return () => clearInterval(timer); }, [seconds]);
-  const resend = async () => { if (seconds) return; await onResend(); setResent(true); setSeconds(60); };
+  const resend = async () => { if (seconds) return; try { await onResend(); setResent(true); setSeconds(60); } catch { /* The parent displays the resend error. */ } };
   return <AuthLayout eyebrow="Secure verification" school={school}>
     <Pressable accessibilityLabel="Back to login" onPress={onBack} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable>
     <Text style={styles.title}>Verify it’s you</Text><Text style={styles.lead}>Enter the 6-digit code sent to <Text style={styles.strong}>{maskedEmail}</Text>. It expires in 10 minutes.</Text>

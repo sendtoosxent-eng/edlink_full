@@ -1,5 +1,7 @@
+import { Text } from './Typography';
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { BrandLoader } from './BrandLoader';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { colors, radius, shadows, typography } from '../theme/index';
 import type { AttendanceStatus } from '../types';
 
@@ -35,14 +37,7 @@ export function StatCard({ label, value }: { label: string; value: string | numb
   );
 }
 
-export function InlineLoading() {
-  return (
-    <View style={styles.center}>
-      <ActivityIndicator color={colors.primary} size="large" />
-      <Text style={styles.mutedText}>Loading Edlink...</Text>
-    </View>
-  );
-}
+export function InlineLoading() { return <BrandLoader />; }
 
 export function ErrorState({ message, retry }: { message: string; retry: () => void }) {
   return (

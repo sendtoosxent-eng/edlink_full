@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::post('auth/school', [AuthController::class, 'school'])->middleware('throttle:20,1');
+    Route::post('auth/account', [AuthController::class, 'account'])->middleware('throttle:10,1');
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
     Route::post('auth/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
     Route::post('auth/otp/resend', [AuthController::class, 'resendOtp'])->middleware('throttle:5,1');

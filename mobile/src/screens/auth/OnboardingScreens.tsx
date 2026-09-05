@@ -1,5 +1,6 @@
+import { Text } from '../../components/Typography';
 import React from 'react';
-import { Animated, Easing, type ImageSourcePropType, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Animated, Easing, type ImageSourcePropType, Pressable, StyleSheet, View, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 type Controls = { onNext: () => void; onBack?: () => void; onSkip?: () => void };
@@ -17,7 +18,7 @@ const THEME = {
   fontRegular: 'Poppins_400Regular',
   fontMedium: 'Poppins_500Medium',
   fontSemiBold: 'Poppins_600SemiBold',
-  fontBold: 'Poppins_900Bold',
+  fontBold: 'Poppins_700Bold',
 };
 
 // --- Reusable Sub-components ---

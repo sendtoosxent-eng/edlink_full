@@ -1,11 +1,13 @@
+import { AuthProgress } from './AuthProgress';
+import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../../theme';
 import { AuthLayout } from './AuthLayout';
 
 export function SchoolScreen({ school, error, busy, onChange, onBack, onContinue }: { school: string; error: string; busy: boolean; onChange: (value: string) => void; onBack: () => void; onContinue: () => void }) {
   return <AuthLayout eyebrow="Your school, your space" heroTitle="Find your school" heroSubtitle="Connect securely to your school workspace before signing in.">
-    <View style={styles.headingRow}><Pressable accessibilityLabel="Go back" onPress={onBack} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable><View style={styles.step}><View style={[styles.dot, styles.dotActive]} /><View style={styles.dot} /><View style={styles.dot} /></View></View>
+    <View style={styles.headingRow}><Pressable accessibilityLabel="Go back" onPress={onBack} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable><AuthProgress step={1} /></View>
     <View>
       <Text style={styles.title}>Enter your school number</Text><Text style={styles.lead}>Use the number provided by your school administrator. We’ll load the correct school name and logo for you.</Text>
       <Text style={styles.label}>School number</Text><View style={[styles.field, !!error && styles.fieldError]}><View style={styles.fieldIcon}><Ionicons name="school-outline" size={22} color={colors.gold} /></View><TextInput accessibilityLabel="School number" value={school} onChangeText={value => onChange(value.toUpperCase())} placeholder="e.g. EDL-4K9P2" placeholderTextColor="#85838B" autoCapitalize="characters" autoCorrect={false} returnKeyType="go" onSubmitEditing={onContinue} style={styles.input} />{school ? <Pressable accessibilityLabel="Clear school number" onPress={() => onChange('')} hitSlop={10}><Ionicons name="close-circle" size={20} color={colors.muted} /></Pressable> : null}</View>

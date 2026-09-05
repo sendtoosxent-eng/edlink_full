@@ -40,6 +40,24 @@ class AuthController extends ApiController
         ]);
     }
 
+    public function account(Request $request)
+    {
+        $data = $request->validate([
+            'school_number' => ['required', 'string', 'max:32'],
+            'email' => ['required', 'email', 'max:255'],
+            'expected_role' => ['required', 'in:teacher,student,parent'],
+        ]);
+        $school = School::where('school_number', strtoupper(trim($data['school_number'])))->first();
+        $user = $school?->users()->whereRaw('LOWER(email) = ?', [strtolower(trim($data['email']))])
+            ->where('role', $data['expected_role'])->first();
+        if (! $school || ! $school->isLicenceUsable() || $school->isExpiredDemo()
+            || ! $user || ! $user->hasVerifiedEmail() || $user->employment_status === 'inactive') {
+            throw ValidationException::withMessages(['email' => ['We could not find an active account for this school and role.']]);
+        }
+
+        return $this->ok(['name' => $user->name, 'avatar_url' => $user->avatarUrl()]);
+    }
+
     public function login(LoginRequest $request)
     {
         $school = School::where('school_number', strtoupper($request->string('school_number')))->first();

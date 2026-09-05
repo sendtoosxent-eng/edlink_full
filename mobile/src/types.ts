@@ -1,4 +1,5 @@
 export type Role = 'teacher' | 'student' | 'parent';
+export type AccountIdentity = { name: string; avatar_url: string | null };
 export type SchoolIdentity = { number: string; name: string; logo_url?: string | null; is_demo: boolean };
 export type User = { id: number; name: string; email: string; role: Role; avatar_url?: string | null; school: { id: number; number: string; name: string }; permissions: string[] };
 export type AuthSuccess = { otp_required: false; token: string; user: User };

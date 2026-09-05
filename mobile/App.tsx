@@ -1,9 +1,14 @@
+import { TabTransition } from './src/components/TabTransition';
+import { BrandLoader } from './src/components/BrandLoader';
+import { Text } from './src/components/Typography';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from '@expo-google-fonts/poppins';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { api, ApiError } from './src/api';
 import { AuthFlow } from './src/screens/auth/AuthFlow';
@@ -12,7 +17,6 @@ import { colors, radius } from './src/theme';
 import { ParentDashboardScreen, StudentDashboardScreen, TeacherDashboardScreen, type AppTab } from './src/screens/app/DashboardScreens';
 import { BottomTabBar } from './src/components/Navigation';
 import { ProfileScreen } from './src/screens/app/ProfileScreen';
-import { BrandLogo } from './src/components/BrandLogo';
 import { PageIntro as ScreenHeader } from './src/components/PageIntro';
 import { PaymentsScreen } from './src/screens/app/PaymentsScreen';
 import { LeaveRequestScreen, NotificationsScreen, TeacherToolPlaceholder } from './src/screens/app/TeacherToolsScreens';
@@ -23,6 +27,7 @@ const STATUSES: AttendanceStatus[] = ['present', 'absent', 'late', 'excused'];
 type Tab = AppTab;
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold });
   const [session, setSession] = useState<{ token: string; user: User }>();
   const [lockedToken, setLockedToken] = useState<string>();
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -65,9 +70,9 @@ export default function App() {
   };
   const signOut = async () => { if (session) await api.logout(session.token).catch(() => undefined); await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); setLockedToken(undefined); setSession(undefined); };
   return (
-    <SafeAreaProvider>
-      {booting ? <LoadingScreen /> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} />}
-    </SafeAreaProvider>
+    <SafeAreaProvider><KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+      {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} />}
+    </KeyboardProvider></SafeAreaProvider>
   );
 }
 
@@ -78,7 +83,7 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
   return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
     {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
-    <View style={styles.screen}>
+    <TabTransition screen={tab} order={tabs}>
       {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}
       {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
       {tab === 'homework' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
@@ -92,7 +97,7 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
       {user.role === 'teacher' && tab === 'teacher_results' && <TeacherToolPlaceholder title="Results" description="Review published results for learners within your academic scope." icon="trophy-outline" onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_homework' && <TeacherToolPlaceholder title="Add homework" description="Create and publish homework for an assigned class and subject." icon="add-circle-outline" onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'homework' && <Pressable accessibilityRole="button" accessibilityLabel="Add homework" onPress={() => setTab('add_homework')} style={styles.floatingAdd}><Ionicons name="add" size={30} color={colors.gold} /></Pressable>}
-    </View>
+    </TabTransition>
     <BottomTabBar tabs={tabs} activeTab={activeRoot} onSelect={setTab} />
   </SafeAreaView>;
 }
@@ -151,7 +156,7 @@ function attendanceSession(assignment: Assignment) { return assignment.attendanc
 function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, (pressed || disabled) && styles.buttonMuted]}><Text style={styles.primaryButtonText}>{label}</Text></Pressable>; }
 function ChildPicker({ children, selected, onSelect }: { children: Student[]; selected?: number; onSelect: (id: number) => void }) { return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childPicker} contentContainerStyle={styles.chipRow}>{children.map(child => <Pressable key={child.id} onPress={() => onSelect(child.id)} style={[styles.chip, child.id === selected && styles.chipActive]}><Text style={[styles.chipText, child.id === selected && styles.chipTextActive]}>{child.name}</Text></Pressable>)}</ScrollView>; }
 function Stat({ label, value }: { label: string; value: string }) { return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>; } function Pill({ status }: { status: AttendanceStatus }) { return <View style={[styles.pill, styles[`status_${status}`]]}><Text style={styles.pillText}>{capitalize(status)}</Text></View>; } function Section({ title }: { title: string }) { return <Text style={styles.sectionTitle}>{title}</Text>; }
-function InlineLoading() { return <View style={styles.center}><ActivityIndicator color="#176B5B" size="large" /><Text style={styles.muted}>Loading Edlink…</Text></View>; } function LoadingScreen() { return <SafeAreaView style={[styles.safe, styles.center]}><BrandLogo /><ActivityIndicator color="#176B5B" /></SafeAreaView>; } function Empty({ message, compact }: { message: string; compact?: boolean }) { return <View style={[styles.empty, compact && styles.emptyCompact]}><Text style={styles.emptyText}>{message}</Text></View>; } function ErrorState({ message, retry }: { message: string; retry: () => void }) { return <View style={styles.center}><Text style={styles.errorTitle}>We couldn’t load this</Text><Text style={styles.muted}>{message}</Text><PrimaryButton label="Try again" onPress={retry} /></View>; }
+function InlineLoading() { return <BrandLoader />; } function Empty({ message, compact }: { message: string; compact?: boolean }) { return <View style={[styles.empty, compact && styles.emptyCompact]}><Text style={styles.emptyText}>{message}</Text></View>; } function ErrorState({ message, retry }: { message: string; retry: () => void }) { return <View style={styles.center}><Text style={styles.errorTitle}>We couldn’t load this</Text><Text style={styles.muted}>{message}</Text><PrimaryButton label="Try again" onPress={retry} /></View>; }
 function messageFor(error: unknown) { return error instanceof ApiError ? error.message : 'Cannot reach the Edlink server. Check your connection.'; } function firstName(name: string) { return name.trim().split(/\s+/)[0] || 'there'; } function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase(); } function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); } function shortTime(value: string) { return value?.slice(0, 5) ?? ''; } function formatDate(value: string) { const date = new Date(value.length === 10 ? `${value}T12:00:00` : value); return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); } function average(exam: ExamResult) { const papers = exam.papers.filter(paper => paper.score != null && paper.maximum_score > 0); return papers.length ? Math.round(papers.reduce((sum, paper) => sum + Number(paper.score) / paper.maximum_score * 100, 0) / papers.length) : 0; }
 
 const styles = StyleSheet.create({

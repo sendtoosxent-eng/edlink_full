@@ -1,6 +1,7 @@
+import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { api, ApiError } from '../../api';
 import { PageIntro } from '../../components/PageIntro';
 import { colors, radius, shadows } from '../../theme/index';

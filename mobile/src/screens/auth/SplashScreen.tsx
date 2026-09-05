@@ -1,5 +1,6 @@
+import { Text } from '../../components/Typography';
 import { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, View } from 'react-native';
 
 const LOGO_IMAGE = require('../../../assets/img/edlink-logo.png');
 

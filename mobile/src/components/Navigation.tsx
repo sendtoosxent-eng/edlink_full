@@ -1,5 +1,6 @@
+import { Text } from './Typography';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Pressable, Text, StyleSheet, Animated, LayoutChangeEvent } from 'react-native';
+import { View, Pressable, StyleSheet, Animated, LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadows } from '../theme/index';

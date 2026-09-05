@@ -1,5 +1,6 @@
+import { Text, TextInput } from '../../components/Typography';
 import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../../theme';
 
 export function AuthHeader({ onBack, accountStep = false }: { onBack: () => void; accountStep?: boolean }) {

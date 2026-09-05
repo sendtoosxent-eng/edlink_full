@@ -142,3 +142,21 @@ it('shows portal users only their own homework submission and protects teacher r
     $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review",['score'=>21])->assertUnprocessable();
     $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review",['score'=>18,'feedback'=>'Well done'])->assertOk();
 });
+
+it('looks up only an active school account and returns just its display identity', function () {
+    $data = mobileFixture();
+    $payload = ['school_number' => strtolower($data['school']->school_number), 'email' => strtoupper($data['teacher']->email), 'expected_role' => 'teacher'];
+    $this->postJson('/api/v1/auth/account', $payload)->assertOk()
+        ->assertExactJson(['data' => ['name' => $data['teacher']->name, 'avatar_url' => null], 'meta' => []]);
+    expect($data['teacher']->tokens()->count())->toBe(0);
+    $this->postJson('/api/v1/auth/account', [...$payload, 'expected_role' => 'parent'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'school_number' => 'EDL-OTHER'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'email' => 'missing@example.test'])->assertUnprocessable();
+    $data['teacher']->update(['employment_status' => 'inactive']);
+    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
+    $data['teacher']->forceFill(['employment_status' => 'active', 'email_verified_at' => null])->save();
+    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
+    $data['teacher']->forceFill(['email_verified_at' => now()])->save();
+    $data['school']->update(['license_status' => 'expired', 'license_expires_at' => now()->subDay()]);
+    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
+});

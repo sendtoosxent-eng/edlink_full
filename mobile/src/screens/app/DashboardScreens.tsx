@@ -1,6 +1,7 @@
+import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { colors, radius, shadows } from '../../theme/index';
 import type { Dashboard, User } from '../../types';
 

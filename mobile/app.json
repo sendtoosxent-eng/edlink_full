@@ -48,7 +48,8 @@
             "image": "./assets/splash-icon.png"
           }
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text } from './Typography';
+import { StyleSheet, View } from 'react-native';
 import { colors, radius, shadows } from '../theme/index';
 
 export function PageIntro({ title, description, subtitle }: { title: string; description?: string; subtitle?: string; icon?: unknown; user?: unknown }) {

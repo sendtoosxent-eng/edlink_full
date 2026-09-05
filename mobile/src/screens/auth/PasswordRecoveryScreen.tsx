@@ -1,6 +1,7 @@
+import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../../theme';
 import type { SchoolIdentity } from '../../types';
 import { AuthLayout } from './AuthLayout';

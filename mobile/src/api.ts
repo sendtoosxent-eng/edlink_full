@@ -1,4 +1,4 @@
-import type { AuthSuccess, LoginResult, Role, SchoolIdentity, User } from './types';
+import type { AccountIdentity, AuthSuccess, LoginResult, Role, SchoolIdentity, User } from './types';
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://edlink.space/api/v1').replace(/\/$/, '');
 type Envelope<T> = { data: T; meta?: Record<string, unknown> };
@@ -28,6 +28,7 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
 }
 
 export const api = {
+  account: (school_number: string, email: string, expected_role: Role) => request<AccountIdentity>('/auth/account', undefined, { method: 'POST', body: JSON.stringify({ school_number, email, expected_role }) }),
   school: (school_number: string) => request<SchoolIdentity>('/auth/school', undefined, { method: 'POST', body: JSON.stringify({ school_number }) }),
   login: (body: { school_number: string; email: string; password: string; device_name: string; expected_role: Role }) => request<LoginResult>('/auth/login', undefined, { method: 'POST', body: JSON.stringify(body) }),
   verifyOtp: (body: { challenge_token: string; code: string; device_name: string }) => request<AuthSuccess>('/auth/otp/verify', undefined, { method: 'POST', body: JSON.stringify(body) }),
