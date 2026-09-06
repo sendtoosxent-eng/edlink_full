@@ -81,7 +81,7 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
   const workspace = data.teacher_workspace;
   return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
     <TopBar user={user} />
-    <GreetingCard user={user} title={`Welcome, ${firstName(user.name)}`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
+    <GreetingCard user={user} title={`Hi, ${firstName(user.name)}!`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
     {workspace && <View style={[styles.listCard, { marginTop: 14, paddingVertical: 14 }]}>
       <Text style={styles.cardTitle}>{workspace.class_teacher_classes.length ? 'My class responsibility' : 'My teaching assignments'}</Text>
       {!!workspace.class_teacher_classes.length && <Text style={styles.bodyCopy}>{workspace.class_teacher_classes.map(item => item.name).join(' · ')} — daily register and class learner tools</Text>}

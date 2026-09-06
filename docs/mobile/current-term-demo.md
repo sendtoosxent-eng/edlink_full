@@ -1,0 +1,15 @@
+# EDL-TEACH current-term app demo
+
+From the deployed Laravel project directory (the directory containing `artisan`):
+
+```sh
+git pull --ff-only origin main
+php artisan db:seed --class=EdlTeachCurrentTermDemoSeeder --force
+php artisan view:cache
+```
+
+The seeder requires school EDL-TEACH to be marked as a demo and its current term to be open and unlocked. It does not switch terms, reset accounts, or change student names. It adds data for every active learner with a class: two synthetic payments totaling UGX 150,000, seven days of attendance, and a published assessment with Mathematics, English and Science scores. Payments have synthetic posted ledger entries for mobile visibility; this is demonstration data, not actual receipts or reconciled accounting. No receipt notifications are sent.
+
+Rerunning does not duplicate payments or assessment papers. Attendance is added for the latest seven days, preserving existing demo dates. The command reports the actual current term used. These records supplement existing records.
+
+Refresh or reopen the app's Home, School fees, Results, and Attendance screens after running the command. The default mobile API is https://edlink.space/api/v1, so local database seeding alone does not populate the hosted app.

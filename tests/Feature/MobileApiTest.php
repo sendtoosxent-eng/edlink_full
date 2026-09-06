@@ -343,3 +343,17 @@ it('accepts student homework attachments and clears stale review on resubmission
     $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Revised', 'base_version' => $submission->fresh()->updated_at->toISOString()])->assertOk()->assertJsonPath('data.score', null)->assertJsonPath('data.feedback', null)->assertJsonPath('data.status', 'late');
     $this->get('/api/v1/homework/'.$assignment->id.'/submissions/'.$submission->id.'/attachment')->assertOk()->assertDownload('answer.txt');
 });
+
+it('seeds current-term demo data visible through the student mobile API without duplicate payments', function () {
+    $data = mobileFixture();
+    $data['school']->update(['school_number' => 'EDL-TEACH', 'is_demo' => true]);
+    $this->seed(\Database\Seeders\EdlTeachCurrentTermDemoSeeder::class);
+    $this->seed(\Database\Seeders\EdlTeachCurrentTermDemoSeeder::class);
+    Sanctum::actingAs($data['studentUser'], ['mobile']);
+    $this->getJson('/api/v1/payments')->assertOk()->assertJsonCount(2, 'data.payments')->assertJsonPath('data.summary.paid', 150000);
+    $this->getJson('/api/v1/attendance')->assertOk()->assertJsonCount(7, 'data.data');
+    $results = $this->getJson('/api/v1/results')->assertOk();
+    expect(collect($results->json('data'))->firstWhere('name', 'App Demo Current Term Assessment')['papers'])->toHaveCount(3);
+    expect(\App\Models\AttendanceRecord::where('student_id', $data['student']->id)->where('term_id', $data['term']->id)->count())->toBe(7);
+    expect(\App\Models\FeePayment::where('school_id', $data['foreign']->school_id)->count())->toBe(0);
+});
