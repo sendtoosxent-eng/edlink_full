@@ -194,3 +194,81 @@ it('does not combine unrelated class and subject assignments in dashboard averag
     Sanctum::actingAs($data['teacher'], ['mobile']);
     $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonPath('data.analytics.performance_labels', []);
 });
+
+it('limits the native class directory to teachers allowed to view learners', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/teacher/students')->assertForbidden();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    $response = $this->getJson('/api/v1/teacher/students')->assertOk();
+    expect(collect($response->json('data.data'))->pluck('id')->all())->toContain($data['student']->id)->not->toContain($data['foreign']->id);
+    $this->getJson('/api/v1/teacher/students?search=Linked%20Learner')->assertOk()->assertJsonCount(2, 'data.data');
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $this->getJson('/api/v1/teacher/students')->assertForbidden();
+});
+
+it('serves native subjects and protects school tool actions', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/teacher/tools/subjects.index')->assertOk()->assertJsonPath('data.rows.0.title', 'Mathematics');
+    $this->getJson('/api/v1/teacher/tools/payroll.index')->assertForbidden();
+    $this->postJson('/api/v1/teacher/tools/events.index', ['action' => 'save_event'])->assertForbidden();
+    $data['teacher']->designation->update(['permissions' => ['academics.events', 'students.manage', 'parents.manage']]);
+    $data['teacher']->unsetRelation('designation');
+    $this->postJson('/api/v1/teacher/tools/events.index', ['action' => 'save_event', 'title' => 'Sports day', 'term_id' => $data['term']->id, 'event_date' => today()->toDateString(), 'type' => 'sports', 'target_audience' => 'all'])->assertOk();
+    $this->postJson('/api/v1/teacher/tools/student-categories.index', ['action' => 'add', 'name' => 'Boarding'])->assertOk();
+    $this->assertDatabaseHas('student_categories', ['school_id' => $data['school']->id, 'name' => 'Boarding']);
+    $this->postJson('/api/v1/teacher/tools/parents.register', ['action' => 'save', 'name' => 'Native parent', 'email' => 'native.parent@example.test', 'phone' => '', 'relationship' => 'Parent', 'password' => 'long-enough-password', 'studentIds' => [$data['foreign']->id]])->assertUnprocessable();
+    $this->postJson('/api/v1/teacher/tools/parents.register', ['action' => 'save', 'name' => 'Native parent', 'email' => 'native.parent@example.test', 'phone' => '', 'relationship' => 'Parent', 'password' => 'long-enough-password', 'studentIds' => [$data['student']->id]])->assertOk();
+});
+
+it('uses the shared exam report calculation for native results', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/teacher/exams')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/teacher/exams/'.$data['paper']->exam_id)->assertOk()->assertJsonPath('data.readiness.all_papers_approved', false)->assertJsonCount(2, 'data.learners');
+});
+
+it('renders native teacher report modules with the website scopes', function () {
+    $data = mobileFixture();
+    $data['teacher']->designation->update(['permissions' => ['reports.view', 'attendance.reports', 'academics.events']]);
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    foreach (['reports.index', 'reports.student-term-report', 'reports.bulk-term-reports', 'attendance.reports', 'events.index'] as $tool) {
+        $this->getJson('/api/v1/teacher/tools/'.$tool)->assertOk()->assertJsonStructure(['data' => ['rows', 'forms']]);
+    }
+});
+
+it('downloads homework attachments only within the teachers own assignments', function () {
+    $data = mobileFixture();
+    \Illuminate\Support\Facades\Storage::fake('local');
+    \Illuminate\Support\Facades\Storage::disk('local')->put('homework/example.txt', 'Homework content');
+    $assignment = HomeworkAssignment::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'teacher_id' => $data['teacher']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'title' => 'Native attachment', 'instructions' => 'Read', 'maximum_score' => 10, 'due_at' => now()->addDay(), 'published_at' => now(), 'attachment_path' => 'homework/example.txt', 'attachment_name' => 'example.txt']);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->get('/api/v1/homework/'.$assignment->id.'/attachment')->assertOk()->assertDownload('example.txt');
+    $otherTeacher = User::factory()->create(['school_id' => $data['school']->id, 'role' => 'teacher']);
+    Sanctum::actingAs($otherTeacher, ['mobile']);
+    $this->getJson('/api/v1/homework/'.$assignment->id.'/attachment')->assertForbidden();
+});
+
+
+it('provides a native response for every permission-granted workspace tool', function () {
+    $data = mobileFixture();
+    $data['teacher']->designation->update(['permissions' => array_keys(\App\Support\DesignationPermissions::groups())]);
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $tools = \App\Support\MobileTeacherWorkspace::forUser($data['teacher'])['tools'];
+    foreach ($tools as $tool) {
+        if ($tool['native'] || $tool['id'] === 'exams.results') continue;
+        $this->getJson('/api/v1/teacher/tools/'.$tool['id'])->assertOk()->assertJsonStructure(['data' => ['title', 'rows', 'forms', 'page', 'last_page']]);
+    }
+});
+
+it('keeps native profile editing behind learner-management permission', function () {
+    $data = mobileFixture();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/teacher/students/'.$data['student']->id)->assertOk()->assertJsonPath('data.can_edit', false);
+    $this->postJson('/api/v1/teacher/students/'.$data['student']->id, ['name' => 'Changed'])->assertForbidden();
+    $this->getJson('/api/v1/teacher/students/'.$data['foreign']->id)->assertNotFound();
+});

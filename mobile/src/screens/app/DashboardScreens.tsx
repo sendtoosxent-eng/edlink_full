@@ -1,12 +1,12 @@
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { colors, radius, shadows } from '../../theme/index';
-import { API_URL } from '../../api';
+import { ACCESS_SECTIONS, toolSection } from './TeacherAccessScreen';
 import type { Dashboard, User } from '../../types';
 
-export type AppTab = 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
+export type AppTab = 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
 type Lesson = Dashboard['next_lesson'];
 type DashboardUser = User & { onSignOut?: () => Promise<void>; navigate?: (tab: AppTab) => void; nextLesson?: Lesson };
 type Props = { data: Dashboard; user: DashboardUser; attendanceRate: number | null; navigate: (tab: AppTab) => void; refreshing?: boolean; onRefresh?: () => void };
@@ -14,7 +14,9 @@ type IconName = React.ComponentProps<typeof Ionicons>['name'];
 const EMPTY_ANALYTICS = { attendance_labels: [] as string[], present_series: [] as number[], absent_series: [] as number[], performance_labels: [] as string[], performance_series: [] as number[], stats: {} as Record<string, number> };
 
 function TopBar({ user }: { user: DashboardUser }) {
-  return <View style={styles.topBar}><Image accessibilityLabel="Edlink" source={require('../../../assets/img/edlink-logo.png')} style={styles.topLogo} resizeMode="contain" /><View style={styles.topActions}><Pressable accessibilityRole="button" accessibilityLabel="Open notifications" onPress={() => user.navigate?.('notifications')} style={styles.bellButton}><Ionicons name="notifications-outline" size={21} color={colors.primary} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Log out" onPress={() => void user.onSignOut?.()} style={styles.logoutButton}><Ionicons name="log-out-outline" size={21} color={colors.primary} /></Pressable></View></View>;
+  return <View style={styles.topBar}><Image accessibilityLabel="Edlink" source={require('../../../assets/img/edlink-logo.png')}
+  style={styles.topLogo} resizeMode="contain" /><View style={styles.topActions}><Pressable accessibilityRole="button" accessibilityLabel="Open notifications" onPress={() => user.navigate?.('notifications')} style={styles.bellButton}>
+    <Ionicons name="notifications-outline" size={21} color={colors.secondary} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Log out" onPress={() => void user.onSignOut?.()} style={styles.logoutButton}><Ionicons name="log-out-outline" size={21} color={colors.secondary} /></Pressable></View></View>;
 }
 
 function Avatar({ name, uri, size = 54 }: { name: string; uri?: string | null; size?: number }) {
@@ -30,7 +32,10 @@ function GreetingCard({ user, title, subtitle, imageName, imageUri }: { user: Us
 }
 
 function StatGrid({ items }: { items: Array<{ icon: IconName; label: string; value: number | string; tone?: 'gold' | 'green' | 'blue' }> }) {
-  return <View style={styles.statGrid}>{items.map(item => <View key={item.label} style={[styles.statCard, shadows.card]}><View style={[styles.statIcon, item.tone === 'green' && styles.statIconGreen, item.tone === 'blue' && styles.statIconBlue]}><Ionicons name={item.icon} size={19} color={colors.primary} /></View><Text style={styles.statValue}>{item.value}</Text><Text style={styles.statLabel}>{item.label}</Text></View>)}</View>;
+  return <View style={styles.statGrid}>{items.map(item => <View key={item.label} style={styles.statCard}>
+    <View style={styles.statTop}><Text adjustsFontSizeToFit numberOfLines={1} style={styles.statValue}>{item.value}</Text><Ionicons name={item.icon} size={20} color={colors.secondary} /></View>
+    <Text style={styles.statLabel}>{item.label}</Text>
+  </View>)}</View>;
 }
 
 function AttendanceChart({ data, rate, onPress }: { data: Dashboard; rate: number | null; onPress: () => void }) {
@@ -73,11 +78,6 @@ function EmptyInline({ icon, text }: { icon: IconName; text: string }) { return 
 export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
   const stats = data.analytics?.stats ?? {};
   const workspace = data.teacher_workspace;
-  const openTool = async (tool: NonNullable<Dashboard['teacher_workspace']>['tools'][number]) => {
-    if (tool.native) { navigate(tool.native as AppTab); return; }
-    try { await Linking.openURL(`${API_URL.replace(/\/api\/v1$/, '')}${tool.path}`); }
-    catch { Alert.alert('Unable to open tool', 'Please try again.'); }
-  };
   return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
     <TopBar user={user} />
     <GreetingCard user={user} title={`Welcome, ${firstName(user.name)}`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
@@ -89,15 +89,10 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
     <StatGrid items={[{ icon: 'people-outline', label: 'Learners', value: stats.learners ?? 0, tone: 'blue' }, { icon: 'easel-outline', label: 'Classes', value: stats.classes ?? 0 }, { icon: 'book-outline', label: 'Subjects', value: stats.subjects ?? 0, tone: 'green' }]} />
     <StatGrid items={[{ icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? 0 }, { icon: 'checkbox-outline', label: 'Recorded today', value: stats.attendance_today ?? 0, tone: 'green' }, { icon: 'document-text-outline', label: 'Pending marks', value: stats.pending_marks ?? 0, tone: 'blue' }]} />
     <SectionHeader title="Teacher workspace" subtitle="Tools available for your assignments and school permissions" />
-    {workspace ? [...new Set(workspace.tools.map(tool => tool.group))].map(group => <View key={group} style={{ marginBottom: 16 }}>
-      <Text style={[styles.cardTitle, { marginBottom: 9 }]}>{group}</Text>
-      <View style={styles.quickRow}>{workspace.tools.filter(tool => tool.group === group).map(tool => <Pressable accessibilityRole="button" key={tool.id} onPress={() => void openTool(tool)} style={styles.quickAction}>
-        <View style={styles.quickIcon}><Ionicons name={tool.native ? 'apps-outline' : 'open-outline'} size={21} color={colors.primary} /></View>
-        <Text style={styles.quickLabel}>{tool.label}</Text>
-        {!tool.native && <Text style={styles.webLabel}>Website</Text>}
-      </Pressable>)}</View>
-    </View>) : <QuickActions role="teacher" navigate={navigate} />}
-    {workspace && <Text style={styles.bodyCopy}>Website tools open in your browser and may ask you to sign in.</Text>}
+    <View style={styles.quickRow}>{ACCESS_SECTIONS.map(section => <Pressable key={section.tab} accessibilityRole="button" onPress={() => navigate(section.tab)} style={styles.accessCard}>
+      <Ionicons name={section.icon} size={28} color="white" /><Text style={styles.accessTitle}>{section.title}</Text><Text style={styles.accessDescription}>{section.description}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}><Text style={styles.accessDescription}>{workspace ? `${workspace.tools.filter(tool => toolSection(tool.group) === section.tab).length} tools` : 'Explore tools'}</Text><Ionicons name="arrow-forward" size={20} color="white" /></View>
+    </Pressable>)}</View>
     <SectionHeader title="My attendance activity" subtitle="Registers you recorded over the last seven days" /><AttendanceChart data={data} rate={attendanceRate} onPress={() => navigate('attendance')} />
     <SectionHeader title="Subject insights" /><PerformanceChart data={data} />
     <SectionHeader title="Today’s timetable" /><Schedule data={data} />
@@ -129,14 +124,19 @@ function eventDate(value: string, part: 'day' | 'month') { const date = new Date
 function nextLessonCopy(lesson: Lesson | undefined, now: number) { if (!lesson) return 'No more lessons scheduled today'; const day = new Date(); const [startHour, startMinute] = lesson.starts_at.slice(0, 5).split(':').map(Number); const [endHour, endMinute] = lesson.ends_at.slice(0, 5).split(':').map(Number); const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), startHour, startMinute).getTime(); const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), endHour, endMinute).getTime(); const name = lesson.subject ?? lesson.label ?? 'Next lesson'; if (now >= start && now < end) return `${name} is going on · ends ${shortTime(lesson.ends_at)}`; const minutes = Math.max(0, Math.ceil((start - now) / 60_000)); const countdown = minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes} min`; return `${name} starts in ${countdown}`; }
 
 const styles = StyleSheet.create({
+  accessCard: { width: '47%', flexGrow: 1, backgroundColor: colors.primary, borderRadius: 20, padding: 18, minHeight: 180 }, accessTitle: { color: 'white', fontSize: 17, fontWeight: '800', marginTop: 12 }, accessDescription: { color: '#D8E2F2', fontSize: 11, lineHeight: 17, marginTop: 4 },
   bodyCopy: { color: colors.textMuted, fontSize: 12, lineHeight: 21, marginTop: 7 }, webLabel: { color: colors.textMuted, fontSize: 9, marginTop: 3, marginBottom: 8 },
   screen: { flex: 1, backgroundColor: colors.background }, content: { paddingHorizontal: 18, paddingBottom: 34 },
-  topBar: { minHeight: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, topLogo: { width: 142, height: 62, marginLeft: 10 }, topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 }, bellButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.secondary, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }, logoutButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.secondary, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  topBar: { minHeight: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, topLogo: { width: 142, height: 62, marginLeft: 10 }, topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 }, bellButton: { width: 42, height: 42, borderRadius: 35, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }, logoutButton: { width: 42, height: 42, borderRadius: 25, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   avatar: { backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 2, borderColor: colors.surface }, avatarImage: { resizeMode: 'cover' }, avatarText: { color: colors.primary, fontWeight: '900', fontSize: 15 },
   greetingCard: { minHeight: 190, borderRadius: radius.lg, backgroundColor: colors.primaryCard, padding: 22, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }, greetingGlow: { position: 'absolute', width: 210, height: 210, borderRadius: 105, backgroundColor: colors.primary, right: -65, top: -85, opacity: 0.7 }, greetingCopy: { flex: 1, paddingRight: 12 }, greetingEyebrow: { color: colors.secondary, fontSize: 10, fontWeight: '900', letterSpacing: 1.3 }, greetingTitle: { color: colors.textLight, fontSize: 23, lineHeight: 29, fontWeight: '900', marginTop: 8 }, greetingSubtitle: { color: '#C9D1E5', fontSize: 12, lineHeight: 18, marginTop: 6 },
   datePill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.secondary, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 6, marginTop: 13 }, dateText: { color: colors.primary, fontSize: 10, fontWeight: '800' },
   lessonPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 }, lessonText: { color: colors.secondary, fontSize: 10, lineHeight: 14, fontWeight: '800', flexShrink: 1 },
-  statGrid: { flexDirection: 'row', gap: 9, marginTop: 14 }, statCard: { flex: 1, minHeight: 116, borderRadius: radius.md, backgroundColor: colors.surface, padding: 12, borderWidth: 1, borderColor: colors.border }, statIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: '#FFF2CF', alignItems: 'center', justifyContent: 'center' }, statIconGreen: { backgroundColor: colors.status.present.bg }, statIconBlue: { backgroundColor: colors.status.excused.bg }, statValue: { color: colors.textDark, fontSize: 22, fontWeight: '900', marginTop: 10 }, statLabel: { color: colors.textMuted, fontSize: 10, lineHeight: 14, marginTop: 2 },
+  statGrid: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  statCard: { flex: 1, minWidth: 0, minHeight: 102, borderRadius: 16, backgroundColor: colors.primary, paddingHorizontal: 13, paddingVertical: 16 },
+  statTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 5 },
+  statValue: { flexShrink: 1, color: '#FFFFFF', fontSize: 28, lineHeight: 35, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  statLabel: { color: '#D8E2F2', fontSize: 10, lineHeight: 15, fontWeight: '500', marginTop: 9 },
   sectionHeader: { marginTop: 25, marginBottom: 11 }, sectionTitle: { color: colors.textDark, fontSize: 19, fontWeight: '900' }, sectionSubtitle: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 }, quickAction: { width: '31%', flexGrow: 1, minHeight: 91, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }, quickIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }, quickLabel: { color: colors.textDark, fontSize: 11, fontWeight: '800', marginTop: 7, textAlign: 'center' },
   chartCard: { borderRadius: radius.md, backgroundColor: colors.surface, padding: 16, borderWidth: 1, borderColor: colors.border }, cardHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, cardTitle: { color: colors.textDark, fontSize: 16, fontWeight: '900' }, cardCaption: { color: colors.textMuted, fontSize: 10, marginTop: 3 }, rateValue: { color: colors.primary, fontSize: 25, fontWeight: '900' },

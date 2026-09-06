@@ -28,6 +28,9 @@ class HomeworkController extends ApiController
         abort_unless($term, 422, 'Open a term before creating homework.');
         MobileAccess::teacherStudentQuery($user,$data['school_class_id'],$data['subject_id'])->exists();
         if (! empty($data['stream_id'])) abort_unless(Stream::where('school_id',$user->school_id)->where('school_class_id',$data['school_class_id'])->whereKey($data['stream_id'])->exists(),422,'The selected stream does not belong to this class.');
+        $attachment = $request->file('attachment');
+        unset($data['attachment']);
+        if ($attachment) { $data['attachment_path'] = $attachment->store('homework/assignments', 'local'); $data['attachment_name'] = $attachment->getClientOriginalName(); }
         $assignment=HomeworkAssignment::create([...$data,'school_id'=>$user->school_id,'term_id'=>$term->id,'teacher_id'=>$user->id,'published_at'=>now()]);
         AuditLog::record($user->school_id,'mobile.homework.created',$assignment);
         return $this->ok($assignment);
@@ -53,6 +56,17 @@ class HomeworkController extends ApiController
         if($existing&&!empty($data['base_version'])&&$existing->updated_at->gt($data['base_version'])) return response()->json(['message'=>'Submission changed on another device.','code'=>'conflict'],409);
         $submission=HomeworkSubmission::updateOrCreate(['homework_assignment_id'=>$item->id,'student_id'=>$student->id],['submitted_by'=>$request->user()->id,'answer'=>$data['answer'],'submitted_at'=>now(),'status'=>'submitted']);
         return $this->ok($submission);
+    }
+
+    public function download(Request $request, int $assignment, ?int $submission = null)
+    {
+        $item = MobileAccess::homework($request->user(), $assignment);
+        $record = $submission ? HomeworkSubmission::where('homework_assignment_id', $item->id)->findOrFail($submission) : $item;
+        if ($submission && !TeacherAcademicScope::isTeacher($request->user())) {
+            abort_unless($record->student_id === MobileAccess::student($request->user(), $request->integer('student_id') ?: null)->id, 403);
+        }
+        abort_unless($record->attachment_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($record->attachment_path), 404);
+        return \Illuminate\Support\Facades\Storage::disk('local')->download($record->attachment_path, $record->attachment_name, ['Cache-Control' => 'private, no-store']);
     }
 
     public function review(Request $request,int $assignment,int $submission)

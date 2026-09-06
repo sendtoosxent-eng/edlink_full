@@ -15,6 +15,12 @@ interface TabBarProps {
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_CONFIG: Record<AppTab, { label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName }> = {
+  class_access: { label: 'My Classes', activeIcon: 'people', inactiveIcon: 'people-outline' },
+  teaching_access: { label: 'Teaching', activeIcon: 'book', inactiveIcon: 'book-outline' },
+  reports_access: { label: 'Reports', activeIcon: 'bar-chart', inactiveIcon: 'bar-chart-outline' },
+  school_access: { label: 'My School', activeIcon: 'school', inactiveIcon: 'school-outline' },
+  class_students: { label: 'Students', activeIcon: 'people', inactiveIcon: 'people-outline' },
+  teacher_schedule: { label: 'Timetable', activeIcon: 'calendar', inactiveIcon: 'calendar-outline' },
   home: { label: 'Home', activeIcon: 'home', inactiveIcon: 'home-outline' },
   attendance: { label: 'Attendance', activeIcon: 'calendar', inactiveIcon: 'calendar-outline' },
   homework: { label: 'Homework', activeIcon: 'book', inactiveIcon: 'book-outline' },

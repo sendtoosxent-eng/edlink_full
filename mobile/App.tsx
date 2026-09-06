@@ -1,3 +1,7 @@
+import { NativeReportsScreen } from './src/screens/app/NativeReportsScreen';
+import { TeacherScheduleScreen } from './src/screens/app/TeacherScheduleScreen';
+import { TeacherDirectoryScreen } from './src/screens/app/TeacherDirectoryScreen';
+import { TeacherAccessScreen, ACCESS_SECTIONS, type AccessTab } from './src/screens/app/TeacherAccessScreen';
 import { TabTransition } from './src/components/TabTransition';
 import { BrandLoader } from './src/components/BrandLoader';
 import { Text } from './src/components/Typography';
@@ -19,7 +23,7 @@ import { BottomTabBar } from './src/components/Navigation';
 import { ProfileScreen } from './src/screens/app/ProfileScreen';
 import { PageIntro as ScreenHeader } from './src/components/PageIntro';
 import { PaymentsScreen } from './src/screens/app/PaymentsScreen';
-import { LeaveRequestScreen, NotificationsScreen, TeacherMarksScreen, AddHomeworkScreen, TeacherReportsScreen, TeacherHomeworkScreen } from './src/screens/app/TeacherToolsScreens';
+import { LeaveRequestScreen, NotificationsScreen, TeacherMarksScreen, AddHomeworkScreen, TeacherHomeworkScreen } from './src/screens/app/TeacherToolsScreens';
 
 const TOKEN_KEY = 'edlink.mobile.token';
 const BIOMETRIC_KEY = 'edlink.mobile.biometric-enabled';
@@ -84,6 +88,9 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
   return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
     {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
     <TabTransition screen={tab} order={tabs}>
+      {user.role === 'teacher' && ACCESS_SECTIONS.some(section => section.tab === tab) && <TeacherAccessScreen key={tab} token={token} section={tab as AccessTab} navigate={setTab} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'class_students' && <TeacherDirectoryScreen token={token} onBack={() => setTab('class_access')} />}
+      {user.role === 'teacher' && tab === 'teacher_schedule' && <TeacherScheduleScreen token={token} onBack={() => setTab('teaching_access')} />}
       {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}
       {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
       {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
@@ -95,7 +102,7 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
       {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'view_marks' && <TeacherMarksScreen token={token} readOnly onBack={() => setTab('home')} />}
-      {user.role === 'teacher' && tab === 'teacher_results' && <TeacherReportsScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'teacher_results' && <NativeReportsScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_homework' && <AddHomeworkScreen token={token} onBack={() => setTab('homework')} />}
       {user.role === 'teacher' && tab === 'homework' && <Pressable accessibilityRole="button" accessibilityLabel="Add homework" onPress={() => setTab('add_homework')} style={styles.floatingAdd}><Ionicons name="add" size={30} color={colors.gold} /></Pressable>}
     </TabTransition>

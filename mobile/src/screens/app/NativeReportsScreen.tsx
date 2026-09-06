@@ -1,0 +1,26 @@
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../components/Typography';
+import { api } from '../../api';
+import { colors } from '../../theme/index';
+type Exam = { id: number; name: string; class_name: string; term: string; year: number; published: boolean };
+type Report = { name: string; class_name: string; published: boolean; readiness: { ready: boolean; missing_marks: number; all_papers_approved: boolean }; learners: Array<{ id: number; name: string; admission_no: string; average: number; grade: string; position: number; subjects: Array<{ name: string; score: number | null; maximum: number; grade: string; applicable: boolean }> }> };
+export function NativeReportsScreen({ token, onBack }: { token: string; onBack: () => void }) {
+  const [exams, setExams] = useState<Exam[]>([]); const [report, setReport] = useState<Report>(); const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const load = useCallback(async () => { setBusy(true); setError(''); try { setExams((await api.get<Exam[]>('/teacher/exams', token)).data); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load exams.'); } finally { setBusy(false); } }, [token]);
+  useEffect(() => { void load(); }, [load]);
+  const select = async (id: number) => { setBusy(true); setError(''); try { setReport((await api.get<Report>(`/teacher/exams/${id}`, token)).data); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load results.'); } finally { setBusy(false); } };
+  const share = async (learner: Report['learners'][number]) => { if (!report) return; try { await Share.share({ message: `${report.name} · ${report.class_name}\n${learner.name} · ${learner.admission_no}\n${report.published ? 'Published' : 'Internal results'}\nAverage: ${learner.average}% · Grade: ${learner.grade} · Position: ${learner.position}\n\n${learner.subjects.filter(s => s.applicable).map(s => `${s.name}: ${s.score ?? '—'}/${s.maximum} · ${s.grade}`).join('\n')}` }); } catch { setError('Could not share report.'); } };
+  return <ScrollView contentContainerStyle={styles.content}><Pressable onPress={onBack}><Text style={styles.back}>← Reports</Text></Pressable><Text style={styles.title}>Results & report cards</Text>
+    {!!error && <Text>{error}</Text>}{busy && <Text>Loading…</Text>}
+    {!report ? <>{exams.map(exam => <Pressable disabled={busy} key={exam.id} onPress={() => void select(exam.id)} style={styles.card}><Text style={styles.heading}>{exam.name}</Text><Text style={styles.meta}>{exam.class_name} · {exam.term} {exam.year}</Text><Text style={styles.meta}>{exam.published ? 'Published' : 'Internal results'}</Text></Pressable>)}{!busy && !error && !exams.length && <Text>No exams in your academic scope.</Text>}<Pressable onPress={() => void load()}><Text style={styles.back}>Refresh exams</Text></Pressable></> : <>
+      <Pressable onPress={() => { setReport(undefined); setSearch(''); }}><Text style={styles.back}>Choose another exam</Text></Pressable><Text style={styles.heading}>{report.name} · {report.class_name}</Text>
+      <Text style={styles.meta}>{report.published ? 'Published results' : 'Internal results'} · Only approved paper scores are included.</Text>
+      {!report.readiness.ready && <Text style={styles.meta}>Results are incomplete: {report.readiness.missing_marks} missing marks{!report.readiness.all_papers_approved ? ' · Some papers await approval' : ''}.</Text>}
+      <TextInput value={search} onChangeText={setSearch} placeholder="Find a learner" style={styles.input} accessibilityLabel="Find learner results" />
+      {report.learners.filter(l => `${l.name} ${l.admission_no}`.toLowerCase().includes(search.toLowerCase())).map(learner => <View style={styles.card} key={learner.id}><Text style={styles.heading}>{learner.name}</Text><Text style={styles.meta}>{learner.admission_no} · Position {learner.position}</Text><Text style={styles.value}>{learner.average}% · {learner.grade}</Text>{learner.subjects.filter(s => s.applicable).map((subject, i) => <View key={i} style={styles.row}><Text style={styles.subject}>{subject.name}</Text><Text>{subject.score ?? '—'}/{subject.maximum} · {subject.grade}</Text></View>)}<Pressable onPress={() => void share(learner)}><Text style={styles.back}>Share result summary</Text></Pressable></View>)}
+    </>}
+  </ScrollView>;
+}
+const styles = StyleSheet.create({ content: { padding: 20, gap: 15 }, back: { color: colors.primary, fontWeight: '700', paddingVertical: 12 }, title: { fontSize: 26, fontWeight: '800', color: colors.primary }, heading: { fontSize: 17, fontWeight: '700', color: colors.primary }, meta: { color: colors.textMuted, fontSize: 12, lineHeight: 20 }, card: { backgroundColor: 'white', borderRadius: 20, padding: 18, gap: 8 }, value: { fontSize: 25, color: colors.primary, fontWeight: '700' }, row: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderColor: '#EDF0F5' }, subject: { flex: 1, color: colors.primary }, input: { backgroundColor: 'white', color: colors.primary, padding: 15, borderRadius: 15 } });

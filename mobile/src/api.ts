@@ -12,7 +12,7 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
   const timeout = setTimeout(() => controller.abort(), 20_000);
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, { ...init, signal: controller.signal, headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers } });
+    response = await fetch(`${API_URL}${path}`, { ...init, signal: controller.signal, headers: { Accept: 'application/json', ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers } });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') throw new ApiError('The Edlink server took too long to respond. Please try again.', 408);
     throw new ApiError('Cannot connect to Edlink. Check your internet connection and try again.', 0);
@@ -38,6 +38,7 @@ export const api = {
   me: (token: string) => request<User>('/auth/me', token),
   logout: (token: string) => request<{ logged_out: boolean }>('/auth/logout', token, { method: 'POST' }),
   get: <T>(path: string, token: string) => request<T>(path, token),
+  upload: <T>(path: string, token: string, body: FormData) => request<T>(path, token, { method: 'POST', body }),
   put: <T>(path: string, token: string, body: unknown) => request<T>(path, token, { method: 'PUT', body: JSON.stringify(body) }),
   post: <T>(path: string, token: string, body: unknown) => request<T>(path, token, { method: 'POST', body: JSON.stringify(body) }),
 };

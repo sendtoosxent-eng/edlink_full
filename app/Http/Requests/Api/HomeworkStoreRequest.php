@@ -13,6 +13,7 @@ class HomeworkStoreRequest extends FormRequest
             'school_class_id' => ['required', 'integer'],
             'stream_id' => ['nullable', 'integer'],
             'subject_id' => ['required', 'integer'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,webp,zip', 'max:10240'],
             'title' => ['required', 'string', 'max:160'],
             'instructions' => ['required', 'string', 'max:10000'],
             'maximum_score' => ['required', 'integer', 'min:1', 'max:1000'],

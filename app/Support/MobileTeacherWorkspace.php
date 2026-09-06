@@ -19,7 +19,7 @@ class MobileTeacherWorkspace
             $tools[] = compact('label', 'group', 'native') + ['id' => $route, 'path' => route($route, [], false)];
         };
         if (TeacherAcademicScope::canViewStudentDirectory($user)) {
-            $add('My class students', 'students.index', 'My classes');
+            $add('My class students', 'students.index', 'My classes', 'class_students');
         }
         foreach (self::catalog() as [$label, $route, $permission, $group, $native]) {
             if ($user->hasPermission($permission)) {
