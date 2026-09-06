@@ -13,3 +13,11 @@ The seeder requires school EDL-TEACH to be marked as a demo and its current term
 Rerunning does not duplicate payments or assessment papers. Attendance is added for the latest seven days, preserving existing demo dates. The command reports the actual current term used. These records supplement existing records.
 
 Refresh or reopen the app's Home, School fees, Results, and Attendance screens after running the command. The default mobile API is https://edlink.space/api/v1, so local database seeding alone does not populate the hosted app.
+
+To add three class-wide lessons (Mathematics 08:00–08:40, English 09:00–09:40, Science 10:00–10:40) every Monday through Sunday for every class, including empty classes, run:
+
+```sh
+php artisan db:seed --class=EdlTeachTimetableDemoSeeder --force
+```
+
+This separate seeder targets only EDL-TEACH's open current term, preserves existing lessons, and does not duplicate its own lessons on reruns. These class-wide demo slots are visible to students in every stream; they do not assign teachers.

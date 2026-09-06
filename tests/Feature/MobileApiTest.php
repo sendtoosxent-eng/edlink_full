@@ -357,3 +357,16 @@ it('seeds current-term demo data visible through the student mobile API without 
     expect(\App\Models\AttendanceRecord::where('student_id', $data['student']->id)->where('term_id', $data['term']->id)->count())->toBe(7);
     expect(\App\Models\FeePayment::where('school_id', $data['foreign']->school_id)->count())->toBe(0);
 });
+
+it('adds a full demo week for every class without duplicates or cross-school lessons', function () {
+    $data = mobileFixture();
+    $data['school']->update(['school_number' => 'EDL-TEACH', 'is_demo' => true]);
+    $emptyClass = SchoolClass::create(['school_id' => $data['school']->id, 'name' => 'Empty class']);
+    $this->seed(\Database\Seeders\EdlTeachTimetableDemoSeeder::class);
+    $this->seed(\Database\Seeders\EdlTeachTimetableDemoSeeder::class);
+    expect(DB::table('timetable_slots')->where('school_class_id', $emptyClass->id)->count())->toBe(21);
+    expect(DB::table('timetable_slots')->where('school_id', $data['foreign']->school_id)->count())->toBe(0);
+    Sanctum::actingAs($data['studentUser'], ['mobile']);
+    $response = $this->getJson('/api/v1/timetable')->assertOk()->assertJsonCount(21, 'data');
+    expect(collect($response->json('data'))->pluck('day_of_week')->unique()->count())->toBe(7);
+});
