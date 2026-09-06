@@ -80,7 +80,7 @@ export function ConnectOnboardingScreen({ onNext, onSkip }: Controls) {
       </View>
 
       <View style={styles.sheet}>
-        <Text style={styles.title}>Everything school,{'\n'}in one place</Text>
+        <Text style={styles.title}>Everything about school,{'\n'}in one place</Text>
         <Text style={styles.lead}>
           Edlink connects teachers, students, and parents seamlessly in real time.
         </Text>
@@ -135,13 +135,13 @@ export function InformOnboardingScreen({ onNext, onBack }: Controls) {
       </Pressable>
 
       <View style={styles.illustrationArea}>
-        <MotionImage source={require('../../../assets/img/onboad.png')} accessibilityLabel="Two students ready for their school day" style={styles.informPhoto} />
+        <MotionImage source={require('../../../assets/img/parent.png')} accessibilityLabel="Two students ready for their school day" style={styles.informPhoto} />
       </View>
 
       <View style={styles.sheet}>
         <Text style={styles.title}>Stay informed{'\n'}every school day</Text>
         <Text style={styles.lead}>
-          Check attendance, class announcements, and timetables at a glance.
+          Check your child's attendance, class announcements, and timetables at a glance.
         </Text>
         <View style={styles.footerRow}>
           <Dots active={1} />

@@ -18,7 +18,7 @@ export function SplashScreen() {
     <View style={styles.screen}>
       <Animated.View style={[styles.lockup, { opacity, transform: [{ scale }] }]}>
         <Image accessibilityLabel="Edlink" source={LOGO_IMAGE} resizeMode="contain" style={styles.logo} />
-        <Text style={styles.tagline}>Your school day, simplified.</Text>
+        <Text style={styles.tagline}>Innovating paperless learning.</Text>
       </Animated.View>
     </View>
   );

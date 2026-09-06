@@ -6,7 +6,7 @@ import { colors, radius } from '../../theme';
 import { AuthLayout } from './AuthLayout';
 
 export function SchoolScreen({ school, error, busy, onChange, onBack, onContinue }: { school: string; error: string; busy: boolean; onChange: (value: string) => void; onBack: () => void; onContinue: () => void }) {
-  return <AuthLayout eyebrow="Your school, your space" heroTitle="Find your school" heroSubtitle="Connect securely to your school workspace before signing in.">
+  return <AuthLayout eyebrow="innovating paperless learning" heroTitle="Find your school" heroSubtitle="Connect securely to your school workspace before signing in.">
     <View style={styles.headingRow}><Pressable accessibilityLabel="Go back" onPress={onBack} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable><AuthProgress step={1} /></View>
     <View>
       <Text style={styles.title}>Enter your school number</Text><Text style={styles.lead}>Use the number provided by your school administrator. We’ll load the correct school name and logo for you.</Text>
