@@ -370,3 +370,16 @@ it('adds a full demo week for every class without duplicates or cross-school les
     $response = $this->getJson('/api/v1/timetable')->assertOk()->assertJsonCount(21, 'data');
     expect(collect($response->json('data'))->pluck('day_of_week')->unique()->count())->toBe(7);
 });
+
+it('seeds published demo homework that students can open without duplicating assignments', function () {
+    $data = mobileFixture();
+    $data['school']->update(['school_number' => 'EDL-TEACH', 'is_demo' => true]);
+    $this->seed(\Database\Seeders\EdlTeachHomeworkDemoSeeder::class);
+    $this->seed(\Database\Seeders\EdlTeachHomeworkDemoSeeder::class);
+    Sanctum::actingAs($data['studentUser'], ['mobile']);
+    $response = $this->getJson('/api/v1/homework')->assertOk()->assertJsonCount(3, 'data.data');
+    $assignment = $response->json('data.data.0');
+    $this->getJson('/api/v1/homework/'.$assignment['id'])->assertOk();
+    expect(HomeworkAssignment::where('school_id', $data['foreign']->school_id)->count())->toBe(0);
+    expect(HomeworkAssignment::where('school_id', $data['school']->id)->where('due_at', '>', now())->count())->toBe(3);
+});

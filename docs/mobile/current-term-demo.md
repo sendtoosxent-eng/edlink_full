@@ -21,3 +21,11 @@ php artisan db:seed --class=EdlTeachTimetableDemoSeeder --force
 ```
 
 This separate seeder targets only EDL-TEACH's open current term, preserves existing lessons, and does not duplicate its own lessons on reruns. These class-wide demo slots are visible to students in every stream; they do not assign teachers.
+
+For three published homework tasks per class (Mathematics number practice, English writing, and Science healthy habits), run:
+
+```sh
+php artisan db:seed --class=EdlTeachHomeworkDemoSeeder --force
+```
+
+Each task is worth 20 marks and is due at 17:00 in 3, 4, or 5 days from its initial creation. These are simple app-testing exercises shared across class levels. The seeder selects the existing class.teacher@edlink.local teacher, falling back to another teacher in the school. It preserves existing assignments, submissions, and deadlines on reruns. Reopen My homework to load the published tasks.
