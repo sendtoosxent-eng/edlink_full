@@ -1,3 +1,5 @@
+import { EditProfileScreen } from './EditProfileScreen';
+import { ErrorScreen } from '../../components/ErrorScreen';
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
@@ -16,16 +18,19 @@ type Props = {
   studentId?: number;
   onSignOut: () => Promise<void>;
   navigate: (tab: AppTab) => void;
+  onUserUpdated: (user: User) => void;
 };
 
-export function ProfileScreen({ token, user, studentId, onSignOut, navigate }: Props) {
+export function ProfileScreen({ token, user, studentId, onSignOut, navigate, onUserUpdated }: Props) {
+  const [editing, setEditing] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [timetable, setTimetable] = useState<TimetableItem[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setLoading(true); setLoadError('');
     const suffix = studentId ? `?student_id=${studentId}` : '';
     try {
       const [slots, notices] = await Promise.all([
@@ -35,7 +40,7 @@ export function ProfileScreen({ token, user, studentId, onSignOut, navigate }: P
       setTimetable(slots.data);
       setAnnouncements(notices.data.data ?? []);
     } catch (error) {
-      Alert.alert('Could not refresh profile', messageFor(error));
+      setLoadError(messageFor(error));
     } finally {
       setLoading(false);
     }
@@ -57,6 +62,9 @@ export function ProfileScreen({ token, user, studentId, onSignOut, navigate }: P
     ]);
   };
 
+  if (editing) return <EditProfileScreen token={token} user={user} onBack={() => setEditing(false)} onSaved={updated => { onUserUpdated(updated); setEditing(false); }} />;
+  if (loadError) return <ErrorScreen message={loadError} retry={load} onBack={() => setLoadError('')} />;
+
   return (
     <ScrollView
       contentContainerStyle={styles.content}
@@ -75,9 +83,12 @@ export function ProfileScreen({ token, user, studentId, onSignOut, navigate }: P
         <Text style={styles.school}>{user.school.name}</Text>
       </View>
 
+      {user.role === 'teacher' && <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={styles.editButton}><Ionicons name="create-outline" size={20} color={colors.secondary} /><Text style={styles.editText}>Edit profile</Text></Pressable>}
       <Text style={styles.sectionTitle}>Account information</Text>
       <View style={[styles.card, shadows.card]}>
         <InfoRow icon="mail-outline" label="Email address" value={user.email} />
+        <View style={styles.divider} />
+        <InfoRow icon="call-outline" label="Phone number" value={user.phone || 'Not added'} />
         <View style={styles.divider} />
         <InfoRow icon="business-outline" label="School number" value={user.school.number} />
         <View style={styles.divider} />
@@ -155,6 +166,7 @@ function shortTime(value: string) { return value?.slice(0, 5) ?? ''; }
 function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase(); }
 
 const styles = StyleSheet.create({
+  editButton: { minHeight: 54, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 16 }, editText: { color: 'white', fontWeight: '700' },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   hero: { minHeight: 258, borderRadius: radius.lg, backgroundColor: colors.primaryCard, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', padding: 24, overflow: 'hidden' },
   heroGlow: { position: 'absolute', width: 260, height: 260, borderRadius: 130, backgroundColor: colors.primary, opacity: 0.45, top: -130, right: -80 },

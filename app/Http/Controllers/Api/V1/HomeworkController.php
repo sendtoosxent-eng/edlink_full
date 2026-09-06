@@ -19,6 +19,14 @@ class HomeworkController extends ApiController
         $user=$request->user();
         if(TeacherAcademicScope::isTeacher($user)) $query=HomeworkAssignment::where('school_id',$user->school_id)->where('teacher_id',$user->id);
         else { $student=MobileAccess::student($user,$request->integer('student_id')?:null); $query=HomeworkAssignment::where('school_id',$user->school_id)->whereNotNull('published_at')->where('school_class_id',$student->school_class_id)->where(fn($q)=>$q->whereNull('stream_id')->orWhere('stream_id',$student->stream_id));if(StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)){$selections=$student->subjectSelections()->where('term_id',$user->school->currentTerm()?->id);if((clone $selections)->exists())$query->whereIn('subject_id',(clone $selections)->pluck('subject_id'));} }
+        if (isset($student)) {
+            $request->validate(['status' => ['nullable', 'in:all,pending,submitted,reviewed']]);
+            $own = fn ($q) => $q->where('student_id', $student->id);
+            $query->with(['submissions' => $own]);
+            if ($request->input('status') === 'pending') $query->whereDoesntHave('submissions', $own);
+            if ($request->input('status') === 'submitted') $query->whereHas('submissions', fn ($q) => $own($q)->whereIn('status', ['submitted', 'late']));
+            if ($request->input('status') === 'reviewed') $query->whereHas('submissions', fn ($q) => $own($q)->where('status', 'reviewed'));
+        }
         return $this->ok($query->with(['subject:id,name','schoolClass:id,name'])->orderBy('due_at')->paginate(20));
     }
     public function store(HomeworkStoreRequest $request)
@@ -49,12 +57,34 @@ class HomeworkController extends ApiController
     }
     public function submit(Request $request,int $assignment)
     {
-        $data=$request->validate(['student_id'=>['nullable','integer'],'answer'=>['required','string','max:20000'],'base_version'=>['nullable','date']]);
-        $item=MobileAccess::homework($request->user(),$assignment,$data['student_id']??null);
-        $student=MobileAccess::student($request->user(),$data['student_id']??null);
-        $existing=HomeworkSubmission::where(['homework_assignment_id'=>$item->id,'student_id'=>$student->id])->first();
-        if($existing&&!empty($data['base_version'])&&$existing->updated_at->gt($data['base_version'])) return response()->json(['message'=>'Submission changed on another device.','code'=>'conflict'],409);
-        $submission=HomeworkSubmission::updateOrCreate(['homework_assignment_id'=>$item->id,'student_id'=>$student->id],['submitted_by'=>$request->user()->id,'answer'=>$data['answer'],'submitted_at'=>now(),'status'=>'submitted']);
+        abort_unless($request->user()->role === 'student', 403);
+        $data = $request->validate([
+            'student_id' => ['nullable', 'integer'], 'answer' => ['nullable', 'string', 'max:20000'],
+            'base_version' => ['nullable', 'date'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,webp,zip', 'max:10240'],
+        ]);
+        $item = MobileAccess::homework($request->user(), $assignment, $data['student_id'] ?? null);
+        $student = MobileAccess::student($request->user(), $data['student_id'] ?? null);
+        $existing = HomeworkSubmission::where(['homework_assignment_id' => $item->id, 'student_id' => $student->id])->first();
+        if ($existing && !empty($data['base_version']) && $existing->updated_at->gt($data['base_version'])) return response()->json(['message' => 'Submission changed on another device. Reload the assignment before submitting.', 'code' => 'conflict'], 409);
+        if (!filled($data['answer'] ?? null) && !$request->hasFile('attachment') && !$existing?->attachment_path) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['answer' => 'Write an answer or attach your work.']);
+        }
+        $file = $request->file('attachment');
+        $path = $file?->store('homework/submissions', 'local');
+        try {
+            $submission = HomeworkSubmission::updateOrCreate(['homework_assignment_id' => $item->id, 'student_id' => $student->id], [
+                'submitted_by' => $request->user()->id, 'answer' => $data['answer'] ?? null,
+                'attachment_path' => $path ?? $existing?->attachment_path,
+                'attachment_name' => $file?->getClientOriginalName() ?? $existing?->attachment_name,
+                'submitted_at' => now(), 'status' => $item->due_at?->isPast() ? 'late' : 'submitted',
+                'score' => null, 'feedback' => null, 'reviewed_at' => null,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($path) \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+            throw $exception;
+        }
+        if ($path && $existing?->attachment_path) \Illuminate\Support\Facades\Storage::disk('local')->delete($existing->attachment_path);
         return $this->ok($submission);
     }
 

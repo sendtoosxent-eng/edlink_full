@@ -195,6 +195,35 @@ class AuthController extends ApiController
 
     public function me(Request $request) { return $this->ok($this->userPayload($request->user())); }
 
+    public function updateProfile(Request $request, \App\Services\PublicImageStorage $images)
+    {
+        $user = $request->user();
+        abort_unless($user->role === 'teacher', 403);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->where('school_id', $user->school_id)->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+        $emailChanged = $data['email'] !== $user->email;
+        $oldPath = $user->avatar_path;
+        $newPath = $request->hasFile('photo') ? $images->store($request->file('photo'), 'avatars/'.$user->school_id) : null;
+        try {
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+            if (array_key_exists('phone', $data)) $user->phone = $data['phone'];
+            if ($newPath) $user->avatar_path = $newPath;
+            if ($emailChanged) $user->email_verified_at = null;
+            $user->save();
+        } catch (\Throwable $exception) {
+            if ($newPath) \Illuminate\Support\Facades\Storage::disk('public')->delete($newPath);
+            throw $exception;
+        }
+        if ($newPath) $images->deleteReplacement($oldPath, $newPath);
+        if ($emailChanged) $user->sendEmailVerificationNotification();
+        return $this->ok($this->userPayload($user));
+    }
+
     public function logout(Request $request)
     {
         AuditLog::record($request->user()->school_id, 'mobile.logout', $request->user());
@@ -207,7 +236,7 @@ class AuthController extends ApiController
         $user->loadMissing('school', 'designation');
         return [
             'id' => $user->id, 'name' => $user->name, 'email' => $user->email,
-            'role' => $user->role, 'avatar_url' => $user->avatarUrl(),
+            'phone' => $user->phone, 'role' => $user->role, 'avatar_url' => $user->avatarUrl(),
             'school' => ['id' => $user->school->id, 'number' => $user->school->school_number, 'name' => $user->school->name],
             'permissions' => array_values($user->designation?->permissions ?? []),
         ];

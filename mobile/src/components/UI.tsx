@@ -39,15 +39,7 @@ export function StatCard({ label, value }: { label: string; value: string | numb
 
 export function InlineLoading() { return <BrandLoader />; }
 
-export function ErrorState({ message, retry }: { message: string; retry: () => void }) {
-  return (
-    <View style={styles.center}>
-      <Text style={typography.titleSmall}>Something went wrong</Text>
-      <Text style={styles.mutedText}>{message}</Text>
-      <PrimaryButton label="Try Again" onPress={retry} />
-    </View>
-  );
-}
+export { ErrorScreen as ErrorState } from './ErrorScreen';
 
 const styles = StyleSheet.create({
   button: {

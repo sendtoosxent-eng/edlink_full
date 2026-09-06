@@ -1,3 +1,6 @@
+import { StudentHomeworkScreen } from './src/screens/app/StudentHomeworkScreen';
+import { SchoolCalendarScreen } from './src/screens/app/SchoolCalendarScreen';
+import { ErrorScreen as ErrorState } from './src/components/ErrorScreen';
 import { NativeReportsScreen } from './src/screens/app/NativeReportsScreen';
 import { TeacherScheduleScreen } from './src/screens/app/TeacherScheduleScreen';
 import { TeacherDirectoryScreen } from './src/screens/app/TeacherDirectoryScreen';
@@ -36,7 +39,9 @@ export default function App() {
   const [lockedToken, setLockedToken] = useState<string>();
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [booting, setBooting] = useState(true);
-  useEffect(() => { void (async () => {
+  const [bootError, setBootError] = useState<ApiError>();
+  const restoreSession = useCallback(async () => {
+    setBooting(true); setBootError(undefined);
     const token = await SecureStore.getItemAsync(TOKEN_KEY);
     const hardware = await LocalAuthentication.hasHardwareAsync();
     const enrolled = hardware && await LocalAuthentication.isEnrolledAsync();
@@ -49,9 +54,13 @@ export default function App() {
         if (!result.success) { setBooting(false); return; }
       }
       setSession({ token, user: (await api.me(token)).data });
-    } catch { await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) { await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); setLockedToken(undefined); }
+      else setBootError(error instanceof ApiError ? error : new ApiError('Unable to open your account. Please try again.', 0));
+    }
     setBooting(false);
-  })(); }, []);
+  }, []);
+  useEffect(() => { void restoreSession(); }, [restoreSession]);
   const acceptSession = async (data: AuthSuccess) => {
     await SecureStore.setItemAsync(TOKEN_KEY, data.token); setLockedToken(data.token); setSession(data);
     if (!biometricAvailable || await SecureStore.getItemAsync(BIOMETRIC_KEY) === 'true') return;
@@ -75,13 +84,13 @@ export default function App() {
   const signOut = async () => { if (session) await api.logout(session.token).catch(() => undefined); await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); setLockedToken(undefined); setSession(undefined); };
   return (
     <SafeAreaProvider><KeyboardProvider statusBarTranslucent navigationBarTranslucent>
-      {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} />}
+      {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : bootError ? <SafeAreaView style={styles.safe}><ErrorState message={bootError.message} status={bootError.status} retry={restoreSession} /></SafeAreaView> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} onUserUpdated={user => setSession(current => current ? { ...current, user } : current)} />}
     </KeyboardProvider></SafeAreaProvider>
   );
 }
 
-function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: User; onSignOut: () => Promise<void> }) {
-  const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
+function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: string; user: User; onSignOut: () => Promise<void>; onUserUpdated: (user: User) => void }) {
+  const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : user.role === 'student' ? ['home', 'homework', 'results', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
   const [tab, setTab] = useState<Tab>('home'); const [activeRoot, setActiveRoot] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
   useEffect(() => { if (tabs.includes(tab)) setActiveRoot(tab); }, [tab]);
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
@@ -94,10 +103,13 @@ function AuthenticatedApp({ token, user, onSignOut }: { token: string; user: Use
       {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}
       {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
       {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
-      {tab === 'homework' && user.role !== 'teacher' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
+      {user.role === 'student' && tab === 'student_schedule' && <TeacherScheduleScreen token={token} backLabel="Dashboard" onBack={() => setTab('home')} />}
+      {user.role === 'student' && tab === 'student_calendar' && <SchoolCalendarScreen token={token} onBack={() => setTab('home')} />}
+      {tab === 'homework' && user.role === 'student' && <StudentHomeworkScreen token={token} />}
+      {tab === 'homework' && user.role === 'parent' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}
-      {tab === 'more' && <ProfileScreen token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
+      {tab === 'more' && <ProfileScreen onUserUpdated={onUserUpdated} token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
       {tab === 'notifications' && <NotificationsScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen token={token} onBack={() => setTab('home')} />}
@@ -164,7 +176,7 @@ function attendanceSession(assignment: Assignment) { return assignment.attendanc
 function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, (pressed || disabled) && styles.buttonMuted]}><Text style={styles.primaryButtonText}>{label}</Text></Pressable>; }
 function ChildPicker({ children, selected, onSelect }: { children: Student[]; selected?: number; onSelect: (id: number) => void }) { return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childPicker} contentContainerStyle={styles.chipRow}>{children.map(child => <Pressable key={child.id} onPress={() => onSelect(child.id)} style={[styles.chip, child.id === selected && styles.chipActive]}><Text style={[styles.chipText, child.id === selected && styles.chipTextActive]}>{child.name}</Text></Pressable>)}</ScrollView>; }
 function Stat({ label, value }: { label: string; value: string }) { return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>; } function Pill({ status }: { status: AttendanceStatus }) { return <View style={[styles.pill, styles[`status_${status}`]]}><Text style={styles.pillText}>{capitalize(status)}</Text></View>; } function Section({ title }: { title: string }) { return <Text style={styles.sectionTitle}>{title}</Text>; }
-function InlineLoading() { return <BrandLoader />; } function Empty({ message, compact }: { message: string; compact?: boolean }) { return <View style={[styles.empty, compact && styles.emptyCompact]}><Text style={styles.emptyText}>{message}</Text></View>; } function ErrorState({ message, retry }: { message: string; retry: () => void }) { return <View style={styles.center}><Text style={styles.errorTitle}>We couldn’t load this</Text><Text style={styles.muted}>{message}</Text><PrimaryButton label="Try again" onPress={retry} /></View>; }
+function InlineLoading() { return <BrandLoader />; } function Empty({ message, compact }: { message: string; compact?: boolean }) { return <View style={[styles.empty, compact && styles.emptyCompact]}><Text style={styles.emptyText}>{message}</Text></View>; }
 function messageFor(error: unknown) { return error instanceof ApiError ? error.message : 'Cannot reach the Edlink server. Check your connection.'; } function firstName(name: string) { return name.trim().split(/\s+/)[0] || 'there'; } function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase(); } function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); } function shortTime(value: string) { return value?.slice(0, 5) ?? ''; } function formatDate(value: string) { const date = new Date(value.length === 10 ? `${value}T12:00:00` : value); return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); } function average(exam: ExamResult) { const papers = exam.papers.filter(paper => paper.score != null && paper.maximum_score > 0); return papers.length ? Math.round(papers.reduce((sum, paper) => sum + Number(paper.score) / paper.maximum_score * 100, 0) / papers.length) : 0; }
 
 const styles = StyleSheet.create({

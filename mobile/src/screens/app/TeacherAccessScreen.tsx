@@ -1,3 +1,4 @@
+import { ErrorScreen } from '../../components/ErrorScreen';
 import { NativeModuleScreen } from './NativeModuleScreen';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -41,6 +42,7 @@ export function TeacherAccessScreen({ token, section, navigate, onBack }: { toke
     if (tool.native) { navigate(tool.native as AppTab); return; }
     setSelectedTool(tool.id);
   };
+  if (error && !workspace) return <ErrorScreen message={error} retry={load} onBack={onBack} />;
   if (selectedTool) return <NativeModuleScreen key={selectedTool} token={token} tool={selectedTool} onBack={() => setSelectedTool(undefined)} />;
   return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}>
     <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}><Ionicons name="arrow-back" color={colors.primary} size={20} /><Text style={styles.backText}>Dashboard</Text></Pressable>

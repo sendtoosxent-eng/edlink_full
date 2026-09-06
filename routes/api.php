@@ -18,6 +18,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::post('auth/password/reset', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1');
     Route::middleware(['auth:sanctum', EnsureMobileAccess::class])->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
+        Route::post('auth/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:10,1');
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('dashboard', [MobileDataController::class, 'dashboard']);
         Route::get('timetable', [MobileDataController::class, 'timetable']);

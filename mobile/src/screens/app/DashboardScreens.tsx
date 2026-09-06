@@ -6,7 +6,7 @@ import { colors, radius, shadows } from '../../theme/index';
 import { ACCESS_SECTIONS, toolSection } from './TeacherAccessScreen';
 import type { Dashboard, User } from '../../types';
 
-export type AppTab = 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
+export type AppTab = 'student_schedule' | 'student_calendar' | 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
 type Lesson = Dashboard['next_lesson'];
 type DashboardUser = User & { onSignOut?: () => Promise<void>; navigate?: (tab: AppTab) => void; nextLesson?: Lesson };
 type Props = { data: Dashboard; user: DashboardUser; attendanceRate: number | null; navigate: (tab: AppTab) => void; refreshing?: boolean; onRefresh?: () => void };
@@ -103,7 +103,26 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
 
 export function StudentDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
   const stats = data.analytics?.stats ?? {}; const student = data.student;
-  return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}><TopBar user={user} /><GreetingCard user={user} title={`Keep going, ${firstName(student?.name ?? user.name)}!`} subtitle={`${student?.class ?? 'Student'}${student?.stream ? ` · ${student.stream}` : ''} · Here’s your learning snapshot.`} imageName={student?.name} imageUri={student?.photo_url} /><StatGrid items={[{ icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${attendanceRate}%`, tone: 'green' }, { icon: 'book-outline', label: 'Homework', value: stats.homework ?? data.homework.length }, { icon: 'trophy-outline', label: 'Results', value: stats.published_results ?? 0, tone: 'blue' }]} /><SectionHeader title="Quick access" /><QuickActions role="student" navigate={navigate} /><SectionHeader title="My attendance" /><AttendanceChart data={data} rate={attendanceRate} onPress={() => navigate('attendance')} /><SectionHeader title="My performance" /><PerformanceChart data={data} /><SectionHeader title="Today’s lessons" /><Schedule data={data} /><SectionHeader title="Upcoming homework" /><HomeworkList data={data} navigate={navigate} /><SectionHeader title="School calendar" /><Events data={data} /></DashboardScroll>;
+  const actions: Array<{ title: string; description: string; icon: IconName; tab: AppTab }> = [
+    { title: 'My homework', description: 'Assignments, answers and feedback', icon: 'book-outline', tab: 'homework' },
+    { title: 'My timetable', description: 'Plan your school week', icon: 'calendar-outline', tab: 'student_schedule' },
+    { title: 'My results', description: 'Published scores and performance', icon: 'ribbon-outline', tab: 'results' },
+    { title: 'Attendance', description: 'Your school attendance record', icon: 'checkbox-outline', tab: 'attendance' },
+    { title: 'School fees', description: 'Payments and your balance', icon: 'wallet-outline', tab: 'payments' },
+    { title: 'School calendar', description: 'Upcoming events and dates', icon: 'today-outline', tab: 'student_calendar' },
+  ];
+  return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
+    <TopBar user={user} />
+    <GreetingCard user={user} title={`Hi, ${firstName(student?.name ?? user.name)}!`} subtitle={`${student?.class ?? 'Student'}${student?.stream ? ` · ${student.stream}` : ''} · ${user.school.name}`} imageName={student?.name} imageUri={student?.photo_url} />
+    <StatGrid items={[{ icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${attendanceRate}%` }, { icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? 0 }, { icon: 'trophy-outline', label: 'Results', value: stats.published_results ?? 0 }]} />
+    <SectionHeader title="My learning" subtitle="Everything you need for your school day" />
+    <View style={styles.quickRow}>{actions.map(action => <Pressable accessibilityRole="button" key={action.tab} onPress={() => navigate(action.tab)} style={styles.accessCard}><Ionicons name={action.icon} size={27} color={colors.secondary} /><Text style={styles.accessTitle}>{action.title}</Text><Text style={styles.accessDescription}>{action.description}</Text><Ionicons name="arrow-forward" size={20} color={colors.secondary} style={{ marginTop: 12 }} /></Pressable>)}</View>
+    <SectionHeader title="Today’s lessons" /><Schedule data={data} />
+    <SectionHeader title="My attendance" /><AttendanceChart data={data} rate={attendanceRate} onPress={() => navigate('attendance')} />
+    <SectionHeader title="My performance" /><PerformanceChart data={data} />
+    <SectionHeader title="Upcoming homework" /><HomeworkList data={data} navigate={navigate} />
+    <SectionHeader title="School calendar" /><Events data={data} />
+  </DashboardScroll>;
 }
 
 export function ParentDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {

@@ -272,3 +272,74 @@ it('keeps native profile editing behind learner-management permission', function
     $this->postJson('/api/v1/teacher/students/'.$data['student']->id, ['name' => 'Changed'])->assertForbidden();
     $this->getJson('/api/v1/teacher/students/'.$data['foreign']->id)->assertNotFound();
 });
+
+it('lets a teacher update only their own profile fields', function () {
+    Notification::fake();
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->postJson('/api/v1/auth/profile', [
+        'name' => 'Updated Teacher', 'email' => 'updated@mobile.test', 'phone' => '+256700123456',
+        'id' => $data['parent']->id, 'role' => 'school_admin', 'school_id' => $data['foreign']->school_id,
+    ])->assertOk()->assertJsonPath('data.name', 'Updated Teacher')->assertJsonPath('data.phone', '+256700123456')->assertJsonPath('data.role', 'teacher');
+    expect($data['teacher']->fresh()->school_id)->toBe($data['school']->id);
+    expect($data['teacher']->fresh()->email_verified_at)->toBeNull();
+    expect($data['parent']->fresh()->email)->not->toBe('updated@mobile.test');
+    Notification::assertSentTo($data['teacher'], \App\Notifications\QueuedVerifyEmail::class);
+});
+
+it('validates profile changes and rejects non teacher writes', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->postJson('/api/v1/auth/profile', ['name' => '', 'email' => 'invalid'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/profile', ['name' => 'Teacher', 'email' => $data['parent']->email])->assertUnprocessable();
+    expect($data['teacher']->fresh()->email)->toBe('teacher@mobile.test');
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $this->postJson('/api/v1/auth/profile', ['name' => 'Parent', 'email' => 'parent@mobile.test'])->assertForbidden();
+});
+
+it('stores a teacher profile photo and rejects invalid uploads', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->post('/api/v1/auth/profile', [
+        'name' => $data['teacher']->name, 'email' => $data['teacher']->email,
+        'photo' => \Illuminate\Http\UploadedFile::fake()->image('avatar.jpg'),
+    ], ['Accept' => 'application/json'])->assertOk()->assertJsonStructure(['data' => ['avatar_url']]);
+    $path = $data['teacher']->fresh()->avatar_path;
+    \Illuminate\Support\Facades\Storage::disk('public')->assertExists($path);
+    $this->post('/api/v1/auth/profile', [
+        'name' => $data['teacher']->name, 'email' => $data['teacher']->email,
+        'photo' => \Illuminate\Http\UploadedFile::fake()->create('invalid.pdf', 10, 'application/pdf'),
+    ], ['Accept' => 'application/json'])->assertUnprocessable();
+    expect($data['teacher']->fresh()->avatar_path)->toBe($path);
+});
+
+it('filters student homework using only their own submissions', function () {
+    $data = mobileFixture();
+    $assignment = HomeworkAssignment::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'teacher_id' => $data['teacher']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'title' => 'Student work', 'instructions' => 'Solve', 'maximum_score' => 10, 'due_at' => now()->addDay(), 'published_at' => now()]);
+    HomeworkSubmission::create(['homework_assignment_id' => $assignment->id, 'student_id' => $data['unlinked']->id, 'submitted_by' => $data['studentUser']->id, 'answer' => 'Private other answer', 'status' => 'reviewed', 'submitted_at' => now()]);
+    Sanctum::actingAs($data['studentUser'], ['mobile']);
+    $this->getJson('/api/v1/homework?status=pending')->assertOk()->assertJsonCount(1, 'data.data')->assertJsonCount(0, 'data.data.0.submissions')->assertDontSee('Private other answer');
+    $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'My answer'])->assertOk();
+    $this->getJson('/api/v1/homework?status=pending')->assertOk()->assertJsonCount(0, 'data.data');
+    $this->getJson('/api/v1/homework?status=submitted')->assertOk()->assertJsonCount(1, 'data.data')->assertJsonPath('data.data.0.submissions.0.answer', 'My answer');
+    $this->getJson('/api/v1/homework?status=reviewed')->assertOk()->assertJsonCount(0, 'data.data');
+    $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Impersonation', 'student_id' => $data['unlinked']->id])->assertNotFound();
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Parent answer'])->assertForbidden();
+});
+
+it('accepts student homework attachments and clears stale review on resubmission', function () {
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $data = mobileFixture();
+    $assignment = HomeworkAssignment::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'teacher_id' => $data['teacher']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'title' => 'Student attachment', 'instructions' => 'Upload your work', 'maximum_score' => 10, 'due_at' => now()->subDay(), 'published_at' => now()]);
+    Sanctum::actingAs($data['studentUser'], ['mobile']);
+    $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => ''])->assertUnprocessable();
+    $this->post('/api/v1/homework/'.$assignment->id.'/submit', ['attachment' => \Illuminate\Http\UploadedFile::fake()->create('answer.txt', 1, 'text/plain')], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('data.status', 'late');
+    $submission = HomeworkSubmission::where('student_id', $data['student']->id)->firstOrFail();
+    \Illuminate\Support\Facades\Storage::disk('local')->assertExists($submission->attachment_path);
+    $submission->update(['status' => 'reviewed', 'score' => 8, 'feedback' => 'Good', 'reviewed_at' => now()]);
+    $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Revised', 'base_version' => now()->subHour()->toISOString()])->assertConflict();
+    $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Revised', 'base_version' => $submission->fresh()->updated_at->toISOString()])->assertOk()->assertJsonPath('data.score', null)->assertJsonPath('data.feedback', null)->assertJsonPath('data.status', 'late');
+    $this->get('/api/v1/homework/'.$assignment->id.'/submissions/'.$submission->id.'/attachment')->assertOk()->assertDownload('answer.txt');
+});
