@@ -1,9 +1,10 @@
+import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 import { NativeAttachment } from '../../components/NativeAttachment';
 import * as DocumentPicker from 'expo-document-picker';
 import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { api, ApiError } from '../../api';
 import { PageIntro } from '../../components/PageIntro';
 import { colors, radius, shadows } from '../../theme/index';

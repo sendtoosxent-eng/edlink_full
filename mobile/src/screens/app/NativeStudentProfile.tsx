@@ -1,5 +1,6 @@
+import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { api } from '../../api';
 import { Text, TextInput } from '../../components/Typography';

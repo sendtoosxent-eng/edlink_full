@@ -1,9 +1,10 @@
+import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 import { ErrorScreen } from '../../components/ErrorScreen';
 import { NativeRepeatFields } from '../../components/NativeRepeatFields';
 import { exportNativeReport } from '../../components/NativeReportExport';
 import { NativeSelect } from '../../components/NativeSelect';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../components/Typography';
 import { api } from '../../api';
 import { colors } from '../../theme/index';

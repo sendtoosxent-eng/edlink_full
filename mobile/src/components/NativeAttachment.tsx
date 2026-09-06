@@ -1,5 +1,6 @@
+import { EdlinkAlert as Alert } from './EdlinkAlert';
 import { useState } from 'react';
-import { Alert, Image, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, View } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';

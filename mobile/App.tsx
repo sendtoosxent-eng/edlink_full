@@ -1,3 +1,4 @@
+import { EdlinkAlert as Alert, EdlinkAlertHost } from './src/components/EdlinkAlert';
 import { StudentHomeworkScreen } from './src/screens/app/StudentHomeworkScreen';
 import { SchoolCalendarScreen } from './src/screens/app/SchoolCalendarScreen';
 import { ErrorScreen as ErrorState } from './src/components/ErrorScreen';
@@ -15,7 +16,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { api, ApiError } from './src/api';
 import { AuthFlow } from './src/screens/auth/AuthFlow';
@@ -85,7 +86,7 @@ export default function App() {
   return (
     <SafeAreaProvider><KeyboardProvider statusBarTranslucent navigationBarTranslucent>
       {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : bootError ? <SafeAreaView style={styles.safe}><ErrorState message={bootError.message} status={bootError.status} retry={restoreSession} /></SafeAreaView> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} onUserUpdated={user => setSession(current => current ? { ...current, user } : current)} />}
-    </KeyboardProvider></SafeAreaProvider>
+    <EdlinkAlertHost /></KeyboardProvider></SafeAreaProvider>
   );
 }
 

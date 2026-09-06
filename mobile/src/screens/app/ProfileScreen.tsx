@@ -1,9 +1,10 @@
+import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 import { EditProfileScreen } from './EditProfileScreen';
 import { ErrorScreen } from '../../components/ErrorScreen';
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { api, ApiError } from '../../api';
 import { colors, radius, shadows } from '../../theme/index';
 import type { User } from '../../types';

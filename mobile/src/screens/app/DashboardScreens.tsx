@@ -1,3 +1,4 @@
+import { EdlinkAlert } from '../../components/EdlinkAlert';
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -16,7 +17,7 @@ const EMPTY_ANALYTICS = { attendance_labels: [] as string[], present_series: [] 
 function TopBar({ user }: { user: DashboardUser }) {
   return <View style={styles.topBar}><Image accessibilityLabel="Edlink" source={require('../../../assets/img/edlink-logo.png')}
   style={styles.topLogo} resizeMode="contain" /><View style={styles.topActions}><Pressable accessibilityRole="button" accessibilityLabel="Open notifications" onPress={() => user.navigate?.('notifications')} style={styles.bellButton}>
-    <Ionicons name="notifications-outline" size={21} color={colors.secondary} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Log out" onPress={() => void user.onSignOut?.()} style={styles.logoutButton}><Ionicons name="log-out-outline" size={21} color={colors.secondary} /></Pressable></View></View>;
+    <Ionicons name="notifications-outline" size={21} color={colors.secondary} /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Log out" onPress={() => EdlinkAlert.alert('Log out of Edlink?', 'You will need to sign in again to access your school account.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: () => user.onSignOut?.() }])} style={styles.logoutButton}><Ionicons name="log-out-outline" size={21} color={colors.secondary} /></Pressable></View></View>;
 }
 
 function Avatar({ name, uri, size = 54 }: { name: string; uri?: string | null; size?: number }) {
