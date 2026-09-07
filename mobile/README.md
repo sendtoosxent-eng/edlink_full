@@ -20,3 +20,7 @@ npm run android
 The app connects to `https://edlink.space/api/v1` by default. Override it for local development by copying `.env.example` to `.env` and changing `EXPO_PUBLIC_API_URL` (for example, Android Emulator uses `http://10.0.2.2:8000/api/v1` for a server running on the host Mac).
 
 Mobile sign-in requires an active school, a verified teacher/student/parent account, its school number, and its normal Edlink password.
+
+## Over-the-air app updates
+
+See [OTA setup and release commands](../docs/mobile/ota-updates.md). Expo account/project linkage and a new installed app build are required before users can receive updates.

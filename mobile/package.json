@@ -15,6 +15,7 @@
     "expo-sharing": "~57.0.18",
     "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.21",
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-keyboard-controller": "1.21.9",
@@ -32,7 +33,13 @@
     "android": "expo start --localhost --android",
     "android:lan": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "eas:login": "npx eas-cli@latest login",
+    "updates:configure": "npx eas-cli@latest update:configure",
+    "build:preview": "npx eas-cli@latest build --platform android --profile preview",
+    "build:production": "npx eas-cli@latest build --platform android --profile production",
+    "update:preview": "npx eas-cli@latest update --channel preview --environment preview",
+    "update:production": "npx eas-cli@latest update --channel production --environment production"
   },
   "private": true
 }
