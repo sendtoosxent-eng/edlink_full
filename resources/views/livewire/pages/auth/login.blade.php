@@ -159,8 +159,8 @@ new #[Layout('layouts.guest-split')] class extends Component
 
 <div>
     <p class="text-xs font-bold uppercase tracking-[0.2em] text-yellow-600">School sign in</p>
-    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-[#252641] sm:text-4xl">Welcome back</h1>
-    <p class="mb-7 mt-3 text-sm leading-6 text-slate-500">Enter your school and account details to continue to your workspace.</p>
+    <h1 class="mt-2 text-[28px] font-extrabold tracking-tight text-[#252641] sm:text-4xl">Welcome back</h1>
+    <p class="mb-6 mt-2 text-sm leading-6 text-slate-500 sm:mb-7 sm:mt-3">Enter your school and account details to continue to your workspace.</p>
 
     @if($demoRole && !$demoSchoolType)
         <div class="mb-6">
@@ -190,32 +190,32 @@ new #[Layout('layouts.guest-split')] class extends Component
 
     <form wire:submit="login" class="space-y-4" @if($demoRole && !$demoSchoolType) hidden @endif>
         <div>
-            <label class="mb-2 block text-xs font-bold text-slate-700">School number</label>
-            <input type="text" wire:model.fill="school_number" value="{{ $school_number }}" required autofocus placeholder="e.g. EDL-4K9P2"
-                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 uppercase tracking-wide outline-none transition placeholder:text-slate-300 focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10">
+            <label for="school-number" class="mb-2 block text-xs font-bold text-slate-700">School number</label>
+            <input id="school-number" name="school_number" type="text" wire:model.fill="school_number" value="{{ $school_number }}" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. EDL-4K9P2"
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base uppercase tracking-wide outline-none transition placeholder:text-slate-300 focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 sm:py-3.5">
             @error('school_number') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div>
-            <label class="mb-2 block text-xs font-bold text-slate-700">Email address</label>
-            <input type="email" x-model="$wire.email" required autocomplete="email" placeholder="you@school.com"
-                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 outline-none transition placeholder:text-slate-300 focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10">
+            <label for="login-email" class="mb-2 block text-xs font-bold text-slate-700">Email address</label>
+            <input id="login-email" name="email" type="email" x-model="$wire.email" required autocomplete="email" autocapitalize="none" spellcheck="false" inputmode="email" placeholder="you@school.com"
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition placeholder:text-slate-300 focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 sm:py-3.5">
             @error('email') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div>
-            <label class="mb-2 block text-xs font-bold text-slate-700">Password</label>
-            <input type="password" x-model="$wire.password" required autocomplete="current-password" placeholder="Enter your password"
-                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 outline-none transition placeholder:text-slate-300 focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10">
+            <label for="login-password" class="mb-2 block text-xs font-bold text-slate-700">Password</label>
+            <input id="login-password" name="password" type="password" x-model="$wire.password" required autocomplete="current-password" placeholder="Enter your password"
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition placeholder:text-slate-300 focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 sm:py-3.5">
             @error('password') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
-        <div class="flex items-center justify-between gap-4 pt-1">
-            <label class="flex items-center space-x-2 text-xs font-medium text-slate-500 sm:text-sm">
-                <input type="checkbox" wire:model="remember" class="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400">
+        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <label class="flex min-h-11 cursor-pointer items-center space-x-2 text-xs font-medium text-slate-500 sm:text-sm">
+                <input type="checkbox" wire:model="remember" class="h-4 w-4 shrink-0 rounded border-slate-300 text-yellow-500 focus:ring-yellow-400">
                 <span>Remember me</span>
             </label>
-            <a href='{{ route('password.request') }}' wire:navigate class='text-xs font-bold text-yellow-700 hover:text-yellow-800 sm:text-sm'>Forgot password?</a>
+            <a href='{{ route('password.request') }}' wire:navigate class='inline-flex min-h-11 items-center text-xs font-bold text-yellow-700 hover:text-yellow-800 sm:text-sm'>Forgot password?</a>
         </div>
 
         <button type="submit"

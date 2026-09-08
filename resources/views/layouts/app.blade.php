@@ -65,9 +65,10 @@
             });
         });
     </script>
+    @include('partials.mobile-shell-styles')
     @livewireStyles
 </head>
-<body class="font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
+<body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
       x-data="{ mobileNavOpen: false }"
       x-init="$watch('$store.ui.collapsed', v => document.documentElement.style.setProperty('--sidebar-w', v ? '80px' : '288px'));
                document.documentElement.style.setProperty('--sidebar-w', $store.ui.collapsed ? '80px' : '288px');">
@@ -75,13 +76,13 @@
     @include('partials.global-loader')
 
     <!-- Mobile top bar -->
-    <div class="lg:hidden fixed top-0 inset-x-0 bg-darken text-white flex items-center justify-between px-4 py-3 z-30">
+    <div class="mobile-shell-bar lg:hidden fixed top-0 inset-x-0 bg-darken text-white flex items-center justify-between px-4 py-3 z-30">
         <div>
             <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
             <img src="{{ asset('img/logo.png') }}" alt="Edlink logo" class="w-[180px] h-auto">
             </a>
         </div>
-        <button @click="mobileNavOpen = !mobileNavOpen" class="text-xl">☰</button>
+        <button aria-label="Open navigation" @click="mobileNavOpen = !mobileNavOpen" class="text-xl">☰</button>
     </div>
 
 
@@ -285,10 +286,10 @@
     <div x-cloak x-show="mobileNavOpen" @click="mobileNavOpen = false" class="fixed inset-0 bg-black/40 z-30 lg:hidden transition-opacity"></div>
 
     <!-- Main Content Wrapper -->
-    <div id="app-main" class="flex-1 pt-14 lg:pt-0">
+    <div id="app-main" class="mobile-shell-main flex-1 pt-14 lg:pt-0">
 
         <!-- Top Header Navigation Bar -->
-        <header class="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-sm">
+        <header class="mobile-shell-header bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-sm">
             <div class="flex items-center space-x-4 min-w-0">
                 <button @click="$store.ui.toggle()" class="hidden lg:flex w-9 h-9 rounded-lg border border-gray-200 items-center justify-center text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>

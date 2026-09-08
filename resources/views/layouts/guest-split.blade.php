@@ -2,7 +2,7 @@
 <html lang="en">
 <head><link rel="icon" type="image/png" href="{{ asset('img/fav.png') }}"><link rel="apple-touch-icon" href="{{ asset('img/fav.png') }}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{{ $title ?? 'Edlink' }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,11 +17,28 @@
             }
         }
     </script>
+    <style>
+        .auth-shell { min-height: 100vh; min-height: 100svh; grid-template-columns: minmax(0, 1fr); }
+        .auth-form-panel, .auth-form-content { min-width: 0; }
+        .auth-form-panel { min-height: 100vh; min-height: 100svh; }
+        .auth-form-content { overflow-wrap: anywhere; }
+        .auth-form-content input:not([type="checkbox"]):not([type="radio"]),
+        .auth-form-content select, .auth-form-content textarea { min-width: 0; max-width: 100%; }
+        @media (max-width: 639px) {
+            .auth-shell .auth-form-panel {
+                align-items: flex-start;
+                padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+            }
+        }
+        @media (min-width: 1024px) {
+            .auth-shell { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+        }
+    </style>
     @livewireStyles
 </head>
 <body class="min-h-screen bg-white font-sans text-slate-800">
 @include('partials.global-loader')
-    <main class="grid min-h-screen lg:grid-cols-[minmax(420px,0.9fr)_minmax(520px,1.1fr)]">
+    <main class="auth-shell grid">
         <section class="relative hidden min-h-screen overflow-hidden bg-[#161327] lg:flex lg:flex-col">
             <div class="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-yellow-400/15 blur-3xl"></div>
             <div class="absolute -right-24 top-1/3 h-72 w-72 rounded-full bg-teal-400/10 blur-3xl"></div>
@@ -48,20 +65,20 @@
             </div>
         </section>
 
-        <section class="flex min-h-screen items-center justify-center px-4 py-8 sm:px-8 lg:px-12 xl:px-20">
-            <div class="w-full max-w-[480px]">
-                <div class="mb-7 flex items-center justify-between lg:hidden">
+        <section class="auth-form-panel flex items-center justify-center px-4 py-8 sm:px-8 lg:px-12 xl:px-20">
+            <div class="auth-form-content w-full max-w-[480px]">
+                <div class="mb-6 flex items-center justify-between gap-3 sm:mb-7 lg:hidden">
                     <a href="{{ url('/') }}" class="inline-flex items-center">
-                        <img src="{{ asset('img/logoneg.png') }}" alt="Edlink home" class="h-auto w-32 sm:w-36">
+                        <img src="{{ asset('img/logoneg.png') }}" alt="Edlink home" class="h-auto w-28 sm:w-36">
                     </a>
-                    <span class="rounded-full bg-yellow-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">School portal</span>
+                    <span class="shrink-0 rounded-full bg-yellow-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">School portal</span>
                 </div>
 
-                <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-9 lg:border-0 lg:p-0 lg:shadow-none">
+                <div class="min-w-0 bg-white sm:rounded-3xl sm:border sm:border-slate-100 sm:p-9 sm:shadow-xl sm:shadow-slate-200/50 lg:border-0 lg:p-0 lg:shadow-none">
                     {{ $slot }}
                 </div>
 
-                <p class="mt-7 text-center text-xs text-slate-400">
+                <p class="mt-6 text-center text-xs leading-5 text-slate-400 sm:mt-7">
                     &copy; <span x-data x-text="new Date().getFullYear()"></span> Edlink. Built by Spotnet Technologies.
                 </p>
             </div>

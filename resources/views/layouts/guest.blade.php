@@ -17,20 +17,32 @@
             }
         }
     </script>
+    <style>
+        .guest-card input:not([type="checkbox"]):not([type="radio"]) {
+            min-width: 0;
+            max-width: 100%;
+            min-height: 48px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .guest-card input:focus-visible { outline: 2px solid #eab308; outline-offset: 2px; }
+    </style>
     @livewireStyles
 </head>
-<body class="font-sans bg-gray-50 min-h-screen flex items-center justify-center px-4 py-10">
+<body class="font-sans bg-gray-50 min-h-screen min-h-[100svh] flex items-start justify-center px-4 py-6 sm:items-center sm:py-10">
 @include('partials.global-loader')
-    <div class="w-full max-w-md">
+    <div class="w-full min-w-0 max-w-md break-words">
         <div class="text-center mb-8">
             <div>
             <a href="{{ url('/') }}" class="inline-flex items-center gap-2 ">
-            <img src="{{ asset('img/logo.png') }}" alt="Edlink logo" class="w-[180px] h-auto">
+            <img src="{{ asset('img/logoneg.png') }}" alt="Edlink logo" class="w-32 sm:w-[180px] h-auto">
             </a>
         </div>
         </div>
 
-        <div class="bg-white shadow-xl rounded-2xl p-8">
+        <div class="guest-card bg-white shadow-xl rounded-2xl p-5 sm:p-8">
             {{ $slot }}
         </div>
 

@@ -35,3 +35,41 @@ server error
 
   php artisan up
   SSH
+  \
+
+
+
+
+
+  How to use Edlink Offline Workspace
+
+  You can record daily attendance and enter draft marks without internet, then sync them to Edlink later.
+
+  1. Prepare while online
+     Sign in to Edlink and open Offline workspace. On your first visit, create a PIN with at least 6 characters. Remember it—you’ll use it to unlock
+     your downloaded work.
+
+  2. Download the work you need
+     Choose Daily attendance or Draft marks. Select the class and attendance date, or the exam paper, then click Download. Repeat for each register or
+     paper you need.
+
+  3. Work without internet
+     Open the downloaded item under On this device and enter attendance or marks. Your changes save on that device. You can reopen /offline/ in the
+     same browser and device and unlock it with your PIN.
+
+  4. Sync when internet returns
+     Open and unlock the workspace. It syncs automatically while open and connected, or you can click Sync now. Wait until it says All saved changes
+     are synced. If your login expired, sign in again using the same account and school.
+
+  5. Review any conflicts
+     If someone changed the same records online, click Review online changes. Choose whether to keep the online value or your offline value, then save
+     your choices and retry.
+
+  Remember:
+
+  - Download everything you need before losing internet, including each attendance date.
+  - Marks sync as drafts. Submit them for approval through the normal online marks page.
+  - Click Lock when leaving a shared device.
+  - Don’t clear browser data while changes are pending—you could lose unsynced work.
+  - Your offline PIN is separate from your Edlink password and cannot be recovered.
+ 
