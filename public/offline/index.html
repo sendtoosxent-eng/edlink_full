@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#252641">
+  <title>Offline workspace · Edlink</title>
+  <link rel="stylesheet" href="./workspace.css">
+  <script type="module" src="./workspace.js"></script>
+</head>
+<body>
+  <header><a href="/dashboard" class="brand">Edlink<span>School workspace</span></a><a href="/dashboard">Back to Edlink</a></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">WORK FROM ANYWHERE</p><h1>Offline workspace</h1><p>Prepare your registers online. Keep working when the connection drops.</p></div><span id="connection" class="badge">Checking connection…</span></div>
+    <p id="message" role="status" aria-live="polite"></p>
+    <section id="gate" class="card narrow">
+      <h2 id="gate-title">Protect this device</h2>
+      <p id="gate-help">Set a PIN of at least 6 characters to encrypt your downloaded records. Use this PIN to unlock them without internet. Keep it safe: it cannot be recovered.</p>
+      <form id="unlock-form"><label for="pin">Offline PIN</label><input id="pin" type="password" minlength="6" required autocomplete="off"><button type="submit" id="unlock">Unlock workspace</button></form>
+      <p><a href="/login" target="_blank" rel="noopener">Sign in online</a> before preparing this device or syncing an expired session.</p>
+      <p class="muted">Use a trusted device. Clearing browser data removes downloaded records and unsynced changes.</p>
+    </section>
+    <div id="workspace" hidden>
+      <div class="toolbar"><p id="identity"></p><div><button id="sync" type="button">Sync now</button><button id="lock" class="secondary" type="button">Lock</button></div></div>
+      <section class="card">
+        <h2>Prepare work for offline use</h2>
+        <p>Download each class and attendance date or exam paper you need before going offline. Marks sync as drafts; submit and approve them in Edlink online.</p>
+        <form id="download-form" class="download-form">
+          <div><label for="kind">Task</label><select id="kind"><option value="attendance">Daily attendance</option><option value="marks">Draft marks</option></select></div>
+          <div class="grow"><label for="target">Class or paper</label><select id="target" required></select></div>
+          <div id="date-field"><label for="date">Attendance date</label><input id="date" type="date" required></div>
+          <button type="submit">Download</button>
+        </form>
+      </section>
+      <div class="columns"><aside class="card"><h2>On this device</h2><p id="pending" class="muted"></p><div id="datasets"></div><button id="export" type="button" class="secondary">Export pending changes</button><button id="clear" type="button" class="secondary danger">Remove device data</button></aside>
+      <section class="card editor"><div id="empty"><h2>Ready when you are</h2><p>Download a register or paper, then select it here to start.</p></div><div id="record" hidden><h2 id="record-title"></h2><p id="record-meta" class="muted"></p><p id="record-error" role="alert"></p><div class="toolbar"><button id="present" class="secondary" type="button">Mark all present</button><button id="review" class="secondary" type="button" hidden>Review online changes</button></div><div class="table-wrap"><table><thead><tr><th>Learner</th><th id="value-heading">Attendance</th></tr></thead><tbody id="rows"></tbody></table></div><p class="muted">Each edit is saved on this device. Pending changes sync automatically while this workspace is unlocked and connected.</p></div></section></div>
+    </div>
+    <dialog id="conflict"><h2>Review changes</h2><p>Choose a value for each learner before retrying. Nothing is overwritten until you confirm your choices.</p><div id="conflict-rows"></div><div class="toolbar"><button id="resolve" type="button">Save choices and retry</button><button id="cancel-review" type="button" class="secondary">Cancel</button></div></dialog>
+  </main>
+</body>
+</html>

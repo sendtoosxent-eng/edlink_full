@@ -300,6 +300,9 @@
             </div>
 
             <!-- Profile & Search Bar Panel Layout -->
+            @if(auth()->user()->hasPermission('attendance.daily') || auth()->user()->hasPermission('exams.marks'))
+                <a href="{{ url('/offline/') }}" class="text-sm font-semibold text-darken border border-gray-200 rounded-lg px-3 py-2">Offline workspace</a>
+            @endif
             @include('partials.branch-switcher')
             <div class="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
                  @if(isset($school) && $school?->is_demo)

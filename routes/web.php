@@ -278,6 +278,9 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified', 'branch.context', 'active.user'])->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designation.access'])->group(function () {
+    Route::get('offline-data/catalog', [\App\Http\Controllers\OfflineWorkspaceController::class, 'catalog'])->name('offline.catalog');
+    Route::get('offline-data/download', [\App\Http\Controllers\OfflineWorkspaceController::class, 'download'])->name('offline.download');
+    Route::post('offline-data/sync', [\App\Http\Controllers\OfflineWorkspaceController::class, 'sync'])->middleware('throttle:60,1')->name('offline.sync');
     Route::get('notifications', NotificationCenter::class)->name('notifications.index');
     Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
