@@ -264,3 +264,39 @@ it('hides and rejects assessment generation without preparation rights', functio
         ->call('generateFeeAssessments')->assertForbidden();
     expect(AccountingJournal::where('journal_type', 'fee_assessment')->count())->toBe(0);
 });
+
+it('allows admins and designated preparers to save and submit manual journals', function (string $role) {
+    $school = School::create(['name' => 'Manual Journal School', 'slug' => 'manual-journal-school']);
+    $designation = \App\Models\Designation::create(['school_id' => $school->id, 'name' => 'Journal preparer', 'permissions' => ['accounting.dashboard.view', 'accounting.journals.create', 'accounting.journals.submit']]);
+    $user = User::factory()->create(['school_id' => $school->id, 'role' => $role, 'designation_id' => $role === 'admin' ? null : $designation->id]);
+    $cash = LedgerAccount::where('school_id', $school->id)->where('code', '1110')->firstOrFail();
+    $income = LedgerAccount::where('school_id', $school->id)->where('code', '4100')->firstOrFail();
+
+    $component = Livewire::actingAs($user)->test(AccountingWorkspace::class)
+        ->call('setTab', 'journals')->assertSee('Manual journal entry')
+        ->set('journalDescription', 'Manual receipt')
+        ->set('journalLines', [
+            ['ledger_account_id' => $cash->id, 'description' => '', 'debit' => '100.10', 'credit' => '0'],
+            ['ledger_account_id' => $income->id, 'description' => '', 'debit' => '0', 'credit' => '100.10'],
+        ])
+        ->call('saveJournal')->assertSuccessful()->assertHasNoErrors();
+    $journal = AccountingJournal::where('journal_type', 'manual')->sole();
+    expect($journal->status)->toBe('draft')
+        ->and($journal->created_by)->toBe($user->id)
+        ->and((float) $journal->lines()->sum('debit'))->toBe(100.10)
+        ->and((float) $journal->lines()->sum('credit'))->toBe(100.10);
+    $component->call('submitJournal', $journal->id)->assertSuccessful()->assertHasNoErrors()
+        ->assertDontSee('wire:click="approveJournal(', false);
+    expect($journal->fresh()->status)->toBe('submitted');
+    $component->call('approveJournal', $journal->id)->assertForbidden();
+})->with(['admin', 'bursar']);
+
+it('hides manual journal creation and rejects saves without preparation rights', function () {
+    $school = School::create(['name' => 'Journal Viewer School', 'slug' => 'journal-viewer-school']);
+    $user = User::factory()->create(['school_id' => $school->id, 'role' => 'bursar']);
+    Livewire::actingAs($user)->test(AccountingWorkspace::class)
+        ->call('setTab', 'journals')
+        ->assertSee('Journal register')->assertDontSee('Manual journal entry')
+        ->call('saveJournal')->assertForbidden();
+    expect(AccountingJournal::where('journal_type', 'manual')->count())->toBe(0);
+});
