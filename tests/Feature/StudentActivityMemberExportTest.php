@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\School;
+use App\Livewire\StudentActivities;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -20,6 +22,11 @@ it('allows an assigned patron to view and export their house members', function 
     $page = $this->actingAs($patron)->get(route('students.activities'));
     expect($page->status())->toBe(200);
     $page->assertSee('Mandela House')->assertSee('Amina Kato')->assertSee('Export for Excel');
+
+    Livewire::test(StudentActivities::class)
+        ->call('selectHouse', $houseId)
+        ->assertSet('selectedHouseId', (string) $houseId)
+        ->assertSee('Amina Kato');
 
     $export = $this->actingAs($patron)->get(route('students.activities.export',['type'=>'house','activity'=>$houseId]));
     $export->assertOk()->assertDownload()->assertHeader('content-type','text/csv; charset=UTF-8');

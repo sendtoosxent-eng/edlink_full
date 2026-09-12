@@ -139,7 +139,7 @@ class StudentActivities extends Component
 
     public function selectHouse(int $houseId): void
     {
-        $allowed = DB::table('student_houses')->where('school_id', Auth::user()->school_id)->whereKey($houseId)
+        $allowed = DB::table('student_houses')->where('school_id', Auth::user()->school_id)->where('id', $houseId)
             ->when(! $this->isManager(), fn ($query) => $query->where('patron_user_id', Auth::id()))->exists();
         abort_unless($allowed, 403);
         $this->selectedHouseId = (string) $houseId;
