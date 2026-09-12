@@ -10,6 +10,7 @@ class DesignationPermissions
             'students' => ['label' => 'Students & admissions', 'rights' => ['students.view' => 'View learners', 'students.manage' => 'Register and manage learners', 'students.activities' => 'Manage houses and clubs']],
             'finance' => ['label' => 'Finance', 'rights' => ['finance.payments' => 'Record payments and receipts', 'finance.adjustments' => 'Request and review individual fee adjustments', 'finance.expenses' => 'Manage expenses', 'finance.ledger' => 'Manage ledger, reversals and reconciliation', 'finance.reports' => 'View financial reports']],
             'accounting' => ['label' => 'Accounting & controls', 'rights' => [
+                'accounting.assessments.generate' => 'Generate current-term fee assessments',
                 'accounting.dashboard.view' => 'View accounting dashboard', 'accounting.accounts.view' => 'View chart of accounts', 'accounting.accounts.manage' => 'Manage chart of accounts',
                 'accounting.mappings.manage' => 'Manage posting rules', 'accounting.journals.create' => 'Create manual journals', 'accounting.journals.submit' => 'Submit journals',
                 'accounting.journals.approve' => 'Approve journals', 'accounting.journals.post' => 'Post journals', 'accounting.journals.reverse' => 'Reverse journals',

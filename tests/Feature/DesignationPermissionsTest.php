@@ -34,3 +34,15 @@ it('keeps administrators unrestricted and supports legacy module designations', 
         ->and($bursar->hasPermission('staff.payroll'))->toBeFalse()
         ->and($admin->hasPermission('settings.manage'))->toBeTrue();
 });
+
+it('grants assessment preparation only through the appropriate designation rights', function (array $rights, bool $allowed) {
+    $school = School::create(['name' => 'Assessment Permissions', 'slug' => 'assessment-permissions']);
+    $designation = Designation::create(['school_id' => $school->id, 'name' => 'Accounts', 'permissions' => $rights]);
+    $user = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher', 'designation_id' => $designation->id]);
+    expect($user->hasPermission('accounting.assessments.generate'))->toBe($allowed);
+})->with([
+    'explicit assessment permission' => [['accounting.assessments.generate'], true],
+    'existing opening balance permission' => [['accounting.opening_balances.manage'], true],
+    'create without submit' => [['accounting.journals.create'], false],
+    'submit without create' => [['accounting.journals.submit'], false],
+]);

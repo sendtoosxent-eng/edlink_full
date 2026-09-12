@@ -133,7 +133,7 @@ class Accounting extends Component
 
     public function generateFeeAssessments(StudentReceivablesService $service): void
     {
-        $this->authorizePermission('accounting.opening_balances.manage');
+        $this->authorizePermission('accounting.assessments.generate');
         $term = Auth::user()->school->currentTerm();
         if (! $term) {
             $this->addError('assessment', 'Set a current academic term before generating fee assessments.');

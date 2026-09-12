@@ -233,3 +233,34 @@ it('deletes only unused custom ledger accounts', function () {
     Livewire::actingAs($admin)->test(AccountingWorkspace::class)->call('editAccount', $system->id)->call('deleteAccount')->assertHasErrors('account');
     expect(LedgerAccount::whereKey($system->id)->exists())->toBeTrue();
 });
+
+
+it('generates current-term assessments for school admins and journal preparers', function (string $role) {
+    $school = School::create(['name' => 'Assessment Access School', 'slug' => 'assessment-access']);
+    $designation = \App\Models\Designation::create(['school_id' => $school->id, 'name' => 'Assessment preparer', 'permissions' => ['accounting.dashboard.view', 'accounting.journals.create', 'accounting.journals.submit']]);
+    $user = User::factory()->create(['school_id' => $school->id, 'role' => $role, 'designation_id' => $role === 'admin' ? null : $designation->id]);
+    $term = Term::create(['school_id' => $school->id, 'name' => 'Term 1', 'year' => now()->year, 'term_number' => 1, 'is_current' => true, 'status' => 'open']);
+    $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'P4']);
+    $category = StudentCategory::create(['school_id' => $school->id, 'name' => 'Day']);
+    $student = Student::create(['school_id' => $school->id, 'school_class_id' => $class->id, 'student_category_id' => $category->id, 'name' => 'Assessment Learner', 'status' => 'active']);
+    StudentEnrolment::create(['school_id' => $school->id, 'student_id' => $student->id, 'term_id' => $term->id, 'school_class_id' => $class->id, 'student_category_id' => $category->id, 'base_fee_amount' => '1000.00', 'status' => 'active', 'enrolled_at' => now()]);
+
+    expect($user->hasPermission('accounting.opening_balances.manage'))->toBeFalse();
+    $component = Livewire::actingAs($user)->test(AccountingWorkspace::class)
+        ->assertSee('Generate current-term assessments')
+        ->call('generateFeeAssessments')->assertSuccessful()->assertHasNoErrors();
+    $journal = AccountingJournal::where('journal_type', 'fee_assessment')->sole();
+    expect($journal->status)->toBe('submitted')->and($journal->created_by)->toBe($user->id);
+    $component->call('generateFeeAssessments')->assertSuccessful()->assertHasNoErrors();
+    expect(AccountingJournal::where('journal_type', 'fee_assessment')->count())->toBe(1);
+    $component->call('approveJournal', $journal->id)->assertForbidden();
+})->with(['admin', 'bursar']);
+
+it('hides and rejects assessment generation without preparation rights', function () {
+    $school = School::create(['name' => 'Read Only Accounting', 'slug' => 'read-only-accounting']);
+    $user = User::factory()->create(['school_id' => $school->id, 'role' => 'bursar']);
+    Livewire::actingAs($user)->test(AccountingWorkspace::class)
+        ->assertDontSee('Generate current-term assessments')
+        ->call('generateFeeAssessments')->assertForbidden();
+    expect(AccountingJournal::where('journal_type', 'fee_assessment')->count())->toBe(0);
+});

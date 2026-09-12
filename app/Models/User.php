@@ -117,6 +117,13 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->isSuperadmin()) {
             return true;
         }
+        if ($permission === 'accounting.assessments.generate') {
+            if ($this->role === 'admin'
+                || $this->hasPermission('accounting.opening_balances.manage')
+                || ($this->hasPermission('accounting.journals.create') && $this->hasPermission('accounting.journals.submit'))) {
+                return true;
+            }
+        }
         if ($this->role === 'bursar' && in_array($permission, [
             'accounting.dashboard.view',
             'accounting.assets.view',
