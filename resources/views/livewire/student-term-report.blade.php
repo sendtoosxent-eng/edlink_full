@@ -1,37 +1,5 @@
 <div>
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-        @page {
-            size: A4 portrait;
-            margin: 0;
-        }
-        @media print {
-            body * {
-                visibility: hidden !important;
-            }
-            .report-container,
-            .report-container * {
-                visibility: visible !important;
-            }
-            body {
-                background: white !important;
-                padding: 0 !important;
-            }
-            .report-container {
-                position: absolute !important;
-                inset: 0 auto auto 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
-    </style>
+    @include('partials.student-report-print')
 
     @unless(in_array(auth()->user()->role, ['parent', 'student'], true))
     <section class="no-print mx-auto mb-5 max-w-[210mm] rounded-2xl border bg-white p-5 shadow-sm">
@@ -59,7 +27,7 @@
     </div>
 
     <!-- MAIN REPORT CONTAINER -->
-    <main class="report-container max-w-[210mm] mx-auto bg-white p-4 sm:p-6 shadow-xl relative min-h-[297mm]">
+    <main data-student-report class="report-container max-w-[210mm] mx-auto bg-white p-4 sm:p-6 shadow-xl relative min-h-[297mm]">
 
         <!-- DOUBLE BORDER WRAPPER -->
         <div class="border-4 border-slate-900 p-1.5 h-full">

@@ -433,6 +433,69 @@
 			</div>
 		</div>
 	</section>
+	
+	<!-- ============ MOBILE APP ============ -->
+<section class="mobile-section py-24 max-w-7xl mx-auto px-4 sm:px-6">
+    <div data-aos="fade-up" class="relative rounded-2xl sm:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-darken via-[#2a2560] to-darken">
+        <div class="absolute -left-10 -top-10 w-72 h-72 bg-yellow-400/10 rounded-full animate-blob"></div>
+        <div class="absolute -right-10 -bottom-16 w-72 h-72 bg-teal-400/10 rounded-full animate-blob-slow"></div>
+
+        <div class="relative z-10 grid lg:grid-cols-2 gap-10 items-center px-6 sm:px-10 lg:px-16 py-14 lg:py-20">
+
+            <!-- copy -->
+            <div class="text-center lg:text-left">
+                <span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-yellow-400 mb-5">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <span>Now on Android</span>
+                </span>
+
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                    Take Edlink <span class="text-gradient">everywhere</span> you go
+                </h2>
+                <p class="mt-4 text-gray-300 max-w-md mx-auto lg:mx-0">
+                    Mark attendance, check fees, and reach parents right from your phone. The Edlink Android app keeps admins, teachers, and staff connected without needing a laptop.
+                </p>
+
+                <div class="mt-8 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3">
+                    <a href="#" class="group flex items-center space-x-3 bg-white text-darken rounded-2xl px-5 py-3 shadow-xl hover:scale-105 transition-transform">
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.24-.84-.76-.84-1.35zm13.81-7.24L4.83 20.15l9.19-9.19 2.79 1.6zm3.35-6.02c.5.29.84.85.84 1.51s-.34 1.22-.84 1.51l-2.6 1.51-3.02-3.02 3.02-3.02 2.6 1.51zM4.83 3.85l11.98 6.89-2.79 1.6L4.83 3.85z"/></svg>
+                        <div class="text-left leading-tight">
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500">Get it on</p>
+                            <p class="text-sm font-bold">Google Play</p>
+                        </div>
+                    </a>
+
+                    <div class="flex items-center gap-4 text-gray-300 text-xs">
+                        <div class="flex items-center gap-1">
+                            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.448a1 1 0 00-.364 1.118l1.287 3.958c.299.921-.755 1.688-1.54 1.118l-3.367-2.448a1 1 0 00-1.176 0l-3.367 2.448c-.784.57-1.838-.197-1.539-1.118l1.286-3.958a1 1 0 00-.363-1.118L2.03 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z"/></svg>
+                            <span>4.7 rating</span>
+                        </div>
+                        <div class="w-px h-4 bg-white/15"></div>
+                        <span>Free download</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- phone mockup -->
+            <div class="relative flex justify-center lg:justify-end">
+                <div class="absolute w-64 h-64 bg-yellow-400/10 rounded-full blur-3xl"></div>
+                <div class="relative animate-float">
+                    <div class="w-52 sm:w-60 aspect-[9/19] rounded-[2.5rem] border-[6px] border-white/10 bg-darken shadow-2xl overflow-hidden">
+                        <img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'mobile_app_image') }}" class="w-full h-full object-cover" alt="Edlink Android app">
+                    </div>
+                    <!-- floating badge -->
+                    <div class="absolute -bottom-4 -left-6 sm:-left-10 glass bg-white/90 dark:bg-darken/90 rounded-2xl shadow-xl border border-white/10 px-4 py-3 flex items-center space-x-2">
+                        <span class="w-8 h-8 rounded-lg bg-teal-400/20 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                        <span class="text-xs font-semibold text-darken dark:text-white">Works offline-ready</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
 
 	<!-- ============ PRICING ============ -->
 	<section id="pricing" class="mobile-section py-28 bg-gray-50/60 dark:bg-white/[0.02]">
@@ -702,7 +765,8 @@
 					{ q: 'Multi-branch?', a: 'Yes, our Growth and Enterprise plans support multi-branch schools with per-branch reporting and permissions.' },
 					{ q: 'Talk to support?', a: 'Use the WhatsApp or Call buttons below, or send a message through the contact form and we\'ll get back to you fast.' },
 					{q: 'What is Edlink?', a: 'Edlink is a school management system that helps schools manage students, classes, teachers, results, fees, homework, and communication in one place.' },
-					{q: 'Which school types does Edlink support?', a: 'Edlink supports multiple school types like kindergaten , Primary , Secondary and Vocational school types'}
+					{q: 'Which school types does Edlink support?', a: 'Edlink supports multiple school types like kindergaten , Primary , Secondary and Vocational school types'},
+					{q: 'Do you have a Mobile App For Edlink?', a: 'Yes, Edlink has a mobile app for Android users. Contact your vendor for more information.'}
 				],
 				ask(q) {
 					this.messages.push({ from: 'user', text: q.q });

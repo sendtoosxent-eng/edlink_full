@@ -1,12 +1,5 @@
 <div class="mx-auto max-w-6xl">
-    <style>
-        @media print {
-            @page { size: A4 portrait; margin: 10mm; }
-            body { background: white !important; }
-            .bulk-report { width: 190mm; min-height: 277mm; margin: 0 auto; break-after: page; page-break-after: always; box-shadow: none !important; }
-            .bulk-report:last-child { break-after: auto; page-break-after: auto; }
-        }
-    </style>
+    @include('partials.student-report-print')
 
     <div class="mb-8 print:hidden">
         <h1 class="text-2xl font-bold">Bulk term reports</h1>
@@ -33,7 +26,7 @@
 
     @forelse($reports as $report)
         @php($student=$report['student']) @php($data=$report['data']) @php($settings=$data['settings'])
-        <article class="bulk-report relative isolate mb-8 overflow-hidden rounded-2xl border bg-white p-8 print:mb-0 print:rounded-none print:border-0">
+        <article data-student-report class="bulk-report relative isolate mb-8 overflow-hidden rounded-2xl border bg-white p-8 print:mb-0 print:rounded-none print:border-0">
             <div class="pointer-events-none absolute inset-0 z-0 flex items-center justify-center" aria-hidden="true">
                 @if($school->badgeUrl())
                     <img src="{{ $school->badgeUrl() }}" class="h-72 w-72 object-contain opacity-[0.06] grayscale" alt="">

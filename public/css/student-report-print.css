@@ -1,0 +1,91 @@
+/* Applied to print copies during measurement as well as printing. */
+#student-report-print-root {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 194mm;
+    background: white;
+}
+.student-report-sheet {
+    position: relative;
+    width: 194mm;
+    height: 280mm;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    break-inside: avoid;
+    break-after: page;
+    page-break-after: always;
+}
+.student-report-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+}
+#student-report-print-root .student-report-print-content {
+    position: relative !important;
+    inset: auto !important;
+    width: 194mm !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    transform-origin: top left;
+    font-size: 10px;
+    line-height: 1.3;
+}
+#student-report-print-root * { box-sizing: border-box; animation: none !important; transition: none !important; }
+#student-report-print-root .report-container > div { padding: 3px; height: auto; }
+#student-report-print-root .report-container > div > div { padding: 12px; height: auto; overflow: visible; }
+#student-report-print-root header { margin-bottom: 10px; gap: 10px; padding-bottom: 8px; }
+#student-report-print-root h1, #student-report-print-root h2 { font-size: 20px; line-height: 1.1; }
+#student-report-print-root .text-sm, #student-report-print-root .text-xs { font-size: 10px; }
+#student-report-print-root .text-lg, #student-report-print-root .text-base { font-size: 12px; }
+#student-report-print-root header .w-20 { width: 58px; }
+#student-report-print-root header .h-20 { height: 58px; }
+#student-report-print-root header .h-24 { height: 70px; }
+#student-report-print-root .mt-8, #student-report-print-root .mt-6,
+#student-report-print-root .mt-5, #student-report-print-root .mt-4,
+#student-report-print-root .mt-3 { margin-top: 8px; }
+#student-report-print-root .mt-10 { margin-top: 24px; }
+#student-report-print-root .mb-6 { margin-bottom: 10px; }
+#student-report-print-root .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 8px; }
+#student-report-print-root .gap-4 { gap: 8px; }
+#student-report-print-root .p-3 { padding: 6px; }
+#student-report-print-root .p-2 { padding: 4px; }
+#student-report-print-root .py-3 { padding-top: 6px; padding-bottom: 6px; }
+#student-report-print-root table { width: 100%; table-layout: auto; }
+#student-report-print-root th, #student-report-print-root td {
+    width: auto;
+    padding: 4px 3px;
+    font-size: 9px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+#student-report-print-root th { font-size: 8px; letter-spacing: 0; background: #0f172a; color: white; }
+#student-report-print-root .min-h-\[50px\] { min-height: 32px; }
+#student-report-print-root .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media print {
+    @page { size: A4 portrait; margin: 8mm; }
+    html:has(body.printing-student-reports), body.printing-student-reports {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+    body.printing-student-reports > :not(#student-report-print-root) { display: none !important; }
+    #student-report-print-root {
+        position: static;
+        width: 194mm;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    #student-report-print-root, #student-report-print-root * { visibility: visible !important; }
+}
