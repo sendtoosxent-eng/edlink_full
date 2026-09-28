@@ -17,6 +17,7 @@ class ReportSettings extends Component
     public string $calculationMethod = 'single_exam';
     public string $missingAssessmentRule = 'incomplete';
     public array $assessmentWeights = [];
+    public string $showExamBreakdown = 'enabled';
     public string $showPosition = 'enabled';
     public string $showFees = 'enabled';
     public string $showAttendance = 'enabled';
@@ -62,6 +63,7 @@ class ReportSettings extends Component
             'showGrade' => 'required|in:enabled,disabled',
             'showPoints' => 'required|in:enabled,disabled',
             'showRemarks' => 'required|in:enabled,disabled',
+            'showExamBreakdown' => 'required|in:enabled,disabled',
         ]);
 
         if ($this->calculationMethod === 'weighted' && abs(collect($this->assessmentWeights)->sum(fn ($row) => (float) ($row['weight'] ?? 0)) - 100) > 0.01) {
@@ -76,6 +78,7 @@ class ReportSettings extends Component
             'calculation_method' => $this->calculationMethod,
             'missing_assessment_rule' => $this->missingAssessmentRule,
             'assessment_weights' => json_encode(array_values($this->assessmentWeights)),
+            'show_exam_breakdown' => $this->showExamBreakdown,
             'show_position' => $this->showPosition,
             'show_fees' => $this->showFees,
             'show_attendance' => $this->showAttendance,
@@ -108,6 +111,7 @@ class ReportSettings extends Component
         $this->calculationMethod = $values[$prefix.'calculation_method'] ?? $defaults['calculation_method'];
         $this->missingAssessmentRule = $values[$prefix.'missing_assessment_rule'] ?? $defaults['missing_assessment_rule'];
         $this->assessmentWeights = json_decode($values[$prefix.'assessment_weights'] ?? $defaults['assessment_weights'], true) ?: [];
+        $this->showExamBreakdown = $values[$prefix.'show_exam_breakdown'] ?? $defaults['show_exam_breakdown'];
         $this->showPosition = $values[$prefix.'show_position'] ?? $defaults['show_position'];
         $this->showFees = $values[$prefix.'show_fees'] ?? $defaults['show_fees'];
         $this->showAttendance = $values[$prefix.'show_attendance'] ?? $defaults['show_attendance'];

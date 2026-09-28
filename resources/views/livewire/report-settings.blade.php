@@ -72,7 +72,7 @@
             <div class="sm:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">
                 <div class="border-b border-slate-200 bg-white px-5 py-4">
                     <h3 class="text-sm font-extrabold text-slate-900">Result Calculation</h3>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Control how examinations are combined into the final subject result for this stage.</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Term-specific exam category weights take priority when configured. Otherwise, this stage calculation method is used.</p>
                 </div>
                 <div class="grid gap-4 p-5 sm:grid-cols-2">
                     <label><span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Calculation Method</span><select wire:model.live="calculationMethod" class="w-full rounded-xl border-slate-200 bg-white text-sm font-semibold focus:border-amber-500 focus:ring-amber-500/20"><option value="single_exam">Single selected examination</option><option value="weighted">Weighted examinations</option><option value="average">Average all examinations equally</option><option value="best_exam">Use best examination</option></select></label>
@@ -163,6 +163,7 @@
                 </div>
                 <div class="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach([
+                        'showExamBreakdown' => 'Exam scores and percentages',
                         'showMarks' => 'Marks Scored',
                         'showMaximum' => 'Maximum Marks',
                         'showPercentage' => 'Percentage',

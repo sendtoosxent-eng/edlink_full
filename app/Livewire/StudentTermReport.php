@@ -166,6 +166,7 @@ class StudentTermReport extends Component
                     'aggregate_points' => $row['incomplete'] ? null : $scale?->aggregate_points,
                     'remarks' => $row['incomplete'] ? 'One or more required assessments are missing.' : ($scale?->remark ?? 'Grade not configured'),
                     'incomplete' => $row['incomplete'],
+                    'assessments' => $row['assessments'],
                 ];
             });
     }
@@ -252,6 +253,8 @@ class StudentTermReport extends Component
 
         $attendancePresent = $attendance->whereIn('status', ['present', 'late'])->count(); $attendanceTotal = $attendance->count();
         $average = $calculationGrades->avg('percentage');
+        $examColumns = $grades->flatMap(fn ($grade) => $grade->assessments)
+            ->unique('exam_id')->sortBy('name')->values();
         $gradingScales = GradingScale::where('school_id', $school->id)->where('education_stage', $settings['stage'])->orderByDesc('minimum_percentage')->get();
         $overallScale = $average !== null ? $gradingScales->first(fn ($scale) => $average >= (float) $scale->minimum_percentage && $average <= (float) $scale->maximum_percentage) : null;
         $teacherRemarks = $grades->isEmpty() ? 'No approved results are available for this examination.' : trim(($overallScale?->remark ?? 'Keep working consistently in every subject.').' Overall result: '.($average >= $settings['pass'] ? 'Pass.' : 'Below the configured pass mark.'));
@@ -259,6 +262,6 @@ class StudentTermReport extends Component
         $school->setAttribute('logo_url', $school->badgeUrl());
         $report = (object) ['student' => $student, 'term' => $term, 'grades' => $grades, 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'gpa' => $gpa, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate];
 
-        return view('livewire.student-term-report', compact('school', 'term', 'students', 'student', 'exams', 'exam', 'settings', 'gradingScales', 'grades', 'attendance', 'gpa', 'aggregate', 'average', 'position', 'fees', 'promotion', 'report') + ['terms' => Term::where('school_id', $school->id)->orderByDesc('year')->orderByDesc('id')->get(), 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate, 'pageTitle' => 'Student Term Report']);
+        return view('livewire.student-term-report', compact('school', 'term', 'students', 'student', 'exams', 'exam', 'settings', 'gradingScales', 'grades', 'examColumns', 'attendance', 'gpa', 'aggregate', 'average', 'position', 'fees', 'promotion', 'report') + ['terms' => Term::where('school_id', $school->id)->orderByDesc('year')->orderByDesc('id')->get(), 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate, 'pageTitle' => 'Student Term Report']);
     }
 }

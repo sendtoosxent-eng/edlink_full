@@ -105,6 +105,12 @@
                         @error('endsAt')<span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span>@enderror
                     </label>
                 </div>
+                <!---Room Selection -->
+                <label class="block text-xs font-bold text-slate-700">
+                    Room Number <span class="font-normal text-slate-400">(Optional)</span>
+                    <input wire:model="label" placeholder="Optional when a subject is selected" class="mt-1.5 w-full rounded-xl border-slate-200 bg-slate-50/50 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-400/20 transition">
+                    @error('label')<span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span>@enderror
+                </label>
 
                 <!-- Subject Selection -->
                 <label class="block text-xs font-bold text-slate-700">

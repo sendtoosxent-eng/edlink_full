@@ -9,7 +9,7 @@
                     Promotion Preview &amp; Confirmation
                 </h1>
                 <p class="mt-1 text-sm text-slate-500 max-w-2xl">
-                    Configure pass mark thresholds to evaluate learner performance. Preview promotion outcomes before writing official target-term enrolments.
+                    Promotion decisions use the final term average and stage pass mark configured in Report Settings. Preview outcomes before creating next-term placements.
                 </p>
             </div>
         </div>
@@ -74,13 +74,13 @@
                 @enderror
             </div>
 
-            <!-- Average Pass Mark -->
+            <!-- Stage pass marks -->
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Average Pass Mark (%)</label>
-                <input wire:model.live.debounce.500ms="passMark" type="number" min="0" max="100" step="0.01" placeholder="e.g. 50" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition font-medium">
-                @error('passMark')
-                    <span class="mt-1 text-xs font-semibold text-rose-600 block">{{ $message }}</span>
-                @enderror
+                <span class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Configured stage pass marks</span>
+                <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-700">
+                    @foreach($passMarks as $stage => $threshold)<span>{{ str($stage)->replace('_',' ')->title() }}: <b>{{ number_format($threshold, 1) }}%</b></span>@endforeach
+                </div>
+                <a href="{{ route('reports.settings') }}" wire:navigate class="mt-1 inline-block text-xs font-bold text-amber-700 hover:underline">Edit in Report Settings</a>
             </div>
 
             <!-- Evaluate Action Button -->
@@ -141,6 +141,7 @@
                         <th class="py-3.5 px-6">Current Class</th>
                         <th class="py-3.5 px-6 text-center">Subjects</th>
                         <th class="py-3.5 px-6 text-center">Average</th>
+                        <th class="py-3.5 px-6 text-center">Pass mark</th>
                         <th class="py-3.5 px-6 text-center">Check</th>
                         <th class="py-3.5 px-6">Automatic Outcome</th>
                         <th class="py-3.5 px-6">Target Placement</th>
@@ -162,18 +163,21 @@
                             <td class="py-4 px-6 text-center">
                                 <span class="font-extrabold text-slate-900 font-mono">{{ number_format($row['average'], 1) }}%</span>
                             </td>
+                            <td class="py-4 px-6 text-center font-mono">{{ number_format($row['pass_mark'], 1) }}%</td>
                             <td class="py-4 px-6 text-center whitespace-nowrap">
                                 @if($row['subjects'] === 0)
                                     <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-xs font-bold text-rose-700">
                                         No marks
                                     </span>
+                                @elseif($row['incomplete'])
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-xs font-bold text-rose-700">Incomplete</span>
                                 @elseif($row['passed'])
                                     <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
                                         Passed
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-800">
-                                        Below {{ $passMark }}%
+                                        Below {{ number_format($row['pass_mark'], 1) }}%
                                     </span>
                                 @endif
                             </td>
@@ -189,13 +193,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 px-6 text-center">
+                            <td colspan="8" class="py-12 px-6 text-center">
                                 <div class="max-w-xs mx-auto text-center space-y-2">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto">
                                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                                     </div>
                                     <p class="text-sm font-extrabold text-slate-800">No Evaluation Preview Ready</p>
-                                    <p class="text-xs text-slate-500">Select source and target terms, specify the average pass mark, and click "Evaluate All Learners".</p>
+                                    <p class="text-xs text-slate-500">Select the source and target terms, then evaluate learners using their stage pass marks from Report Settings.</p>
                                 </div>
                             </td>
                         </tr>

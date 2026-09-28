@@ -21,6 +21,8 @@ class StageTermReportCalculator
             $scale = $mark['incomplete'] ? null : $scales->first(fn ($item) => $mark['percentage'] >= $item->minimum_percentage && $mark['percentage'] <= $item->maximum_percentage);
             return $mark + ['grade' => $mark['incomplete'] ? 'Incomplete' : ($scale?->grade ?? '-'), 'points' => $mark['incomplete'] ? null : $scale?->aggregate_points, 'comment' => $mark['incomplete'] ? 'One or more required assessments are missing.' : ($scale?->remark ?? '')];
         });
+        $examColumns = $marks->flatMap(fn (array $mark) => $mark['assessments'])
+            ->unique('exam_id')->sortBy('name')->values();
         $used = $marks->reject(fn ($mark) => $mark['incomplete'])->sortByDesc('percentage')->take($settings['best']);
         $average = $used->count() ? round($used->avg('percentage'), 2) : 0;
         $attendance = AttendanceRecord::where(['school_id' => $student->school_id, 'term_id' => $term->id, 'student_id' => $student->id])->where('session_key', 'daily')->get();
@@ -29,7 +31,7 @@ class StageTermReportCalculator
         }
         $overall = $scales->first(fn ($scale) => $average >= (float) $scale->minimum_percentage && $average <= (float) $scale->maximum_percentage);
 
-        return compact('settings', 'marks', 'average', 'class', 'scales') + [
+        return compact('settings', 'marks', 'average', 'class', 'scales', 'examColumns') + [
             'stage' => $stage, 'scale_configured' => $scales->isNotEmpty(),
             'passed' => $marks->isNotEmpty() && ! $marks->contains('incomplete', true) && $average >= $settings['pass'],
             'aggregate' => $used->sum(fn ($mark) => (int) ($mark['points'] ?? 0)),

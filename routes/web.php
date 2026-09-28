@@ -31,6 +31,7 @@ use App\Livewire\Communications;
 use App\Livewire\Designations;
 use App\Livewire\EventsV2 as Events;
 use App\Livewire\ExamResults;
+use App\Livewire\ExamCategories;
 use App\Livewire\ExamSetup;
 use App\Livewire\Expenses;
 use App\Livewire\FeeAdjustments;
@@ -393,6 +394,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('reports/bulk-term-reports', BulkTermReports::class)->name('reports.bulk-term-reports');
     Route::get('academics/promotions', Promotions::class)->name('promotions.index');
     Route::get('settings/result-access', ResultAccessSettings::class)->name('settings.result-access');
+    Route::get('settings/exam-categories', ExamCategories::class)->name('settings.exam-categories');
     Route::get('exams/{exam}/students/{student}/report-card', function (Exam $exam, Student $student) {
         $user = auth()->user();
         abort_unless(

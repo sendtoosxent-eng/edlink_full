@@ -9,6 +9,8 @@ use App\Models\StudentEnrolment;
 use App\Models\Term;
 use App\Services\StageTermReportCalculator;
 use App\Services\GraduationService;
+use App\Services\SchoolAcademicSetup;
+use App\Services\StageReportSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -19,7 +21,6 @@ class PromotionsV2 extends Component
 {
     public string $sourceTermId = '';
     public string $targetTermId = '';
-    public string $passMark = '50';
     public array $preview = [];
     public bool $previewReady = false;
 
@@ -32,7 +33,6 @@ class PromotionsV2 extends Component
 
     public function updatedSourceTermId(): void { $this->clearPreview(); }
     public function updatedTargetTermId(): void { $this->clearPreview(); }
-    public function updatedPassMark(): void { $this->clearPreview(); }
 
     public function clearPreview(): void
     {
@@ -45,7 +45,6 @@ class PromotionsV2 extends Component
         $validated = $this->validate([
             'sourceTermId' => ['required', 'integer'],
             'targetTermId' => ['required', 'integer', 'different:sourceTermId'],
-            'passMark' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $school = Auth::user()->school;
@@ -68,7 +67,7 @@ class PromotionsV2 extends Component
 
         $this->preview = $enrolments->map(function (StudentEnrolment $enrolment) use ($source, $classes, $graduatingClassId): array {
             $report = StageTermReportCalculator::student($enrolment->student, $source);
-            $passed = $report['marks']->isNotEmpty() && $report['average'] >= (float) $this->passMark;
+            $passed = $report['passed'];
             $index = $classes->search(fn (SchoolClass $class) => $class->id === $enrolment->school_class_id);
             $nextClass = $index === false ? null : $classes->get($index + 1);
             if (! $source->isFinalTerm()) {
@@ -86,7 +85,9 @@ class PromotionsV2 extends Component
                 'admission_no' => $enrolment->student->admission_no,
                 'current_class' => $enrolment->schoolClass?->name ?? 'Unassigned',
                 'average' => $report['average'],
+                'pass_mark' => $report['settings']['pass'],
                 'subjects' => $report['marks']->count(),
+                'incomplete' => $report['marks']->contains('incomplete', true),
                 'passed' => $passed,
                 'outcome' => $outcome,
                 'target_class_id' => $targetClass?->id,
@@ -156,7 +157,8 @@ class PromotionsV2 extends Component
                 }
             }
             AuditLog::record($school->id, 'term.automatic_promotions_committed', $source, [
-                'target_term_id' => $target->id, 'pass_mark' => (float) $this->passMark,
+                'target_term_id' => $target->id,
+                'pass_marks' => collect($this->preview)->pluck('pass_mark')->unique()->values()->all(),
                 'learners' => count($this->preview),
                 'promoted' => collect($this->preview)->where('outcome', 'promoted')->count(),
                 'repeated' => collect($this->preview)->where('outcome', 'repeated')->count(),
@@ -175,6 +177,9 @@ class PromotionsV2 extends Component
         $school = Auth::user()->school;
         return view('livewire.promotions-v2', [
             'terms' => Term::where('school_id', $school->id)->latest('year')->latest('id')->get(),
+            'passMarks' => collect(SchoolAcademicSetup::stagesFor($school))->mapWithKeys(fn (string $stage) => [
+                $stage => StageReportSettings::get($school->id, $stage)['pass'],
+            ]),
             'pageTitle' => 'Automatic Promotions',
         ]);
     }

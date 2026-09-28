@@ -73,3 +73,77 @@ server error
   - Don’t clear browser data while changes are pending—you could lose unsynced work.
   - Your offline PIN is separate from your Edlink password and cannot be recovered.
  
+ ////////exam work flow
+
+  Here’s the flow:
+
+  1. Set up categories and weights in System Settings → Academic → Examination
+     categories. Add the assessment periods your school uses, such as Beginning
+     of Term, Midterm, and End of Term. Their weights must total 100%.
+
+  2. Create exams in Exam Setup. If there’s one category, it’s assigned
+     automatically. If there are several, choose the category for the exam.
+     Existing exams can be categorized from the exam list.
+
+  3. Add subject papers to each exam, setting the maximum score and any paper
+     weighting.
+
+  4. Teachers enter marks, save them as drafts, and submit them for approval. An
+     authorized staff member approves each paper.
+
+  5. Review and publish results after the papers are approved and the
+     publication checklist is satisfied.
+
+  How the final subject mark is calculated: Each score is first converted to a
+  percentage: score ÷ maximum score × 100. If a category contains multiple
+  exams, their percentages are averaged. Then each category average is
+  multiplied by its configured weight, and the weighted results are added. For
+  example, category averages of 60% at 20%, 70% at 30%, and 80% at 50% produce a
+  final mark of 72%.
+
+  If a required category has no approved marks, the school’s existing missing
+  assessment rule applies. With the default “incomplete” rule, the subject
+  result is marked incomplete until all categories have marks.
+
+
+Think of an exam as an assessment sitting, and an exam paper as the subject-
+  specific part students take.
+
+  For example, a school configures these categories in System Settings:
+
+   Category             Share of final mark
+  ━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━
+   Beginning of term                    20%
+  ───────────────────  ─────────────────────
+   Midterm                              30%
+  ───────────────────  ─────────────────────
+   End of term                          50%
+
+  Then in Exam Setup, the school creates an exam called Midterm Assessment for
+  Primary 4 and assigns it to the Midterm category. The exam name describes the
+  assessment event; it isn’t the subject.
+
+  Next, the school adds papers to that exam:
+
+   Paper subject    Maximum score
+  ━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━
+   Science                    100
+  ───────────────  ───────────────
+   Mathematics                100
+  ───────────────  ───────────────
+   English                    100
+
+  Teachers enter each learner’s score for each paper. So a learner might get
+  70/100 in Science in this Midterm Assessment.
+
+  If the learner’s Science scores are 60% in Beginning of term, 70% in Midterm,
+  and 80% in End of term, the final Science mark is:
+
+  (60 × 20%) + (70 × 30%) + (80 × 50%) = 72%
+
+  The paper weighting field is an additional multiplier for papers within an
+  exam, for cases where one paper should count more than another. Most schools
+  can leave it at 1. As I mentioned, it isn’t currently included in the new
+  category based term calculation, so that field’s effect needs refinement.
+
+

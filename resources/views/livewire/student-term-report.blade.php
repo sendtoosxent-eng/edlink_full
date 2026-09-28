@@ -70,7 +70,7 @@
 
                             <!-- MARKSHEET Banner -->
                             <div class="inline-block bg-yellow-400 text-slate-950 font-black uppercase tracking-widest px-8 py-1 mt-2 text-sm shadow-2xs">
-                                {{ $settings['calculation_method'] === 'single_exam' ? $exam->name.' MARKSHEET' : 'COMBINED TERM REPORT' }}
+                                {{ $settings['calculation_method'] === 'single_exam' && $examColumns->count() <= 1 ? $exam->name.' MARKSHEET' : 'COMBINED TERM REPORT' }}
                             </div>
                         </div>
 
@@ -114,9 +114,12 @@
                                 <tr class="bg-slate-900 text-white font-extrabold uppercase border-b-2 border-slate-900 text-[11px]">
                                     <th class="p-2.5 border-r-2 border-slate-900 w-12 text-center">S.NO</th>
                                     <th class="p-2.5 border-r-2 border-slate-900">SUBJECT</th>
-                                    @if($settings['show_marks'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MARKS SCORED</th>@endif
-                                    @if($settings['show_maximum'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">MAXIMUM MARKS</th>@endif
-                                    @if($settings['show_percentage'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-20">%</th>@endif
+                                    @if($settings['show_exam_breakdown'])
+                                        @foreach($examColumns as $column)<th class="p-2 border-r-2 border-slate-900 text-center"><span class="block">{{ $column['name'] }}</span><small class="normal-case">Score / %</small></th>@endforeach
+                                    @endif
+                                    @if($settings['show_marks'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">FINAL MARKS</th>@endif
+                                    @if($settings['show_maximum'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">FINAL MAXIMUM</th>@endif
+                                    @if($settings['show_percentage'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-20">FINAL RESULT %</th>@endif
                                     @if($settings['show_grade'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-28">GRADE</th>@endif
                                     @if($settings['show_points'])<th class="p-2.5 border-r-2 border-slate-900 text-center w-24">POINTS</th>@endif
                                     @if($settings['show_remarks'])<th class="p-2.5 text-center w-32">REMARKS</th>@endif
@@ -124,9 +127,16 @@
                             </thead>
                             <tbody class="divide-y-2 divide-slate-900 font-semibold text-slate-900 uppercase">
                                 @forelse($grades ?? ($report->grades ?? []) as $index => $grade)
+                                @php($examAssessments = collect($grade->assessments)->keyBy('exam_id'))
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">{{ $grade->subject->name ?? ($grade['subject_name'] ?? 'SUBJECT') }}</td>
+                                    @if($settings['show_exam_breakdown'])
+                                        @foreach($examColumns as $column)
+                                            @php($attempt = $examAssessments->get($column['exam_id']))
+                                            <td class="p-2 border-r-2 border-slate-900 text-center font-mono">@if($attempt)<span class="block">{{ number_format($attempt['score'], 1) }}/{{ number_format($attempt['maximum'], 1) }}</span><small class="block text-slate-600">{{ number_format($attempt['percentage'], 1) }}%</small>@else—@endif</td>
+                                        @endforeach
+                                    @endif
                                     @if($settings['show_marks'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->score ?? ($grade['score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>@endif
                                     @if($settings['show_maximum'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ rtrim(rtrim(number_format((float) ($grade->maximum_score ?? ($grade['maximum_score'] ?? 0)), 2, '.', ''), '0'), '.') }}</td>@endif
                                     @if($settings['show_percentage'])<td class="p-2.5 border-r-2 border-slate-900 text-center font-mono font-bold">{{ number_format((float) $grade->percentage, 1) }}%</td>@endif
@@ -138,6 +148,7 @@
                                 <tr>
                                     <td class="p-2.5 border-r-2 border-slate-900 text-center font-bold">01</td>
                                     <td class="p-2.5 border-r-2 border-slate-900 font-bold">NO GRADES RECORDED</td>
+                                    @if($settings['show_exam_breakdown'])@foreach($examColumns as $column)<td class="p-2 border-r-2 border-slate-900 text-center">—</td>@endforeach @endif
                                     @if($settings['show_marks'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
                                     @if($settings['show_maximum'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif
                                     @if($settings['show_percentage'])<td class="p-2.5 border-r-2 border-slate-900 text-center">—</td>@endif

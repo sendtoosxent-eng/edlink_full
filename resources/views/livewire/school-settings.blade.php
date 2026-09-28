@@ -124,6 +124,10 @@
                 <p class="text-xs text-slate-500 mt-0.5">These guide term operations, promotion, and registration policies.</p>
             </div>
             <div class="grid gap-5 md:grid-cols-2">
+                <a href="{{ route('settings.exam-categories') }}" wire:navigate class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-900 p-4 md:col-span-2">
+                    <span><strong class="block text-sm text-amber-300">Examination categories & weights</strong><span class="mt-1 block text-xs text-slate-500">Choose your school's assessment categories and each category's share of the final mark.</span></span>
+                    <span class="shrink-0 text-sm font-bold text-amber-300">Configure &rarr;</span>
+                </a>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Academic year/term rule</label>
                     <select wire:model="settings.academic_year_rule" class="w-full rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium"><option>Three terms per academic year</option><option>Two semesters per academic year</option><option>Four quarters per academic year</option><option>Custom academic calendar</option></select>

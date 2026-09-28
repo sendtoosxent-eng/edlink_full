@@ -69,6 +69,21 @@
                     @error('classId') <span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span> @enderror
                 </div>
 
+                @if($categories->count() > 1)
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Assessment Category *</label>
+                        <select wire:model="categoryId" class="block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20">
+                            <option value="">Select category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }} ({{ number_format($category->weight, 2) }}%)</option>
+                            @endforeach
+                        </select>
+                        @error('categoryId') <span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span> @enderror
+                    </div>
+                @elseif($categories->count() === 1)
+                    <p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Category: <strong>{{ $categories->first()->name }}</strong> ({{ number_format($categories->first()->weight, 2) }}%). Assigned automatically.</p>
+                @endif
+
                 <!-- Stream Select -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Stream <span class="font-normal text-slate-400">(Optional)</span></label>
@@ -105,7 +120,7 @@
                     <select wire:model="examId" class="block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-800/20 transition cursor-pointer">
                         <option value="">Choose an exam</option>
                         @foreach($exams as $exam)
-                            <option value="{{ $exam->id }}">{{ $exam->name }} · {{ $exam->schoolClass->name }}</option>
+                            <option value="{{ $exam->id }}">{{ $exam->name }} · {{ $exam->schoolClass->name }}{{ $exam->category ? ' · '.$exam->category->name : '' }} · {{ $exam->term->name }} {{ $exam->term->year }}</option>
                         @endforeach
                     </select>
                     @error('examId') <span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span> @enderror
@@ -115,12 +130,13 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Subject *</label>
                     <select wire:model="subjectId" class="block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-800/20 transition cursor-pointer">
-                        <option value="">Choose a subject</option>
+                        <option value="">{{ $examId ? 'Choose a subject offered to this class' : 'Select an exam first' }}</option>
                         @foreach($subjects as $subject)
                             <option value="{{ $subject->id }}">{{ $subject->name }}</option>
                         @endforeach
                     </select>
                     @error('subjectId') <span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span> @enderror
+                    @if($examId && $subjects->isEmpty()) <p class="mt-1 text-[11px] font-medium text-slate-500">No subjects are assigned to this class for the exam term.</p> @endif
                 </div>
 
                 <!-- Maximum Score & Weighting (Grid) -->
@@ -169,7 +185,7 @@
                         <div class="flex items-center gap-2.5">
                             <h3 class="text-sm font-bold text-slate-900">{{ $exam->name }}</h3>
                             <span class="rounded-md bg-slate-100 border border-slate-200/60 px-2 py-0.5 text-[11px] font-bold text-slate-700">
-                                {{ $exam->schoolClass->name }}
+                                {{ $exam->schoolClass->name }}{{ $exam->stream ? ' · '.$exam->stream->name : '' }}
                             </span>
                         </div>
 
@@ -178,6 +194,20 @@
                             {{ $exam->status ?? 'Draft' }}
                         </span>
                     </div>
+                    <p class="mt-1 text-xs text-slate-500">{{ $exam->term->name }}, {{ $exam->term->year }}</p>
+                    @if($exam->category)<p class="mt-1 text-xs font-semibold text-amber-700">{{ $exam->category->name }} · {{ number_format($exam->category->weight, 2) }}% of final mark</p>@endif
+                    @php($examCategories = $allCategories->where('term_id', $exam->term_id))
+                    @if($examCategories->isNotEmpty())
+                        <label class="mt-2 flex max-w-sm items-center gap-2 text-xs font-semibold text-slate-600">
+                            <span>Assessment category</span>
+                            <select wire:change="assignCategory({{ $exam->id }}, $event.target.value)" class="min-w-0 flex-1 rounded-md border-slate-300 py-1.5 text-xs">
+                                <option value="">Unassigned</option>
+                                @foreach($examCategories as $category)
+                                    <option value="{{ $category->id }}" @selected((int) $exam->exam_category_id === (int) $category->id)>{{ $category->name }} ({{ number_format($category->weight, 2) }}%)</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    @endif
 
                     <!-- Papers List -->
                     <div class="mt-3">
