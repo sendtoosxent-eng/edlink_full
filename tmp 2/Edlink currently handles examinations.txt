@@ -1,0 +1,122 @@
+ Edlink currently handles examinations through this workflow:
+
+  1. Exam creation
+
+  The administrator or academic officer goes to Exams → Create Exam and provides:
+
+  - Exam name, such as Mid-Term or End-of-Term
+  - Target class
+  - Optional stream
+  - Current academic term
+
+  The term must be open. The exam starts as a draft.
+
+  2. Subject papers
+
+  Subject papers are added to the exam individually. Each paper has:
+
+  - Subject
+  - Maximum score
+  - Weighting
+
+  For example, Mathematics may have a maximum of 100 and a weighting of 1. A paper added again is updated rather than
+  duplicated.
+
+  3. Learners included
+
+  Edlink includes active learners from the exam’s class and optional stream.
+
+  For S3–S6, the individual subject-selection module is also applied:
+
+  - A learner only appears on the marks sheet for subjects they selected.
+  - Unselected subjects do not create missing-mark errors.
+  - S1–S2 and schools without configured selections continue using class-wide subjects.
+
+  4. Marks entry
+
+  An assigned subject teacher or authorized academic administrator goes to Exams → Enter Marks.
+
+  They can:
+
+  - Select their assigned paper
+  - Enter scores for eligible learners
+  - Save incomplete marks as a draft
+  - Submit completed marks for approval
+
+  A submitted paper requires a score for every eligible learner. Scores cannot be negative or exceed the paper’s maximum
+  score.
+
+  5. Marks approval
+
+  Submitted marks are reviewed by someone with exam-management permissions.
+
+  They can:
+
+  - Approve submitted marks
+  - Reopen approved marks for corrections
+
+  Only approved papers are included in official results and report cards.
+
+  6. Results calculation
+
+  For each subject, Edlink calculates:
+
+  Percentage = learner score ÷ maximum score × 100
+
+  The overall weighted average is calculated using each paper’s weighting:
+
+  Weighted average = Σ(score × weighting) ÷ Σ(maximum score × weighting) × 100
+
+  The system then applies the grading scale configured for the learner’s education stage:
+
+  - Primary
+  - O-Level
+  - A-Level
+  - Kindergarten
+
+  Class positions are generated from weighted averages, with learners having the same average receiving the same
+  position.
+
+  7. Publication checks
+
+  Before results can be published, Edlink verifies that:
+
+  - The examination has subject papers
+  - Every paper has been approved
+  - Grading scales cover the complete percentage range
+  - Active learners exist
+  - Every eligible learner has all required marks
+
+  A missing mark prevents publication. An unselected subject for an S3–S6 learner does not count as missing.
+
+  8. Publishing results
+
+  Once ready, an administrator can publish the examination.
+
+  Published results become available to linked students and parents through My Results. An administrator can also
+  unpublish the results while the term remains open.
+
+  9. Report cards
+
+  Report cards can include:
+
+  - Subject scores and percentages
+  - Grades and remarks
+  - Weighted average
+  - Aggregate points
+  - Class position
+  - Attendance
+  - Fees paid, amount due and balance
+  - Promotion outcome
+  - Teacher remarks
+
+  The exact contents depend on the school’s report settings.
+
+  10. Fee-clearance control
+
+  A school can require fee clearance before parents or students access published results. Staff can still review
+  internal results.
+
+  One current weakness is that the exam setup subject dropdown shows every subject registered by the school, rather than
+  only subjects assigned to the selected class. That should be tightened to prevent an administrator from accidentally
+  adding an unrelated subject paper.

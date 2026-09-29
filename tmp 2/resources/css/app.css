@@ -1,0 +1,320 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+/* ===========================================
+   EDLINK DASHBOARD THEME
+=========================================== */
+
+:root{
+    --primary:#252641;
+    --secondary:#3B82F6;
+    --success:#22C55E;
+    --warning:#FACC15;
+    --danger:#EF4444;
+    --light:#F8FAFC;
+    --border:#E5E7EB;
+    --text:#374151;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#f5f7fb;
+    font-family:'Poppins',sans-serif;
+    color:var(--text);
+}
+
+/* Smooth transitions */
+
+button,
+a,
+div,
+input,
+select{
+    transition:.3s ease;
+}
+
+/* Scrollbar */
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#c7c7c7;
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#999;
+}
+
+/* Sidebar */
+
+aside{
+    background:linear-gradient(180deg,#252641,#1d1f35);
+    box-shadow:8px 0 30px rgba(0,0,0,.12);
+}
+
+aside nav a,
+aside nav button{
+    border-radius:12px;
+}
+
+aside nav a:hover,
+aside nav button:hover{
+    background:rgba(255,255,255,.12)!important;
+    transform:translateX(5px);
+}
+
+aside nav a.bg-white\/10{
+    background:linear-gradient(90deg,#facc15,#f59e0b)!important;
+    color:#252641!important;
+    font-weight:600;
+}
+
+aside svg{
+    transition:.3s;
+}
+
+aside a:hover svg,
+aside button:hover svg{
+    transform:scale(1.1);
+}
+
+/* Topbar */
+
+header{
+    background:white;
+    backdrop-filter:blur(12px);
+    box-shadow:0 3px 15px rgba(0,0,0,.05);
+}
+
+header button:hover{
+    background:#f3f4f6!important;
+}
+
+/* Welcome Card */
+
+main .rounded-2xl:first-child{
+    box-shadow:0 20px 45px rgba(37,38,65,.25);
+    border:none;
+}
+
+main .rounded-2xl:first-child h2{
+    letter-spacing:.3px;
+}
+
+/* Cards */
+
+.bg-white{
+    transition:.3s;
+}
+
+.bg-white:hover{
+    transform:translateY(-6px);
+    box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+
+/* Statistic Cards */
+
+.grid .bg-white{
+    border:1px solid transparent;
+}
+
+.grid .bg-white:hover{
+    border-color:#facc15;
+}
+
+/* Icon circles */
+
+.w-10.h-10{
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+/* Charts */
+
+canvas{
+    padding-top:10px;
+}
+
+/* Tables */
+
+table{
+    border-collapse:collapse;
+}
+
+thead{
+    background:#f8fafc;
+}
+
+tbody tr:hover{
+    background:#f8fafc;
+}
+
+td,
+th{
+    padding:14px;
+}
+
+/* Calendar */
+
+#calendarGrid span{
+    transition:.3s;
+    cursor:pointer;
+}
+
+#calendarGrid span:hover{
+    background:#252641!important;
+    color:white!important;
+    transform:scale(1.08);
+}
+
+/* Notifications */
+
+#notificationsList > div{
+    border-radius:12px;
+    padding:15px;
+}
+
+#notificationsList > div:hover{
+    background:#f8fafc;
+}
+
+/* Dropdown */
+
+.group .absolute{
+    border:none!important;
+    box-shadow:0 20px 45px rgba(0,0,0,.12)!important;
+}
+
+/* Inputs */
+
+input,
+select{
+    border-radius:10px!important;
+}
+
+input:focus,
+select:focus{
+    border-color:#3B82F6!important;
+    box-shadow:0 0 0 4px rgba(59,130,246,.15)!important;
+}
+
+/* Buttons */
+
+button{
+    cursor:pointer;
+}
+
+button:hover{
+    transform:translateY(-1px);
+}
+
+/* Timetable */
+
+tbody td{
+    transition:.2s;
+}
+
+tbody td:hover{
+    background:#EFF6FF;
+}
+
+/* Class List */
+
+.border-b:hover{
+    background:#f9fafb;
+    padding-left:10px;
+}
+
+/* Notification badge */
+
+.bg-red-500{
+    animation:pulseBadge 1.5s infinite;
+}
+
+@keyframes pulseBadge{
+
+    0%{
+        transform:scale(1);
+        opacity:1;
+    }
+
+    50%{
+        transform:scale(1.4);
+        opacity:.5;
+    }
+
+    100%{
+        transform:scale(1);
+        opacity:1;
+    }
+
+}
+
+/* Cards Animation */
+
+@keyframes fadeUp{
+
+    from{
+        opacity:0;
+        transform:translateY(20px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+main > *{
+    animation:fadeUp .6s ease;
+}
+
+/* Mobile */
+
+@media(max-width:768px){
+
+    main{
+        padding:20px!important;
+    }
+
+    header{
+        padding:15px!important;
+    }
+
+    .grid{
+        gap:15px!important;
+    }
+
+    table{
+        font-size:12px;
+    }
+
+}
+
+/* Large Desktop */
+
+@media(min-width:1500px){
+
+    body{
+        font-size:16px;
+    }
+
+    .rounded-2xl{
+        border-radius:24px!important;
+    }
+
+}

@@ -1,0 +1,1438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\Users\Lenovo\Herd\edlink\phpunit.xml" tests="102" assertions="432" errors="0" failures="4" skipped="0" time="50.800118">
+    <testsuite name="Unit" tests="6" assertions="8" errors="0" failures="0" skipped="0" time="0.062786">
+      <testsuite name="Tests\Unit\DesignationAccessTest" file="tests\Unit\DesignationAccessTest.php" tests="5" assertions="7" errors="0" failures="0" skipped="0" time="0.060949">
+        <testcase name="administrators retain unrestricted module access" file="tests\Unit\DesignationAccessTest.php::administrators retain unrestricted module access" class="Tests\Unit\DesignationAccessTest" classname="Tests.Unit.DesignationAccessTest" assertions="2" time="0.049700"/>
+        <testcase name="staff without a designation have no module access" file="tests\Unit\DesignationAccessTest.php::staff without a designation have no module access" class="Tests\Unit\DesignationAccessTest" classname="Tests.Unit.DesignationAccessTest" assertions="1" time="0.002636"/>
+        <testcase name="designation permissions grant only selected modules" file="tests\Unit\DesignationAccessTest.php::designation permissions grant only selected modules" class="Tests\Unit\DesignationAccessTest" classname="Tests.Unit.DesignationAccessTest" assertions="2" time="0.004124"/>
+        <testsuite name="student and parent portal accounts are not restricted by staff designations" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.004490">
+          <testcase name="student and parent portal accounts are not restricted by staff designations with data set &quot;('student')&quot;" file="tests\Unit\DesignationAccessTest.php::student and parent portal accounts are not restricted by staff designations with data set &quot;('student')&quot;" class="Tests\Unit\DesignationAccessTest" classname="Tests.Unit.DesignationAccessTest" assertions="1" time="0.002416"/>
+          <testcase name="student and parent portal accounts are not restricted by staff designations with data set &quot;('parent')&quot;" file="tests\Unit\DesignationAccessTest.php::student and parent portal accounts are not restricted by staff designations with data set &quot;('parent')&quot;" class="Tests\Unit\DesignationAccessTest" classname="Tests.Unit.DesignationAccessTest" assertions="1" time="0.002074"/>
+        </testsuite>
+      </testsuite>
+      <testsuite name="Tests\Unit\ExampleTest" file="tests\Unit\ExampleTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.001837">
+        <testcase name="that true is true" file="tests\Unit\ExampleTest.php::that true is true" class="Tests\Unit\ExampleTest" classname="Tests.Unit.ExampleTest" assertions="1" time="0.001837"/>
+      </testsuite>
+    </testsuite>
+    <testsuite name="Feature" tests="96" assertions="424" errors="0" failures="4" skipped="0" time="50.737332">
+      <testsuite name="Tests\Feature\AttendanceAccessTest" file="tests\Feature\AttendanceAccessTest.php" tests="3" assertions="9" errors="0" failures="0" skipped="0" time="2.960389">
+        <testcase name="a subject teacher opens only the attendance screen granted by the designation" file="tests\Feature\AttendanceAccessTest.php::a subject teacher opens only the attendance screen granted by the designation" class="Tests\Feature\AttendanceAccessTest" classname="Tests.Feature.AttendanceAccessTest" assertions="3" time="1.725594"/>
+        <testcase name="a DOS opens daily attendance and reports but not ungranted subject attendance" file="tests\Feature\AttendanceAccessTest.php::a DOS opens daily attendance and reports but not ungranted subject attendance" class="Tests\Feature\AttendanceAccessTest" classname="Tests.Feature.AttendanceAccessTest" assertions="3" time="1.109179"/>
+        <testcase name="administrators remain unrestricted across attendance screens" file="tests\Feature\AttendanceAccessTest.php::administrators remain unrestricted across attendance screens" class="Tests\Feature\AttendanceAccessTest" classname="Tests.Feature.AttendanceAccessTest" assertions="3" time="0.125616"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\BursarWorkspaceTest" file="tests\Feature\BursarWorkspaceTest.php" tests="3" assertions="15" errors="0" failures="0" skipped="0" time="0.212286">
+        <testcase name="it redirects a bursar away from the administrator dashboard" file="tests\Feature\BursarWorkspaceTest.php::it redirects a bursar away from the administrator dashboard" class="Tests\Feature\BursarWorkspaceTest" classname="Tests.Feature.BursarWorkspaceTest" assertions="2" time="0.057007"/>
+        <testcase name="it shows the bursar accounting dashboard instead of the generic staff dashboard" file="tests\Feature\BursarWorkspaceTest.php::it shows the bursar accounting dashboard instead of the generic staff dashboard" class="Tests\Feature\BursarWorkspaceTest" classname="Tests.Feature.BursarWorkspaceTest" assertions="5" time="0.079803"/>
+        <testcase name="it shows a bursar only finance-based report choices" file="tests\Feature\BursarWorkspaceTest.php::it shows a bursar only finance-based report choices" class="Tests\Feature\BursarWorkspaceTest" classname="Tests.Feature.BursarWorkspaceTest" assertions="8" time="0.075476"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\DashboardChartFiltersTest" file="tests\Feature\DashboardChartFiltersTest.php" tests="1" assertions="8" errors="0" failures="0" skipped="0" time="0.122963">
+        <testcase name="it provides working year and class datasets to the administrator line charts" file="tests\Feature\DashboardChartFiltersTest.php::it provides working year and class datasets to the administrator line charts" class="Tests\Feature\DashboardChartFiltersTest" classname="Tests.Feature.DashboardChartFiltersTest" assertions="8" time="0.122963"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\DemoRegistrationReuseTest" file="tests\Feature\DemoRegistrationReuseTest.php" tests="2" assertions="7" errors="0" failures="0" skipped="0" time="19.132605">
+        <testcase name="it allows an email with only a stale deleted-demo marker to register again" file="tests\Feature\DemoRegistrationReuseTest.php::it allows an email with only a stale deleted-demo marker to register again" class="Tests\Feature\DemoRegistrationReuseTest" classname="Tests.Feature.DemoRegistrationReuseTest" assertions="3" time="18.955639"/>
+        <testcase name="it still prevents another demo while the email belongs to an existing tenant" file="tests\Feature\DemoRegistrationReuseTest.php::it still prevents another demo while the email belongs to an existing tenant" class="Tests\Feature\DemoRegistrationReuseTest" classname="Tests.Feature.DemoRegistrationReuseTest" assertions="4" time="0.176966"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\DesignationPermissionsTest" file="tests\Feature\DesignationPermissionsTest.php" tests="2" assertions="9" errors="0" failures="0" skipped="0" time="0.213859">
+        <testcase name="it uses granular designation rights instead of the account type" file="tests\Feature\DesignationPermissionsTest.php::it uses granular designation rights instead of the account type" class="Tests\Feature\DesignationPermissionsTest" classname="Tests.Feature.DesignationPermissionsTest" assertions="5" time="0.121829"/>
+        <testcase name="it keeps administrators unrestricted and supports legacy module designations" file="tests\Feature\DesignationPermissionsTest.php::it keeps administrators unrestricted and supports legacy module designations" class="Tests\Feature\DesignationPermissionsTest" classname="Tests.Feature.DesignationPermissionsTest" assertions="4" time="0.092030"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\ExampleTest" file="tests\Feature\ExampleTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.547369">
+        <testcase name="the application returns a successful response" file="tests\Feature\ExampleTest.php::the application returns a successful response" class="Tests\Feature\ExampleTest" classname="Tests.Feature.ExampleTest" assertions="1" time="0.547369"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\FinanceLedgerAccessTest" file="tests\Feature\FinanceLedgerAccessTest.php" tests="4" assertions="16" errors="0" failures="0" skipped="0" time="4.821036">
+        <testcase name="it allows administrators and assigned bursars to access the finance ledger" file="tests\Feature\FinanceLedgerAccessTest.php::it allows administrators and assigned bursars to access the finance ledger" class="Tests\Feature\FinanceLedgerAccessTest" classname="Tests.Feature.FinanceLedgerAccessTest" assertions="2" time="4.561947"/>
+        <testcase name="it denies the finance ledger to staff without its assigned permission" file="tests\Feature\FinanceLedgerAccessTest.php::it denies the finance ledger to staff without its assigned permission" class="Tests\Feature\FinanceLedgerAccessTest" classname="Tests.Feature.FinanceLedgerAccessTest" assertions="1" time="0.108728"/>
+        <testcase name="it shows the saved reconciliation result and history" file="tests\Feature\FinanceLedgerAccessTest.php::it shows the saved reconciliation result and history" class="Tests\Feature\FinanceLedgerAccessTest" classname="Tests.Feature.FinanceLedgerAccessTest" assertions="6" time="0.088373"/>
+        <testcase name="it posts approved entries to the pool and reverses both records atomically" file="tests\Feature\FinanceLedgerAccessTest.php::it posts approved entries to the pool and reverses both records atomically" class="Tests\Feature\FinanceLedgerAccessTest" classname="Tests.Feature.FinanceLedgerAccessTest" assertions="7" time="0.061989"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\HomeworkWorkflowTest" file="tests\Feature\HomeworkWorkflowTest.php" tests="5" assertions="19" errors="0" failures="1" skipped="0" time="3.617223">
+        <testcase name="it lets an assigned teacher publish homework" file="tests\Feature\HomeworkWorkflowTest.php::it lets an assigned teacher publish homework" class="Tests\Feature\HomeworkWorkflowTest" classname="Tests.Feature.HomeworkWorkflowTest" assertions="3" time="1.311371"/>
+        <testcase name="it lets the linked student submit and the teacher review homework" file="tests\Feature\HomeworkWorkflowTest.php::it lets the linked student submit and the teacher review homework" class="Tests\Feature\HomeworkWorkflowTest" classname="Tests.Feature.HomeworkWorkflowTest" assertions="9" time="0.175847"/>
+        <testcase name="it does not show homework from another class to a student" file="tests\Feature\HomeworkWorkflowTest.php::it does not show homework from another class to a student" class="Tests\Feature\HomeworkWorkflowTest" classname="Tests.Feature.HomeworkWorkflowTest" assertions="1" time="0.060285"/>
+        <testcase name="it lets a school administrator access homework from the shared sidebar" file="tests\Feature\HomeworkWorkflowTest.php::it lets a school administrator access homework from the shared sidebar" class="Tests\Feature\HomeworkWorkflowTest" classname="Tests.Feature.HomeworkWorkflowTest" assertions="3" time="0.167363">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">it lets a school administrator access homework from the shared sidebarFailed asserting that '&lt;!DOCTYPE html&gt;\n
+&lt;html lang="en"&gt;\n
+&lt;head&gt;\n
+    &lt;meta charset="UTF-8"&gt;\n
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;\n
+    &lt;title&gt;Edlink&lt;/title&gt;\n
+    &lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;\n
+    &lt;link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"&gt;\n
+    &lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;\n
+    &lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;\n
+&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;\n
+&lt;link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"&gt;\n
+    &lt;script&gt;\n
+        tailwind.config = {\n
+            theme: {\n
+                extend: {\n
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },\n
+                    colors: { darken: '#252641' }\n
+                }\n
+            }\n
+        }\n
+    &lt;/script&gt;\n
+    &lt;style&gt;\n
+        [x-cloak] { display: none !important; }\n
+        html, body { overflow-x: hidden; max-width: 100vw; }\n
+        \n
+        :root { --sidebar-w: 288px; }\n
+        #app-sidebar { width: var(--sidebar-w); transition: width .2s ease; }\n
+        #app-main { transition: margin-left .2s ease; }\n
+        @media (min-width: 1024px) { #app-main { margin-left: var(--sidebar-w); } }\n
+\n
+        /* Navigation Links styles */\n
+        .nav-link, .nav-group-btn { color: #d1d5db; transition: background-color .15s ease, color .15s ease; }\n
+        .nav-link:hover, .nav-group-btn:hover { background-color: rgba(234, 179, 8, 0.12); color: #facc15; }\n
+        \n
+        /* Active States */\n
+        .nav-link.active, .nav-group-btn.active { background-color: #eab308; color: #252641; font-weight: 600; }\n
+        .nav-link.active svg, .nav-group-btn.active svg { color: #252641; }\n
+        \n
+        /* Sub-navigation Links */\n
+        .nav-sub-link { color: #9ca3af; transition: color .15s ease; position: relative; }\n
+        .nav-sub-link:hover { color: #facc15; }\n
+        .nav-sub-link.active { color: #facc15; font-weight: 600; }\n
+        .nav-sub-link.active::before {\n
+            content: '';\n
+            position: absolute;\n
+            left: -16px;\n
+            top: 50%;\n
+            transform: translateY(-50%);\n
+            width: 4px;\n
+            height: 4px;\n
+            background-color: #facc15;\n
+            border-radius: 50%;\n
+        }\n
+    &lt;/style&gt;\n
+    &lt;script&gt;\n
+        document.addEventListener('alpine:init', () =&gt; {\n
+            Alpine.store('ui', {\n
+                collapsed: localStorage.getItem('edlink_sidebar_collapsed') === 'true',\n
+                toggle() {\n
+                    this.collapsed = !this.collapsed;\n
+                    localStorage.setItem('edlink_sidebar_collapsed', this.collapsed);\n
+                    setTimeout(() =&gt; window.dispatchEvent(new Event('resize')), 220);\n
+                }\n
+            });\n
+        });\n
+    &lt;/script&gt;\n
+    &lt;!-- Livewire Styles --&gt;&lt;style &gt;[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.list-item][wire\:loading\.list-item], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak] {display: none !important;}[wire\:cloak] {display: none !important;}dialog#livewire-error::backdrop {background-color: rgba(0, 0, 0, .6);}&lt;/style&gt;\n
+&lt;/head&gt;\n
+&lt;body class="font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"\n
+      x-data="{ mobileNavOpen: false }"\n
+      x-init="$watch('$store.ui.collapsed', v =&gt; document.documentElement.style.setProperty('--sidebar-w', v ? '80px' : '288px'));\n
+               document.documentElement.style.setProperty('--sidebar-w', $store.ui.collapsed ? '80px' : '288px');"&gt;\n
+\n
+    &lt;div id="global-loader" aria-live="polite" aria-label="Edlink is loading"\n
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/70 backdrop-blur-md transition-opacity duration-200"&gt;\n
+    &lt;div class="flex flex-col items-center rounded-3xl border border-white/10 bg-slate-900/95 px-10 py-8 text-center shadow-2xl"&gt;\n
+        &lt;div class="relative flex h-24 w-24 items-center justify-center"&gt;\n
+            &lt;span class="absolute inset-0 animate-spin rounded-full border-[3px] border-white/10 border-t-yellow-400 border-r-yellow-400"&gt;&lt;/span&gt;\n
+            &lt;span class="absolute inset-2 animate-pulse rounded-full bg-yellow-400/10"&gt;&lt;/span&gt;\n
+            &lt;img src="http://edlink.test/img/webfav.png" alt="Edlink" class="relative h-16 w-16 object-contain drop-shadow-xl"&gt;\n
+        &lt;/div&gt;\n
+        &lt;p class="mt-5 text-xs font-black uppercase tracking-[.24em] text-white"&gt;Edlink&lt;/p&gt;\n
+        &lt;p class="mt-1 text-[11px] font-medium text-slate-300"&gt;Processing request...&lt;/p&gt;\n
+        &lt;div class="mt-4 flex gap-1.5"&gt;&lt;span class="h-1.5 w-1.5 animate-bounce rounded-full bg-yellow-400"&gt;&lt;/span&gt;&lt;span class="h-1.5 w-1.5 animate-bounce rounded-full bg-yellow-400" style="animation-delay:120ms"&gt;&lt;/span&gt;&lt;span class="h-1.5 w-1.5 animate-bounce rounded-full bg-yellow-400" style="animation-delay:240ms"&gt;&lt;/span&gt;&lt;/div&gt;\n
+    &lt;/div&gt;\n
+&lt;/div&gt;\n
+\n
+&lt;script&gt;\n
+(() =&gt; {\n
+    const findLoader = () =&gt; document.getElementById('global-loader');\n
+    let safetyTimer;\n
+    const showLoader = () =&gt; {\n
+        const loader = findLoader(); if (!loader) return;\n
+        clearTimeout(safetyTimer);\n
+        loader.classList.remove('opacity-0', 'pointer-events-none');\n
+        loader.classList.add('opacity-100', 'pointer-events-auto');\n
+        safetyTimer = setTimeout(hideLoader, 15000);\n
+    };\n
+    const hideLoader = () =&gt; {\n
+        const loader = findLoader(); if (!loader) return;\n
+        clearTimeout(safetyTimer);\n
+        loader.classList.remove('opacity-100', 'pointer-events-auto');\n
+        loader.classList.add('opacity-0', 'pointer-events-none');\n
+    };\n
+    window.EdlinkLoader = { show: showLoader, hide: hideLoader };\n
+    window.addEventListener('load', hideLoader);\n
+    window.addEventListener('pageshow', hideLoader);\n
+    document.addEventListener('DOMContentLoaded', () =&gt; requestAnimationFrame(hideLoader));\n
+    document.addEventListener('livewire:navigate', showLoader);\n
+    document.addEventListener('livewire:navigated', hideLoader);\n
+    document.addEventListener('livewire:init', () =&gt; {\n
+        Livewire.hook('request', ({ respond, fail }) =&gt; {\n
+            showLoader(); respond(hideLoader); fail(hideLoader);\n
+        });\n
+    });\n
+    document.addEventListener('submit', event =&gt; {\n
+        if (!event.defaultPrevented &amp;&amp; event.target.matches('form:not([data-no-loader])')) showLoader();\n
+    });\n
+})();\n
+&lt;/script&gt;\n
+\n
+    &lt;!-- Mobile top bar --&gt;\n
+    &lt;div class="lg:hidden fixed top-0 inset-x-0 bg-darken text-white flex items-center justify-between px-4 py-3 z-30"&gt;\n
+        &lt;div&gt;\n
+            &lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/logo.png" alt="Edlink logo" class="w-[180px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+        &lt;/div&gt;\n
+        &lt;button @click="mobileNavOpen = !mobileNavOpen" class="text-xl"&gt;☰&lt;/button&gt;\n
+    &lt;/div&gt;\n
+\n
+\n
+    &lt;!-- Sidebar --&gt;\n
+    &lt;aside id="app-sidebar" class="bg-darken text-white flex-col fixed inset-y-0 z-40 transform lg:translate-x-0 flex overflow-y-auto overflow-x-hidden border-r border-white/5 shadow-2xl"\n
+        :class="mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"\n
+        x-data="{ open: '' }"&gt;\n
+\n
+        &lt;!-- Logo Container --&gt;\n
+        &lt;div class="px-6 py-6 flex items-center space-x-2 border-b border-white/10 hidden lg:flex" :class="$store.ui.collapsed &amp;&amp; 'justify-center px-0'"&gt;\n
+            &lt;span class=" shrink-0"&gt;\n
+                &lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/fav.png" alt="Edlink logo" class="w-[50px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+            &lt;/span&gt;\n
+            &lt;span class="font-semibold text-lg" x-show="!$store.ui.collapsed" x-cloak&gt;\n
+                &lt;div&gt;\n
+            &lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/dash.png" alt="Edlink logo" class="w-[125px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+        &lt;/div&gt;\n
+            &lt;/span&gt;\n
+        &lt;/div&gt;\n
+\n
+        &lt;!-- Navigation Menu --&gt;\n
+        &lt;nav class="flex-1 px-3 py-6 space-y-1 text-sm mt-14 lg:mt-0"&gt;\n
+\n
+            &lt;a href="http://edlink.test/dashboard" wire:navigate class="nav-link  flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed &amp;&amp; 'justify-center'"&gt;\n
+                &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /&gt;&lt;/svg&gt;\n
+                &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Dashboard&lt;/span&gt;\n
+            &lt;/a&gt;\n
+\n
+            \n
+            \n
+            \n
+                                                                                                    &lt;div x-init="if(false) open = 'students'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='students'}else{open = open === 'students' ? '' : 'students'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg " \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'students' &amp;&amp; !$store.ui.collapsed &amp;&amp; !false &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 17.5c0 .34-.02.675-.06 1.004M12 14l-6.16-3.422A12.083 12.083 0 003 17.5c0 .34.02.675.06 1.004M12 14v7" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Students&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'students' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'students' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/students/register" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Registration&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/students" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;All Students&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/students/categories" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Categories&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/students/activities" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Houses &amp;amp; Clubs&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/students/portal-access" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Portal Access&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/academics/promotions" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Promotions&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/students/id-cards" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;ID Cards&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+                                                                            &lt;div x-init="if(true) open = 'academics'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='academics'}else{open = open === 'academics' ? '' : 'academics'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg active" \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'academics' &amp;&amp; !$store.ui.collapsed &amp;&amp; !true &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Academics&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'academics' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'academics' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/academics/classes" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Classes &amp;amp; Streams&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/academics/subjects" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Subjects&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/academics/grading-scales" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Grading Scales&lt;/a&gt;\n
+                                                                                                                                                                                                                                &lt;a href="http://edlink.test/academics/timetable" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Timetable&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/homework" wire:navigate class="nav-sub-link active block py-1.5 text-sm"&gt;Homework&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/academics/events" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Events&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+                                                                            &lt;div x-init="if(false) open = 'attendance'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='attendance'}else{open = open === 'attendance' ? '' : 'attendance'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg " \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'attendance' &amp;&amp; !$store.ui.collapsed &amp;&amp; !false &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Attendance&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'attendance' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'attendance' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/attendance" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Mark Attendance&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/attendance/subject" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Subject Attendance&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/attendance/reports" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Attendance Reports&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+                                                                            &lt;div x-init="if(false) open = 'finance'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='finance'}else{open = open === 'finance' ? '' : 'finance'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg " \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'finance' &amp;&amp; !$store.ui.collapsed &amp;&amp; !false &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Finance&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'finance' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'finance' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/finance/terms" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Terms&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/finance/fee-structure" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Fee Structure&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/finance/payments" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Payments&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/finance/expenses" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Expenses&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/finance/ledger" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Ledger &amp;amp; Reconciliation&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+                                                                            &lt;div x-init="if(false) open = 'exams'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='exams'}else{open = open === 'exams' ? '' : 'exams'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg " \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'exams' &amp;&amp; !$store.ui.collapsed &amp;&amp; !false &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2h-2" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Exams&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'exams' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'exams' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/exams/setup" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Create Exam&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/exams/marks" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Enter Marks&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/exams/results" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Report Cards&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+                                                                            &lt;div x-init="if(false) open = 'staff'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='staff'}else{open = open === 'staff' ? '' : 'staff'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg " \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'staff' &amp;&amp; !$store.ui.collapsed &amp;&amp; !false &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-2.13a4 4 0 10-4-4 4 4 0 0017 8z" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Staff&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'staff' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'staff' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/staff" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;All Staff&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/staff/register" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Add Staff&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/staff/attendance" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Staff Attendance&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/staff/payroll" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Payroll&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/staff/leaves" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Leave Requests&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/staff/designations" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Designations &amp;amp; Access&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+                                                                            &lt;div x-init="if(false) open = 'parents'"&gt;\n
+                    &lt;button @click="if($store.ui.collapsed){$store.ui.toggle();open='parents'}else{open = open === 'parents' ? '' : 'parents'}" \n
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg " \n
+                        :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === 'parents' &amp;&amp; !$store.ui.collapsed &amp;&amp; !false &amp;&amp; 'bg-yellow-500/10 text-yellow-400']"&gt;\n
+                        \n
+                        &lt;span class="flex items-center space-x-3" :class="$store.ui.collapsed &amp;&amp; 'space-x-0'"&gt;\n
+                            &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l1.586-1.586z" /&gt;&lt;/svg&gt;\n
+                            &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Parents&lt;/span&gt;\n
+                        &lt;/span&gt;\n
+                        &lt;svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === 'parents' &amp;&amp; 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+                    \n
+                    &lt;div x-cloak x-show="open === 'parents' &amp;&amp; !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1"&gt;\n
+                                                                                                                                                                        &lt;a href="http://edlink.test/parents/register" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Register Parent&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/parents" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;All Parents&lt;/a&gt;\n
+                                                                                                                                                                                                    &lt;a href="http://edlink.test/parents/communications" wire:navigate class="nav-sub-link  block py-1.5 text-sm"&gt;Communications&lt;/a&gt;\n
+                                                                        &lt;/div&gt;\n
+                &lt;/div&gt;\n
+            \n
+                        &lt;a href="http://edlink.test/settings/audit-trail" wire:navigate class="nav-link  flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed &amp;&amp; 'justify-center space-x-0'"&gt;\n
+                &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2zM14 3v5h5" /&gt;&lt;/svg&gt;\n
+                &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Audit Trail&lt;/span&gt;\n
+            &lt;/a&gt;\n
+                                    &lt;a href="http://edlink.test/reports" wire:navigate class="nav-link  flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed &amp;&amp; 'justify-center space-x-0'"&gt;\n
+                &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /&gt;&lt;/svg&gt;\n
+                &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Reports&lt;/span&gt;\n
+            &lt;/a&gt;\n
+                                    &lt;a href="http://edlink.test/parents/communications" wire:navigate class="nav-link flex items-center space-x-3 px-3 py-2.5 rounded-lg" :class="$store.ui.collapsed &amp;&amp; 'justify-center space-x-0'"&gt;\n
+                &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /&gt;&lt;/svg&gt;\n
+                &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Announcements&lt;/span&gt;\n
+            &lt;/a&gt;\n
+                    &lt;/nav&gt;\n
+\n
+        &lt;!-- Sidebar Footer Action Links --&gt;\n
+        &lt;div class="px-3 py-5 border-t border-white/10 space-y-1"&gt;\n
+            &lt;button @click="$store.ui.toggle()" class="nav-link hidden lg:flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm w-full" :class="$store.ui.collapsed &amp;&amp; 'justify-center space-x-0'"&gt;\n
+                &lt;svg class="w-5 h-5 flex-shrink-0 transition-transform" :class="$store.ui.collapsed &amp;&amp; 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /&gt;&lt;/svg&gt;\n
+                &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Collapse&lt;/span&gt;\n
+            &lt;/button&gt;\n
+                        &lt;a href="http://edlink.test/settings" wire:navigate class="nav-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm w-full text-left" :class="$store.ui.collapsed &amp;&amp; 'justify-center space-x-0'"&gt;\n
+                &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /&gt;&lt;/svg&gt;\n
+                &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Settings&lt;/span&gt;\n
+            &lt;/a&gt;\n
+                        &lt;form method="POST" action="http://edlink.test/logout"&gt;\n
+                &lt;input type="hidden" name="_token" value="1avm2iwFnO8Pqh5UNTi1GBTE7RHLvKsSCFOdAuuK" autocomplete="off"&gt;                &lt;button type="submit" class="nav-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm w-full text-left transition-colors hover:bg-red-500/10 hover:text-red-400" :class="$store.ui.collapsed &amp;&amp; 'justify-center space-x-0'"&gt;\n
+                    &lt;svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /&gt;&lt;/svg&gt;\n
+                    &lt;span x-show="!$store.ui.collapsed" x-cloak&gt;Log out&lt;/span&gt;\n
+                &lt;/button&gt;\n
+            &lt;/form&gt;\n
+        &lt;/div&gt;\n
+    &lt;/aside&gt;\n
+\n
+    &lt;!-- Overlay backdrop for mobile view --&gt;\n
+    &lt;div x-cloak x-show="mobileNavOpen" @click="mobileNavOpen = false" class="fixed inset-0 bg-black/40 z-30 lg:hidden transition-opacity"&gt;&lt;/div&gt;\n
+\n
+    &lt;!-- Main Content Wrapper --&gt;\n
+    &lt;div id="app-main" class="flex-1 pt-14 lg:pt-0"&gt;\n
+\n
+        &lt;!-- Top Header Navigation Bar --&gt;\n
+        &lt;header class="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-sm"&gt;\n
+            &lt;div class="flex items-center space-x-4 min-w-0"&gt;\n
+                &lt;button @click="$store.ui.toggle()" class="hidden lg:flex w-9 h-9 rounded-lg border border-gray-200 items-center justify-center text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0"&gt;\n
+                    &lt;svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /&gt;&lt;/svg&gt;\n
+                &lt;/button&gt;\n
+                &lt;div class="min-w-0"&gt;\n
+                    &lt;h1 class="text-sm font-semibold text-darken truncate"&gt;Homework School&lt;/h1&gt;\n
+                    &lt;p class="text-xs text-gray-400 truncate"&gt;EDL-D980F&lt;/p&gt;\n
+                &lt;/div&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;!-- Profile &amp; Search Bar Panel Layout --&gt;\n
+                        &lt;div class="flex items-center space-x-2 lg:space-x-4 flex-shrink-0"&gt;\n
+                                 \n
+                &lt;div class="relative hidden md:block"&gt;\n
+                    &lt;svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /&gt;&lt;/svg&gt;\n
+                    &lt;input type="text" placeholder="Search students, classes..." class="w-48 lg:w-64 pl-9 pr-4 py-2 text-sm bg-gray-100 border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors"&gt;\n
+                &lt;/div&gt;\n
+\n
+                &lt;!-- Notification bell (hover dropdown) --&gt;\n
+                &lt;div class="relative group"&gt;\n
+                    &lt;button class="relative w-9 h-9 rounded-lg hover:bg-gray-50 flex items-center justify-center text-gray-500 transition-colors"&gt;\n
+                        &lt;svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /&gt;&lt;/svg&gt;\n
+                                            &lt;/button&gt;\n
+\n
+                    &lt;div class="absolute right-0 mt-1 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-30"&gt;\n
+                        &lt;div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between"&gt;\n
+                            &lt;p class="text-sm font-semibold text-darken"&gt;Notifications&lt;/p&gt;\n
+                            &lt;span class="text-xs text-yellow-600 font-medium"&gt;0 new&lt;/span&gt;\n
+                        &lt;/div&gt;\n
+                        &lt;div id="notificationsDropdown" class="max-h-80 overflow-y-auto"&gt;&lt;div class="px-4 py-8 text-center text-sm text-slate-400"&gt;No notifications yet.&lt;/div&gt;&lt;/div&gt;\n
+                    &lt;/div&gt;\n
+                &lt;/div&gt;\n
+\n
+                &lt;!-- Account dropdown settings menu details --&gt;\n
+                &lt;div class="relative group"&gt;\n
+                    &lt;button class="flex items-center space-x-2 pl-2 pr-1 py-1 rounded-lg hover:bg-gray-50 transition-colors"&gt;\n
+                        &lt;div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600 overflow-hidden"&gt;\n
+                                                            M\n
+                                                    &lt;/div&gt;\n
+                        &lt;svg class="w-4 h-4 text-gray-400 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /&gt;&lt;/svg&gt;\n
+                    &lt;/button&gt;\n
+\n
+                    &lt;div class="absolute right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-30"&gt;\n
+                        &lt;div class="px-4 py-2 border-b border-gray-100"&gt;\n
+                            &lt;p class="text-sm font-medium text-darken truncate"&gt;Mrs. Oma Kozey&lt;/p&gt;\n
+                            &lt;p class="text-xs text-gray-400 truncate"&gt;kenny.schiller@example.net&lt;/p&gt;\n
+                        &lt;/div&gt;\n
+                        &lt;button type="button" onclick="Livewire.dispatch('open-profile-modal')" class="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"&gt;\n
+                            &lt;svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /&gt;&lt;/svg&gt;\n
+                            &lt;span&gt;Edit profile&lt;/span&gt;\n
+                        &lt;/button&gt;\n
+                        &lt;button type="button" onclick="Livewire.dispatch('open-profile-modal')" class="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"&gt;\n
+                            &lt;svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /&gt;&lt;/svg&gt;\n
+                            &lt;span&gt;Change password&lt;/span&gt;\n
+                        &lt;/button&gt;\n
+                        &lt;a href="#" class="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"&gt;\n
+                            &lt;svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /&gt;&lt;/svg&gt;\n
+                            &lt;span&gt;Settings&lt;/span&gt;\n
+                        &lt;/a&gt;\n
+                        &lt;div class="border-t border-gray-100 mt-1 pt-1"&gt;\n
+                            &lt;form method="POST" action="http://edlink.test/logout"&gt;\n
+                                &lt;input type="hidden" name="_token" value="1avm2iwFnO8Pqh5UNTi1GBTE7RHLvKsSCFOdAuuK" autocomplete="off"&gt;                                &lt;button type="submit" class="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 text-left"&gt;\n
+                                    &lt;svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /&gt;&lt;/svg&gt;\n
+                                    &lt;span&gt;Log out&lt;/span&gt;\n
+                                &lt;/button&gt;\n
+                            &lt;/form&gt;\n
+                        &lt;/div&gt;\n
+                    &lt;/div&gt;\n
+                &lt;/div&gt;\n
+            &lt;/div&gt;\n
+        &lt;/header&gt;\n
+\n
+        &lt;!-- Main Slot Blade View Grid Area Layout --&gt;\n
+        &lt;main class="p-6 lg:p-10"&gt;\n
+                            &lt;div wire:snapshot="{&amp;quot;data&amp;quot;:{&amp;quot;classId&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;streamId&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;subjectId&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;title&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;instructions&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;dueAt&amp;quot;:&amp;quot;2026-08-04T13:45&amp;quot;,&amp;quot;maximumScore&amp;quot;:&amp;quot;100&amp;quot;,&amp;quot;attachment&amp;quot;:null,&amp;quot;selectedAssignmentId&amp;quot;:null,&amp;quot;answer&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;reviewScores&amp;quot;:[[],{&amp;quot;s&amp;quot;:&amp;quot;arr&amp;quot;}],&amp;quot;reviewFeedback&amp;quot;:[[],{&amp;quot;s&amp;quot;:&amp;quot;arr&amp;quot;}],&amp;quot;submissionAttachment&amp;quot;:null},&amp;quot;memo&amp;quot;:{&amp;quot;id&amp;quot;:&amp;quot;a2wTU0zPg3AYbSB4D3WN&amp;quot;,&amp;quot;name&amp;quot;:&amp;quot;homework&amp;quot;,&amp;quot;path&amp;quot;:&amp;quot;homework&amp;quot;,&amp;quot;method&amp;quot;:&amp;quot;GET&amp;quot;,&amp;quot;release&amp;quot;:&amp;quot;a-a-a&amp;quot;,&amp;quot;children&amp;quot;:[],&amp;quot;scripts&amp;quot;:[],&amp;quot;assets&amp;quot;:[],&amp;quot;errors&amp;quot;:[],&amp;quot;locale&amp;quot;:&amp;quot;en&amp;quot;,&amp;quot;islands&amp;quot;:[]},&amp;quot;checksum&amp;quot;:&amp;quot;73c973f1c1f3fa64b3707934ced93fd89463b7284948f03f0de7dd142d6d5b78&amp;quot;}" wire:effects="[]" wire:id="a2wTU0zPg3AYbSB4D3WN" wire:name="homework" class="space-y-6"&gt;\n
+    &lt;!-- Top Hero Banner --&gt;\n
+    &lt;header class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-xs"&gt;\n
+        &lt;div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"&gt;\n
+            &lt;div&gt;\n
+                &lt;h1 class="mt-3 text-2xl font-black sm:text-3xl text-amber-300 tracking-tight"&gt;Homework &amp; Assignments&lt;/h1&gt;\n
+                &lt;p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300"&gt;\n
+                    Create and publish class assignments, track submissions, and evaluate learner work.\n
+                &lt;/p&gt;\n
+            &lt;/div&gt;\n
+            \n
+            &lt;div class="rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-3 text-xs backdrop-blur-md shrink-0"&gt;\n
+                &lt;span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400"&gt;Total Assignments&lt;/span&gt;\n
+                &lt;b class="mt-0.5 block text-base font-black text-amber-300"&gt;\n
+                    0 tasks\n
+                &lt;/b&gt;\n
+            &lt;/div&gt;\n
+        &lt;/div&gt;\n
+\n
+        &lt;!-- Ambient Glow Effects --&gt;\n
+        &lt;div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"&gt;&lt;/div&gt;\n
+        &lt;div class="absolute left-1/3 bottom-0 h-32 w-32 rounded-full bg-slate-700/20 blur-2xl pointer-events-none"&gt;&lt;/div&gt;\n
+    &lt;/header&gt;\n
+\n
+    &lt;!-- Session Status Alert --&gt;\n
+    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;\n
+    &lt;!-- Create Homework Section (Teachers / Staff) --&gt;\n
+    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;        &lt;section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs"&gt;\n
+            &lt;div class="border-b border-slate-100 pb-4"&gt;\n
+                &lt;h2 class="text-base font-bold text-slate-900"&gt;Create New Homework&lt;/h2&gt;\n
+                &lt;p class="mt-0.5 text-xs font-medium text-slate-400"&gt;Fill in the assignment details below for your class.&lt;/p&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;form wire:submit="createAssignment" class="mt-5 grid gap-4 md:grid-cols-2"&gt;\n
+                &lt;!-- Class Selection --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700"&gt;\n
+                    Class *\n
+                    &lt;select wire:model="classId" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition"&gt;\n
+                        &lt;option value=""&gt;Select class&lt;/option&gt;\n
+                        &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                            &lt;option value="1"&gt;Primary 6&lt;/option&gt;\n
+                        &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                    &lt;/select&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Subject Selection --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700"&gt;\n
+                    Subject *\n
+                    &lt;select wire:model="subjectId" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition"&gt;\n
+                        &lt;option value=""&gt;Select subject&lt;/option&gt;\n
+                        &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                            &lt;option value="1"&gt;Mathematics&lt;/option&gt;\n
+                        &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                    &lt;/select&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Assignment Title --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700 md:col-span-2"&gt;\n
+                    Title *\n
+                    &lt;input wire:model="title" type="text" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition" placeholder="e.g. Fractions Exercise 3"&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Instructions --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700 md:col-span-2"&gt;\n
+                    Instructions *\n
+                    &lt;textarea wire:model="instructions" rows="4" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition" placeholder="Explain what learners should complete and how to submit it."&gt;&lt;/textarea&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Due Date &amp; Time --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700"&gt;\n
+                    Due Date &amp; Time *\n
+                    &lt;input wire:model="dueAt" type="datetime-local" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition"&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Maximum Score --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700"&gt;\n
+                    Maximum Score *\n
+                    &lt;input wire:model="maximumScore" type="number" min="1" max="1000" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition"&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Teacher Attachment --&gt;\n
+                &lt;label class="block text-xs font-bold text-slate-700 md:col-span-2"&gt;\n
+                    Teacher Attachment &lt;span class="font-normal text-slate-400"&gt;(Optional, max 10 MB)&lt;/span&gt;\n
+                    &lt;input wire:model="attachment" type="file" class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-medium text-slate-700 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1 file:text-xs file:font-bold file:text-slate-700 file:cursor-pointer hover:file:bg-slate-300"&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/label&gt;\n
+\n
+                &lt;!-- Submit Button --&gt;\n
+                &lt;div class="pt-2 md:col-span-2"&gt;\n
+                    &lt;button wire:loading.attr="disabled" class="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] px-5 py-3 text-xs font-black text-slate-950 shadow-xs transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"&gt;\n
+                        &lt;span wire:loading wire:target="createAssignment"&gt;&lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;span class="relative inline-flex shrink-0 items-center justify-center align-middle" style="width:18px;height:18px" role="status" aria-label="Loading"&gt;\n
+    &lt;span class="absolute inset-0 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80"&gt;&lt;/span&gt;\n
+    &lt;img src="http://edlink.test/img/webfav.png" alt="" class="relative object-contain" style="width:11px;height:11px"&gt;\n
+&lt;/span&gt;\n
+&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;&lt;/span&gt;\n
+                        &lt;span&gt;Publish Homework&lt;/span&gt;\n
+                    &lt;/button&gt;\n
+                &lt;/div&gt;\n
+            &lt;/form&gt;\n
+\n
+            &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;        &lt;/section&gt;\n
+    &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;\n
+    &lt;!-- Main Workspace Area --&gt;\n
+    &lt;div class="grid items-start gap-6 lg:grid-cols-[360px_minmax(0,1fr)]"&gt;\n
+        &lt;!-- Sidebar: Homework List --&gt;\n
+        &lt;section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs"&gt;\n
+            &lt;div class="border-b border-slate-100 bg-slate-900 px-5 py-4 text-white"&gt;\n
+                &lt;h2 class="text-xs font-black uppercase tracking-wider text-amber-300"&gt;\n
+                    Published Assignments\n
+                &lt;/h2&gt;\n
+                &lt;span class="text-[10px] font-medium text-slate-400"&gt;Select an item to view full details&lt;/span&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;div class="max-h-[700px] divide-y divide-slate-100 overflow-y-auto"&gt;\n
+                &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                    &lt;div class="p-10 text-center text-xs font-medium text-slate-400"&gt;\n
+                        No homework assignments available.\n
+                    &lt;/div&gt;\n
+                &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;            &lt;/div&gt;\n
+        &lt;/section&gt;\n
+\n
+        &lt;!-- Main Detail View Panel --&gt;\n
+        &lt;section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs"&gt;\n
+            &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                &lt;div class="flex flex-col items-center justify-center py-20 text-center"&gt;\n
+                    &lt;div class="rounded-full bg-slate-100 p-3 text-slate-400"&gt;\n
+                        &lt;svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"&gt;\n
+                            &lt;path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6203 12 14m0 0l-3-3m3 3l3-3m-12 8h14" /&gt;\n
+                        &lt;/svg&gt;\n
+                    &lt;/div&gt;\n
+                    &lt;p class="mt-3 text-xs font-bold text-slate-700"&gt;No Assignment Selected&lt;/p&gt;\n
+                    &lt;p class="mt-0.5 text-xs text-slate-400"&gt;Select an assignment from the left menu to view instructions and submissions.&lt;/p&gt;\n
+                &lt;/div&gt;\n
+            &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;        &lt;/section&gt;\n
+    &lt;/div&gt;\n
+&lt;/div&gt;\r\n
+                    &lt;/main&gt;\n
+    &lt;/div&gt;\n
+\n
+    &lt;div wire:key="lw-3066905374-0-2" wire:snapshot="{&amp;quot;data&amp;quot;:{&amp;quot;isOpen&amp;quot;:false,&amp;quot;name&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;photo&amp;quot;:null,&amp;quot;current_password&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;new_password&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;new_password_confirmation&amp;quot;:&amp;quot;&amp;quot;},&amp;quot;memo&amp;quot;:{&amp;quot;id&amp;quot;:&amp;quot;uBQBwedjiKUxMOnwIvuV&amp;quot;,&amp;quot;name&amp;quot;:&amp;quot;profile-modal&amp;quot;,&amp;quot;path&amp;quot;:&amp;quot;homework&amp;quot;,&amp;quot;method&amp;quot;:&amp;quot;GET&amp;quot;,&amp;quot;release&amp;quot;:&amp;quot;a-a-a&amp;quot;,&amp;quot;children&amp;quot;:[],&amp;quot;scripts&amp;quot;:[],&amp;quot;assets&amp;quot;:[],&amp;quot;errors&amp;quot;:[],&amp;quot;locale&amp;quot;:&amp;quot;en&amp;quot;,&amp;quot;islands&amp;quot;:[]},&amp;quot;checksum&amp;quot;:&amp;quot;20fdc849c694bd81c8c83773412daeea7e10ef1bab90b0f3246abe53fa610a29&amp;quot;}" wire:effects="{&amp;quot;listeners&amp;quot;:[&amp;quot;open-profile-modal&amp;quot;]}" wire:id="uBQBwedjiKUxMOnwIvuV" wire:name="profile-modal"&gt;\n
+    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;&lt;/div&gt;\n
+    &lt;div wire:key="lw-3066905374-1-2" wire:snapshot="{&amp;quot;data&amp;quot;:{&amp;quot;isOpen&amp;quot;:false,&amp;quot;studentId&amp;quot;:null,&amp;quot;name&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;admission_no&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;date_of_birth&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;gender&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;photo&amp;quot;:null,&amp;quot;school_class_id&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;stream_id&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;student_category_id&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;guardianId&amp;quot;:null,&amp;quot;guardian_name&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;guardian_relationship&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;guardian_phone&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;guardian_email&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;guardian_address&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;nationality&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;religion&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;blood_group&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;home_address&amp;quot;:&amp;quot;&amp;quot;,&amp;quot;medical_notes&amp;quot;:&amp;quot;&amp;quot;},&amp;quot;memo&amp;quot;:{&amp;quot;id&amp;quot;:&amp;quot;Q6kYXo7ebdh4EnJksQqB&amp;quot;,&amp;quot;name&amp;quot;:&amp;quot;student-edit-modal&amp;quot;,&amp;quot;path&amp;quot;:&amp;quot;homework&amp;quot;,&amp;quot;method&amp;quot;:&amp;quot;GET&amp;quot;,&amp;quot;release&amp;quot;:&amp;quot;a-a-a&amp;quot;,&amp;quot;children&amp;quot;:[],&amp;quot;scripts&amp;quot;:[],&amp;quot;assets&amp;quot;:[],&amp;quot;errors&amp;quot;:[],&amp;quot;locale&amp;quot;:&amp;quot;en&amp;quot;,&amp;quot;islands&amp;quot;:[]},&amp;quot;checksum&amp;quot;:&amp;quot;cdaff756d215ed29b10452ec55f3a826a031fb477bf52b06a9144160d04229b4&amp;quot;}" wire:effects="{&amp;quot;listeners&amp;quot;:[&amp;quot;edit-student&amp;quot;]}" wire:id="Q6kYXo7ebdh4EnJksQqB" wire:name="student-edit-modal"&gt;\n
+    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;&lt;/div&gt;\n
+\n
+    &lt;script&gt;\n
+        document.addEventListener('livewire:init', () =&gt; {\n
+            Livewire.on('profile-updated', () =&gt; setTimeout(() =&gt; window.location.reload(), 600));\n
+        });\n
+    &lt;/script&gt;\n
+\n
+\n
+    &lt;!-- Livewire Scripts --&gt;\n
+&lt;script src="http://edlink.test/livewire-1ee1bff1/livewire.js?id=657d57c2"   data-csrf="1avm2iwFnO8Pqh5UNTi1GBTE7RHLvKsSCFOdAuuK" data-module-url="http://edlink.test/livewire-1ee1bff1" data-update-uri="http://edlink.test/livewire-1ee1bff1/update" data-navigate-once="true"&gt;&lt;/script&gt;\n
+    &lt;div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-center z-20 shadow-sm"&gt;\n
+    &lt;p class="text-xs text #252641 text-center"&gt;\n
+        Copyright &amp;copy; 2026 &lt;span class="font-semibold text-yellow-400"&gt;Edlink School Management System&lt;/span&gt;. All rights reserved. \n
+        &lt;a href="http://edlink.test" class="text-yellow-400 hover:underline"&gt;\n
+            Spotnet Technologies\n
+        &lt;/a&gt;\n
+    &lt;/p&gt;\n
+&lt;/div&gt;\n
+&lt;/body&gt;\n
+&lt;/html&gt;\n
+' [UTF-8](length: 59079) contains "Create homework" [ASCII](length: 15).&#13;
+at vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+at vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:713
+at tests\Feature\HomeworkWorkflowTest.php:103</failure>
+        </testcase>
+        <testcase name="it shows homework as a top-level link on the school admin dashboard" file="tests\Feature\HomeworkWorkflowTest.php::it shows homework as a top-level link on the school admin dashboard" class="Tests\Feature\HomeworkWorkflowTest" classname="Tests.Feature.HomeworkWorkflowTest" assertions="3" time="1.902356"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\LicenseRenewalReminderTest" file="tests\Feature\LicenseRenewalReminderTest.php" tests="1" assertions="4" errors="0" failures="0" skipped="0" time="0.063246">
+        <testcase name="it queues one daily renewal reminder for an expiring school" file="tests\Feature\LicenseRenewalReminderTest.php::it queues one daily renewal reminder for an expiring school" class="Tests\Feature\LicenseRenewalReminderTest" classname="Tests.Feature.LicenseRenewalReminderTest" assertions="4" time="0.063246"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\MobileApiTest" file="tests\Feature\MobileApiTest.php" tests="5" assertions="17" errors="0" failures="0" skipped="0" time="0.398082">
+        <testcase name="it issues and revokes a device-specific sanctum token" file="tests\Feature\MobileApiTest.php::it issues and revokes a device-specific sanctum token" class="Tests\Feature\MobileApiTest" classname="Tests.Feature.MobileApiTest" assertions="4" time="0.093818"/>
+        <testcase name="it does not allow a parent to select an unlinked or cross-school learner" file="tests\Feature\MobileApiTest.php::it does not allow a parent to select an unlinked or cross-school learner" class="Tests\Feature\MobileApiTest" classname="Tests.Feature.MobileApiTest" assertions="3" time="0.089175"/>
+        <testcase name="it rejects hostile learner identifiers in teacher attendance writes" file="tests\Feature\MobileApiTest.php::it rejects hostile learner identifiers in teacher attendance writes" class="Tests\Feature\MobileApiTest" classname="Tests.Feature.MobileApiTest" assertions="1" time="0.063620"/>
+        <testcase name="it rejects marks outside the assigned paper and maximum score" file="tests\Feature\MobileApiTest.php::it rejects marks outside the assigned paper and maximum score" class="Tests\Feature\MobileApiTest" classname="Tests.Feature.MobileApiTest" assertions="2" time="0.071137"/>
+        <testcase name="it shows portal users only their own homework submission and protects teacher review" file="tests\Feature\MobileApiTest.php::it shows portal users only their own homework submission and protects teacher review" class="Tests\Feature\MobileApiTest" classname="Tests.Feature.MobileApiTest" assertions="7" time="0.080331"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\MultiSchoolManagementTest" file="tests\Feature\MultiSchoolManagementTest.php" tests="5" assertions="22" errors="0" failures="0" skipped="0" time="1.672712">
+        <testcase name="it lets an authorised director switch branches without changing their home school" file="tests\Feature\MultiSchoolManagementTest.php::it lets an authorised director switch branches without changing their home school" class="Tests\Feature\MultiSchoolManagementTest" classname="Tests.Feature.MultiSchoolManagementTest" assertions="6" time="0.126473"/>
+        <testcase name="it rejects switching to a school outside the users memberships" file="tests\Feature\MultiSchoolManagementTest.php::it rejects switching to a school outside the users memberships" class="Tests\Feature\MultiSchoolManagementTest" classname="Tests.Feature.MultiSchoolManagementTest" assertions="1" time="0.060656"/>
+        <testcase name="it lets platform owners create groups and grant a director all branch access" file="tests\Feature\MultiSchoolManagementTest.php::it lets platform owners create groups and grant a director all branch access" class="Tests\Feature\MultiSchoolManagementTest" classname="Tests.Feature.MultiSchoolManagementTest" assertions="9" time="1.366847"/>
+        <testcase name="it generates admission numbers from the first letter of the branch" file="tests\Feature\MultiSchoolManagementTest.php::it generates admission numbers from the first letter of the branch" class="Tests\Feature\MultiSchoolManagementTest" classname="Tests.Feature.MultiSchoolManagementTest" assertions="2" time="0.053686"/>
+        <testcase name="it maps one staff member to different roles in different branches" file="tests\Feature\MultiSchoolManagementTest.php::it maps one staff member to different roles in different branches" class="Tests\Feature\MultiSchoolManagementTest" classname="Tests.Feature.MultiSchoolManagementTest" assertions="4" time="0.065049"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PasswordRecoveryTest" file="tests\Feature\PasswordRecoveryTest.php" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.151898">
+        <testcase name="it queues a school-scoped password reset email" file="tests\Feature\PasswordRecoveryTest.php::it queues a school-scoped password reset email" class="Tests\Feature\PasswordRecoveryTest" classname="Tests.Feature.PasswordRecoveryTest" assertions="2" time="0.084726"/>
+        <testcase name="it does not reveal whether password recovery details exist" file="tests\Feature\PasswordRecoveryTest.php::it does not reveal whether password recovery details exist" class="Tests\Feature\PasswordRecoveryTest" classname="Tests.Feature.PasswordRecoveryTest" assertions="2" time="0.067172"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PlatformAuthenticationTest" file="tests\Feature\PlatformAuthenticationTest.php" tests="7" assertions="63" errors="0" failures="0" skipped="0" time="3.269489">
+        <testcase name="it renders database-backed landing page content and assets" file="tests\Feature\PlatformAuthenticationTest.php::it renders database-backed landing page content and assets" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="3" time="0.043305"/>
+        <testcase name="it updates and renders every landing page image from the platform editor" file="tests\Feature\PlatformAuthenticationTest.php::it updates and renders every landing page image from the platform editor" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="14" time="0.130618"/>
+        <testcase name="it shows the separate Edlink platform login" file="tests\Feature\PlatformAuthenticationTest.php::it shows the separate Edlink platform login" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="3" time="0.071314"/>
+        <testcase name="it requires password then enrolls a first-time platform owner in TOTP" file="tests\Feature\PlatformAuthenticationTest.php::it requires password then enrolls a first-time platform owner in TOTP" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="12" time="0.164969"/>
+        <testcase name="it requires a valid TOTP before entering the platform dashboard" file="tests\Feature\PlatformAuthenticationTest.php::it requires a valid TOTP before entering the platform dashboard" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="17" time="2.741594"/>
+        <testcase name="it accepts each hashed recovery code only once" file="tests\Feature\PlatformAuthenticationTest.php::it accepts each hashed recovery code only once" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="3" time="0.059492"/>
+        <testcase name="it lets an authenticated platform administrator securely reset MFA" file="tests\Feature\PlatformAuthenticationTest.php::it lets an authenticated platform administrator securely reset MFA" class="Tests\Feature\PlatformAuthenticationTest" classname="Tests.Feature.PlatformAuthenticationTest" assertions="11" time="0.058197"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PlatformSchoolImportTest" file="tests\Feature\PlatformSchoolImportTest.php" tests="3" assertions="11" errors="0" failures="0" skipped="0" time="0.202238">
+        <testcase name="it imports students into the selected school with guardians and enrolments" file="tests\Feature\PlatformSchoolImportTest.php::it imports students into the selected school with guardians and enrolments" class="Tests\Feature\PlatformSchoolImportTest" classname="Tests.Feature.PlatformSchoolImportTest" assertions="5" time="0.070241"/>
+        <testcase name="it imports teachers with their school designation and rejects duplicates" file="tests\Feature\PlatformSchoolImportTest.php::it imports teachers with their school designation and rejects duplicates" class="Tests\Feature\PlatformSchoolImportTest" classname="Tests.Feature.PlatformSchoolImportTest" assertions="4" time="0.071759"/>
+        <testcase name="it rejects a student file atomically when any row references missing school data" file="tests\Feature\PlatformSchoolImportTest.php::it rejects a student file atomically when any row references missing school data" class="Tests\Feature\PlatformSchoolImportTest" classname="Tests.Feature.PlatformSchoolImportTest" assertions="2" time="0.060238"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PlatformSchoolManagementTest" file="tests\Feature\PlatformSchoolManagementTest.php" tests="6" assertions="30" errors="0" failures="0" skipped="0" time="1.108360">
+        <testcase name="it shows a platform school profile" file="tests\Feature\PlatformSchoolManagementTest.php::it shows a platform school profile" class="Tests\Feature\PlatformSchoolManagementTest" classname="Tests.Feature.PlatformSchoolManagementTest" assertions="4" time="0.807193"/>
+        <testcase name="it permanently removes a demo school and audits the action" file="tests\Feature\PlatformSchoolManagementTest.php::it permanently removes a demo school and audits the action" class="Tests\Feature\PlatformSchoolManagementTest" classname="Tests.Feature.PlatformSchoolManagementTest" assertions="6" time="0.065213"/>
+        <testcase name="it protects active customer schools from deletion" file="tests\Feature\PlatformSchoolManagementTest.php::it protects active customer schools from deletion" class="Tests\Feature\PlatformSchoolManagementTest" classname="Tests.Feature.PlatformSchoolManagementTest" assertions="3" time="0.055497"/>
+        <testcase name="it updates school contact details and audits the change" file="tests\Feature\PlatformSchoolManagementTest.php::it updates school contact details and audits the change" class="Tests\Feature\PlatformSchoolManagementTest" classname="Tests.Feature.PlatformSchoolManagementTest" assertions="4" time="0.048578"/>
+        <testcase name="it converts an expired demo into an active school when its licence is activated" file="tests\Feature\PlatformSchoolManagementTest.php::it converts an expired demo into an active school when its licence is activated" class="Tests\Feature\PlatformSchoolManagementTest" classname="Tests.Feature.PlatformSchoolManagementTest" assertions="7" time="0.057342"/>
+        <testcase name="it creates a school and its first administrator together" file="tests\Feature\PlatformSchoolManagementTest.php::it creates a school and its first administrator together" class="Tests\Feature\PlatformSchoolManagementTest" classname="Tests.Feature.PlatformSchoolManagementTest" assertions="6" time="0.074537"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PlatformSchoolSmsConfigurationTest" file="tests\Feature\PlatformSchoolSmsConfigurationTest.php" tests="3" assertions="16" errors="0" failures="0" skipped="0" time="0.170409">
+        <testcase name="it configures SMS independently for one school and encrypts its secrets" file="tests\Feature\PlatformSchoolSmsConfigurationTest.php::it configures SMS independently for one school and encrypts its secrets" class="Tests\Feature\PlatformSchoolSmsConfigurationTest" classname="Tests.Feature.PlatformSchoolSmsConfigurationTest" assertions="8" time="0.060058"/>
+        <testcase name="it refuses to enable SMS without the required credentials" file="tests\Feature\PlatformSchoolSmsConfigurationTest.php::it refuses to enable SMS without the required credentials" class="Tests\Feature\PlatformSchoolSmsConfigurationTest" classname="Tests.Feature.PlatformSchoolSmsConfigurationTest" assertions="3" time="0.049752"/>
+        <testcase name="it shows the SMS controls only behind platform MFA" file="tests\Feature\PlatformSchoolSmsConfigurationTest.php::it shows the SMS controls only behind platform MFA" class="Tests\Feature\PlatformSchoolSmsConfigurationTest" classname="Tests.Feature.PlatformSchoolSmsConfigurationTest" assertions="5" time="0.060599"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PlatformSupportCentreTest" file="tests\Feature\PlatformSupportCentreTest.php" tests="2" assertions="14" errors="0" failures="0" skipped="0" time="0.833636">
+        <testcase name="it shows landing page messages and marks an opened message as read" file="tests\Feature\PlatformSupportCentreTest.php::it shows landing page messages and marks an opened message as read" class="Tests\Feature\PlatformSupportCentreTest" classname="Tests.Feature.PlatformSupportCentreTest" assertions="9" time="0.766390"/>
+        <testcase name="it emails and stores a platform support reply" file="tests\Feature\PlatformSupportCentreTest.php::it emails and stores a platform support reply" class="Tests\Feature\PlatformSupportCentreTest" classname="Tests.Feature.PlatformSupportCentreTest" assertions="5" time="0.067246"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\PrivacyPageTest" file="tests\Feature\PrivacyPageTest.php" tests="2" assertions="5" errors="0" failures="1" skipped="0" time="0.140462">
+        <testcase name="it serves the public Edlink privacy policy page" file="tests\Feature\PrivacyPageTest.php::it serves the public Edlink privacy policy page" class="Tests\Feature\PrivacyPageTest" classname="Tests.Feature.PrivacyPageTest" assertions="3" time="0.091250">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">it serves the public Edlink privacy policy pageFailed asserting that '&lt;!DOCTYPE html&gt;\n
+&lt;html lang="en" x-data="{ dark: localStorage.getItem('edlink_theme') === 'dark' || (!localStorage.getItem('edlink_theme') &amp;&amp; window.matchMedia('(prefers-color-scheme: dark)').matches) }"\n
+      x-init="$watch('dark', v =&gt; { localStorage.setItem('edlink_theme', v ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', v); }); document.documentElement.classList.toggle('dark', dark);"\n
+      :class="{ 'dark': dark }"&gt;\n
+&lt;head&gt;&lt;link rel="icon" type="image/png" href="http://edlink.test/img/fav.png"&gt;&lt;link rel="apple-touch-icon" href="http://edlink.test/img/fav.png"&gt;\n
+	&lt;meta charset="UTF-8"&gt;\n
+	&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;\n
+	&lt;title&gt;Privacy Policy - Edlink&lt;/title&gt;\n
+	&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;\n
+	&lt;script&gt;\n
+		tailwind.config = {\n
+			darkMode: 'class',\n
+			theme: {\n
+				extend: {\n
+					fontFamily: { sans: ['Poppins', 'sans-serif'] },\n
+					colors: { darken: '#161327', ink: '#0f0d1f' },\n
+				}\n
+			}\n
+		}\n
+	&lt;/script&gt;\n
+	&lt;link rel="preconnect" href="https://fonts.gstatic.com"&gt;\n
+	&lt;link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"&gt;\n
+	&lt;style&gt;\n
+		[x-cloak] { display: none !important; }\n
+		html { scroll-behavior: smooth; }\n
+		body { font-family: 'Poppins', sans-serif; }\n
+		.glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }\n
+		.prose-legal h2 { scroll-margin-top: 6rem; }\n
+	&lt;/style&gt;\n
+&lt;/head&gt;\n
+&lt;body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300"&gt;\n
+\n
+	&lt;div class="fixed top-0 inset-x-0 z-40 glass bg-white/70 dark:bg-ink/70 border-b border-gray-100 dark:border-white/10"&gt;\n
+		&lt;div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16"&gt;\n
+			&lt;a href="http://edlink.test" class="flex items-center space-x-2"&gt;\n
+				&lt;span class=" shrink-0"&gt;\n
+                &lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/logoneg.png" alt="Edlink logo" class="w-[150px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+			&lt;div class="flex items-center space-x-3"&gt;\n
+				&lt;button @click="dark = !dark" class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-white/10 hover:border-yellow-400 transition-colors"&gt;\n
+					&lt;svg x-show="!dark" class="w-4 h-4 text-darken" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /&gt;&lt;/svg&gt;\n
+					&lt;svg x-show="dark" x-cloak class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"&gt;&lt;path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 008.998-5.998z"/&gt;&lt;/svg&gt;\n
+				&lt;/button&gt;\n
+				&lt;a href="http://edlink.test" class="px-5 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-white/15 hover:border-yellow-400 transition-colors"&gt;Back home&lt;/a&gt;\n
+			&lt;/div&gt;\n
+		&lt;/div&gt;\n
+	&lt;/div&gt;\n
+\n
+	&lt;div class="max-w-7xl mx-auto px-6 pt-32 pb-24 grid lg:grid-cols-4 gap-12"&gt;\n
+		&lt;aside class="hidden lg:block lg:col-span-1"&gt;\n
+			&lt;div class="sticky top-28"&gt;\n
+				&lt;p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4"&gt;On this page&lt;/p&gt;\n
+				&lt;nav class="space-y-2 text-sm"&gt;\n
+					&lt;a href="#p1" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;1. Scope&lt;/a&gt;\n
+					&lt;a href="#p2" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;2. Information We Collect&lt;/a&gt;\n
+					&lt;a href="#p3" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;3. How We Use Information&lt;/a&gt;\n
+					&lt;a href="#p4" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;4. Legal Bases and School Data&lt;/a&gt;\n
+					&lt;a href="#p5" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;5. Sharing and Disclosure&lt;/a&gt;\n
+					&lt;a href="#p6" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;6. Retention&lt;/a&gt;\n
+					&lt;a href="#p7" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;7. Security&lt;/a&gt;\n
+					&lt;a href="#p8" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;8. Children's Data&lt;/a&gt;\n
+					&lt;a href="#p9" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;9. International Transfers&lt;/a&gt;\n
+					&lt;a href="#p10" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;10. Your Rights&lt;/a&gt;\n
+					&lt;a href="#p11" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;11. Cookies and Device Data&lt;/a&gt;\n
+					&lt;a href="#p12" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;12. Changes and Contact&lt;/a&gt;\n
+				&lt;/nav&gt;\n
+			&lt;/div&gt;\n
+		&lt;/aside&gt;\n
+\n
+		&lt;div class="lg:col-span-3"&gt;\n
+			&lt;span class="text-xs font-bold tracking-widest text-yellow-500 uppercase"&gt;Legal&lt;/span&gt;\n
+			&lt;h1 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white"&gt;Privacy Policy&lt;/h1&gt;\n
+			&lt;p class="mt-3 text-gray-500 dark:text-gray-400"&gt;Last updated: 02 August 2026&lt;/p&gt;\n
+\n
+			&lt;div class="mt-6 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-300"&gt;\n
+				This policy explains how Spotnet Technologies handles personal data in Edlink. Schools remain responsible for the lawfulness of the student, guardian, and staff data they enter into the Service.\n
+			&lt;/div&gt;\n
+\n
+			&lt;div class="prose-legal mt-10 space-y-10 text-sm leading-relaxed"&gt;\n
+\n
+				&lt;section id="p1"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;1. Scope&lt;/h2&gt;\n
+					&lt;p&gt;This Privacy Policy explains how Spotnet Technologies collects, uses, stores, discloses, and protects personal data when you use Edlink, visit our website, contact us, or otherwise interact with us. It applies to schools, staff, students, parents, guardians, and other users of the Service.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;If there is a conflict between this policy and a signed data processing addendum or other written agreement, the signed agreement will control to the extent of the conflict.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p2"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;2. Information We Collect&lt;/h2&gt;\n
+					&lt;p&gt;We may collect the following categories of information:&lt;/p&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2 mt-3"&gt;\n
+						&lt;li&gt;Account and contact details such as names, email addresses, phone numbers, job titles, usernames, and login credentials.&lt;/li&gt;\n
+						&lt;li&gt;School and organization details such as school name, location, school number, class structure, staff lists, fee settings, and administrative records.&lt;/li&gt;\n
+						&lt;li&gt;Student, guardian, and staff data that schools or authorized users upload into Edlink, including registration details, attendance, academic records, messages, and related school content.&lt;/li&gt;\n
+						&lt;li&gt;Payment and billing information such as invoices, transaction references, subscription status, and payment confirmations.&lt;/li&gt;\n
+						&lt;li&gt;Usage and technical data such as IP address, browser type, device information, log data, time stamps, and interaction data generated when you use the Service.&lt;/li&gt;\n
+						&lt;li&gt;Support and communications data such as messages you send to us, feedback, complaints, and records of support interactions.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p3"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;3. How We Use Information&lt;/h2&gt;\n
+					&lt;p&gt;We use personal data to operate and improve Edlink, create and manage accounts, process school records, provide support, send service notices, maintain security, troubleshoot errors, detect abuse, comply with legal obligations, and enforce our agreements.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;We may also use aggregated or de-identified information for analytics, product improvement, testing, reporting, and internal administration. Where data is de-identified, we will take reasonable steps to prevent re-identification.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p4"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;4. Legal Bases and School Data&lt;/h2&gt;\n
+					&lt;p&gt;For school-uploaded data, the school or organization using Edlink is generally the controller or equivalent responsible party, and Spotnet acts as a processor or service provider to the extent permitted by law. The school is responsible for ensuring that it has a lawful basis to collect and share the data it enters into the Service, including any notice, consent, or other authorisation required by law.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;Where we process personal data for our own business purposes, we do so for legitimate business administration, performance of a contract, compliance with legal obligations, protection of our rights, and other lawful purposes permitted under applicable law.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p5"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;5. Sharing and Disclosure&lt;/h2&gt;\n
+					&lt;p&gt;We do not sell personal data. We may share information only where reasonably necessary for the Service or where law requires it.&lt;/p&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2 mt-3"&gt;\n
+						&lt;li&gt;With service providers, hosting providers, payment providers, communication providers, and other vendors that help us operate Edlink under appropriate confidentiality and security obligations.&lt;/li&gt;\n
+						&lt;li&gt;With a school, to the extent that the school is entitled to receive the data or is using us as processor or service provider.&lt;/li&gt;\n
+						&lt;li&gt;With professional advisers, auditors, insurers, or advisors where needed for business, legal, or compliance purposes.&lt;/li&gt;\n
+						&lt;li&gt;To comply with law, lawful requests, court orders, regulatory demands, or to protect rights, safety, security, and property.&lt;/li&gt;\n
+						&lt;li&gt;In connection with a merger, acquisition, financing, reorganisation, or sale of assets, subject to appropriate protections.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p6"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;6. Retention&lt;/h2&gt;\n
+					&lt;p&gt;We retain personal data only for as long as reasonably necessary for the purposes described in this policy, to provide the Service, to comply with legal obligations, to resolve disputes, to enforce agreements, and to maintain backups, archives, and security logs. Retention periods may vary depending on the type of data, the account status, and legal requirements.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;When data is no longer needed, we may delete it, anonymize it, or store it in a limited archived form where permitted by law or operational necessity.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p7"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;7. Security&lt;/h2&gt;\n
+					&lt;p&gt;We use administrative, technical, and organisational safeguards designed to protect personal data against unauthorised access, alteration, loss, or disclosure. However, no system is completely secure, and we cannot guarantee absolute security. You are responsible for protecting your account credentials and for using the Service in a secure manner.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p8"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;8. Children's Data&lt;/h2&gt;\n
+					&lt;div class="rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-rose-700 dark:text-rose-300 text-xs font-medium mb-4"&gt;\n
+						Edlink is used by schools and may contain information about children. That requires careful handling and strict school-side responsibility.\n
+					&lt;/div&gt;\n
+					&lt;p&gt;Schools must ensure that they have the right to collect, use, and share student data before entering it into Edlink. Spotnet does not determine the purpose or lawful basis for the school's use of student data and relies on the school to provide lawful instructions.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;If we receive a request about student data that was uploaded by a school, we may direct the requester to the school first or coordinate with the school as appropriate and as required by law.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p9"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;9. International Transfers&lt;/h2&gt;\n
+					&lt;p&gt;Because Edlink may use cloud infrastructure, support tools, or service providers located in different countries, personal data may be processed outside the country where it was collected. Where required by law, we will take reasonable steps to use appropriate safeguards for such transfers.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p10"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;10. Your Rights&lt;/h2&gt;\n
+					&lt;p&gt;Depending on your role and applicable law, you may have rights to access, correct, update, delete, object to, restrict, or obtain a copy of your personal data, and to withdraw consent where consent is the legal basis. Some requests must be made through the school if the school controls the relevant data.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;We may need to verify your identity before responding to a request. We may also refuse or limit a request where the law permits or requires us to do so.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p11"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;11. Cookies and Device Data&lt;/h2&gt;\n
+					&lt;p&gt;We may use cookies, session storage, local storage, and similar technologies to keep you signed in, remember preferences, maintain security, and understand how the Service is used. You can control some of these technologies through your browser settings, but disabling them may affect functionality.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="p12"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;12. Changes and Contact&lt;/h2&gt;\n
+					&lt;p&gt;We may update this Privacy Policy from time to time. If we make material changes, we will post the updated version on this page or otherwise provide notice as required by law. Continued use of the Service after the updated policy becomes effective means you accept it.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;Questions or requests about this Privacy Policy can be sent to &lt;a href="mailto:contact@edlink.com" class="text-yellow-600 dark:text-yellow-400 font-medium"&gt;contact@edlink.com&lt;/a&gt;.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+			&lt;/div&gt;\n
+		&lt;/div&gt;\n
+	&lt;/div&gt;\n
+\n
+	&lt;footer class="bg-darken text-gray-400"&gt;\n
+		&lt;div class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center text-center"&gt;\n
+			&lt;div class="flex items-center space-x-2 mb-4"&gt;\n
+				&lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/logo.png" alt="Edlink logo" class="w-[150px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+			&lt;/div&gt;\n
+			&lt;p class="text-xs text-gray-500"&gt;&amp;copy; &lt;span x-data x-text="new Date().getFullYear()"&gt;&lt;/span&gt; Edlink. Built by Spotnet Technologies.&lt;/p&gt;\n
+		&lt;/div&gt;\n
+	&lt;/footer&gt;\n
+\n
+&lt;/body&gt;\n
+	&lt;script type="module" src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"&gt;&lt;/script&gt;\n
+&lt;/html&gt;\n
+' [ASCII](length: 14990) contains "23 July 2026" [ASCII](length: 12).&#13;
+at vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+at vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:713
+at tests\Feature\PrivacyPageTest.php:7</failure>
+        </testcase>
+        <testcase name="it links the landing-page footer to the privacy policy page" file="tests\Feature\PrivacyPageTest.php::it links the landing-page footer to the privacy policy page" class="Tests\Feature\PrivacyPageTest" classname="Tests.Feature.PrivacyPageTest" assertions="2" time="0.049212"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\QueuedCommunicationsTest" file="tests\Feature\QueuedCommunicationsTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.317464">
+        <testcase name="it queues school announcements without waiting for smtp" file="tests\Feature\QueuedCommunicationsTest.php::it queues school announcements without waiting for smtp" class="Tests\Feature\QueuedCommunicationsTest" classname="Tests.Feature.QueuedCommunicationsTest" assertions="3" time="0.317464"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\QueuedEmailVerificationTest" file="tests\Feature\QueuedEmailVerificationTest.php" tests="2" assertions="5" errors="0" failures="0" skipped="0" time="0.104117">
+        <testcase name="it queues email verification when a client registration event is fired" file="tests\Feature\QueuedEmailVerificationTest.php::it queues email verification when a client registration event is fired" class="Tests\Feature\QueuedEmailVerificationTest" classname="Tests.Feature.QueuedEmailVerificationTest" assertions="4" time="0.056343"/>
+        <testcase name="it includes the school number in the verification email" file="tests\Feature\QueuedEmailVerificationTest.php::it includes the school number in the verification email" class="Tests\Feature\QueuedEmailVerificationTest" classname="Tests.Feature.QueuedEmailVerificationTest" assertions="1" time="0.047774"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\QueuedReportExportTest" file="tests\Feature\QueuedReportExportTest.php" tests="2" assertions="9" errors="0" failures="0" skipped="0" time="0.155816">
+        <testcase name="it queues a report export without generating it in the web request" file="tests\Feature\QueuedReportExportTest.php::it queues a report export without generating it in the web request" class="Tests\Feature\QueuedReportExportTest" classname="Tests.Feature.QueuedReportExportTest" assertions="3" time="0.074277"/>
+        <testcase name="it generates a private CSV and prevents another school from downloading it" file="tests\Feature\QueuedReportExportTest.php::it generates a private CSV and prevents another school from downloading it" class="Tests\Feature\QueuedReportExportTest" classname="Tests.Feature.QueuedReportExportTest" assertions="6" time="0.081539"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\ReportDatabasePaginationTest" file="tests\Feature\ReportDatabasePaginationTest.php" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.104717">
+        <testcase name="it materializes only the current database page for the student register" file="tests\Feature\ReportDatabasePaginationTest.php::it materializes only the current database page for the student register" class="Tests\Feature\ReportDatabasePaginationTest" classname="Tests.Feature.ReportDatabasePaginationTest" assertions="6" time="0.104717"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\SchoolAcademicSetupTest" file="tests\Feature\SchoolAcademicSetupTest.php" tests="3" assertions="9" errors="0" failures="0" skipped="0" time="0.180770">
+        <testcase name="it provisions and protects the standard primary structure" file="tests\Feature\SchoolAcademicSetupTest.php::it provisions and protects the standard primary structure" class="Tests\Feature\SchoolAcademicSetupTest" classname="Tests.Feature.SchoolAcademicSetupTest" assertions="4" time="0.059865"/>
+        <testcase name="it separates lower and advanced secondary structures" file="tests\Feature\SchoolAcademicSetupTest.php::it separates lower and advanced secondary structures" class="Tests\Feature\SchoolAcademicSetupTest" classname="Tests.Feature.SchoolAcademicSetupTest" assertions="3" time="0.066808"/>
+        <testcase name="it leaves kindergarten classes open for the school to define" file="tests\Feature\SchoolAcademicSetupTest.php::it leaves kindergarten classes open for the school to define" class="Tests\Feature\SchoolAcademicSetupTest" classname="Tests.Feature.SchoolAcademicSetupTest" assertions="2" time="0.054098"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\SchoolLicenceAccessTest" file="tests\Feature\SchoolLicenceAccessTest.php" tests="2" assertions="9" errors="0" failures="0" skipped="0" time="0.151946">
+        <testcase name="it rejects login for every user mapped to an expired school number" file="tests\Feature\SchoolLicenceAccessTest.php::it rejects login for every user mapped to an expired school number" class="Tests\Feature\SchoolLicenceAccessTest" classname="Tests.Feature.SchoolLicenceAccessTest" assertions="4" time="0.095199"/>
+        <testcase name="it logs out an existing session when its school licence has expired" file="tests\Feature\SchoolLicenceAccessTest.php::it logs out an existing session when its school licence has expired" class="Tests\Feature\SchoolLicenceAccessTest" classname="Tests.Feature.SchoolLicenceAccessTest" assertions="5" time="0.056747"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\SecurityIsolationTest" file="tests\Feature\SecurityIsolationTest.php" tests="3" assertions="10" errors="0" failures="0" skipped="0" time="1.433728">
+        <testcase name="it does not expose the platform-wide database backup to school routes" file="tests\Feature\SecurityIsolationTest.php::it does not expose the platform-wide database backup to school routes" class="Tests\Feature\SecurityIsolationTest" classname="Tests.Feature.SecurityIsolationTest" assertions="2" time="0.040054"/>
+        <testcase name="it rejects class and category identifiers belonging to another school" file="tests\Feature\SecurityIsolationTest.php::it rejects class and category identifiers belonging to another school" class="Tests\Feature\SecurityIsolationTest" classname="Tests.Feature.SecurityIsolationTest" assertions="5" time="1.291687"/>
+        <testcase name="it cannot update a guardian by tampering with a livewire guardian id" file="tests\Feature\SecurityIsolationTest.php::it cannot update a guardian by tampering with a livewire guardian id" class="Tests\Feature\SecurityIsolationTest" classname="Tests.Feature.SecurityIsolationTest" assertions="3" time="0.101987"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\StaffActivityAuditTest" file="tests\Feature\StaffActivityAuditTest.php" tests="4" assertions="15" errors="0" failures="1" skipped="0" time="1.231343">
+        <testcase name="it captures an administrator request without storing submitted values" file="tests\Feature\StaffActivityAuditTest.php::it captures an administrator request without storing submitted values" class="Tests\Feature\StaffActivityAuditTest" classname="Tests.Feature.StaffActivityAuditTest" assertions="6" time="0.044777"/>
+        <testcase name="it captures each teacher Livewire action with its component and method" file="tests\Feature\StaffActivityAuditTest.php::it captures each teacher Livewire action with its component and method" class="Tests\Feature\StaffActivityAuditTest" classname="Tests.Feature.StaffActivityAuditTest" assertions="5" time="0.051305"/>
+        <testcase name="it recognises the named Livewire update route and records the real method" file="tests\Feature\StaffActivityAuditTest.php::it recognises the named Livewire update route and records the real method" class="Tests\Feature\StaffActivityAuditTest" classname="Tests.Feature.StaffActivityAuditTest" assertions="3" time="0.047476"/>
+        <testcase name="it allows only administrators to review the school audit trail" file="tests\Feature\StaffActivityAuditTest.php::it allows only administrators to review the school audit trail" class="Tests\Feature\StaffActivityAuditTest" classname="Tests.Feature.StaffActivityAuditTest" assertions="1" time="1.087785">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">it allows only administrators to review the school audit trailFailed asserting that '&lt;div wire:key="lw-2022476031-0" wire:snapshot="" wire:effects="" wire:id="4uRfmgnBF4sXOjYaMWeU" wire:name="audit-trail" class="space-y-6"&gt;\n
+\n
+    &lt;!-- Top Header Banner --&gt;\n
+    &lt;header class="relative overflow-hidden rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl"&gt;\n
+        &lt;div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"&gt;\n
+            &lt;div&gt;\n
+                &lt;h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight"&gt;\n
+                    Audit Trail\n
+                &lt;/h1&gt;\n
+                &lt;p class="mt-1 text-sm text-slate-400 max-w-xl"&gt;\n
+                    Review page visits, Livewire actions, and important system operations performed by staff.\n
+                &lt;/p&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;div class="flex items-center gap-3 self-start sm:self-center"&gt;\n
+                &lt;span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 text-xs font-bold text-emerald-400 backdrop-blur-sm"&gt;\n
+                    &lt;span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"&gt;&lt;/span&gt;\n
+                    Audit Capture Active\n
+                &lt;/span&gt;\n
+            &lt;/div&gt;\n
+        &lt;/div&gt;\n
+\n
+        &lt;!-- Ambient background glow --&gt;\n
+        &lt;div class="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl pointer-events-none"&gt;&lt;/div&gt;\n
+    &lt;/header&gt;\n
+\n
+    &lt;!-- Stat Cards Grid --&gt;\n
+    &lt;div class="grid gap-4 sm:grid-cols-3"&gt;\n
+        &lt;div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"&gt;\n
+            &lt;p class="text-xs font-bold uppercase tracking-wider text-slate-400"&gt;Activities Today&lt;/p&gt;\n
+            &lt;p class="mt-2 text-3xl font-black text-slate-900"&gt;2&lt;/p&gt;\n
+        &lt;/div&gt;\n
+        &lt;div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"&gt;\n
+            &lt;p class="text-xs font-bold uppercase tracking-wider text-slate-400"&gt;Actions Today&lt;/p&gt;\n
+            &lt;p class="mt-2 text-3xl font-black text-blue-600"&gt;0&lt;/p&gt;\n
+        &lt;/div&gt;\n
+        &lt;div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"&gt;\n
+            &lt;p class="text-xs font-bold uppercase tracking-wider text-slate-400"&gt;Active Staff Today&lt;/p&gt;\n
+            &lt;p class="mt-2 text-3xl font-black text-emerald-600"&gt;1&lt;/p&gt;\n
+        &lt;/div&gt;\n
+    &lt;/div&gt;\n
+\n
+    &lt;!-- Filter Control Panel &amp; Log Table --&gt;\n
+    &lt;section class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm"&gt;\n
+        \n
+        &lt;!-- Filter Controls Bar --&gt;\n
+        &lt;div class="grid gap-3.5 border-b border-slate-100 p-5 md:grid-cols-2 xl:grid-cols-4 bg-slate-50/50"&gt;\n
+            \n
+            &lt;!-- Search Field --&gt;\n
+            &lt;div&gt;\n
+                &lt;label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"&gt;Search Logs&lt;/label&gt;\n
+                &lt;input wire:model.live.debounce.350ms="search" \n
+                       type="text" \n
+                       placeholder="Search event, staff, route or IP..." \n
+                       class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10 placeholder:text-slate-400"&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;!-- Staff Select --&gt;\n
+            &lt;div&gt;\n
+                &lt;label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"&gt;Staff Member&lt;/label&gt;\n
+                &lt;div class="relative"&gt;\n
+                    &lt;select wire:model.live="userId" class="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-10 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10"&gt;\n
+                        &lt;option value=""&gt;All staff&lt;/option&gt;\n
+                        &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                            &lt;option value="1"&gt;Bill Gibson — Admin&lt;/option&gt;\n
+                        &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                    &lt;/select&gt;\n
+                    &lt;div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400"&gt;\n
+                        &lt;svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/&gt;&lt;/svg&gt;\n
+                    &lt;/div&gt;\n
+                &lt;/div&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;!-- Role Select --&gt;\n
+            &lt;div&gt;\n
+                &lt;label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"&gt;Role&lt;/label&gt;\n
+                &lt;div class="relative"&gt;\n
+                    &lt;select wire:model.live="role" class="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-10 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10"&gt;\n
+                        &lt;option value=""&gt;All roles&lt;/option&gt;\n
+                        &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                            &lt;option value="admin"&gt;Admin&lt;/option&gt;\n
+                                                    &lt;option value="superadmin"&gt;Superadmin&lt;/option&gt;\n
+                                                    &lt;option value="academic_admin"&gt;Academic admin&lt;/option&gt;\n
+                                                    &lt;option value="registrar"&gt;Registrar&lt;/option&gt;\n
+                                                    &lt;option value="teacher"&gt;Teacher&lt;/option&gt;\n
+                                                    &lt;option value="bursar"&gt;Bursar&lt;/option&gt;\n
+                        &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                    &lt;/select&gt;\n
+                    &lt;div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400"&gt;\n
+                        &lt;svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/&gt;&lt;/svg&gt;\n
+                    &lt;/div&gt;\n
+                &lt;/div&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;!-- Event Select --&gt;\n
+            &lt;div&gt;\n
+                &lt;label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"&gt;Event Type&lt;/label&gt;\n
+                &lt;div class="relative"&gt;\n
+                    &lt;select wire:model.live="event" class="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-10 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10"&gt;\n
+                        &lt;option value=""&gt;All events&lt;/option&gt;\n
+                        &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                            &lt;option value="audit_trail.viewed"&gt;audit_trail.viewed&lt;/option&gt;\n
+                                                    &lt;option value="page.viewed"&gt;page.viewed&lt;/option&gt;\n
+                        &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                    &lt;/select&gt;\n
+                    &lt;div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400"&gt;\n
+                        &lt;svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/&gt;&lt;/svg&gt;\n
+                    &lt;/div&gt;\n
+                &lt;/div&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;!-- Date Range Filters --&gt;\n
+            &lt;div&gt;\n
+                &lt;label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"&gt;From Date&lt;/label&gt;\n
+                &lt;input wire:model.live="fromDate" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10"&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;div&gt;\n
+                &lt;label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"&gt;To Date&lt;/label&gt;\n
+                &lt;input wire:model.live="toDate" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10"&gt;\n
+            &lt;/div&gt;\n
+\n
+            &lt;!-- Clear Action --&gt;\n
+            &lt;div class="flex items-end xl:col-span-2"&gt;\n
+                &lt;button wire:click="clearFilters" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition duration-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-200"&gt;\n
+                    Clear Filters\n
+                &lt;/button&gt;\n
+            &lt;/div&gt;\n
+        &lt;/div&gt;\n
+\n
+        &lt;!-- Audit Table --&gt;\n
+        &lt;div class="overflow-x-auto"&gt;\n
+            &lt;table class="w-full min-w-[980px] text-left text-sm text-slate-600"&gt;\n
+                &lt;thead class="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100"&gt;\n
+                    &lt;tr&gt;\n
+                        &lt;th class="px-6 py-3.5"&gt;Date &amp;amp; Time&lt;/th&gt;\n
+                        &lt;th class="px-6 py-3.5"&gt;Staff Member&lt;/th&gt;\n
+                        &lt;th class="px-6 py-3.5"&gt;Event&lt;/th&gt;\n
+                        &lt;th class="px-6 py-3.5"&gt;Location / Action&lt;/th&gt;\n
+                        &lt;th class="px-6 py-3.5"&gt;IP Address&lt;/th&gt;\n
+                        &lt;th class="px-6 py-3.5 text-right"&gt;Action&lt;/th&gt;\n
+                    &lt;/tr&gt;\n
+                &lt;/thead&gt;\n
+                &lt;tbody class="divide-y divide-slate-100 font-medium"&gt;\n
+                    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;                                                &lt;tr class="hover:bg-slate-50/80 transition duration-150"&gt;\n
+                            &lt;td class="whitespace-nowrap px-6 py-4"&gt;\n
+                                &lt;b class="text-slate-900 font-bold"&gt;02 Aug 2026&lt;/b&gt;\n
+                                &lt;span class="block text-xs font-normal text-slate-400 mt-0.5"&gt;01:45:19 PM&lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="px-6 py-4"&gt;\n
+                                &lt;b class="text-slate-900 font-bold block"&gt;Bill Gibson&lt;/b&gt;\n
+                                &lt;span class="block text-xs font-normal capitalize text-slate-400 mt-0.5"&gt;admin&lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="px-6 py-4"&gt;\n
+                                &lt;span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold\n
+                                    \n
+                                    \n
+                                    \n
+                                    bg-slate-100 text-slate-700"&gt;\n
+                                    &lt;span class="h-1.5 w-1.5 rounded-full \n
+                                        \n
+                                        \n
+                                        \n
+                                        bg-slate-400"&gt;&lt;/span&gt;\n
+                                    audit_trail.viewed\n
+                                &lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="max-w-xs px-6 py-4"&gt;\n
+                                &lt;b class="block truncate font-bold text-slate-800"&gt;settings.audit-trail&lt;/b&gt;\n
+                                &lt;span class="block truncate text-xs font-normal text-slate-400 mt-0.5" title="No additional location"&gt;\n
+                                    No additional location\n
+                                &lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="whitespace-nowrap px-6 py-4 font-mono text-xs text-slate-500"&gt;\n
+                                127.0.0.1\n
+                            &lt;/td&gt;\n
+                            &lt;td class="px-6 py-4 text-right whitespace-nowrap"&gt;\n
+                                &lt;button wire:click="showDetails(2)" class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition duration-150 hover:bg-slate-900 hover:text-white hover:border-slate-900"&gt;\n
+                                    Details\n
+                                &lt;/button&gt;\n
+                            &lt;/td&gt;\n
+                        &lt;/tr&gt;\n
+                                                                    &lt;tr class="hover:bg-slate-50/80 transition duration-150"&gt;\n
+                            &lt;td class="whitespace-nowrap px-6 py-4"&gt;\n
+                                &lt;b class="text-slate-900 font-bold"&gt;02 Aug 2026&lt;/b&gt;\n
+                                &lt;span class="block text-xs font-normal text-slate-400 mt-0.5"&gt;01:45:19 PM&lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="px-6 py-4"&gt;\n
+                                &lt;b class="text-slate-900 font-bold block"&gt;Bill Gibson&lt;/b&gt;\n
+                                &lt;span class="block text-xs font-normal capitalize text-slate-400 mt-0.5"&gt;admin&lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="px-6 py-4"&gt;\n
+                                &lt;span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold\n
+                                    \n
+                                    \n
+                                    \n
+                                    bg-slate-100 text-slate-700"&gt;\n
+                                    &lt;span class="h-1.5 w-1.5 rounded-full \n
+                                        \n
+                                        \n
+                                        \n
+                                        bg-slate-400"&gt;&lt;/span&gt;\n
+                                    page.viewed\n
+                                &lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="max-w-xs px-6 py-4"&gt;\n
+                                &lt;b class="block truncate font-bold text-slate-800"&gt;dashboard&lt;/b&gt;\n
+                                &lt;span class="block truncate text-xs font-normal text-slate-400 mt-0.5" title="No additional location"&gt;\n
+                                    No additional location\n
+                                &lt;/span&gt;\n
+                            &lt;/td&gt;\n
+                            &lt;td class="whitespace-nowrap px-6 py-4 font-mono text-xs text-slate-500"&gt;\n
+                                —\n
+                            &lt;/td&gt;\n
+                            &lt;td class="px-6 py-4 text-right whitespace-nowrap"&gt;\n
+                                &lt;button wire:click="showDetails(1)" class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition duration-150 hover:bg-slate-900 hover:text-white hover:border-slate-900"&gt;\n
+                                    Details\n
+                                &lt;/button&gt;\n
+                            &lt;/td&gt;\n
+                        &lt;/tr&gt;\n
+                    &lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;                &lt;/tbody&gt;\n
+            &lt;/table&gt;\n
+        &lt;/div&gt;\n
+\n
+        &lt;div class="border-t border-slate-100 p-4 bg-slate-50/50"&gt;\n
+            &lt;div&gt;\n
+    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;&lt;/div&gt;\n
+\n
+        &lt;/div&gt;\n
+    &lt;/section&gt;\n
+\n
+    &lt;!-- Details Modal --&gt;\n
+    &lt;!--[if BLOCK]&gt;&lt;![endif]--&gt;&lt;!--[if ENDBLOCK]&gt;&lt;![endif]--&gt;\n
+&lt;/div&gt;' [UTF-8](length: 15149) contains "Audit trail" [ASCII](length: 11).&#13;
+at vendor\livewire\livewire\src\Features\SupportTesting\MakesAssertions.php:17
+at tests\Feature\StaffActivityAuditTest.php:83</failure>
+        </testcase>
+      </testsuite>
+      <testsuite name="Tests\Feature\StaffRegistrationTest" file="tests\Feature\StaffRegistrationTest.php" tests="1" assertions="8" errors="0" failures="0" skipped="0" time="0.507168">
+        <testcase name="it advances through every step and registers a staff account" file="tests\Feature\StaffRegistrationTest.php::it advances through every step and registers a staff account" class="Tests\Feature\StaffRegistrationTest" classname="Tests.Feature.StaffRegistrationTest" assertions="8" time="0.507168"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\StageReportSettingsTest" file="tests\Feature\StageReportSettingsTest.php" tests="1" assertions="5" errors="0" failures="0" skipped="0" time="0.052844">
+        <testcase name="it loads only the saved settings for the requested education stage" file="tests\Feature\StageReportSettingsTest.php::it loads only the saved settings for the requested education stage" class="Tests\Feature\StageReportSettingsTest" classname="Tests.Feature.StageReportSettingsTest" assertions="5" time="0.052844"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\StudentActivityMemberExportTest" file="tests\Feature\StudentActivityMemberExportTest.php" tests="2" assertions="9" errors="0" failures="0" skipped="0" time="1.151491">
+        <testcase name="it allows an assigned patron to view and export their house members" file="tests\Feature\StudentActivityMemberExportTest.php::it allows an assigned patron to view and export their house members" class="Tests\Feature\StudentActivityMemberExportTest" classname="Tests.Feature.StudentActivityMemberExportTest" assertions="8" time="1.092679"/>
+        <testcase name="it prevents an unrelated teacher from exporting another patron group" file="tests\Feature\StudentActivityMemberExportTest.php::it prevents an unrelated teacher from exporting another patron group" class="Tests\Feature\StudentActivityMemberExportTest" classname="Tests.Feature.StudentActivityMemberExportTest" assertions="1" time="0.058812"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\StudentSubjectSelectionTest" file="tests\Feature\StudentSubjectSelectionTest.php" tests="5" assertions="16" errors="0" failures="0" skipped="0" time="2.244248">
+        <testcase name="it saves an individual A-Level selection with principal and subsidiary subjects" file="tests\Feature\StudentSubjectSelectionTest.php::it saves an individual A-Level selection with principal and subsidiary subjects" class="Tests\Feature\StudentSubjectSelectionTest" classname="Tests.Feature.StudentSubjectSelectionTest" assertions="4" time="0.711384"/>
+        <testcase name="it supports core and elective selection for Senior 3 and Senior 4" file="tests\Feature\StudentSubjectSelectionTest.php::it supports core and elective selection for Senior 3 and Senior 4" class="Tests\Feature\StudentSubjectSelectionTest" classname="Tests.Feature.StudentSubjectSelectionTest" assertions="2" time="0.103959"/>
+        <testcase name="it excludes a learner from marks entry for a subject they did not select" file="tests\Feature\StudentSubjectSelectionTest.php::it excludes a learner from marks entry for a subject they did not select" class="Tests\Feature\StudentSubjectSelectionTest" classname="Tests.Feature.StudentSubjectSelectionTest" assertions="3" time="0.532619"/>
+        <testcase name="it shows subject selection under Academics in the administrator sidebar" file="tests\Feature\StudentSubjectSelectionTest.php::it shows subject selection under Academics in the administrator sidebar" class="Tests\Feature\StudentSubjectSelectionTest" classname="Tests.Feature.StudentSubjectSelectionTest" assertions="4" time="0.088468"/>
+        <testcase name="it hides subject selection from non-secondary school sidebars" file="tests\Feature\StudentSubjectSelectionTest.php::it hides subject selection from non-secondary school sidebars" class="Tests\Feature\StudentSubjectSelectionTest" classname="Tests.Feature.StudentSubjectSelectionTest" assertions="3" time="0.807818"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\TeacherAcademicScopeTest" file="tests\Feature\TeacherAcademicScopeTest.php" tests="4" assertions="13" errors="0" failures="0" skipped="0" time="0.632125">
+        <testcase name="it gives a class teacher a read-only directory containing only their class" file="tests\Feature\TeacherAcademicScopeTest.php::it gives a class teacher a read-only directory containing only their class" class="Tests\Feature\TeacherAcademicScopeTest" classname="Tests.Feature.TeacherAcademicScopeTest" assertions="6" time="0.409253"/>
+        <testcase name="it does not give a subject teacher the general student directory" file="tests\Feature\TeacherAcademicScopeTest.php::it does not give a subject teacher the general student directory" class="Tests\Feature\TeacherAcademicScopeTest" classname="Tests.Feature.TeacherAcademicScopeTest" assertions="2" time="0.076459"/>
+        <testcase name="it lets a class teacher enter every subject in their class" file="tests\Feature\TeacherAcademicScopeTest.php::it lets a class teacher enter every subject in their class" class="Tests\Feature\TeacherAcademicScopeTest" classname="Tests.Feature.TeacherAcademicScopeTest" assertions="2" time="0.068298"/>
+        <testcase name="it limits a subject teacher to their assigned subject" file="tests\Feature\TeacherAcademicScopeTest.php::it limits a subject teacher to their assigned subject" class="Tests\Feature\TeacherAcademicScopeTest" classname="Tests.Feature.TeacherAcademicScopeTest" assertions="3" time="0.078115"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\TeacherWorkspaceTest" file="tests\Feature\TeacherWorkspaceTest.php" tests="3" assertions="18" errors="0" failures="0" skipped="0" time="1.216130">
+        <testcase name="it shows a teacher-focused dashboard with teaching cards and charts" file="tests\Feature\TeacherWorkspaceTest.php::it shows a teacher-focused dashboard with teaching cards and charts" class="Tests\Feature\TeacherWorkspaceTest" classname="Tests.Feature.TeacherWorkspaceTest" assertions="9" time="1.052617"/>
+        <testcase name="it shows extra sidebar modules when a teacher designation receives extra rights" file="tests\Feature\TeacherWorkspaceTest.php::it shows extra sidebar modules when a teacher designation receives extra rights" class="Tests\Feature\TeacherWorkspaceTest" classname="Tests.Feature.TeacherWorkspaceTest" assertions="4" time="0.084841"/>
+        <testcase name="it shows a teacher their next lesson and countdown card" file="tests\Feature\TeacherWorkspaceTest.php::it shows a teacher their next lesson and countdown card" class="Tests\Feature\TeacherWorkspaceTest" classname="Tests.Feature.TeacherWorkspaceTest" assertions="5" time="0.078672"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\TermsPageTest" file="tests\Feature\TermsPageTest.php" tests="2" assertions="5" errors="0" failures="1" skipped="0" time="0.156091">
+        <testcase name="it serves the public Edlink terms page" file="tests\Feature\TermsPageTest.php::it serves the public Edlink terms page" class="Tests\Feature\TermsPageTest" classname="Tests.Feature.TermsPageTest" assertions="3" time="0.092623">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">it serves the public Edlink terms pageFailed asserting that '&lt;!DOCTYPE html&gt;\n
+&lt;html lang="en" x-data="{ dark: localStorage.getItem('edlink_theme') === 'dark' || (!localStorage.getItem('edlink_theme') &amp;&amp; window.matchMedia('(prefers-color-scheme: dark)').matches) }"\n
+      x-init="$watch('dark', v =&gt; { localStorage.setItem('edlink_theme', v ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', v); }); document.documentElement.classList.toggle('dark', dark);"\n
+      :class="{ 'dark': dark }"&gt;\n
+&lt;head&gt;&lt;link rel="icon" type="image/png" href="http://edlink.test/img/fav.png"&gt;&lt;link rel="apple-touch-icon" href="http://edlink.test/img/fav.png"&gt;\n
+	&lt;meta charset="UTF-8"&gt;\n
+	&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;\n
+	&lt;title&gt;Terms and Conditions - Edlink&lt;/title&gt;\n
+	&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;\n
+	&lt;script&gt;\n
+		tailwind.config = {\n
+			darkMode: 'class',\n
+			theme: {\n
+				extend: {\n
+					fontFamily: { sans: ['Poppins', 'sans-serif'] },\n
+					colors: { darken: '#161327', ink: '#0f0d1f' },\n
+				}\n
+			}\n
+		}\n
+	&lt;/script&gt;\n
+	&lt;link rel="preconnect" href="https://fonts.gstatic.com"&gt;\n
+	&lt;link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"&gt;\n
+	&lt;style&gt;\n
+		[x-cloak] { display: none !important; }\n
+		html { scroll-behavior: smooth; }\n
+		body { font-family: 'Poppins', sans-serif; }\n
+		.glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }\n
+		.prose-legal h2 { scroll-margin-top: 6rem; }\n
+	&lt;/style&gt;\n
+&lt;!-- Livewire Styles --&gt;&lt;style &gt;[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.list-item][wire\:loading\.list-item], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak] {display: none !important;}[wire\:cloak] {display: none !important;}dialog#livewire-error::backdrop {background-color: rgba(0, 0, 0, .6);}&lt;/style&gt;\n
+&lt;/head&gt;\n
+&lt;body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300"&gt;\n
+\n
+	&lt;div class="fixed top-0 inset-x-0 z-40 glass bg-white/70 dark:bg-ink/70 border-b border-gray-100 dark:border-white/10"&gt;\n
+		&lt;div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16"&gt;\n
+			&lt;a href="http://edlink.test" class="flex items-center space-x-2"&gt;\n
+				&lt;span class=" shrink-0"&gt;\n
+                &lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/logoneg.png" alt="Edlink logo" class="w-[150px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+            &lt;/span&gt;\n
+			&lt;div class="flex items-center space-x-3"&gt;\n
+				&lt;button @click="dark = !dark" class="w-9 h-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-white/10 hover:border-yellow-400 transition-colors"&gt;\n
+					&lt;svg x-show="!dark" class="w-4 h-4 text-darken" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"&gt;&lt;path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /&gt;&lt;/svg&gt;\n
+					&lt;svg x-show="dark" x-cloak class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"&gt;&lt;path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 008.998-5.998z"/&gt;&lt;/svg&gt;\n
+				&lt;/button&gt;\n
+				&lt;a href="http://edlink.test" class="px-5 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-white/15 hover:border-yellow-400 transition-colors"&gt;Back home&lt;/a&gt;\n
+			&lt;/div&gt;\n
+		&lt;/div&gt;\n
+	&lt;/div&gt;\n
+\n
+	&lt;div class="max-w-7xl mx-auto px-6 pt-32 pb-24 grid lg:grid-cols-4 gap-12"&gt;\n
+		&lt;aside class="hidden lg:block lg:col-span-1"&gt;\n
+			&lt;div class="sticky top-28"&gt;\n
+				&lt;p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4"&gt;On this page&lt;/p&gt;\n
+				&lt;nav class="space-y-2 text-sm"&gt;\n
+					&lt;a href="#s1" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;1. Acceptance of Terms&lt;/a&gt;\n
+					&lt;a href="#s2" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;2. Service Description&lt;/a&gt;\n
+					&lt;a href="#s3" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;3. Accounts and Responsibility&lt;/a&gt;\n
+					&lt;a href="#s4" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;4. Trials and Availability&lt;/a&gt;\n
+					&lt;a href="#s5" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;5. Fees and Payment&lt;/a&gt;\n
+					&lt;a href="#s6" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;6. Student, Guardian and Staff Data&lt;/a&gt;\n
+					&lt;a href="#s7" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;7. Acceptable Use&lt;/a&gt;\n
+					&lt;a href="#s8" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;8. Data Retention and Deletion&lt;/a&gt;\n
+					&lt;a href="#s9" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;9. Service Availability&lt;/a&gt;\n
+					&lt;a href="#s10" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;10. Intellectual Property&lt;/a&gt;\n
+					&lt;a href="#s11" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;11. Termination&lt;/a&gt;\n
+					&lt;a href="#s12" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;12. Limitation of Liability&lt;/a&gt;\n
+					&lt;a href="#s13" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;13. Indemnification&lt;/a&gt;\n
+					&lt;a href="#s14" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;14. Changes to Terms&lt;/a&gt;\n
+					&lt;a href="#s15" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;15. Governing Law&lt;/a&gt;\n
+					&lt;a href="#s16" class="block text-gray-500 dark:text-gray-400 hover:text-yellow-500"&gt;16. Contact&lt;/a&gt;\n
+				&lt;/nav&gt;\n
+			&lt;/div&gt;\n
+		&lt;/aside&gt;\n
+\n
+		&lt;div class="lg:col-span-3"&gt;\n
+			&lt;span class="text-xs font-bold tracking-widest text-yellow-500 uppercase"&gt;Legal&lt;/span&gt;\n
+			&lt;h1 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white"&gt;Terms and Conditions&lt;/h1&gt;\n
+			&lt;p class="mt-3 text-gray-500 dark:text-gray-400"&gt;Last updated: 02 August 2026&lt;/p&gt;\n
+\n
+			&lt;div class="mt-6 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-300"&gt;\n
+				These Terms form a binding agreement between you and Spotnet Technologies. If you use Edlink on behalf of a school or organization, you confirm that you have authority to bind that entity.\n
+			&lt;/div&gt;\n
+\n
+			&lt;div class="prose-legal mt-10 space-y-10 text-sm leading-relaxed"&gt;\n
+\n
+				&lt;section id="s1"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;1. Acceptance of Terms&lt;/h2&gt;\n
+					&lt;p&gt;By creating an account, registering a school, or otherwise accessing or using Edlink (the "Service"), you agree to be bound by these Terms and any applicable policies, notices, or addenda we publish from time to time. If you do not accept these Terms, you must not use the Service.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;If you use the Service on behalf of a school, company, or other organization, you represent and warrant that you have authority to bind that entity. If you do not have that authority, you remain personally responsible for all obligations arising from your use of the Service.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s2"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;2. Service Description&lt;/h2&gt;\n
+					&lt;p&gt;Edlink is a school management software-as-a-service platform that may include student registration and records, attendance, results, fee and finance management, homework, messaging, reporting, timetable, academic term management, and related administrative functions. Features may change, be withdrawn, or be added at our discretion unless otherwise agreed in writing.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;The Service is provided for institutional administration only. It is not designed for emergency response, medical decision-making, legal recordkeeping where offline originals are required, or any use case where uninterrupted availability is critical to safety, law, or compliance.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s3"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;3. Accounts and Responsibility&lt;/h2&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;You must provide true, complete, and current information when registering a school and creating user accounts.&lt;/li&gt;\n
+						&lt;li&gt;Each school operates as a separate tenant. Subject to your own configuration, your school's data is not intended to be visible to other schools using Edlink.&lt;/li&gt;\n
+						&lt;li&gt;You are responsible for all activity that occurs under your credentials or through accounts you create, approve, or administer.&lt;/li&gt;\n
+						&lt;li&gt;You must maintain reasonable administrative and technical safeguards for passwords, devices, and access permissions.&lt;/li&gt;\n
+						&lt;li&gt;Account roles control access. You are solely responsible for assigning, reviewing, suspending, and removing access in a timely manner.&lt;/li&gt;\n
+						&lt;li&gt;You are responsible for ensuring that your staff, users, and agents comply with these Terms and any school policies you apply through the Service.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s4"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;4. Trials and Availability&lt;/h2&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;Any trial, demo, pilot, or evaluation access is offered at our discretion and may be modified, suspended, or discontinued at any time.&lt;/li&gt;\n
+						&lt;li&gt;Unless we state otherwise in writing, trials are limited to one per school or organization and one per email address or other identifying information we reasonably use for abuse prevention.&lt;/li&gt;\n
+						&lt;li&gt;Trial access may be limited in features, storage, support, or duration.&lt;/li&gt;\n
+						&lt;li&gt;We may terminate trial access immediately if we believe the trial is being misused, abused, or used outside the permitted scope.&lt;/li&gt;\n
+						&lt;li&gt;When a trial ends, continued use of the Service requires activation of a paid plan or other written approval from Spotnet.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s5"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;5. Fees and Payment&lt;/h2&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;Paid plans are billed according to the pricing, billing cycle, and payment terms shown at the time of purchase or in your written agreement.&lt;/li&gt;\n
+						&lt;li&gt;All fees are due in advance unless we agree otherwise in writing.&lt;/li&gt;\n
+						&lt;li&gt;Fees are non-refundable except where mandatory law requires otherwise or where we expressly state a refund in writing.&lt;/li&gt;\n
+						&lt;li&gt;We may change pricing, packaging, or billing terms on reasonable notice, and continued use after the effective date constitutes acceptance.&lt;/li&gt;\n
+						&lt;li&gt;If payment is late, declined, reversed, or disputed without reasonable basis, we may suspend or restrict access, charge applicable taxes or recovery costs, and pursue collection to the extent permitted by law.&lt;/li&gt;\n
+						&lt;li&gt;Unless expressly stated otherwise, fees do not include taxes, levies, bank charges, mobile money charges, or foreign exchange costs, which remain your responsibility.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s6"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;6. Student, Guardian and Staff Data&lt;/h2&gt;\n
+					&lt;div class="rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-rose-700 dark:text-rose-300 text-xs font-medium mb-4"&gt;\n
+						This section concerns student data, including data about children, and carries heightened legal responsibility.\n
+					&lt;/div&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;The school or organization using Edlink is the controller or equivalent responsible party for the personal data it uploads or directs us to process. Spotnet acts as a processor or service provider to the extent permitted by applicable law.&lt;/li&gt;\n
+						&lt;li&gt;You are solely responsible for obtaining and maintaining a lawful basis to collect, use, disclose, store, and transfer any personal data you submit to the Service, including any parent, guardian, staff, or student consent or notice required by law.&lt;/li&gt;\n
+						&lt;li&gt;You must not upload personal data unless you have the right and authority to do so and have met all applicable legal, regulatory, and contractual obligations.&lt;/li&gt;\n
+						&lt;li&gt;We may process personal data only as necessary to provide, secure, maintain, support, and improve the Service, to comply with law, and to enforce these Terms and our policies.&lt;/li&gt;\n
+						&lt;li&gt;Any privacy policy, data processing addendum, or similar document we publish or sign will apply in addition to these Terms, not in place of them.&lt;/li&gt;\n
+						&lt;li&gt;Data export and deletion requests are handled according to Section 8 and any applicable retention obligations.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s7"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;7. Acceptable Use&lt;/h2&gt;\n
+					&lt;p class="mb-2"&gt;You agree not to:&lt;/p&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;Use the Service for any unlawful, fraudulent, harmful, harassing, discriminatory, or abusive purpose.&lt;/li&gt;\n
+						&lt;li&gt;Attempt to access, inspect, copy, or disclose another school's data or any data you are not authorized to access.&lt;/li&gt;\n
+						&lt;li&gt;Upload material that infringes third-party rights, violates law, or contains malicious code, spam, or unauthorized personal data.&lt;/li&gt;\n
+						&lt;li&gt;Reverse engineer, decompile, bypass, probe, disrupt, overload, scrape, or interfere with the Service or its security controls.&lt;/li&gt;\n
+						&lt;li&gt;Use automated tools, bots, or scripts except where we have expressly authorized them in writing.&lt;/li&gt;\n
+						&lt;li&gt;Use the Service to send unsolicited or unauthorized communications outside legitimate school administration.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s8"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;8. Data Retention and Deletion&lt;/h2&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;We retain data for as long as needed to provide the Service, meet legal obligations, resolve disputes, enforce agreements, and maintain backups or security logs.&lt;/li&gt;\n
+						&lt;li&gt;Trial, demo, or inactive account data may be deleted after the trial ends or after a reasonable inactivity period, without further notice, unless law requires longer retention.&lt;/li&gt;\n
+						&lt;li&gt;After termination or suspension, we may retain copies for a reasonable period for export, audit, legal, and operational purposes, after which we may delete or anonymize the data.&lt;/li&gt;\n
+						&lt;li&gt;We are not responsible for restoring deleted data unless a written support agreement expressly says otherwise.&lt;/li&gt;\n
+						&lt;li&gt;Data export requests may be subject to verification, scheduling, technical constraints, or reasonable administrative fees where permitted by law.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s9"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;9. Service Availability&lt;/h2&gt;\n
+					&lt;p&gt;We use commercially reasonable efforts to operate and maintain the Service, but we do not guarantee uninterrupted, secure, error-free, or virus-free operation. The Service may be unavailable because of maintenance, upgrades, network failures, third-party systems, force majeure, or events outside our control. To the maximum extent permitted by law, we are not liable for losses caused by downtime, data loss, delayed processing, or service interruptions.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s10"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;10. Intellectual Property&lt;/h2&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;Edlink, including its software, design, text, graphics, logos, and other branding, is owned by Spotnet Technologies or its licensors and is protected by applicable intellectual property laws.&lt;/li&gt;\n
+						&lt;li&gt;Subject to these Terms, you retain ownership of the school content you submit, but you grant us a worldwide, non-exclusive, royalty-free license to host, process, transmit, display, reproduce, and otherwise use that content as reasonably necessary to operate, secure, support, and improve the Service.&lt;/li&gt;\n
+						&lt;li&gt;You may not copy, modify, distribute, resell, sublicense, or create derivative works of the Service except where permitted by law or by our written consent.&lt;/li&gt;\n
+						&lt;li&gt;Any feedback, suggestions, or improvement requests you provide may be used by us without restriction or payment to you.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s11"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;11. Termination&lt;/h2&gt;\n
+					&lt;ul class="list-disc pl-5 space-y-2"&gt;\n
+						&lt;li&gt;You may cancel your subscription according to the plan terms or written agreement then in effect.&lt;/li&gt;\n
+						&lt;li&gt;We may suspend, restrict, or terminate access immediately if we believe you have breached these Terms, created a security risk, engaged in abuse, or exposed us or others to legal or operational risk.&lt;/li&gt;\n
+						&lt;li&gt;We may also suspend access for non-payment, suspected fraud, identity concerns, or if required by law or a lawful request.&lt;/li&gt;\n
+						&lt;li&gt;Termination does not waive rights or liabilities that arose before termination.&lt;/li&gt;\n
+						&lt;li&gt;Sections that by their nature should survive termination, including payment, IP, confidentiality, limitation of liability, indemnity, and governing law, will survive.&lt;/li&gt;\n
+					&lt;/ul&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s12"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;12. Limitation of Liability&lt;/h2&gt;\n
+					&lt;p&gt;To the maximum extent permitted by law, the Service is provided on an "as is" and "as available" basis without warranties of any kind, whether express, implied, statutory, or otherwise. Spotnet disclaims all implied warranties of merchantability, fitness for a particular purpose, non-infringement, and uninterrupted availability. To the maximum extent permitted by law, Spotnet will not be liable for indirect, incidental, special, consequential, exemplary, or punitive damages, or for lost profits, lost data, business interruption, or procurement of substitute services. Our total aggregate liability for any claim arising out of or relating to the Service will not exceed the fees actually paid to Spotnet by the affected school in the twelve (12) months before the event giving rise to the claim, or the minimum amount permitted by applicable law if a higher minimum applies.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s13"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;13. Indemnification&lt;/h2&gt;\n
+					&lt;p&gt;You agree to defend, indemnify, and hold harmless Spotnet Technologies, its directors, officers, employees, contractors, and agents from and against any claims, losses, liabilities, damages, penalties, fines, costs, and expenses, including reasonable legal fees, arising from or related to: your use of the Service; your violation of these Terms; your violation of law; any content or data you submit; your infringement of third-party rights; or the acts or omissions of your users, staff, or representatives.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s14"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;14. Changes to Terms&lt;/h2&gt;\n
+					&lt;p&gt;We may revise these Terms at any time by posting an updated version on the Site or by giving notice through the Service, by email, or by another reasonable method. The updated Terms take effect on the date stated in the revised version unless a later effective date is specified. Your continued use of the Service after the effective date means you accept the updated Terms. If you do not accept the changes, you must stop using the Service.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s15"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;15. Governing Law&lt;/h2&gt;\n
+					&lt;p&gt;These Terms are governed by the laws of the Republic of Uganda, without regard to conflict of laws rules. Subject to any mandatory law to the contrary, the courts of Uganda will have exclusive jurisdiction over any dispute arising from or relating to the Service or these Terms.&lt;/p&gt;\n
+					&lt;p class="mt-3"&gt;If any provision of these Terms is held unenforceable, the remaining provisions will continue in full force to the extent permitted by law. Our failure to enforce any provision is not a waiver of that provision.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+				&lt;section id="s16" class="pb-4"&gt;\n
+					&lt;h2 class="text-xl font-bold text-darken dark:text-white mb-3"&gt;16. Contact&lt;/h2&gt;\n
+					&lt;p&gt;Questions about these Terms can be sent to &lt;a href="mailto:contact@edlink.com" class="text-yellow-600 dark:text-yellow-400 font-medium"&gt;contact@edlink.com&lt;/a&gt;. Notices to you may be sent to the email address associated with your account or through the Service.&lt;/p&gt;\n
+				&lt;/section&gt;\n
+\n
+			&lt;/div&gt;\n
+		&lt;/div&gt;\n
+	&lt;/div&gt;\n
+\n
+	&lt;footer class="bg-darken text-gray-400"&gt;\n
+		&lt;div class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center text-center"&gt;\n
+			&lt;div class="flex items-center space-x-2 mb-4"&gt;\n
+				&lt;span class=" shrink-0"&gt;\n
+                &lt;a href="http://edlink.test" class="inline-flex items-center gap-2"&gt;\n
+            &lt;img src="http://edlink.test/img/logo.png" alt="Edlink logo" class="w-[150px] h-auto"&gt;\n
+            &lt;/a&gt;\n
+            &lt;/span&gt;\n
+                \n
+			&lt;/div&gt;\n
+			&lt;p class="text-xs text-gray-500"&gt;&amp;copy; &lt;span x-data x-text="new Date().getFullYear()"&gt;&lt;/span&gt; Edlink. Built by Spotnet Technologies.&lt;/p&gt;\n
+		&lt;/div&gt;\n
+	&lt;/footer&gt;\n
+\n
+&lt;!-- Livewire Scripts --&gt;\n
+&lt;script src="http://edlink.test/livewire-1ee1bff1/livewire.js?id=657d57c2"   data-csrf="L3bxPswT0eN4pAnng53hG4lK9bL39oWPM3X5BZxD" data-module-url="http://edlink.test/livewire-1ee1bff1" data-update-uri="http://edlink.test/livewire-1ee1bff1/update" data-navigate-once="true"&gt;&lt;/script&gt;\n
+&lt;/body&gt;\n
+	&lt;script type="module" src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"&gt;&lt;/script&gt;\n
+&lt;/html&gt;\n
+' [ASCII](length: 22825) contains "23 July 2026" [ASCII](length: 12).&#13;
+at vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+at vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:713
+at tests\Feature\TermsPageTest.php:7</failure>
+        </testcase>
+        <testcase name="it links the landing-page footer to the terms page" file="tests\Feature\TermsPageTest.php::it links the landing-page footer to the terms page" class="Tests\Feature\TermsPageTest" classname="Tests.Feature.TermsPageTest" assertions="2" time="0.063469"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\TimetableBuilderTest" file="tests\Feature\TimetableBuilderTest.php" tests="3" assertions="14" errors="0" failures="0" skipped="0" time="1.459073">
+        <testcase name="it renders the timetable builder and creates a school-scoped slot" file="tests\Feature\TimetableBuilderTest.php::it renders the timetable builder and creates a school-scoped slot" class="Tests\Feature\TimetableBuilderTest" classname="Tests.Feature.TimetableBuilderTest" assertions="6" time="1.229150"/>
+        <testcase name="it rejects overlapping timetable slots for the same class" file="tests\Feature\TimetableBuilderTest.php::it rejects overlapping timetable slots for the same class" class="Tests\Feature\TimetableBuilderTest" classname="Tests.Feature.TimetableBuilderTest" assertions="3" time="0.110802"/>
+        <testcase name="it shows the existing lesson details when a teacher has a timetable conflict" file="tests\Feature\TimetableBuilderTest.php::it shows the existing lesson details when a teacher has a timetable conflict" class="Tests\Feature\TimetableBuilderTest" classname="Tests.Feature.TimetableBuilderTest" assertions="5" time="0.119121"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

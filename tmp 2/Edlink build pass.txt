@@ -1,0 +1,17 @@
+ EDL-03E09
+
+ EDL-03E09
+
+recoverycodes
+
+Edlink@2026!
+ http://edlink.test/platform/login
+  (http://edlink.test/platform/login)
+
+  Local testing credentials:
+
+  - Email: platform@edlink.test
+  - Password: Edlink@2026!
+
+
+ 
