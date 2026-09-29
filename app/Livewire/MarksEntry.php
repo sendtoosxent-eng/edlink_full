@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\AuditLog;
 use App\Models\ExamPaper;
 use App\Models\Student;
 use App\Services\StudentSubjectSelectionService;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -17,6 +19,7 @@ use Livewire\Component;
 class MarksEntry extends Component
 {
     public string $paperId = '';
+
     public array $scores = [];
 
     public function updatedPaperId(): void
@@ -46,19 +49,23 @@ class MarksEntry extends Component
     public function approve(): void
     {
         $paper = $this->selectedPaperOrFail();
-        abort_unless($this->canManage() && $paper->exam->term->isOpen(), 403);
+        abort_unless($this->canApprove() && $paper->exam->term->isOpen(), 403);
 
-        if (($this->submissionFor($paper)?->status ?? 'draft') !== 'submitted') {
-            $this->addError('paperId', 'Only submitted marks can be approved.');
-            return;
-        }
-
-        DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->update([
-            'status' => 'approved',
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'updated_at' => now(),
-        ]);
+        DB::transaction(function () use ($paper): void {
+            $submission = DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->lockForUpdate()->first();
+            if (($submission?->status ?? 'draft') !== 'submitted') {
+                throw ValidationException::withMessages(['paperId' => 'Only submitted marks can be approved.']);
+            }
+            $students = $this->studentsFor($paper);
+            $scored = DB::table('exam_marks')->where('exam_paper_id', $paper->id)->whereNotNull('score')->whereIn('student_id', $students->pluck('id'))->pluck('student_id');
+            if ($students->isEmpty() || $students->pluck('id')->diff($scored)->isNotEmpty()) {
+                throw ValidationException::withMessages(['paperId' => 'The class roster changed or some marks are missing. Return the paper to draft and complete it before approval.']);
+            }
+            DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->update([
+                'status' => 'approved', 'approved_by' => Auth::id(), 'approved_at' => now(), 'updated_at' => now(),
+            ]);
+            AuditLog::record(Auth::user()->school_id, 'exam.marks.approved', $paper);
+        });
 
         session()->flash('status', 'Marks approved and included in the examination results.');
     }
@@ -66,7 +73,19 @@ class MarksEntry extends Component
     public function reopen(): void
     {
         $paper = $this->selectedPaperOrFail();
-        abort_unless($this->canManage() && $paper->exam->term->isOpen(), 403);
+        abort_unless($this->canApprove() && $paper->exam->term->isOpen(), 403);
+
+        if ($paper->exam->isPublished()) {
+            $this->addError('paperId', 'Unpublish the exam before reopening an approved paper.');
+
+            return;
+        }
+
+        if (($this->submissionFor($paper)?->status ?? 'draft') !== 'approved') {
+            $this->addError('paperId', 'Only approved papers can be reopened.');
+
+            return;
+        }
 
         DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->update([
             'status' => 'draft',
@@ -83,8 +102,9 @@ class MarksEntry extends Component
         $paper = $this->selectedPaperOrFail();
         abort_unless($paper->exam->term->isOpen() && $this->canEnter($paper), 403);
 
-        if (($this->submissionFor($paper)?->status ?? 'draft') === 'approved') {
-            $this->addError('paperId', 'Approved marks must be reopened before editing.');
+        if (($this->submissionFor($paper)?->status ?? 'draft') !== 'draft') {
+            $this->addError('paperId', 'Submitted or approved marks are read only. An academic approver must reopen an approved paper before it can be edited.');
+
             return;
         }
 
@@ -110,31 +130,26 @@ class MarksEntry extends Component
         }
 
         DB::transaction(function () use ($paper, $students, $status): void {
-            foreach ($students as $student) {
+            $now = now();
+            $rows = $students->map(function (Student $student) use ($paper, $now) {
                 $score = $this->scores[$student->id] ?? null;
-                DB::table('exam_marks')->updateOrInsert(
-                    ['exam_paper_id' => $paper->id, 'student_id' => $student->id],
-                    [
-                        'score' => $score === '' ? null : $score,
-                        'entered_by' => Auth::id(),
-                        'updated_at' => now(),
-                        'created_at' => now(),
-                    ],
-                );
+
+                return ['exam_paper_id' => $paper->id, 'student_id' => $student->id, 'score' => $score === '' ? null : $score,
+                    'entered_by' => Auth::id(), 'created_at' => $now, 'updated_at' => $now];
+            })->all();
+            if ($rows !== []) {
+                DB::table('exam_marks')->upsert($rows, ['exam_paper_id', 'student_id'], ['score', 'entered_by', 'updated_at']);
             }
 
-            DB::table('exam_paper_submissions')->updateOrInsert(
-                ['exam_paper_id' => $paper->id],
-                [
-                    'status' => $status,
-                    'submitted_by' => $status === 'submitted' ? Auth::id() : null,
-                    'submitted_at' => $status === 'submitted' ? now() : null,
-                    'approved_by' => null,
-                    'approved_at' => null,
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ],
-            );
+            DB::table('exam_paper_submissions')->upsert([[
+                'exam_paper_id' => $paper->id, 'status' => $status,
+                'submitted_by' => $status === 'submitted' ? Auth::id() : null,
+                'submitted_at' => $status === 'submitted' ? $now : null,
+                'approved_by' => null, 'approved_at' => null, 'created_at' => $now, 'updated_at' => $now,
+            ]], ['exam_paper_id'], ['status', 'submitted_by', 'submitted_at', 'approved_by', 'approved_at', 'updated_at']);
+            if ($status === 'submitted') {
+                AuditLog::record(Auth::user()->school_id, 'exam.marks.submitted', $paper);
+            }
         });
 
         session()->flash('status', $status === 'submitted'
@@ -156,7 +171,7 @@ class MarksEntry extends Component
                 ->where('school_id', $user->school_id)
                 ->where('term_id', $term->id))
             ->get()
-            ->filter(fn (ExamPaper $paper) => $this->canEnter($paper))
+            ->filter(fn (ExamPaper $paper) => $this->canAccess($paper))
             ->sortBy(fn (ExamPaper $paper) => implode('|', [
                 $paper->exam->schoolClass->name,
                 $paper->exam->name,
@@ -203,11 +218,12 @@ class MarksEntry extends Component
         return DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->first();
     }
 
-    protected function canManage(): bool
+    protected function canApprove(): bool
     {
         $user = Auth::user();
+
         return ! TeacherAcademicScope::isTeacher($user)
-            && ($user->hasPermission('exams.setup') || $user->hasPermission('exams.results'));
+            && $user->hasPermission('exams.results');
     }
 
     protected function canEnter(ExamPaper $paper): bool
@@ -218,15 +234,21 @@ class MarksEntry extends Component
             return false;
         }
 
-        return $this->canManage() || TeacherAcademicScope::canEnterPaper(
+        return TeacherAcademicScope::canEnterPaper(
             $user, $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id
         );
+    }
+
+    protected function canAccess(ExamPaper $paper): bool
+    {
+        return $paper->exam->school_id === Auth::user()->school_id
+            && ($this->canEnter($paper) || $this->canApprove());
     }
 
     public function render()
     {
         $paper = $this->selectedPaper();
-        abort_if($paper && ! $this->canEnter($paper), 403);
+        abort_if($paper && ! $this->canAccess($paper), 403);
         $submission = $paper ? $this->submissionFor($paper) : null;
 
         return view('livewire.marks-entry', [
@@ -235,7 +257,7 @@ class MarksEntry extends Component
             'students' => $paper ? $this->studentsFor($paper) : collect(),
             'paperStatus' => $submission?->status ?? 'draft',
             'submission' => $submission,
-            'canManage' => $this->canManage(),
+            'canManage' => $this->canApprove(),
             'term' => Auth::user()->school->currentTerm(),
             'pageTitle' => 'Enter Marks',
         ]);

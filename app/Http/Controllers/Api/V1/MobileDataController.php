@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Announcement;
-use App\Models\Exam;
-use App\Models\HomeworkAssignment;
-use App\Models\StaffLeave;
 use App\Models\AuditLog;
+use App\Models\Exam;
+use App\Models\ExamPaper;
+use App\Models\HomeworkAssignment;
+use App\Models\SchoolSetting;
+use App\Models\StaffLeave;
 use App\Services\StudentSubjectSelectionService;
 use App\Support\MobileAccess;
+use App\Support\MobileTeacherWorkspace;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +47,7 @@ class MobileDataController extends ApiController
             'attendance' => $attendance,
             'events' => DB::table('school_events')->where('school_id', $user->school_id)->whereDate('event_date', '>=', today())->orderBy('event_date')->limit(4)->get(),
             'analytics' => $analytics,
-            'teacher_workspace' => TeacherAcademicScope::isTeacher($user) ? \App\Support\MobileTeacherWorkspace::forUser($user) : null,
+            'teacher_workspace' => TeacherAcademicScope::isTeacher($user) ? MobileTeacherWorkspace::forUser($user) : null,
         ], ['generated_at' => now()->toISOString()]);
     }
 
@@ -109,7 +112,7 @@ class MobileDataController extends ApiController
             ->selectRaw('subjects.name, ROUND(AVG(exam_marks.score / exam_papers.maximum_score * 100), 1) as average')
             ->groupBy('subjects.id', 'subjects.name')->orderByDesc('average')->limit(6)->get() : collect();
 
-        $pendingPapers = \App\Models\ExamPaper::with('exam')
+        $pendingPapers = ExamPaper::with('exam')
             ->whereHas('exam', fn ($query) => $query->where('school_id', $user->school_id)->where('term_id', $term?->id))
             ->whereDoesntHave('exam', fn ($query) => $query->whereNotNull('published_at'))
             ->whereNotIn('id', DB::table('exam_paper_submissions')->whereIn('status', ['submitted', 'approved'])->select('exam_paper_id'))
@@ -165,20 +168,39 @@ class MobileDataController extends ApiController
     public function results(Request $request)
     {
         $student = MobileAccess::student($request->user(), $request->integer('student_id') ?: null);
-        $exams = Exam::query()->where('school_id', $request->user()->school_id)->where('school_class_id', $student->school_class_id)
-            ->whereNotNull('published_at')->with(['term:id,name', 'papers.subject:id,name,code'])
-            ->latest('published_at')->get()->map(function ($exam) use ($student) {
-                if (StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)) {
+        $enrolments = $student->enrolments()->get(['term_id', 'school_class_id', 'stream_id'])->keyBy('term_id');
+        $feeRule = SchoolSetting::where(['school_id' => $request->user()->school_id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled';
+        $exams = Exam::query()->where('school_id', $request->user()->school_id)
+            ->whereNotNull('published_at')->with(['term:id,name,year', 'schoolClass:id,name,education_stage', 'category:id,name', 'papers.subject:id,name,code'])
+            ->latest('published_at')->get()
+            ->filter(function (Exam $exam) use ($student, $enrolments, $feeRule) {
+                $enrolment = $enrolments->get($exam->term_id);
+                $classId = $enrolment?->school_class_id ?? $student->school_class_id;
+                $streamId = $enrolment?->stream_id ?? $student->stream_id;
+
+                return $exam->school_class_id === $classId
+                    && (! $exam->stream_id || $exam->stream_id === $streamId)
+                    && (! $feeRule || $student->balance($exam->term) <= 0);
+            })->map(function ($exam) use ($student) {
+                $approvedPaperIds = DB::table('exam_paper_submissions')->where('status', 'approved')->whereIn('exam_paper_id', $exam->papers->pluck('id'))->pluck('exam_paper_id');
+                $exam->setRelation('papers', $exam->papers->whereIn('id', $approvedPaperIds)->values());
+                if (StudentSubjectSelectionService::classUsesIndividualSelection($exam->schoolClass)) {
                     $selected = $student->subjectSelections()->where('term_id', $exam->term_id)->pluck('subject_id');
                     if ($selected->isNotEmpty()) {
                         $exam->setRelation('papers', $exam->papers->whereIn('subject_id', $selected)->values());
                     }
                 }
                 $marks = DB::table('exam_marks')->where('student_id', $student->id)->whereIn('exam_paper_id', $exam->papers->pluck('id'))->get()->keyBy('exam_paper_id');
+                $percentages = $exam->papers->map(function ($paper) use ($marks) {
+                    $score = $marks->get($paper->id)?->score;
 
-                return ['id' => $exam->id, 'name' => $exam->name, 'term' => $exam->term?->name, 'published_at' => $exam->published_at,
+                    return $score !== null && (float) $paper->maximum_score > 0 ? (float) $score / (float) $paper->maximum_score * 100 : null;
+                })->filter(fn ($value) => $value !== null);
+
+                return ['id' => $exam->id, 'name' => $exam->name, 'term' => trim(($exam->term?->name ?? '').' '.($exam->term?->year ?? '')), 'category' => $exam->category?->name, 'published_at' => $exam->published_at,
+                    'average' => $percentages->isEmpty() ? null : round($percentages->avg(), 2),
                     'papers' => $exam->papers->map(fn ($paper) => ['id' => $paper->id, 'subject' => $paper->subject?->name, 'score' => $marks->get($paper->id)?->score, 'maximum_score' => $paper->maximum_score])];
-            });
+            })->values();
 
         return $this->ok($exams);
     }
@@ -215,6 +237,7 @@ class MobileDataController extends ApiController
     public function leaveRequests(Request $request)
     {
         abort_unless(TeacherAcademicScope::isTeacher($request->user()), 403);
+
         return $this->ok(StaffLeave::where('school_id', $request->user()->school_id)
             ->where('user_id', $request->user()->id)->latest()->get());
     }
@@ -233,6 +256,7 @@ class MobileDataController extends ApiController
         abort_if($overlap, 422, 'You already have a pending or approved leave request for these dates.');
         $leave = StaffLeave::create($data + ['school_id' => $request->user()->school_id, 'user_id' => $request->user()->id, 'status' => 'pending']);
         AuditLog::record($request->user()->school_id, 'mobile.leave.requested', $leave);
+
         return $this->ok($leave);
     }
 

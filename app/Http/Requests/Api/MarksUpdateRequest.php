@@ -6,12 +6,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class MarksUpdateRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         return [
             'marks' => ['required', 'array'],
-            'marks.*.student_id' => ['required', 'integer'],
+            'marks.*.student_id' => ['required', 'integer', 'distinct'],
             'marks.*.score' => ['nullable', 'numeric', 'min:0'],
             'base_version' => ['nullable', 'date'],
         ];

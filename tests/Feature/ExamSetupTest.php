@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\ExamSetup;
+use App\Models\Designation;
 use App\Models\Exam;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -15,8 +16,8 @@ uses(RefreshDatabase::class);
 
 it('limits exam papers to subjects offered to the exam class and term', function () {
     $school = School::create(['name' => 'Exam School', 'school_type' => 'primary', 'slug' => 'exam-school']);
-    $user = User::factory()->create(['school_id' => $school->id]);
-    DB::table('user_permissions')->insert(['user_id' => $user->id, 'permission' => 'exams.setup']);
+    $designation = Designation::create(['school_id' => $school->id, 'name' => 'Exam Manager', 'permissions' => ['exams.setup']]);
+    $user = User::factory()->create(['school_id' => $school->id, 'designation_id' => $designation->id]);
     $term = Term::create(['school_id' => $school->id, 'name' => 'Term 1', 'year' => 2026, 'start_date' => '2026-01-01', 'end_date' => '2026-04-01', 'is_current' => true]);
     $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'Primary 4']);
     $offered = Subject::create(['school_id' => $school->id, 'name' => 'Mathematics']);
@@ -37,8 +38,8 @@ it('limits exam papers to subjects offered to the exam class and term', function
 
 it('does not allow scoring rules to change after marks are entered', function () {
     $school = School::create(['name' => 'Exam School', 'school_type' => 'primary', 'slug' => 'exam-school']);
-    $user = User::factory()->create(['school_id' => $school->id]);
-    DB::table('user_permissions')->insert(['user_id' => $user->id, 'permission' => 'exams.setup']);
+    $designation = Designation::create(['school_id' => $school->id, 'name' => 'Exam Manager', 'permissions' => ['exams.setup']]);
+    $user = User::factory()->create(['school_id' => $school->id, 'designation_id' => $designation->id]);
     $term = Term::create(['school_id' => $school->id, 'name' => 'Term 1', 'year' => 2026, 'start_date' => '2026-01-01', 'end_date' => '2026-04-01', 'is_current' => true]);
     $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'Primary 4']);
     $subject = Subject::create(['school_id' => $school->id, 'name' => 'Mathematics']);

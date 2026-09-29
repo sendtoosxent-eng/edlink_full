@@ -12,23 +12,41 @@ use Livewire\Component;
 class ReportSettings extends Component
 {
     public string $stage = '';
+
     public string $passMark = '50';
+
     public string $bestSubjects = '8';
+
     public string $calculationMethod = 'single_exam';
+
     public string $missingAssessmentRule = 'incomplete';
+
     public array $assessmentWeights = [];
+
     public string $showExamBreakdown = 'enabled';
+
     public string $showPosition = 'enabled';
+
     public string $showFees = 'enabled';
+
     public string $showAttendance = 'enabled';
+
     public string $showPromotion = 'disabled';
+
     public string $showMarks = 'enabled';
+
     public string $showMaximum = 'enabled';
+
     public string $showPercentage = 'enabled';
+
     public string $showGrade = 'enabled';
+
     public string $showPoints = 'disabled';
+
     public string $showRemarks = 'enabled';
+
     public string $nextTermStarts = '';
+
     public string $footer = '';
 
     public function mount(): void
@@ -47,7 +65,7 @@ class ReportSettings extends Component
     {
         $this->authorizeManagement();
         $this->validate([
-            'stage' => 'required|in:primary,lower_secondary,advanced_level,kindergarten',
+            'stage' => 'required|in:primary,lower_secondary,advanced_level,kindergarten,tertiary',
             'passMark' => 'required|numeric|min:0|max:100',
             'bestSubjects' => 'required|integer|min:1|max:20',
             'calculationMethod' => 'required|in:single_exam,weighted,average,best_exam',
@@ -68,6 +86,7 @@ class ReportSettings extends Component
 
         if ($this->calculationMethod === 'weighted' && abs(collect($this->assessmentWeights)->sum(fn ($row) => (float) ($row['weight'] ?? 0)) - 100) > 0.01) {
             $this->addError('assessmentWeights', 'Assessment weights must add up to exactly 100%.');
+
             return;
         }
 

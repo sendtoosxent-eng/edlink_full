@@ -5,14 +5,11 @@ namespace App\Services;
 use App\Models\Exam;
 use App\Models\GradingScale;
 use App\Models\Student;
-use App\Services\StudentSubjectSelectionService;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Livewire\Attributes\Layout;
-use Livewire\Component;
 
 class TeacherExamReport
 {
@@ -22,7 +19,7 @@ class TeacherExamReport
         $user = Auth::user();
         if (TeacherAcademicScope::isTeacher($user) && ! TeacherAcademicScope::classIds($user)->contains($exam->school_class_id)) {
             $subjectIds = TeacherAcademicScope::subjectAssignments($user, $exam->term_id)
-                ->where('school_class_id', $exam->school_class_id)->pluck('subject_id')->map(fn($id)=>(int)$id);
+                ->where('school_class_id', $exam->school_class_id)->pluck('subject_id')->map(fn ($id) => (int) $id);
             $papers = $papers->whereIn('subject_id', $subjectIds)->values();
         }
         $paperIds = $papers->pluck('id');
@@ -52,6 +49,7 @@ class TeacherExamReport
 
                 if (! $applicable) {
                     $subjects[] = ['paper' => $paper, 'score' => null, 'percentage' => null, 'grade' => '—', 'applicable' => false];
+
                     continue;
                 }
 
@@ -77,6 +75,7 @@ class TeacherExamReport
             $position = $previousAverage !== null && abs($row['average'] - $previousAverage) < 0.001 ? $previousPosition : $index + 1;
             $previousAverage = $row['average'];
             $previousPosition = $position;
+
             return $row + ['position' => $position];
         });
 
@@ -102,9 +101,15 @@ class TeacherExamReport
     protected function studentsFor(Exam $exam): Collection
     {
         return Student::where('school_id', $exam->school_id)
-            ->where('school_class_id', $exam->school_class_id)
-            ->when($exam->stream_id, fn (Builder $query, int $streamId) => $query->where('stream_id', $streamId))
-            ->where('status', 'active')->orderBy('name')->get();
+            ->where(function (Builder $query) use ($exam): void {
+                $query->whereHas('enrolments', fn (Builder $enrolment) => $enrolment
+                    ->where('term_id', $exam->term_id)->where('school_class_id', $exam->school_class_id)
+                    ->when($exam->stream_id, fn (Builder $stream, int $streamId) => $stream->where('stream_id', $streamId)))
+                    ->orWhere(fn (Builder $fallback) => $fallback
+                        ->whereDoesntHave('enrolments', fn (Builder $enrolment) => $enrolment->where('term_id', $exam->term_id))
+                        ->where('school_class_id', $exam->school_class_id)
+                        ->when($exam->stream_id, fn (Builder $stream, int $streamId) => $stream->where('stream_id', $streamId))
+                        ->where('status', 'active'));
+            })->orderBy('name')->get();
     }
-
 }

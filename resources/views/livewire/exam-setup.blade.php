@@ -69,9 +69,9 @@
                     @error('classId') <span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span> @enderror
                 </div>
 
-                @if($categories->count() > 1)
+                @if($categoryGroup && $categories->count() > 1)
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Assessment Category *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Assessment Category · {{ $categoryGroup->name }} *</label>
                         <select wire:model="categoryId" class="block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20">
                             <option value="">Select category</option>
                             @foreach($categories as $category)
@@ -80,8 +80,10 @@
                         </select>
                         @error('categoryId') <span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span> @enderror
                     </div>
-                @elseif($categories->count() === 1)
-                    <p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Category: <strong>{{ $categories->first()->name }}</strong> ({{ number_format($categories->first()->weight, 2) }}%). Assigned automatically.</p>
+                @elseif($categoryGroup && $categories->count() === 1)
+                    <p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">{{ $categoryGroup->name }}: <strong>{{ $categories->first()->name }}</strong> ({{ number_format($categories->first()->weight, 2) }}%). Assigned automatically.</p>
+                @elseif($classId)
+                    <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">This class has no examination category group for the current term. The exam can still be created using the standard calculation. <a wire:navigate href="{{ route('settings.exam-categories') }}" class="font-black underline">Configure assessment rules</a>.</p>
                 @endif
 
                 <!-- Stream Select -->
@@ -196,11 +198,11 @@
                     </div>
                     <p class="mt-1 text-xs text-slate-500">{{ $exam->term->name }}, {{ $exam->term->year }}</p>
                     @if($exam->category)<p class="mt-1 text-xs font-semibold text-amber-700">{{ $exam->category->name }} · {{ number_format($exam->category->weight, 2) }}% of final mark</p>@endif
-                    @php($examCategories = $allCategories->where('term_id', $exam->term_id))
+                    @php($examCategories = $categoryOptions->get($exam->id, collect()))
                     @if($examCategories->isNotEmpty())
                         <label class="mt-2 flex max-w-sm items-center gap-2 text-xs font-semibold text-slate-600">
                             <span>Assessment category</span>
-                            <select wire:change="assignCategory({{ $exam->id }}, $event.target.value)" class="min-w-0 flex-1 rounded-md border-slate-300 py-1.5 text-xs">
+                            <select wire:change="assignCategory({{ $exam->id }}, $event.target.value)" @disabled($exam->isPublished() || !$exam->term->isOpen()) class="min-w-0 flex-1 rounded-md border-slate-300 py-1.5 text-xs disabled:bg-slate-100 disabled:text-slate-500">
                                 <option value="">Unassigned</option>
                                 @foreach($examCategories as $category)
                                     <option value="{{ $category->id }}" @selected((int) $exam->exam_category_id === (int) $category->id)>{{ $category->name }} ({{ number_format($category->weight, 2) }}%)</option>

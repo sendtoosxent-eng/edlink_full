@@ -85,6 +85,16 @@ class EnsureDesignationAccess
 
             return $next($request);
         }
+        if ($route === 'exams.marks') {
+            abort_unless($user?->hasPermission('exams.marks') || $user?->hasPermission('exams.results'), 403);
+
+            return $next($request);
+        }
+        if ($route === 'settings.exam-categories') {
+            abort_unless($user?->hasPermission('settings.manage') || $user?->hasPermission('exams.setup'), 403);
+
+            return $next($request);
+        }
         abort_unless(! $permission || $user?->hasPermission($permission), 403);
         abort_unless($permission || ! $module || $user?->hasModuleAccess($module), 403);
 

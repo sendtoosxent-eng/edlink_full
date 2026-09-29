@@ -7,6 +7,7 @@ use App\Http\Controllers\GraduationCertificateController;
 use App\Http\Controllers\GroupDashboardController;
 use App\Http\Controllers\LandingAssetController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\OfflineWorkspaceController;
 use App\Http\Controllers\PersonProfileController;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\PlatformLandingPageController;
@@ -30,8 +31,8 @@ use App\Livewire\ClassesAndStreams;
 use App\Livewire\Communications;
 use App\Livewire\Designations;
 use App\Livewire\EventsV2 as Events;
-use App\Livewire\ExamResults;
 use App\Livewire\ExamCategories;
+use App\Livewire\ExamResults;
 use App\Livewire\ExamSetup;
 use App\Livewire\Expenses;
 use App\Livewire\FeeAdjustments;
@@ -279,9 +280,9 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified', 'branch.context', 'active.user'])->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designation.access'])->group(function () {
-    Route::get('offline-data/catalog', [\App\Http\Controllers\OfflineWorkspaceController::class, 'catalog'])->name('offline.catalog');
-    Route::get('offline-data/download', [\App\Http\Controllers\OfflineWorkspaceController::class, 'download'])->name('offline.download');
-    Route::post('offline-data/sync', [\App\Http\Controllers\OfflineWorkspaceController::class, 'sync'])->middleware('throttle:60,1')->name('offline.sync');
+    Route::get('offline-data/catalog', [OfflineWorkspaceController::class, 'catalog'])->name('offline.catalog');
+    Route::get('offline-data/download', [OfflineWorkspaceController::class, 'download'])->name('offline.download');
+    Route::post('offline-data/sync', [OfflineWorkspaceController::class, 'sync'])->middleware('throttle:60,1')->name('offline.sync');
     Route::get('notifications', NotificationCenter::class)->name('notifications.index');
     Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
@@ -397,11 +398,14 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('settings/exam-categories', ExamCategories::class)->name('settings.exam-categories');
     Route::get('exams/{exam}/students/{student}/report-card', function (Exam $exam, Student $student) {
         $user = auth()->user();
+        $enrolment = StudentEnrolment::where('school_id', $student->school_id)->where('student_id', $student->id)->where('term_id', $exam->term_id)->first();
+        $classId = $enrolment?->school_class_id ?? $student->school_class_id;
+        $streamId = $enrolment?->stream_id ?? $student->stream_id;
         abort_unless(
             $exam->school_id === $user->school_id
             && $student->school_id === $exam->school_id
-            && $student->school_class_id === $exam->school_class_id
-            && (! $exam->stream_id || $student->stream_id === $exam->stream_id),
+            && $classId === $exam->school_class_id
+            && (! $exam->stream_id || $streamId === $exam->stream_id),
             404,
         );
         $isStaff = in_array($user->role, ['admin', 'academic_admin', 'teacher', 'registrar', 'bursar'], true);

@@ -26,7 +26,7 @@ export type Dashboard = {
     stats: Record<string, number>;
   };
 };
-export type ExamResult = { id: number; name: string; term?: string | null; published_at?: string | null; papers: Array<{ id: number; subject?: string | null; score?: number | null; maximum_score: number }> };
+export type ExamResult = { id: number; name: string; term?: string | null; category?: string | null; average?: number | null; published_at?: string | null; papers: Array<{ id: number; subject?: string | null; score?: number | null; maximum_score: number }> };
 
 export type TeacherWorkspace = {
   role_label: string; term?: string;

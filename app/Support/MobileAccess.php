@@ -3,9 +3,9 @@
 namespace App\Support;
 
 use App\Models\HomeworkAssignment;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
-use App\Models\SchoolClass;
 use App\Services\StudentSubjectSelectionService;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -26,7 +26,7 @@ final class MobileAccess
         return $query->firstOrFail();
     }
 
-    public static function teacherStudentQuery(User $user, int $classId, ?int $subjectId = null, ?int $termId = null): Builder
+    public static function teacherStudentQuery(User $user, int $classId, ?int $subjectId = null, ?int $termId = null, ?int $streamId = null): Builder
     {
         abort_unless(TeacherAcademicScope::isTeacher($user), 403);
         $termId ??= $user->school?->currentTerm()?->id;
@@ -39,7 +39,9 @@ final class MobileAccess
         abort_unless($allowed, 403);
 
         $query = Student::query()->where('school_id', $user->school_id)
-            ->where('school_class_id', $classId)->where('status', 'active');
+            ->where('school_class_id', $classId)
+            ->when($streamId, fn (Builder $query) => $query->where('stream_id', $streamId))
+            ->where('status', 'active');
         if ($subjectId && $termId) {
             $class = SchoolClass::where('school_id', $user->school_id)->findOrFail($classId);
             StudentSubjectSelectionService::constrainStudentsForSubject($query, $class, $termId, $subjectId);

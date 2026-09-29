@@ -5,10 +5,14 @@ namespace App\Livewire;
 use App\Models\AttendanceRecord;
 use App\Models\Exam;
 use App\Models\GradingScale;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\StudentEnrolment;
 use App\Models\Term;
+use App\Services\PromotionStatement;
+use App\Services\SchoolAcademicSetup;
 use App\Services\StageAssessmentCalculator;
+use App\Services\StageReportSettings;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -20,21 +24,31 @@ use Livewire\Component;
 class StudentTermReport extends Component
 {
     public string $termId = '';
+
     public string $studentId = '';
+
+    public string $studentSearch = '';
+
     public string $examId = '';
+
+    public string $reportType = 'term';
 
     public function mount(?Student $student = null, ?Exam $exam = null): void
     {
         if ($student && $exam) {
+            $this->termId = (string) $exam->term_id;
+            $enrolment = StudentEnrolment::where('school_id', $student->school_id)->where('student_id', $student->id)->where('term_id', $exam->term_id)->first();
+            $classId = $enrolment?->school_class_id ?? $student->school_class_id;
+            $streamId = $enrolment?->stream_id ?? $student->stream_id;
             abort_unless($this->canAccessStudent($student)
                 && $exam->school_id === Auth::user()->school_id
                 && (! TeacherAcademicScope::isTeacher(Auth::user()) || TeacherAcademicScope::canViewExam(Auth::user(), $exam->school_class_id, $exam->term_id))
-                && $exam->school_class_id === $student->school_class_id
-                && (! $exam->stream_id || $exam->stream_id === $student->stream_id)
+                && $exam->school_class_id === $classId
+                && (! $exam->stream_id || $exam->stream_id === $streamId)
                 && (! $this->isPortalUser() || $exam->isPublished()), 404);
-            $this->termId = (string) $exam->term_id;
             $this->studentId = (string) $student->id;
             $this->examId = (string) $exam->id;
+
             return;
         }
 
@@ -54,6 +68,7 @@ class StudentTermReport extends Component
         if ($user->role === 'parent') {
             $ids = $ids->merge(Student::where('school_id', $user->school_id)->whereHas('guardians', fn ($query) => $query->where('email', $user->email))->pluck('id'));
         }
+
         return $ids->map(fn ($id) => (int) $id)->unique()->values();
     }
 
@@ -77,9 +92,38 @@ class StudentTermReport extends Component
 
     public function updatedTermId(): void
     {
+        if ($this->reportType === 'end_of_year') {
+            $term = Term::where('school_id', Auth::user()->school_id)->find($this->termId);
+            if (! $term || (int) $term->term_number !== 3) {
+                $this->reportType = 'term';
+            }
+        }
         $this->studentId = '';
         $this->examId = '';
         $this->chooseStudentAndExam();
+    }
+
+    public function showTermReport(): void
+    {
+        $this->reportType = 'term';
+    }
+
+    public function showEndOfYearReport(): void
+    {
+        abort_if($this->isPortalUser(), 403);
+        $term = Term::where('school_id', Auth::user()->school_id)->where('term_number', 3)
+            ->orderByDesc('year')->orderByDesc('id')->first();
+        if (! $term) {
+            $this->addError('termId', 'Create a third term before generating an end-of-year report.');
+
+            return;
+        }
+        $this->reportType = 'end_of_year';
+        $this->termId = (string) $term->id;
+        $this->studentId = '';
+        $this->examId = '';
+        $this->chooseStudentAndExam();
+        $this->resetValidation('termId');
     }
 
     public function updatedStudentId(): void
@@ -102,6 +146,16 @@ class StudentTermReport extends Component
     protected function studentsQuery(): Builder
     {
         $query = Student::where('students.school_id', Auth::user()->school_id)
+            ->when(trim($this->studentSearch) !== '', function (Builder $query): void {
+                $search = '%'.trim($this->studentSearch).'%';
+                $query->where(function (Builder $match) use ($search): void {
+                    $match->where('students.name', 'like', $search)
+                        ->orWhere('students.admission_no', 'like', $search);
+                    if ($this->studentId !== '') {
+                        $match->orWhere('students.id', $this->studentId);
+                    }
+                });
+            })
             ->when($this->isPortalUser(), fn (Builder $query) => $query->whereIn('students.id', $this->linkedStudentIds()))
             ->when($this->termId, fn (Builder $query) => $query->where(function (Builder $scope) {
                 $scope->whereHas('enrolments', fn (Builder $enrolment) => $enrolment->where('term_id', $this->termId))
@@ -115,7 +169,9 @@ class StudentTermReport extends Component
     protected function examsQuery(): Builder
     {
         $query = Exam::where('school_id', Auth::user()->school_id)->where('term_id', $this->termId ?: 0);
-        if ($this->isPortalUser()) $query->whereNotNull('published_at');
+        if ($this->isPortalUser()) {
+            $query->whereNotNull('published_at');
+        }
         $student = $this->studentId !== '' ? $this->studentsQuery()->find($this->studentId) : null;
         if (! $student) {
             return $query->whereRaw('1 = 0');
@@ -142,7 +198,7 @@ class StudentTermReport extends Component
     protected function gradesFor(Student $student, Exam $exam, Term $term, array $settings): Collection
     {
         $scales = GradingScale::where('school_id', $student->school_id)->where('education_stage', $exam->schoolClass->education_stage)->orderByDesc('minimum_percentage')->get();
-        $marks = StageAssessmentCalculator::marks($student, $term, $settings, $exam);
+        $marks = StageAssessmentCalculator::marks($student, $term, $settings, $exam, $this->isPortalUser());
         $user = Auth::user();
         if (TeacherAcademicScope::isTeacher($user) && ! TeacherAcademicScope::classIds($user)->contains($exam->school_class_id)) {
             $subjectIds = TeacherAcademicScope::subjectAssignments($user, $exam->term_id)
@@ -151,24 +207,26 @@ class StudentTermReport extends Component
         }
 
         return $marks->map(function (array $row) use ($scales): object {
-                $percentage = $row['percentage'];
-                $scale = $scales->first(fn ($item) => $percentage >= (float) $item->minimum_percentage && $percentage <= (float) $item->maximum_percentage);
-                $grade = $row['incomplete'] ? 'Incomplete' : ($scale?->grade ?? '—');
-                return (object) [
-                    'subject' => (object) ['id' => $row['subject_id'], 'name' => $row['subject']],
-                    'subject_name' => $row['subject'],
-                    'score' => $row['score'],
-                    'maximum_score' => $row['maximum'],
-                    'credit_hours' => 1,
-                    'percentage' => $percentage,
-                    'grade_name' => $grade,
-                    'grade_point' => $this->gradePoint($grade),
-                    'aggregate_points' => $row['incomplete'] ? null : $scale?->aggregate_points,
-                    'remarks' => $row['incomplete'] ? 'One or more required assessments are missing.' : ($scale?->remark ?? 'Grade not configured'),
-                    'incomplete' => $row['incomplete'],
-                    'assessments' => $row['assessments'],
-                ];
-            });
+            $percentage = $row['percentage'];
+            $scale = $scales->first(fn ($item) => $percentage >= (float) $item->minimum_percentage && $percentage <= (float) $item->maximum_percentage);
+            $grade = $row['incomplete'] ? 'Incomplete' : ($scale?->grade ?? '—');
+
+            return (object) [
+                'subject' => (object) ['id' => $row['subject_id'], 'name' => $row['subject']],
+                'subject_name' => $row['subject'],
+                'score' => $row['score'],
+                'maximum_score' => $row['maximum'],
+                'credit_hours' => $row['weighting'],
+                'weighting' => $row['weighting'],
+                'percentage' => $percentage,
+                'grade_name' => $grade,
+                'grade_point' => $this->gradePoint($grade),
+                'aggregate_points' => $row['incomplete'] ? null : $scale?->aggregate_points,
+                'remarks' => $row['incomplete'] ? 'One or more required assessments are missing.' : ($scale?->remark ?? 'Grade not configured'),
+                'incomplete' => $row['incomplete'],
+                'assessments' => $row['assessments'],
+            ];
+        });
     }
 
     protected function attendanceFor(Student $student, Term $term): Collection
@@ -185,6 +243,7 @@ class StudentTermReport extends Component
             return $base->whereIn('subject_id', $subjectIds)->get();
         }
         $daily = (clone $base)->where('session_key', 'daily')->get();
+
         return $daily->isNotEmpty() ? $daily : $base->whereNotNull('subject_id')->get();
     }
 
@@ -196,18 +255,25 @@ class StudentTermReport extends Component
                     ->orWhere(fn (Builder $fallback) => $fallback->whereDoesntHave('enrolments', fn (Builder $enrolment) => $enrolment->where('term_id', $term->id))->where('school_class_id', $exam->school_class_id)->when($exam->stream_id, fn (Builder $stream) => $stream->where('stream_id', $exam->stream_id)));
             })->get();
         $rows = $classmates->map(function (Student $classmate) use ($term, $settings, $exam): object {
-            $marks = StageAssessmentCalculator::marks($classmate, $term, $settings, $exam)->reject('incomplete')->sortByDesc('percentage')->take($settings['best']);
-            return (object) ['id' => $classmate->id, 'average' => $marks->isEmpty() ? null : $marks->avg('percentage')];
+            $marks = StageAssessmentCalculator::marks($classmate, $term, $settings, $exam, $this->isPortalUser())->reject('incomplete')->sortByDesc('percentage')->take($settings['best']);
+
+            return (object) ['id' => $classmate->id, 'average' => $marks->isEmpty() ? null : StageAssessmentCalculator::weightedAverage($marks)];
         })
             ->filter(fn (object $row) => $row->average !== null)
             ->sortByDesc('average')
             ->values();
-        $previous = null; $position = 0;
+        $previous = null;
+        $position = 0;
         foreach ($rows as $index => $row) {
-            if ($previous === null || abs((float) $row->average - $previous) >= 0.001) $position = $index + 1;
-            if ((int) $row->id === $student->id) return $position;
+            if ($previous === null || abs((float) $row->average - $previous) >= 0.001) {
+                $position = $index + 1;
+            }
+            if ((int) $row->id === $student->id) {
+                return $position;
+            }
             $previous = (float) $row->average;
         }
+
         return null;
     }
 
@@ -219,17 +285,28 @@ class StudentTermReport extends Component
         $exams = $this->examsQuery()->with(['schoolClass', 'stream'])->get();
         $student = $this->studentId !== '' ? $this->studentsQuery()->with(['schoolClass', 'stream', 'guardians'])->find($this->studentId) : null;
         $exam = $this->examId !== '' ? $this->examsQuery()->with(['schoolClass', 'stream'])->find($this->examId) : null;
-        $settings = \App\Services\StageReportSettings::get($school->id, \App\Services\SchoolAcademicSetup::stagesFor($school)[0]);
-        $grades = collect(); $calculationGrades = collect(); $attendance = collect(); $gpa = 0.0; $aggregate = 0; $position = null; $fees = ['due' => 0, 'paid' => 0, 'balance' => 0]; $promotion = null;
+        $settings = StageReportSettings::get($school->id, SchoolAcademicSetup::stagesFor($school)[0]);
+        $grades = collect();
+        $calculationGrades = collect();
+        $attendance = collect();
+        $gpa = 0.0;
+        $aggregate = 0;
+        $position = null;
+        $fees = ['due' => 0, 'paid' => 0, 'balance' => 0];
+        $promotion = null;
+        $promotionStatement = null;
 
         if ($student && $term && $exam) {
             if ($this->isPortalUser()) {
-                $feeRule = \App\Models\SchoolSetting::where(['school_id' => $school->id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled';
+                $feeRule = SchoolSetting::where(['school_id' => $school->id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled';
                 abort_if($feeRule && $student->balance($term) > 0, 403, 'Fee clearance is required before viewing this report.');
             }
             $enrolment = StudentEnrolment::with(['schoolClass', 'stream'])->where('school_id', $school->id)->where('term_id', $term->id)->where('student_id', $student->id)->first();
-            if ($enrolment) { $student->setRelation('schoolClass', $enrolment->schoolClass); $student->setRelation('stream', $enrolment->stream); }
-            $settings = \App\Services\StageReportSettings::get($school->id, $student->schoolClass->education_stage);
+            if ($enrolment) {
+                $student->setRelation('schoolClass', $enrolment->schoolClass);
+                $student->setRelation('stream', $enrolment->stream);
+            }
+            $settings = StageReportSettings::get($school->id, $student->schoolClass->education_stage);
             if (TeacherAcademicScope::isTeacher(Auth::user())) {
                 $settings['show_fees'] = false;
             }
@@ -249,10 +326,12 @@ class StudentTermReport extends Component
                 $fees = ['due' => $student->totalDue($term), 'paid' => $student->totalPaid($term), 'balance' => $student->balance($term)];
             }
             $promotion = $enrolment?->promotion_outcome;
+            $promotionStatement = PromotionStatement::for($student, $term, $enrolment);
         }
 
-        $attendancePresent = $attendance->whereIn('status', ['present', 'late'])->count(); $attendanceTotal = $attendance->count();
-        $average = $calculationGrades->avg('percentage');
+        $attendancePresent = $attendance->whereIn('status', ['present', 'late'])->count();
+        $attendanceTotal = $attendance->count();
+        $average = $calculationGrades->isEmpty() ? null : StageAssessmentCalculator::weightedAverage($calculationGrades);
         $examColumns = $grades->flatMap(fn ($grade) => $grade->assessments)
             ->unique('exam_id')->sortBy('name')->values();
         $gradingScales = GradingScale::where('school_id', $school->id)->where('education_stage', $settings['stage'])->orderByDesc('minimum_percentage')->get();
@@ -262,6 +341,6 @@ class StudentTermReport extends Component
         $school->setAttribute('logo_url', $school->badgeUrl());
         $report = (object) ['student' => $student, 'term' => $term, 'grades' => $grades, 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'gpa' => $gpa, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate];
 
-        return view('livewire.student-term-report', compact('school', 'term', 'students', 'student', 'exams', 'exam', 'settings', 'gradingScales', 'grades', 'examColumns', 'attendance', 'gpa', 'aggregate', 'average', 'position', 'fees', 'promotion', 'report') + ['terms' => Term::where('school_id', $school->id)->orderByDesc('year')->orderByDesc('id')->get(), 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate, 'pageTitle' => 'Student Term Report']);
+        return view('livewire.student-term-report', compact('school', 'term', 'students', 'student', 'exams', 'exam', 'settings', 'gradingScales', 'grades', 'examColumns', 'attendance', 'gpa', 'aggregate', 'average', 'position', 'fees', 'promotion', 'promotionStatement', 'report') + ['terms' => Term::where('school_id', $school->id)->orderByDesc('year')->orderByDesc('id')->get(), 'attendance_present' => $attendancePresent, 'attendance_total' => $attendanceTotal, 'teacher_remarks' => $teacherRemarks, 'issue_date' => $issueDate, 'isEndOfYear' => $this->reportType === 'end_of_year' && (int) $term?->term_number === 3, 'pageTitle' => 'Student Term Report']);
     }
 }

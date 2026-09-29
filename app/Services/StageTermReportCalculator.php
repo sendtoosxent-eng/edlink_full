@@ -19,12 +19,13 @@ class StageTermReportCalculator
         $scales = GradingScale::where('school_id', $student->school_id)->where('education_stage', $stage)->orderByDesc('minimum_percentage')->get();
         $marks = StageAssessmentCalculator::marks($student, $term, $settings)->map(function (array $mark) use ($scales): array {
             $scale = $mark['incomplete'] ? null : $scales->first(fn ($item) => $mark['percentage'] >= $item->minimum_percentage && $mark['percentage'] <= $item->maximum_percentage);
+
             return $mark + ['grade' => $mark['incomplete'] ? 'Incomplete' : ($scale?->grade ?? '-'), 'points' => $mark['incomplete'] ? null : $scale?->aggregate_points, 'comment' => $mark['incomplete'] ? 'One or more required assessments are missing.' : ($scale?->remark ?? '')];
         });
         $examColumns = $marks->flatMap(fn (array $mark) => $mark['assessments'])
             ->unique('exam_id')->sortBy('name')->values();
         $used = $marks->reject(fn ($mark) => $mark['incomplete'])->sortByDesc('percentage')->take($settings['best']);
-        $average = $used->count() ? round($used->avg('percentage'), 2) : 0;
+        $average = $used->count() ? StageAssessmentCalculator::weightedAverage($used) : 0;
         $attendance = AttendanceRecord::where(['school_id' => $student->school_id, 'term_id' => $term->id, 'student_id' => $student->id])->where('session_key', 'daily')->get();
         if ($attendance->isEmpty()) {
             $attendance = AttendanceRecord::where(['school_id' => $student->school_id, 'term_id' => $term->id, 'student_id' => $student->id])->get();
@@ -38,6 +39,7 @@ class StageTermReportCalculator
             'attendance_present' => $attendance->whereIn('status', ['present', 'late'])->count(), 'attendance_total' => $attendance->count(),
             'fees' => ['due' => $student->totalDue($term), 'paid' => $student->totalPaid($term), 'balance' => $student->balance($term)],
             'promotion' => $enrolment?->promotion_outcome,
+            'promotion_statement' => PromotionStatement::for($student, $term, $enrolment),
             'teacher_remarks' => $marks->isEmpty() ? 'No approved results are available.' : trim(($overall?->remark ?? 'Keep working consistently.').' Overall result: '.($average >= $settings['pass'] ? 'Pass.' : 'Below the configured pass mark.')),
         ];
     }

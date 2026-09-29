@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Models\Exam;
-use App\Models\ExamPaper;
 use App\Models\ExamCategory;
+use App\Models\ExamCategoryGroup;
+use App\Models\ExamCategoryGroupAssignment;
+use App\Models\ExamPaper;
 use App\Models\SchoolClass;
 use App\Models\Stream;
 use App\Models\Subject;
@@ -18,17 +20,30 @@ use Livewire\Component;
 class ExamSetup extends Component
 {
     public string $name = '';
+
     public string $classId = '';
+
     public string $streamId = '';
+
     public string $categoryId = '';
+
     public string $examId = '';
+
     public string $subjectId = '';
+
     public string $maximumScore = '100';
+
     public string $weighting = '1';
 
     public function mount(): void
     {
         $this->authorizeManagement();
+    }
+
+    public function updatedClassId(): void
+    {
+        $this->reset(['streamId', 'categoryId']);
+        $this->resetValidation(['streamId', 'categoryId']);
     }
 
     public function addExam(): void
@@ -42,8 +57,13 @@ class ExamSetup extends Component
             return;
         }
 
+        $group = $this->groupForClass($school->id, $term->id, (int) $this->classId);
+        $categories = $group?->categories ?? collect();
+
         $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('exams', 'name')->where(fn ($query) => $query
+                ->where('school_id', $school->id)->where('term_id', $term->id)->where('school_class_id', $this->classId)
+                ->when($this->streamId !== '', fn ($stream) => $stream->where('stream_id', $this->streamId), fn ($stream) => $stream->whereNull('stream_id')))],
             'classId' => ['required', Rule::exists('school_classes', 'id')->where('school_id', $school->id)],
             'streamId' => [
                 'nullable',
@@ -52,12 +72,11 @@ class ExamSetup extends Component
                     ->where('school_class_id', $this->classId)),
             ],
             'categoryId' => [
-                ExamCategory::where('school_id', $school->id)->where('term_id', $term->id)->count() > 1 ? 'required' : 'nullable',
-                Rule::exists('exam_categories', 'id')->where('school_id', $school->id)->where('term_id', $term->id),
+                $group && $categories->count() > 1 ? 'required' : 'nullable',
+                Rule::in($categories->pluck('id')->map(fn ($id) => (string) $id)->all()),
             ],
         ]);
-        $categories = ExamCategory::where('school_id', $school->id)->where('term_id', $term->id)->orderBy('sort_order')->get();
-        $categoryId = $validated['categoryId'] ?: ($categories->count() === 1 ? $categories->first()->id : null);
+        $categoryId = $validated['categoryId'] ?: ($group && $categories->count() === 1 ? $categories->first()->id : null);
 
         $exam = Exam::create([
             'school_id' => $school->id,
@@ -78,6 +97,11 @@ class ExamSetup extends Component
         $this->authorizeManagement();
         $schoolId = Auth::user()->school_id;
         $exam = Exam::where('school_id', $schoolId)->findOrFail($this->examId);
+        if (! $exam->term->isOpen() || $exam->isPublished()) {
+            $this->addError('examId', 'Unpublish the exam and ensure its term is open before changing its papers.');
+
+            return;
+        }
         $offeredSubjectIds = DB::table('class_subjects')
             ->where('school_id', $schoolId)
             ->where('term_id', $exam->term_id)
@@ -105,11 +129,18 @@ class ExamSetup extends Component
     {
         $this->authorizeManagement();
         $schoolId = Auth::user()->school_id;
-        $exam = Exam::where('school_id', $schoolId)->findOrFail($examId);
+        $exam = Exam::with('term')->where('school_id', $schoolId)->findOrFail($examId);
+        if (! $exam->term->isOpen() || $exam->isPublished()) {
+            $this->addError('examId', 'Unpublish the exam and ensure its term is open before changing its category.');
+
+            return;
+        }
+        $group = $this->groupForClass($schoolId, $exam->term_id, $exam->school_class_id);
         $exam->update([
             'exam_category_id' => $categoryId === ''
                 ? null
-                : ExamCategory::where('school_id', $schoolId)->where('term_id', $exam->term_id)->findOrFail($categoryId)->id,
+                : ExamCategory::where('school_id', $schoolId)->where('term_id', $exam->term_id)
+                    ->where('exam_category_group_id', $group?->id)->findOrFail($categoryId)->id,
         ]);
         session()->flash('status', 'Exam category updated.');
     }
@@ -119,9 +150,23 @@ class ExamSetup extends Component
         abort_unless(Auth::user()->hasPermission('exams.setup'), 403);
     }
 
+    private function groupForClass(int $schoolId, int $termId, int $classId): ?ExamCategoryGroup
+    {
+        $groupId = ExamCategoryGroupAssignment::where([
+            'school_id' => $schoolId, 'term_id' => $termId, 'school_class_id' => $classId,
+        ])->value('exam_category_group_id');
+
+        return $groupId ? ExamCategoryGroup::with('categories')->where('school_id', $schoolId)->where('term_id', $termId)->find($groupId) : null;
+    }
+
     public function render()
     {
         $school = Auth::user()->school;
+        $currentTerm = $school->currentTerm();
+        $categoryGroup = $currentTerm && $this->classId !== ''
+            ? $this->groupForClass($school->id, $currentTerm->id, (int) $this->classId)
+            : null;
+        $categories = $categoryGroup?->categories ?? collect();
         $selectedExam = $this->examId !== ''
             ? Exam::where('school_id', $school->id)->find($this->examId)
             : null;
@@ -135,16 +180,24 @@ class ExamSetup extends Component
                 ->orderBy('name')->get()
             : collect();
 
+        $exams = Exam::with(['schoolClass', 'stream', 'term', 'category.group', 'papers.subject'])->where('school_id', $school->id)->latest()->get();
+        $categoryOptions = $exams->mapWithKeys(function (Exam $exam) use ($school) {
+            $group = $this->groupForClass($school->id, $exam->term_id, $exam->school_class_id);
+
+            return [$exam->id => $group?->categories ?? collect()];
+        });
+
         return view('livewire.exam-setup', [
-            'term' => $school->currentTerm(),
+            'term' => $currentTerm,
             'classes' => SchoolClass::where('school_id', $school->id)->get(),
-            'categories' => ExamCategory::where('school_id', $school->id)->where('term_id', $school->currentTerm()?->id)->orderBy('sort_order')->get(),
-            'allCategories' => ExamCategory::where('school_id', $school->id)->whereNotNull('term_id')->orderBy('sort_order')->get(),
+            'categoryGroup' => $categoryGroup,
+            'categories' => $categories,
             'streams' => $this->classId
                 ? Stream::where('school_id', $school->id)->where('school_class_id', $this->classId)->get()
                 : collect(),
             'subjects' => $subjects,
-            'exams' => Exam::with(['schoolClass', 'stream', 'term', 'category', 'papers.subject'])->where('school_id', $school->id)->latest()->get(),
+            'exams' => $exams,
+            'categoryOptions' => $categoryOptions,
             'pageTitle' => 'Exam Setup',
         ]);
     }

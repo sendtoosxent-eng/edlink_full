@@ -41,4 +41,9 @@ class SchoolClass extends Model
     {
         return $this->hasMany(StudentEnrolment::class);
     }
+
+    public function examCategoryAssignments(): HasMany
+    {
+        return $this->hasMany(ExamCategoryGroupAssignment::class);
+    }
 }

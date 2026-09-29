@@ -177,7 +177,7 @@
                                             step="0.01" 
                                             placeholder="0.00"
                                             class="w-32 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right font-black text-slate-900 placeholder:text-slate-300 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed" 
-                                            @disabled($paperStatus === 'approved' || ! $term->isOpen())
+                                            @disabled($paperStatus !== 'draft' || ! $term->isOpen())
                                         >
                                         @error('scores.'.$student->id)
                                             <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
@@ -203,7 +203,7 @@
                 </p>
 
                 <div class="flex flex-wrap gap-2.5">
-                    @if ($paperStatus !== 'approved' && $term->isOpen() && $students->isNotEmpty())
+                    @if ($paperStatus === 'draft' && $term->isOpen() && $students->isNotEmpty())
                         <button type="submit" wire:loading.attr="disabled" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 active:scale-[0.99] transition cursor-pointer">
                             Save Draft
                         </button>

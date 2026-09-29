@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExamCategory extends Model
 {
-    protected $fillable = ['school_id', 'term_id', 'name', 'weight', 'sort_order'];
+    protected $fillable = ['school_id', 'term_id', 'exam_category_group_id', 'name', 'weight', 'sort_order'];
 
     public function school(): BelongsTo
     {
@@ -18,6 +18,11 @@ class ExamCategory extends Model
     public function term(): BelongsTo
     {
         return $this->belongsTo(Term::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(ExamCategoryGroup::class, 'exam_category_group_id');
     }
 
     public function exams(): HasMany

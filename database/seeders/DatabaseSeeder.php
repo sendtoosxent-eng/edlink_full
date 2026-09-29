@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(SchoolTypeDemoSeeder::class);
         $this->call(PublicDemoSchoolsSeeder::class);
+        $this->call(ReportTestingDemoSeeder::class);
 
         // User::factory(10)->create();
 

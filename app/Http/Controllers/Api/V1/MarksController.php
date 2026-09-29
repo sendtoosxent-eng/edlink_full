@@ -14,52 +14,77 @@ class MarksController extends ApiController
 {
     private function paper(Request $request, int $id): ExamPaper
     {
-        $paper=ExamPaper::with(['exam','subject'])->findOrFail($id);
-        abort_unless($paper->exam->school_id===$request->user()->school_id,404);
-        abort_unless(TeacherAcademicScope::canEnterPaper($request->user(),$paper->exam->school_class_id,$paper->subject_id,$paper->exam->term_id),403);
+        $paper = ExamPaper::with(['exam.term', 'exam.schoolClass', 'subject'])->findOrFail($id);
+        abort_unless($paper->exam->school_id === $request->user()->school_id, 404);
+        abort_unless(TeacherAcademicScope::canEnterPaper($request->user(), $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id), 403);
+
         return $paper;
     }
+
     public function index(Request $request)
     {
-        abort_unless(TeacherAcademicScope::isTeacher($request->user()),403);
-        $papers=ExamPaper::with(['exam.schoolClass','subject'])->whereHas('exam',fn($q)=>$q->where('school_id',$request->user()->school_id))->get()
-            ->filter(fn($p)=>TeacherAcademicScope::canEnterPaper($request->user(),$p->exam->school_class_id,$p->subject_id,$p->exam->term_id))->values();
+        abort_unless(TeacherAcademicScope::isTeacher($request->user()), 403);
+        $term = $request->user()->school->currentTerm();
+        if (! $term || ! $term->isOpen()) {
+            return $this->ok([]);
+        }
+        $papers = ExamPaper::with(['exam.schoolClass', 'subject'])->whereHas('exam', fn ($q) => $q->where('school_id', $request->user()->school_id)->where('term_id', $term->id))->get()
+            ->filter(fn ($p) => TeacherAcademicScope::canEnterPaper($request->user(), $p->exam->school_class_id, $p->subject_id, $p->exam->term_id))->values();
+
         return $this->ok($papers);
     }
-    public function show(Request $request,int $paper)
+
+    public function show(Request $request, int $paper)
     {
-        $paper=$this->paper($request,$paper);
-        $students=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id,$paper->exam->term_id)->orderBy('name')->get(['id','name','admission_no']);
-        $marks=DB::table('exam_marks')->where('exam_paper_id',$paper->id)->get()->keyBy('student_id');
-        $submission=DB::table('exam_paper_submissions')->where('exam_paper_id',$paper->id)->first();
-        return $this->ok(['paper'=>$paper,'status'=>$submission?->status??'draft','students'=>$students->map(fn($s)=>['student'=>$s,'score'=>$marks->get($s->id)?->score])],
-            ['version'=>$marks->max('updated_at')]);
+        $paper = $this->paper($request, $paper);
+        $students = MobileAccess::teacherStudentQuery($request->user(), $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id, $paper->exam->stream_id)->orderBy('name')->get(['id', 'name', 'admission_no']);
+        $marks = DB::table('exam_marks')->where('exam_paper_id', $paper->id)->get()->keyBy('student_id');
+        $submission = DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->first();
+
+        return $this->ok(['paper' => $paper, 'status' => $submission?->status ?? 'draft', 'students' => $students->map(fn ($s) => ['student' => $s, 'score' => $marks->get($s->id)?->score])],
+            ['version' => $marks->max('updated_at')]);
     }
-    public function update(MarksUpdateRequest $request,int $paper)
+
+    public function update(MarksUpdateRequest $request, int $paper)
     {
-        $paper=$this->paper($request,$paper); $data=$request->validated();
-        abort_unless($paper->exam->term->isOpen(), 403, 'This term is closed for marks entry.');
-        $submission=DB::table('exam_paper_submissions')->where('exam_paper_id',$paper->id)->first();
-        abort_if($submission && $submission->status!=='draft',409,'Submitted marks are read-only.');
-        $allowed=MobileAccess::teacherStudentQuery($request->user(),$paper->exam->school_class_id,$paper->subject_id,$paper->exam->term_id)->pluck('id');
-        abort_unless(collect($data['marks'])->pluck('student_id')->diff($allowed)->isEmpty(),403);
-        foreach($data['marks'] as $mark) abort_if($mark['score']!==null && $mark['score']>$paper->maximum_score,422,'A score exceeds the paper maximum.');
-        $version=DB::table('exam_marks')->where('exam_paper_id',$paper->id)->max('updated_at');
-        if(!empty($data['base_version'])&&$version&&$version>$data['base_version']) return response()->json(['message'=>'Marks changed on another device.','code'=>'conflict'],409);
-        DB::transaction(function()use($data,$paper,$request){foreach($data['marks'] as $mark)DB::table('exam_marks')->updateOrInsert(['exam_paper_id'=>$paper->id,'student_id'=>$mark['student_id']],['score'=>$mark['score'],'entered_by'=>$request->user()->id,'created_at'=>now(),'updated_at'=>now()]);});
-        return $this->ok(['saved'=>count($data['marks']),'version'=>now()->toISOString()]);
-    }
-    public function submit(Request $request,int $paper)
-    {
-        $paper=$this->paper($request,$paper);
+        $paper = $this->paper($request, $paper);
+        $data = $request->validated();
         abort_unless($paper->exam->term->isOpen(), 403, 'This term is closed for marks entry.');
         $submission = DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->first();
         abort_if($submission && $submission->status !== 'draft', 409, 'Submitted marks are read-only.');
-        $students = MobileAccess::teacherStudentQuery($request->user(), $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id)->pluck('id');
+        $allowed = MobileAccess::teacherStudentQuery($request->user(), $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id, $paper->exam->stream_id)->pluck('id');
+        abort_unless(collect($data['marks'])->pluck('student_id')->diff($allowed)->isEmpty(), 403);
+        foreach ($data['marks'] as $mark) {
+            abort_if($mark['score'] !== null && $mark['score'] > $paper->maximum_score, 422, 'A score exceeds the paper maximum.');
+        }
+        $version = DB::table('exam_marks')->where('exam_paper_id', $paper->id)->max('updated_at');
+        if (! empty($data['base_version']) && $version && $version > $data['base_version']) {
+            return response()->json(['message' => 'Marks changed on another device.', 'code' => 'conflict'], 409);
+        }
+        DB::transaction(function () use ($data, $paper, $request) {
+            $now = now();
+            $rows = collect($data['marks'])->map(fn ($mark) => ['exam_paper_id' => $paper->id, 'student_id' => $mark['student_id'], 'score' => $mark['score'], 'entered_by' => $request->user()->id, 'created_at' => $now, 'updated_at' => $now])->all();
+            if ($rows !== []) {
+                DB::table('exam_marks')->upsert($rows, ['exam_paper_id', 'student_id'], ['score', 'entered_by', 'updated_at']);
+            }
+        });
+
+        return $this->ok(['saved' => count($data['marks']), 'version' => now()->toISOString()]);
+    }
+
+    public function submit(Request $request, int $paper)
+    {
+        $paper = $this->paper($request, $paper);
+        abort_unless($paper->exam->term->isOpen(), 403, 'This term is closed for marks entry.');
+        $submission = DB::table('exam_paper_submissions')->where('exam_paper_id', $paper->id)->first();
+        abort_if($submission && $submission->status !== 'draft', 409, 'Submitted marks are read-only.');
+        $students = MobileAccess::teacherStudentQuery($request->user(), $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id, $paper->exam->stream_id)->pluck('id');
         $scored = DB::table('exam_marks')->where('exam_paper_id', $paper->id)->whereNotNull('score')->pluck('student_id');
         abort_if($students->isEmpty() || $students->diff($scored)->isNotEmpty(), 422, 'Enter a score for every learner before submitting.');
-        DB::table('exam_paper_submissions')->updateOrInsert(['exam_paper_id'=>$paper->id],['status'=>'submitted','submitted_by'=>$request->user()->id,'submitted_at'=>now(),'created_at'=>now(),'updated_at'=>now()]);
+        $now = now();
+        DB::table('exam_paper_submissions')->upsert([['exam_paper_id' => $paper->id, 'status' => 'submitted', 'submitted_by' => $request->user()->id, 'submitted_at' => $now, 'approved_by' => null, 'approved_at' => null, 'created_at' => $now, 'updated_at' => $now]], ['exam_paper_id'], ['status', 'submitted_by', 'submitted_at', 'approved_by', 'approved_at', 'updated_at']);
         AuditLog::record($request->user()->school_id,'mobile.marks.submitted',$paper);
-        return $this->ok(['status'=>'submitted']);
+
+        return $this->ok(['status' => 'submitted']);
     }
 }

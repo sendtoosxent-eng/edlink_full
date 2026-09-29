@@ -1,9 +1,22 @@
-<div>
+<div class="space-y-6">
     @include('partials.student-report-print')
 
     @unless(in_array(auth()->user()->role, ['parent', 'student'], true))
-    <section class="no-print mx-auto mb-5 max-w-[210mm] rounded-2xl border bg-white p-5 shadow-sm">
-        <div class="mb-4"><h2 class="font-bold">Build student report</h2><p class="text-xs text-slate-500">Choose the term, learner and examination.</p></div>
+    <section class="no-print w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="mb-4"><h2 class="font-bold">Build student report</h2><p class="text-xs text-slate-500">Choose a normal term report or generate the third-term end-of-year report with its promotion statement.</p></div>
+        <div class="mb-4 flex flex-wrap gap-2">
+            <button type="button" wire:click="showTermReport" class="rounded-xl px-4 py-2 text-xs font-bold {{ $reportType === 'term' ? 'bg-slate-900 text-white' : 'border bg-white text-slate-700' }}">Term report</button>
+            <button type="button" wire:click="showEndOfYearReport" class="rounded-xl px-4 py-2 text-xs font-bold {{ $reportType === 'end_of_year' ? 'bg-amber-400 text-slate-950' : 'border bg-white text-slate-700' }}">End-of-year report</button>
+        </div>
+        @error('termId')<p class="mb-3 text-xs font-semibold text-rose-600">{{ $message }}</p>@enderror
+        <label class="mb-4 block text-sm font-semibold">Search student
+            <div class="relative mt-1.5">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </span>
+                <input wire:model.live.debounce.300ms="studentSearch" type="search" placeholder="Search name or admission no..." class="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm font-medium text-slate-800 shadow-2xs transition placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-400">
+            </div>
+        </label>
         <div class="grid gap-4 md:grid-cols-3">
             <label class="text-sm font-semibold">Term<select wire:model.live="termId" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm"><option value="">Choose term</option>@foreach($terms as $item)<option value="{{ $item->id }}">{{ $item->name }}, {{ $item->year }}</option>@endforeach</select></label>
             <label class="text-sm font-semibold">Student<select wire:model.live="studentId" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm"><option value="">Choose student</option>@foreach($students as $item)<option value="{{ $item->id }}">{{ $item->name }}{{ $item->admission_no ? ' · '.$item->admission_no : '' }}</option>@endforeach</select></label>
@@ -15,7 +28,7 @@
     @if($student && $term && $exam)
 
     <!-- PRINT CONTROL BUTTONS -->
-    <div class="max-w-[210mm] mx-auto mb-4 flex items-center justify-between no-print pt-4">
+    <div class="mx-auto flex w-full max-w-5xl items-center justify-between no-print">
         <button onclick="window.history.back()" class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-2xs transition">
             <i class="fa fa-arrow-left"></i>
             <span>Back</span>
@@ -27,7 +40,7 @@
     </div>
 
     <!-- MAIN REPORT CONTAINER -->
-    <main data-student-report class="report-container max-w-[210mm] mx-auto bg-white p-4 sm:p-6 shadow-xl relative min-h-[297mm]">
+    <main data-student-report class="report-container relative mx-auto min-h-[1000px] w-full max-w-5xl bg-white p-4 shadow-xl sm:p-6">
 
         <!-- DOUBLE BORDER WRAPPER -->
         <div class="border-4 border-slate-900 p-1.5 h-full">
@@ -70,7 +83,7 @@
 
                             <!-- MARKSHEET Banner -->
                             <div class="inline-block bg-yellow-400 text-slate-950 font-black uppercase tracking-widest px-8 py-1 mt-2 text-sm shadow-2xs">
-                                {{ $settings['calculation_method'] === 'single_exam' && $examColumns->count() <= 1 ? $exam->name.' MARKSHEET' : 'COMBINED TERM REPORT' }}
+                                {{ $isEndOfYear ? 'END-OF-YEAR REPORT' : ($settings['calculation_method'] === 'single_exam' && $examColumns->count() <= 1 ? $exam->name.' MARKSHEET' : 'COMBINED TERM REPORT') }}
                             </div>
                         </div>
 
@@ -182,10 +195,10 @@
                     </table>
                     <p class="mt-1 text-center text-[10px] text-slate-500">Average and aggregate use the best {{ $settings['best'] }} subject{{ $settings['best'] === 1 ? '' : 's' }} · Pass mark {{ number_format($settings['pass'], 0) }}%</p>
 
-                    @if($settings['show_fees'] || $settings['show_promotion'])
+                    @if($settings['show_fees'] || $isEndOfYear)
                     <div class="mt-3 grid gap-2 text-center text-xs sm:grid-cols-3">
                         @if($settings['show_fees'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Fees balance</b><span class="font-mono text-base font-black">{{ number_format($fees['balance'], 0) }}</span><small class="block text-slate-500">Paid {{ number_format($fees['paid'], 0) }} / Due {{ number_format($fees['due'], 0) }}</small></div>@endif
-                        @if($settings['show_promotion'])<div class="border-2 border-slate-900 p-2"><b class="block uppercase">Promotion</b><span class="text-base font-black uppercase">{{ $promotion ?: 'Pending' }}</span></div>@endif
+                        @if($isEndOfYear)<div class="border-2 border-slate-900 p-2 {{ $settings['show_fees'] ? 'sm:col-span-2' : 'sm:col-span-3' }}"><b class="block uppercase">Promotion statement</b><span class="font-bold">{{ $promotionStatement }}</span></div>@endif
                     </div>
                     @endif
 
@@ -254,6 +267,6 @@
         </div>
     </main>
     @else
-        <div class="no-print mx-auto max-w-[210mm] rounded-2xl border border-dashed bg-white p-12 text-center text-sm text-slate-500">Select a term, student and examination to generate the report.</div>
+        <div class="no-print w-full rounded-2xl border border-dashed bg-white p-12 text-center text-sm text-slate-500">Select a term, student and examination to generate the report.</div>
     @endif
 </div>

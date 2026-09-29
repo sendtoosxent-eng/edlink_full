@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\SchoolEvent;
 use App\Models\SchoolSetting;
 use App\Models\Student;
+use App\Models\StudentEnrolment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +63,9 @@ class PortalHome extends Component
 
         $student = $students->firstWhere('id', (int) $this->selectedStudentId);
         $graduation = $student?->activeGraduation()->with('term')->first();
-        if ($graduation) $term = $graduation->term;
+        if ($graduation) {
+            $term = $graduation->term;
+        }
         $studentAttendance = $student ? AttendanceRecord::where('school_id', $school->id)
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
             ->where('student_id', $student->id)->latest('attendance_date')->get() : collect();
@@ -71,9 +74,14 @@ class PortalHome extends Component
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
             ->where('student_id', $student->id)->latest('paid_at')->get() : collect();
 
+        $termEnrolment = $student && $term ? StudentEnrolment::where(['school_id' => $school->id, 'student_id' => $student->id, 'term_id' => $term->id])->first() : null;
+        $resultClassId = $termEnrolment?->school_class_id ?? $student?->school_class_id;
+        $resultStreamId = $termEnrolment?->stream_id ?? $student?->stream_id;
         $exams = $student ? Exam::with('term')->where('school_id', $school->id)->whereNotNull('published_at')
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
-            ->where('school_class_id', $student->school_class_id)->latest('published_at')->get() : collect();
+            ->where('school_class_id', $resultClassId)
+            ->where(fn ($query) => $query->whereNull('stream_id')->when($resultStreamId, fn ($stream) => $stream->orWhere('stream_id', $resultStreamId)))
+            ->latest('published_at')->get() : collect();
 
         $feeRule = SchoolSetting::where(['school_id' => $school->id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled';
         $events = SchoolEvent::where('school_id', $school->id)
@@ -97,8 +105,12 @@ class PortalHome extends Component
                 $notifications->push(['type' => 'attendance', 'message' => $student->name.' was marked '.ucfirst($latestAttendance->status).' on '.$latestAttendance->attendance_date->format('d M Y').'.']);
             }
         }
-        foreach ($exams as $exam) $notifications->push(['type' => 'results', 'message' => $exam->name.' results have been published.']);
-        foreach ($events as $event) $notifications->push(['type' => 'event', 'message' => $event->title.' — '.$event->event_date->format('d M Y').'.']);
+        foreach ($exams as $exam) {
+            $notifications->push(['type' => 'results', 'message' => $exam->name.' results have been published.']);
+        }
+        foreach ($events as $event) {
+            $notifications->push(['type' => 'event', 'message' => $event->title.' — '.$event->event_date->format('d M Y').'.']);
+        }
 
         $week = collect(range(6, 0))->map(fn ($offset) => now()->subDays($offset)->startOfDay());
         $attendanceSeries = $week->map(fn ($day) => $studentAttendance->filter(fn ($record) => $record->attendance_date->isSameDay($day))->whereIn('status', ['present', 'late'])->count())->values();

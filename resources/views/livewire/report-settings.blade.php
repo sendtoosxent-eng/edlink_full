@@ -140,18 +140,9 @@
                 </div>
             </div>
 
-            <!-- Show Promotion Decision -->
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Show Promotion Decision</label>
-                <div class="relative">
-                    <select wire:model="showPromotion" class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 transition duration-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
-                        <option value="disabled">Hide</option>
-                        <option value="enabled">Show</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+                <b class="block uppercase tracking-wider">Promotion statements</b>
+                <span class="mt-1 block">Normal term reports contain term performance only. Promotion statements are included automatically on third-term end-of-year reports.</span>
             </div>
 
             <div class="sm:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">

@@ -1,12 +1,17 @@
-<div class="mx-auto max-w-6xl">
+<div class="w-full space-y-6">
     @include('partials.student-report-print')
 
-    <div class="mb-8 print:hidden">
+    <div class="print:hidden">
         <h1 class="text-2xl font-bold">Bulk term reports</h1>
         <p class="text-slate-500">Uses each class's saved education stage, grading scale, and report settings.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <button type="button" wire:click="showTermReports" class="rounded-xl px-4 py-2 text-sm font-bold {{ $reportType === 'term' ? 'bg-slate-900 text-white' : 'border bg-white text-slate-700' }}">Term reports</button>
+            <button type="button" wire:click="showEndOfYearReports" class="rounded-xl px-4 py-2 text-sm font-bold {{ $reportType === 'end_of_year' ? 'bg-amber-400 text-slate-950' : 'border bg-white text-slate-700' }}">End-of-year reports</button>
+        </div>
+        @error('termId')<p class="mt-2 text-sm font-semibold text-rose-600">{{ $message }}</p>@enderror
     </div>
 
-    <div class="mb-6 grid gap-4 rounded-2xl border bg-white p-5 md:grid-cols-2 print:hidden">
+    <div class="grid gap-4 rounded-2xl border bg-white p-5 md:grid-cols-2 print:hidden">
         <label class="text-sm font-semibold">Term
             <select wire:model.live="termId" class="mt-1 w-full rounded-xl border-slate-200">
                 @foreach($terms as $item)<option value="{{$item->id}}">{{$item->name}}, {{$item->year}}</option>@endforeach
@@ -19,14 +24,14 @@
         </label>
     </div>
 
-    <div class="mb-6 flex items-center justify-between print:hidden">
+    <div class="flex items-center justify-between print:hidden">
         <p class="text-sm text-slate-500">{{ $reports->count() }} report{{ $reports->count() === 1 ? '' : 's' }} ready</p>
         <button onclick="window.print()" @disabled($reports->isEmpty()) class="rounded-xl bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-40">Print class reports</button>
     </div>
 
     @forelse($reports as $report)
         @php($student=$report['student']) @php($data=$report['data']) @php($settings=$data['settings'])
-        <article data-student-report class="bulk-report relative isolate mb-8 overflow-hidden rounded-2xl border bg-white p-8 print:mb-0 print:rounded-none print:border-0">
+        <article data-student-report class="bulk-report relative isolate mx-auto mb-8 w-full max-w-5xl overflow-hidden rounded-2xl border bg-white p-8 print:mb-0 print:rounded-none print:border-0">
             <div class="pointer-events-none absolute inset-0 z-0 flex items-center justify-center" aria-hidden="true">
                 @if($school->badgeUrl())
                     <img src="{{ $school->badgeUrl() }}" class="h-72 w-72 object-contain opacity-[0.06] grayscale" alt="">
@@ -40,7 +45,7 @@
                 <div class="flex-1 text-center">
                     <h2 class="text-2xl font-black uppercase">{{$school->name}}</h2>
                     @if($school->motto)<p class="text-sm italic">{{$school->motto}}</p>@endif
-                    <h3 class="mt-2 font-bold uppercase">Term report · {{$term->name}}, {{$term->year}}</h3>
+                    <h3 class="mt-2 font-bold uppercase">{{ $isEndOfYear ? 'End-of-year report' : 'Term report' }} · {{$term->name}}, {{$term->year}}</h3>
                     <p class="text-[10px] font-semibold uppercase text-slate-500">{{str($settings['calculation_method'])->replace('_',' ')->title()}} calculation</p>
                     <p class="text-xs text-slate-500">{{str($data['stage'])->replace('_',' ')->title()}} grading profile</p>
                 </div>
@@ -78,7 +83,7 @@
             @if($settings['show_fees'])
                 <div class="mt-3 grid grid-cols-3 border text-center text-sm"><p class="p-2"><b>Fees due</b><br>UGX {{number_format($data['fees']['due'])}}</p><p class="border-x p-2"><b>Paid</b><br>UGX {{number_format($data['fees']['paid'])}}</p><p class="p-2"><b>Balance</b><br>UGX {{number_format($data['fees']['balance'])}}</p></div>
             @endif
-            @if($settings['show_promotion'])<p class="mt-3 border p-3 text-sm"><b>Promotion decision:</b> {{str($data['promotion']?:'pending')->title()}}</p>@endif
+            @if($isEndOfYear)<p class="mt-3 border-2 border-slate-900 p-3 text-sm"><b>Promotion statement:</b> {{$data['promotion_statement']}}</p>@endif
             @if($settings['next_term_starts'])<p class="mt-3 border p-3 text-center text-sm"><b>Next term starts:</b> {{\Carbon\Carbon::parse($settings['next_term_starts'])->format('l, d F Y')}}</p>@endif
             @if($settings['footer'])<p class="mt-4 text-center text-sm italic">{{$settings['footer']}}</p>@endif
 

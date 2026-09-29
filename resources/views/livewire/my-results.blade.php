@@ -15,7 +15,7 @@
                     <h2 class="font-bold text-slate-900">{{ $student->name }}</h2>
                     <p class="mt-1 text-sm text-slate-500">{{ $student->schoolClass?->name }} · {{ $student->admission_no }}</p>
                     <div class="mt-4 space-y-2">
-                        @forelse($exams->where('school_class_id', $student->school_class_id)->filter(fn ($exam) => ! $exam->stream_id || $exam->stream_id === $student->stream_id) as $exam)
+                        @forelse($examsByStudent->get($student->id, collect()) as $exam)
                             @php($blocked = $feeRule && $student->balance($exam->term) > 0)
                             <div class="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"><span><strong>{{ $exam->name }}</strong><br><span class="text-slate-500">{{ $exam->term->name }}, {{ $exam->term->year }}</span></span>@if($blocked)<span class="text-right text-xs font-bold text-rose-600">Fee clearance<br>required</span>@else<a href="{{ route('exams.report-card', [$exam, $student]) }}" target="_blank" class="rounded-lg bg-yellow-400 px-3 py-2 font-bold text-slate-900">Preview report</a>@endif</div>
                         @empty

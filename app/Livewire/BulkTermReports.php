@@ -16,7 +16,10 @@ use Livewire\Component;
 class BulkTermReports extends Component
 {
     public string $termId = '';
+
     public string $classId = '';
+
+    public string $reportType = 'term';
 
     public function mount(): void
     {
@@ -29,6 +32,35 @@ class BulkTermReports extends Component
             $classes->whereIn('id', TeacherAcademicScope::classIds($user));
         }
         $this->classId = (string) $classes->orderBy('sort_order')->value('id');
+    }
+
+    public function showTermReports(): void
+    {
+        $this->reportType = 'term';
+    }
+
+    public function showEndOfYearReports(): void
+    {
+        $term = Term::where('school_id', Auth::user()->school_id)->where('term_number', 3)
+            ->orderByDesc('year')->orderByDesc('id')->first();
+        if (! $term) {
+            $this->addError('termId', 'Create a third term before generating end-of-year reports.');
+
+            return;
+        }
+        $this->reportType = 'end_of_year';
+        $this->termId = (string) $term->id;
+        $this->resetValidation('termId');
+    }
+
+    public function updatedTermId(): void
+    {
+        if ($this->reportType === 'end_of_year') {
+            $term = Term::where('school_id', Auth::user()->school_id)->find($this->termId);
+            if (! $term || (int) $term->term_number !== 3) {
+                $this->reportType = 'term';
+            }
+        }
     }
 
     public function render()
@@ -45,7 +77,7 @@ class BulkTermReports extends Component
 
         $students = $term && $classId
             ? Student::with(['schoolClass', 'guardians'])
-                ->where('school_id', $school->id)->where('status', 'active')
+                ->where('school_id', $school->id)
                 ->where(function (Builder $query) use ($classId): void {
                     $query->whereHas('enrolments', fn (Builder $enrolment) => $enrolment
                         ->where('term_id', $this->termId)->where('school_class_id', $classId))
@@ -79,6 +111,7 @@ class BulkTermReports extends Component
             'reports' => $reports,
             'positions' => $positions,
             'school' => $school,
+            'isEndOfYear' => $this->reportType === 'end_of_year' && (int) $term?->term_number === 3,
             'pageTitle' => 'Bulk Term Reports',
         ]);
     }
