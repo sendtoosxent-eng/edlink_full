@@ -4,19 +4,29 @@ use App\Models\CashPoolEntry;
 use App\Models\Expense;
 use App\Models\FeePayment;
 use App\Models\School;
+use App\Models\SchoolClass;
+use App\Models\Student;
+use App\Models\Term;
+use App\Models\User;
 use Database\Seeders\AnnualDashboardDemoSeeder;
-use Database\Seeders\TeacherSubjectVisibilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
 it('seeds every elapsed month once with dashboard finance and academic data', function () {
-    $this->seed(TeacherSubjectVisibilitySeeder::class);
+    $school = School::create(['name' => 'Annual Dashboard Demo', 'slug' => 'annual-dashboard-demo', 'school_number' => 'EDL-TEACH', 'is_demo' => true]);
+    $term = Term::create(['school_id' => $school->id, 'name' => 'Current Term', 'year' => now()->year, 'is_current' => true, 'status' => 'open', 'locked' => false]);
+    $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'Primary Five', 'education_stage' => 'upper_primary', 'sort_order' => 5]);
+    User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+    foreach (range(1, 2) as $number) {
+        Student::create(['school_id' => $school->id, 'school_class_id' => $class->id, 'term_id' => $term->id,
+            'name' => "Annual Learner {$number}", 'admission_no' => "AN-{$number}", 'status' => 'active']);
+    }
+
     $this->seed(AnnualDashboardDemoSeeder::class);
     $this->seed(AnnualDashboardDemoSeeder::class);
 
-    $school = School::where('school_number', 'EDL-TEACH')->firstOrFail();
     $months = now()->month;
 
     expect(FeePayment::where('school_id', $school->id)->where('transaction_id', 'like', 'ANNUAL-DEMO-PAY-%')->count())->toBe($months * 2)
