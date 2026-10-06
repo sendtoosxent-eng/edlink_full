@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AccountingJournal;
 use App\Models\AttendanceRecord;
 use App\Models\CashPoolEntry;
 use App\Models\Exam;
@@ -9,11 +10,14 @@ use App\Models\ExamPaper;
 use App\Models\Expense;
 use App\Models\FeePayment;
 use App\Models\FinanceLedgerEntry;
+use App\Models\FinancialAccount;
 use App\Models\School;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\FinanceLedgerService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AnnualDashboardDemoSeeder extends Seeder
 {
@@ -22,13 +26,25 @@ class AnnualDashboardDemoSeeder extends Seeder
         $school = School::where('school_number', 'EDL-TEACH')->where('is_demo', true)->firstOrFail();
         $term = $school->currentTerm();
         $students = $school->students()->where('status', 'active')->whereNotNull('school_class_id')->orderBy('id')->take(4)->get();
-        $recorder = User::where('school_id', $school->id)->whereIn('role', ['admin', 'bursar'])->orderByRaw("role = 'admin' desc")->first();
+        $approver = User::where('school_id', $school->id)->where('role', 'admin')->first();
+        $recorder = User::where('school_id', $school->id)->whereIn('role', ['bursar', 'admin'])
+            ->when($approver, fn ($query) => $query->whereKeyNot($approver->id))->first();
+        if ($approver && ! $recorder) {
+            $recorder = User::create([
+                'school_id' => $school->id, 'name' => 'Annual Dashboard Demo Recorder',
+                'email' => 'annual-dashboard-recorder-'.$school->id.'@edlink.local',
+                'password' => Str::random(40), 'role' => 'bursar', 'employment_status' => 'active',
+                'email_verified_at' => now(),
+            ]);
+        }
+        $financialAccount = FinancialAccount::where('school_id', $school->id)->where('is_active', true)
+            ->whereNotNull('ledger_account_id')->orderByRaw("type = 'bank' desc")->first();
 
-        if (! $term || $students->isEmpty() || ! $recorder) {
-            throw new \RuntimeException('EDL-TEACH needs a current term, active learners and an administrator before annual dashboard data can be seeded.');
+        if (! $term || $students->isEmpty() || ! $recorder || ! $approver || ! $financialAccount) {
+            throw new \RuntimeException('EDL-TEACH needs a current term, active learners, separate accounting maker/checker users and a mapped financial account before annual dashboard data can be seeded.');
         }
 
-        DB::transaction(function () use ($school, $term, $students, $recorder): void {
+        DB::transaction(function () use ($school, $term, $students, $recorder, $approver, $financialAccount): void {
             foreach (range(1, now()->month) as $month) {
                 $date = now()->setDate((int) $term->year, $month, 1)->startOfDay();
                 $monthCode = $date->format('Ym');
@@ -36,21 +52,23 @@ class AnnualDashboardDemoSeeder extends Seeder
                 foreach ($students->take(2) as $index => $student) {
                     $payment = FeePayment::updateOrCreate(
                         ['school_id' => $school->id, 'transaction_id' => "ANNUAL-DEMO-PAY-{$monthCode}-{$student->id}"],
-                        ['student_id' => $student->id, 'term_id' => $term->id, 'amount' => 120000 + ($month * 15000) + ($index * 35000),
+                        ['student_id' => $student->id, 'term_id' => $term->id, 'financial_account_id' => $financialAccount->id,
+                            'amount' => 120000 + ($month * 15000) + ($index * 35000),
                             'method' => $index ? 'mobile_money' : 'bank', 'notes' => 'Synthetic annual dashboard payment.',
                             'recorded_by' => $recorder->id, 'paid_at' => $date->copy()->addDays(5 + ($index * 8))],
                     );
-                    $this->postSyntheticEntry($payment, 'fee_payment', 'credit', $payment->paid_at, $recorder->id);
+                    $this->postSyntheticEntry($payment, $payment->paid_at, $recorder->id, $approver->id);
                 }
 
                 $expense = Expense::updateOrCreate(
                     ['school_id' => $school->id, 'reference_number' => "ANNUAL-DEMO-EXP-{$monthCode}"],
-                    ['term_id' => $term->id, 'settlement_type' => 'immediate', 'category' => ['Utilities', 'Supplies', 'Maintenance', 'Transport'][$month % 4],
+                    ['term_id' => $term->id, 'financial_account_id' => $financialAccount->id,
+                        'settlement_type' => 'immediate', 'category' => ['Utilities', 'Supplies', 'Maintenance', 'Transport'][$month % 4],
                         'payee' => 'Annual Dashboard Demo Supplier', 'amount' => 85000 + ($month * 18000),
                         'description' => 'Synthetic monthly operating expense for dashboard demonstration.',
                         'expense_date' => $date->copy()->addDays(17), 'recorded_by' => $recorder->id],
                 );
-                $this->postSyntheticEntry($expense, 'expense', 'debit', $expense->expense_date, $recorder->id);
+                $this->postSyntheticEntry($expense, $expense->expense_date, $recorder->id, $approver->id);
             }
         });
 
@@ -69,7 +87,7 @@ class AnnualDashboardDemoSeeder extends Seeder
             foreach (range(0, 4) as $dayOffset) {
                 $attendanceDate = today()->subDays($dayOffset);
                 $attendance = AttendanceRecord::where('student_id', $student->id)->where('session_key', 'annual-dashboard')
-                    ->whereDate('attendance_date', $attendanceDate)->first() ?? new AttendanceRecord();
+                    ->whereDate('attendance_date', $attendanceDate)->first() ?? new AttendanceRecord;
                 $attendance->fill(['school_id' => $school->id, 'student_id' => $student->id, 'attendance_date' => $attendanceDate,
                     'session_key' => 'annual-dashboard', 'term_id' => $term->id, 'school_class_id' => $student->school_class_id,
                     'stream_id' => $student->stream_id,
@@ -111,23 +129,25 @@ class AnnualDashboardDemoSeeder extends Seeder
         }
     }
 
-    private function postSyntheticEntry(FeePayment|Expense $source, string $type, string $direction, $date, int $userId): void
+    private function postSyntheticEntry(FeePayment|Expense $source, $date, int $recorderId, int $approverId): void
     {
-        $entry = FinanceLedgerEntry::updateOrCreate(
-            ['source_type' => $source::class, 'source_id' => $source->id],
-            ['school_id' => $source->school_id, 'term_id' => $source->term_id, 'reference' => 'ANNUAL-DEMO-'.$type.'-'.$source->id,
-                'entry_type' => $type, 'direction' => $direction, 'amount' => $source->amount,
-                'description' => 'Synthetic annual dashboard '.$type, 'status' => 'posted', 'recorded_by' => $userId,
-                'approved_by' => $userId, 'approved_at' => $date, 'posted_at' => $date],
-        );
+        $entry = FinanceLedgerEntry::where('source_type', $source::class)->where('source_id', $source->id)->firstOrFail();
+        $journalExists = AccountingJournal::where('school_id', $source->school_id)
+            ->where('source_type', $source::class)->where('source_id', $source->id)->exists();
 
-        CashPoolEntry::updateOrCreate(
-            ['finance_ledger_entry_id' => $entry->id],
-            ['school_id' => $source->school_id, 'term_id' => $source->term_id,
-                'fee_payment_id' => $source instanceof FeePayment ? $source->id : null,
-                'expense_id' => $source instanceof Expense ? $source->id : null,
-                'direction' => $direction, 'amount' => $source->amount, 'description' => $entry->description,
-                'transacted_at' => $date, 'recorded_by' => $userId],
-        );
+        if (! $journalExists) {
+            // Repair records produced by the old dashboard-only seeder before approving normally.
+            CashPoolEntry::where('finance_ledger_entry_id', $entry->id)->delete();
+            $entry->update([
+                'financial_account_id' => $source->financial_account_id, 'status' => 'pending',
+                'recorded_by' => $recorderId, 'approved_by' => null, 'approved_at' => null,
+            ]);
+            $entry = app(FinanceLedgerService::class)->approve($entry, $approverId);
+        }
+
+        $entry->update(['approved_at' => $date, 'posted_at' => $date]);
+        CashPoolEntry::where('finance_ledger_entry_id', $entry->id)->update([
+            'financial_account_id' => $source->financial_account_id, 'transacted_at' => $date,
+        ]);
     }
 }

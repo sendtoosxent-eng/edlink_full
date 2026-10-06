@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccountingJournal;
 use App\Models\CashPoolEntry;
 use App\Models\Expense;
 use App\Models\FeePayment;
@@ -31,9 +32,15 @@ it('seeds every elapsed month once with dashboard finance and academic data', fu
 
     expect(FeePayment::where('school_id', $school->id)->where('transaction_id', 'like', 'ANNUAL-DEMO-PAY-%')->count())->toBe($months * 2)
         ->and(Expense::posted()->where('school_id', $school->id)->where('reference_number', 'like', 'ANNUAL-DEMO-EXP-%')->count())->toBe($months)
-        ->and(CashPoolEntry::where('school_id', $school->id)->where('description', 'like', 'Synthetic annual dashboard%')->count())->toBe($months * 3)
+        ->and(CashPoolEntry::where('school_id', $school->id)
+            ->where(fn ($query) => $query->whereNotNull('fee_payment_id')->orWhereNotNull('expense_id'))->count())->toBe($months * 3)
         ->and(DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
             ->join('exams', 'exams.id', '=', 'exam_papers.exam_id')->where('exams.school_id', $school->id)->count())->toBeGreaterThan(0);
+    expect(AccountingJournal::where('school_id', $school->id)->whereIn('source_type', [FeePayment::class, Expense::class])
+        ->where('status', 'posted')->count())->toBe($months * 3);
+    AccountingJournal::where('school_id', $school->id)->whereIn('source_type', [FeePayment::class, Expense::class])
+        ->get()->each(fn (AccountingJournal $journal) => expect((float) $journal->lines()->sum('debit'))
+        ->toBe((float) $journal->lines()->sum('credit')));
     expect(DB::table('exams')->where('school_id', $school->id)->distinct()->count('name'))->toBeGreaterThanOrEqual(4)
         ->and(DB::table('attendance_records')->where('school_id', $school->id)->where('session_key', 'annual-dashboard')->count())->toBe(10)
         ->and(DB::table('school_events')->where('school_id', $school->id)->where('title', 'like', 'Demo %')->count())->toBe(3)
