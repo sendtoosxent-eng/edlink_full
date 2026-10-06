@@ -2,11 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\AttendanceRecord;
 use App\Models\CashPoolEntry;
+use App\Models\Exam;
+use App\Models\ExamPaper;
 use App\Models\Expense;
 use App\Models\FeePayment;
 use App\Models\FinanceLedgerEntry;
 use App\Models\School;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +55,60 @@ class AnnualDashboardDemoSeeder extends Seeder
         });
 
         $this->call(EdlTeachCurrentTermDemoSeeder::class);
-        $this->command?->info('EDL-TEACH annual dashboard data seeded from January through '.now()->format('F').'; reruns update existing demo records.');
+        $this->seedDashboardActivity($school, $term, $recorder->id);
+        $this->command?->info('EDL-TEACH dashboard graphs populated with annual finance, attendance, demographics, events and examination trends; reruns update existing demo records.');
+    }
+
+    private function seedDashboardActivity(School $school, $term, int $userId): void
+    {
+        $students = $school->students()->where('status', 'active')->whereNotNull('school_class_id')->orderBy('id')->get();
+        foreach ($students as $studentIndex => $student) {
+            if (! $student->gender) {
+                $student->update(['gender' => $studentIndex % 2 === 0 ? 'male' : 'female']);
+            }
+            foreach (range(0, 4) as $dayOffset) {
+                $attendanceDate = today()->subDays($dayOffset);
+                $attendance = AttendanceRecord::where('student_id', $student->id)->where('session_key', 'annual-dashboard')
+                    ->whereDate('attendance_date', $attendanceDate)->first() ?? new AttendanceRecord();
+                $attendance->fill(['school_id' => $school->id, 'student_id' => $student->id, 'attendance_date' => $attendanceDate,
+                    'session_key' => 'annual-dashboard', 'term_id' => $term->id, 'school_class_id' => $student->school_class_id,
+                    'stream_id' => $student->stream_id,
+                    'status' => ($studentIndex + $dayOffset) % 9 === 0 ? 'absent' : (($studentIndex + $dayOffset) % 6 === 0 ? 'late' : 'present')])->save();
+            }
+        }
+
+        foreach ($students->groupBy('school_class_id') as $classId => $classStudents) {
+            foreach ([['Beginning of Term Assessment', 0], ['Mid Term Assessment', 7], ['End of Term Assessment', 13]] as $examIndex => [$name, $boost]) {
+                $exam = Exam::updateOrCreate(
+                    ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $classId, 'stream_id' => null, 'name' => $name],
+                    ['status' => 'published', 'published_at' => now()->subMonths(2 - $examIndex)],
+                );
+                foreach (['Mathematics', 'English', 'Science'] as $subjectIndex => $subjectName) {
+                    $subject = Subject::firstOrCreate(['school_id' => $school->id, 'name' => $subjectName], ['code' => strtoupper(substr($subjectName, 0, 3))]);
+                    $paper = ExamPaper::updateOrCreate(['exam_id' => $exam->id, 'subject_id' => $subject->id], ['maximum_score' => 100, 'weighting' => 1]);
+                    DB::table('exam_paper_submissions')->updateOrInsert(
+                        ['exam_paper_id' => $paper->id],
+                        ['status' => 'approved', 'submitted_by' => $userId, 'submitted_at' => now()->subDay(), 'approved_by' => $userId,
+                            'approved_at' => now(), 'created_at' => now(), 'updated_at' => now()],
+                    );
+                    foreach ($classStudents->values() as $studentIndex => $student) {
+                        DB::table('exam_marks')->updateOrInsert(
+                            ['exam_paper_id' => $paper->id, 'student_id' => $student->id],
+                            ['score' => min(98, 55 + $boost + (($studentIndex * 5 + $subjectIndex * 4) % 22)), 'entered_by' => $userId,
+                                'created_at' => now(), 'updated_at' => now()],
+                        );
+                    }
+                }
+            }
+        }
+
+        foreach ([['Demo Academic Review Day', 4, 'academic'], ['Demo Sports and Clubs Day', 11, 'activity'], ['Demo Parent Meeting', 18, 'meeting']] as [$title, $days, $type]) {
+            DB::table('school_events')->updateOrInsert(
+                ['school_id' => $school->id, 'title' => $title],
+                ['term_id' => $term->id, 'event_date' => today()->addDays($days)->toDateString(), 'type' => $type,
+                    'target_audience' => 'all', 'description' => 'Synthetic dashboard calendar event.', 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
     }
 
     private function postSyntheticEntry(FeePayment|Expense $source, string $type, string $direction, $date, int $userId): void

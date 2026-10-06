@@ -34,4 +34,8 @@ it('seeds every elapsed month once with dashboard finance and academic data', fu
         ->and(CashPoolEntry::where('school_id', $school->id)->where('description', 'like', 'Synthetic annual dashboard%')->count())->toBe($months * 3)
         ->and(DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
             ->join('exams', 'exams.id', '=', 'exam_papers.exam_id')->where('exams.school_id', $school->id)->count())->toBeGreaterThan(0);
+    expect(DB::table('exams')->where('school_id', $school->id)->distinct()->count('name'))->toBeGreaterThanOrEqual(4)
+        ->and(DB::table('attendance_records')->where('school_id', $school->id)->where('session_key', 'annual-dashboard')->count())->toBe(10)
+        ->and(DB::table('school_events')->where('school_id', $school->id)->where('title', 'like', 'Demo %')->count())->toBe(3)
+        ->and(DB::table('students')->where('school_id', $school->id)->whereNotNull('gender')->count())->toBe(2);
 });
