@@ -181,7 +181,11 @@ Route::get('dashboard', function () {
     $termExpenses = $term ? (float) Expense::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
     $poolCredits = $school ? (float) CashPoolEntry::where('school_id', $school->id)->where('direction', 'credit')->sum('amount') : 0;
     $poolDebits = $school ? (float) CashPoolEntry::where('school_id', $school->id)->where('direction', 'debit')->sum('amount') : 0;
-    $cashFlow = $term ? CashPoolEntry::where('school_id', $school->id)->where('term_id', $term->id)->orderBy('transacted_at')->get()->groupBy(fn ($entry) => $entry->transacted_at->format('M Y')) : collect();
+    $cashFlowYear = (int) ($term?->year ?? now()->year);
+    $cashFlow = $school ? CashPoolEntry::where('school_id', $school->id)
+        ->whereBetween('transacted_at', [Carbon::create($cashFlowYear, 1, 1)->startOfYear(), Carbon::create($cashFlowYear, 12, 31)->endOfYear()])
+        ->get()->groupBy(fn ($entry) => $entry->transacted_at->month) : collect();
+    $cashFlowMonths = collect(range(1, 12));
     $activeLearners = $school ? $school->students()->where('status', 'active')->count() : 0;
     $attendanceToday = $term ? AttendanceRecord::where('school_id', $school->id)->where('term_id', $term->id)->whereDate('attendance_date', today())->get() : collect();
     $presentToday = $attendanceToday->whereIn('status', ['present', 'late'])->count();
@@ -253,9 +257,10 @@ Route::get('dashboard', function () {
         'pendingFees' => max(0, $expectedFees + $arrears - $feesPaid),
         'termExpenses' => $termExpenses,
         'poolBalance' => $poolCredits - $poolDebits,
-        'cashFlowLabels' => $cashFlow->keys()->values(),
-        'cashFlowIncome' => $cashFlow->map(fn ($entries) => (float) $entries->where('direction', 'credit')->sum('amount'))->values(),
-        'cashFlowExpenditure' => $cashFlow->map(fn ($entries) => (float) $entries->where('direction', 'debit')->sum('amount'))->values(),
+        'cashFlowYear' => $cashFlowYear,
+        'cashFlowLabels' => $cashFlowMonths->map(fn ($month) => Carbon::create($cashFlowYear, $month, 1)->format('M')),
+        'cashFlowIncome' => $cashFlowMonths->map(fn ($month) => (float) ($cashFlow->get($month)?->where('direction', 'credit')->sum('amount') ?? 0)),
+        'cashFlowExpenditure' => $cashFlowMonths->map(fn ($month) => (float) ($cashFlow->get($month)?->where('direction', 'debit')->sum('amount') ?? 0)),
         'activeLearners' => $activeLearners,
         'presentToday' => $presentToday,
         'absentToday' => $attendanceToday->where('status', 'absent')->count(),

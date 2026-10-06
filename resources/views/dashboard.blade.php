@@ -816,7 +816,7 @@
         <div class="space-y-1">
             <h3 class="font-bold text-gray-900 text-base tracking-tight">Income &amp; expenditure</h3>
             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-100/70">
-                Live cash-pool activity for the active term
+                January–December {{ $cashFlowYear }} cash-pool activity
             </span>
         </div>
         

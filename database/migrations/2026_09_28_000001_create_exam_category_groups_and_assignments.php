@@ -20,6 +20,12 @@ return new class extends Migration
 
         Schema::table('exam_categories', function (Blueprint $table) {
             $table->foreignId('exam_category_group_id')->nullable()->after('term_id')->constrained('exam_category_groups')->cascadeOnDelete();
+            // MySQL may use the composite unique index below for the school_id
+            // foreign key. Give that constraint its own index before replacing it.
+            $table->index('school_id');
+        });
+
+        Schema::table('exam_categories', function (Blueprint $table) {
             $table->dropUnique(['school_id', 'term_id', 'name']);
             $table->unique(['exam_category_group_id', 'name']);
         });
@@ -69,6 +75,9 @@ return new class extends Migration
             $table->dropUnique(['exam_category_group_id', 'name']);
             $table->dropConstrainedForeignId('exam_category_group_id');
             $table->unique(['school_id', 'term_id', 'name']);
+        });
+        Schema::table('exam_categories', function (Blueprint $table) {
+            $table->dropIndex(['school_id']);
         });
         Schema::dropIfExists('exam_category_groups');
     }

@@ -2,9 +2,31 @@ import type { AccountIdentity, AuthSuccess, LoginResult, Role, SchoolIdentity, U
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://edlink.space/api/v1').replace(/\/$/, '');
 type Envelope<T> = { data: T; meta?: Record<string, unknown> };
+type ErrorPayload = { message?: unknown; error?: unknown; errors?: unknown };
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly errors?: Record<string, string[]>) { super(message); }
+}
+
+function apiErrorMessage(payload: ErrorPayload, status: number, authenticated: boolean) {
+  const errors = payload.errors && typeof payload.errors === 'object' && !Array.isArray(payload.errors)
+    ? payload.errors as Record<string, unknown>
+    : undefined;
+  const validationMessage = errors
+    ? Object.values(errors).flatMap(value => Array.isArray(value) ? value : [value]).find(value => typeof value === 'string')
+    : undefined;
+  if (typeof validationMessage === 'string' && validationMessage.trim()) return validationMessage;
+
+  const serverMessage = [payload.message, payload.error].find(value => typeof value === 'string' && value.trim()) as string | undefined;
+  if (status === 401 && (!serverMessage || /^unauthenticated\.?$/i.test(serverMessage.trim()))) {
+    return authenticated
+      ? 'Your session has expired or is no longer valid. Please sign in again.'
+      : 'We could not verify your sign-in details. Check them and try again.';
+  }
+  if (serverMessage) return serverMessage;
+  if (status === 403) return 'You do not have permission to perform this action.';
+  if (status >= 500) return 'The Edlink server could not complete this request. Please try again.';
+  return `The request could not be completed (error ${status}). Please try again.`;
 }
 
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<Envelope<T>> {
@@ -19,10 +41,12 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
   } finally {
     clearTimeout(timeout);
   }
-  const payload = await response.json().catch(() => ({}));
+  const payload: ErrorPayload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const validationMessage = payload.errors ? Object.values(payload.errors as Record<string, string[]>).flat()[0] : undefined;
-    throw new ApiError(validationMessage ?? payload.message ?? 'Something went wrong.', response.status, payload.errors);
+    const errors = payload.errors && typeof payload.errors === 'object' && !Array.isArray(payload.errors)
+      ? payload.errors as Record<string, string[]>
+      : undefined;
+    throw new ApiError(apiErrorMessage(payload, response.status, Boolean(token)), response.status, errors);
   }
   return payload as Envelope<T>;
 }

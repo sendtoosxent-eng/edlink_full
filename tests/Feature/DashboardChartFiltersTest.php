@@ -72,6 +72,19 @@ it('provides working year and class datasets to the administrator line charts', 
         ],
     ]);
 
+    DB::table('cash_pool_entries')->insert([
+        [
+            'school_id' => $school->id, 'term_id' => $term->id, 'direction' => 'credit', 'amount' => 250000,
+            'description' => 'January income', 'transacted_at' => '2026-01-20', 'recorded_by' => $admin->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ],
+        [
+            'school_id' => $school->id, 'term_id' => $term->id, 'direction' => 'debit', 'amount' => 75000,
+            'description' => 'December expense', 'transacted_at' => '2026-12-05', 'recorded_by' => $admin->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ],
+    ]);
+
     foreach ([[$seniorOne, $studentOne, 80], [$seniorTwo, $studentTwo, 60]] as [$class, $student, $score]) {
         $exam = Exam::create([
             'school_id' => $school->id,
@@ -110,9 +123,18 @@ it('provides working year and class datasets to the administrator line charts', 
 
     $paymentSeries = $response->viewData('paymentTrendByYear');
     $performanceSeries = $response->viewData('performanceSeries');
+    $cashFlowLabels = $response->viewData('cashFlowLabels');
+    $cashFlowIncome = $response->viewData('cashFlowIncome');
+    $cashFlowExpenditure = $response->viewData('cashFlowExpenditure');
 
     expect((float) $paymentSeries['2026'][0])->toBe(150000.0)
         ->and((float) $paymentSeries['2025'][1])->toBe(90000.0)
+        ->and($cashFlowLabels->all())->toBe(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+        ->and($cashFlowIncome->count())->toBe(12)
+        ->and((float) $cashFlowIncome[0])->toBe(250000.0)
+        ->and((float) $cashFlowIncome[11])->toBe(0.0)
+        ->and((float) $cashFlowExpenditure[0])->toBe(0.0)
+        ->and((float) $cashFlowExpenditure[11])->toBe(75000.0)
         ->and($performanceSeries[(string) $seniorOne->id]['data']->all())->toBe([80.0])
         ->and($performanceSeries[(string) $seniorTwo->id]['data']->all())->toBe([60.0])
         ->and($performanceSeries['all']['data']->all())->toBe([70.0]);
