@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AttendanceRecord;
 use App\Models\Exam;
+use App\Models\FeePayment;
 use App\Models\HomeworkAssignment;
 use App\Models\HomeworkSubmission;
 use App\Models\SchoolSetting;
@@ -19,6 +20,7 @@ class StudentActivityNotifier
         'notification_homework_enabled',
         'notification_homework_feedback_enabled',
         'notification_results_enabled',
+        'notification_payment_receipts_enabled',
     ];
 
     public function attendance(AttendanceRecord $record): void
@@ -90,18 +92,33 @@ class StudentActivityNotifier
         }
     }
 
+    public function payment(int $paymentId): void
+    {
+        $payment = FeePayment::with(['student:id,school_id,name'])->find($paymentId);
+        if (! $payment?->student || ! $this->enabled($payment->school_id, self::SETTINGS[5])) {
+            return;
+        }
+
+        $currency = (string) SchoolSetting::getValue($payment->school_id, 'currency', 'UGX');
+        $reference = $payment->transaction_id ?: $payment->bank_slip_number ?: 'EDL-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT);
+        $this->send($payment->student, 'payment_receipt', 'School fee payment received',
+            $currency.' '.number_format((float) $payment->amount, 2).' was received for '.$payment->student->name.'. Your official receipt is attached.',
+            'payment:'.$payment->id, 'success', 'receipt-'.$reference.'.pdf', '/payments/'.$payment->id.'/receipt', ['parent']);
+    }
+
     private function enabled(int $schoolId, string $key): bool
     {
         return SchoolSetting::where(['school_id' => $schoolId, 'key' => $key])->value('value') !== 'disabled';
     }
 
-    private function send(Student $student, string $category, string $title, string $message, string $eventKey, string $type): void
+    private function send(Student $student, string $category, string $title, string $message, string $eventKey, string $type, ?string $attachmentName = null, ?string $attachmentPath = null, array $roles = ['parent', 'student']): void
     {
-        foreach ($this->recipientIds($student) as $userId) {
+        foreach ($this->recipientIds($student, $roles) as $userId) {
             DB::table('school_notifications')->updateOrInsert(
                 ['school_id' => $student->school_id, 'user_id' => $userId, 'event_key' => $eventKey],
                 ['student_id' => $student->id, 'title' => $title, 'message' => $message, 'type' => $type,
-                    'category' => $category, 'read_at' => null, 'created_at' => now(), 'updated_at' => now()],
+                    'category' => $category, 'attachment_name' => $attachmentName, 'attachment_path' => $attachmentPath,
+                    'read_at' => null, 'created_at' => now(), 'updated_at' => now()],
             );
             DB::table('school_notification_reads')->where('school_notification_id', function ($query) use ($student, $userId, $eventKey): void {
                 $query->select('id')->from('school_notifications')->where('school_id', $student->school_id)
@@ -110,11 +127,11 @@ class StudentActivityNotifier
         }
     }
 
-    private function recipientIds(Student $student): Collection
+    private function recipientIds(Student $student, array $roles): Collection
     {
         return DB::table('portal_user_students')->join('users', 'users.id', '=', 'portal_user_students.user_id')
             ->where('portal_user_students.school_id', $student->school_id)->where('portal_user_students.student_id', $student->id)
-            ->whereIn('users.role', ['parent', 'student'])->where('users.school_id', $student->school_id)
+            ->whereIn('users.role', $roles)->where('users.school_id', $student->school_id)
             ->pluck('users.id')->unique()->values();
     }
 }

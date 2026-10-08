@@ -5,6 +5,8 @@ use App\Models\Designation;
 use App\Models\Exam;
 use App\Models\ExamPaper;
 use App\Models\FeePayment;
+use App\Models\FinanceLedgerEntry;
+use App\Models\FinancialAccount;
 use App\Models\HomeworkAssignment;
 use App\Models\HomeworkSubmission;
 use App\Models\School;
@@ -164,6 +166,28 @@ it('protects mobile payment information by learner linkage', function () {
         ->assertJsonStructure(['data' => ['summary' => ['due', 'paid', 'balance'], 'payments']]);
     $this->getJson('/api/v1/payments?student_id='.$data['unlinked']->id)->assertNotFound();
     $this->getJson('/api/v1/payments?student_id='.$data['foreign']->id)->assertNotFound();
+});
+
+it('notifies linked parents with a secure PDF receipt after payment posting', function () {
+    $data = mobileFixture();
+    $account = FinancialAccount::where('school_id', $data['school']->id)->firstOrFail();
+    $payment = FeePayment::create(['school_id' => $data['school']->id, 'financial_account_id' => $account->id,
+        'student_id' => $data['student']->id, 'term_id' => $data['term']->id, 'amount' => 125000,
+        'method' => 'cash', 'recorded_by' => $data['teacher']->id, 'paid_at' => now()]);
+    FinanceLedgerEntry::where('source_type', FeePayment::class)->where('source_id', $payment->id)->update(['status' => 'posted']);
+    app(StudentActivityNotifier::class)->payment($payment->id);
+
+    $notification = DB::table('school_notifications')->where('user_id', $data['parent']->id)->where('category', 'payment_receipt')->first();
+    expect($notification)->not->toBeNull()->and($notification->attachment_name)->toEndWith('.pdf')
+        ->and(DB::table('school_notifications')->where('user_id', $data['studentUser']->id)->where('category', 'payment_receipt')->exists())->toBeFalse();
+
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $response = $this->get('/api/v1'.$notification->attachment_path);
+    $response->assertOk()->assertHeader('content-type', 'application/pdf');
+    expect($response->getContent())->toStartWith('%PDF');
+
+    Sanctum::actingAs(User::factory()->create(['school_id' => $data['school']->id, 'role' => 'parent']), ['mobile']);
+    $this->get('/api/v1'.$notification->attachment_path)->assertNotFound();
 });
 
 it('allows teachers to request their own leave and blocks portal roles', function () {

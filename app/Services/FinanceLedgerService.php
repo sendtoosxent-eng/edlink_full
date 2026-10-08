@@ -42,7 +42,10 @@ class FinanceLedgerService
             }
             if ($entry->source_type === FeePayment::class && $entry->source_id) {
                 $paymentId = $entry->source_id;
-                DB::afterCommit(fn () => app(PaymentReceiptSender::class)->send($paymentId));
+                DB::afterCommit(function () use ($paymentId): void {
+                    app(PaymentReceiptSender::class)->send($paymentId);
+                    app(StudentActivityNotifier::class)->payment($paymentId);
+                });
             }
 
             return $entry;

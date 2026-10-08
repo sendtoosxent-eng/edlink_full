@@ -40,6 +40,11 @@ class AppServiceProvider extends ServiceProvider
                 ->prefix('api/v1')->get('payments', [MobileDataController::class, 'payments'])
                 ->name('api.mobile.payments');
         }
+        if ($this->app->routesAreCached() && ! Route::has('api.mobile.payments.receipt')) {
+            Route::middleware(['api', 'throttle:api', 'auth:sanctum', EnsureMobileAccess::class])
+                ->prefix('api/v1')->get('payments/{payment}/receipt', [MobileDataController::class, 'paymentReceipt'])
+                ->name('api.mobile.payments.receipt');
+        }
         if ($this->app->routesAreCached() && ! Route::has('api.mobile.leave.index')) {
             Route::middleware(['api', 'throttle:api', 'auth:sanctum', EnsureMobileAccess::class])
                 ->prefix('api/v1')->group(function (): void {

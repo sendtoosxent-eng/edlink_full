@@ -6,6 +6,7 @@ use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\Exam;
 use App\Models\ExamPaper;
+use App\Models\FeePayment;
 use App\Models\HomeworkAssignment;
 use App\Models\SchoolSetting;
 use App\Models\StaffLeave;
@@ -13,6 +14,7 @@ use App\Services\StudentSubjectSelectionService;
 use App\Support\MobileAccess;
 use App\Support\MobileTeacherWorkspace;
 use App\Support\TeacherAcademicScope;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -176,7 +178,8 @@ class MobileDataController extends ApiController
 
         $unreadCount = (clone $query)->whereNull('reads.read_at')->count();
         $notifications = $query->paginate(30, ['notifications.id', 'notifications.student_id', 'notifications.title',
-            'notifications.message', 'notifications.type', 'notifications.category', 'notifications.created_at', 'reads.read_at']);
+            'notifications.message', 'notifications.type', 'notifications.category', 'notifications.attachment_name',
+            'notifications.attachment_path', 'notifications.created_at', 'reads.read_at']);
 
         return $this->ok($notifications, ['unread_count' => $unreadCount]);
     }
@@ -263,6 +266,25 @@ class MobileDataController extends ApiController
             ],
             'payments' => $payments,
         ]);
+    }
+
+    public function paymentReceipt(Request $request, FeePayment $payment)
+    {
+        $user = $request->user();
+        abort_unless($user->role === 'parent' && $payment->school_id === $user->school_id, 404);
+        MobileAccess::student($user, $payment->student_id);
+        abort_unless(DB::table('finance_ledger_entries')->where([
+            'source_type' => FeePayment::class, 'source_id' => $payment->id, 'status' => 'posted',
+        ])->exists(), 404);
+
+        $payment->load(['school', 'student.schoolClass', 'term', 'recordedBy']);
+        $reference = $payment->transaction_id ?: $payment->bank_slip_number ?: $payment->id;
+        $pdf = Pdf::loadView('pdf.payment-receipt', [
+            'payment' => $payment, 'school' => $payment->school, 'student' => $payment->student,
+            'term' => $payment->term, 'pdfMode' => true,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('receipt-'.$reference.'.pdf');
     }
 
     public function activities(Request $request)
