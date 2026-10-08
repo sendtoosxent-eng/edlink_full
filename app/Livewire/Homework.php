@@ -7,6 +7,7 @@ use App\Models\HomeworkSubmission;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Services\StudentActivityNotifier;
 use App\Services\StudentSubjectSelectionService;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Support\Facades\Auth;
@@ -98,13 +99,14 @@ class Homework extends Component
         abort_unless($this->offerings()->contains(fn ($row) => (int) $row->school_class_id === (int) $data['classId'] && (int) $row->subject_id === (int) $data['subjectId']), 403);
         abort_unless(SchoolClass::where('school_id', $user->school_id)->whereKey($data['classId'])->exists() && Subject::where('school_id', $user->school_id)->whereKey($data['subjectId'])->exists(), 404);
         $path = $this->attachment?->store('homework/assignments', 'local');
-        HomeworkAssignment::create([
+        $assignment = HomeworkAssignment::create([
             'school_id' => $user->school_id, 'term_id' => $term->id, 'teacher_id' => $user->id,
             'school_class_id' => $data['classId'], 'stream_id' => $data['streamId'] ?: null, 'subject_id' => $data['subjectId'],
             'title' => $data['title'], 'instructions' => $data['instructions'], 'due_at' => $data['dueAt'],
             'maximum_score' => $data['maximumScore'], 'attachment_path' => $path,
             'attachment_name' => $this->attachment?->getClientOriginalName(), 'published_at' => now(),
         ]);
+        app(StudentActivityNotifier::class)->homework($assignment);
         $this->reset(['classId', 'streamId', 'subjectId', 'title', 'instructions', 'attachment']);
         $this->maximumScore = '100';
         $this->dueAt = now()->addDays(2)->format('Y-m-d\TH:i');
@@ -151,6 +153,7 @@ class Homework extends Component
         abort_unless($submission->assignment->school_id === Auth::user()->school_id && ($submission->assignment->teacher_id === Auth::id() || in_array(Auth::user()->role, ['admin', 'superadmin', 'academic_admin'], true)), 403);
         $this->validate(["reviewScores.$submissionId" => 'required|numeric|min:0|max:'.$submission->assignment->maximum_score, "reviewFeedback.$submissionId" => 'nullable|string|max:5000']);
         $submission->update(['score' => $this->reviewScores[$submissionId], 'feedback' => $this->reviewFeedback[$submissionId] ?: null, 'status' => 'reviewed', 'reviewed_at' => now()]);
+        app(StudentActivityNotifier::class)->homeworkFeedback($submission);
         session()->flash('status', 'Submission reviewed.');
     }
 
@@ -189,6 +192,6 @@ class Homework extends Component
         $subjects = Subject::where('school_id', Auth::user()->school_id)->whereIn('id', $offerings->pluck('subject_id'))->orderBy('name')->get();
         $assignments = $this->visibleAssignments();
 
-        return view('livewire.homework', compact('assignments', 'classes', 'subjects', 'offerings') + ['isStudent' => $this->isStudent(), 'selectedAssignment' => $assignments->firstWhere('id',$this->selectedAssignmentId), 'student' => $this->linkedStudent(), 'pageTitle' => 'Homework']);
+        return view('livewire.homework', compact('assignments', 'classes', 'subjects', 'offerings') + ['isStudent' => $this->isStudent(), 'selectedAssignment' => $assignments->firstWhere('id', $this->selectedAssignmentId), 'student' => $this->linkedStudent(), 'pageTitle' => 'Homework']);
     }
 }

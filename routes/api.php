@@ -24,6 +24,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('timetable', [MobileDataController::class, 'timetable']);
         Route::get('events', [MobileDataController::class, 'events']);
         Route::get('announcements', [MobileDataController::class, 'announcements']);
+        Route::get('notifications', [MobileDataController::class, 'notifications'])->name('api.mobile.notifications.index');
+        Route::post('notifications/read', [MobileDataController::class, 'markNotificationsRead'])->name('api.mobile.notifications.read');
         Route::get('results', [MobileDataController::class, 'results']);
         Route::get('payments', [MobileDataController::class, 'payments'])->name('api.mobile.payments');
         Route::get('children', [MobileDataController::class, 'children']);

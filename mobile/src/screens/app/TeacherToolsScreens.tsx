@@ -4,19 +4,37 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { api, ApiError } from '../../api';
 import { PageIntro } from '../../components/PageIntro';
 import { colors, radius, shadows } from '../../theme/index';
 
-type Notice = { id: number; title?: string; subject?: string; message?: string; body?: string; sent_at?: string };
+type Notice = { id: number; title: string; message: string; type: string; category: string; created_at: string; read_at?: string | null };
 
-export function NotificationsScreen({ token, onBack }: { token: string; onBack: () => void }) {
+export function NotificationsScreen({ token, studentId, onRead, onBack }: { token: string; studentId?: number; onRead?: () => void; onBack: () => void }) {
   const [items, setItems] = useState<Notice[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
-  const load = useCallback(async () => { setLoading(true); try { const response = await api.get<{ data: Notice[] }>('/announcements', token); setItems(response.data.data ?? []); setError(''); } catch (reason) { setError(message(reason)); } finally { setLoading(false); } }, [token]);
-  useEffect(() => { void load(); }, [load]);
-  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}><Back onPress={onBack} /><PageIntro title="Notifications" description="School notices and updates for your account." />{error ? <Empty text={error} /> : items.map(item => <View key={item.id} style={[styles.card, shadows.card]}><View style={styles.icon}><Ionicons name="notifications-outline" size={20} color={colors.primary} /></View><View style={styles.grow}><Text style={styles.cardTitle}>{item.title ?? item.subject ?? 'School update'}</Text><Text style={styles.body}>{item.message ?? item.body ?? ''}</Text></View></View>)}{!loading && !error && !items.length && <Empty text="You’re all caught up." />}</ScrollView>;
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    try {
+      const suffix = studentId ? `?student_id=${studentId}` : '';
+      const response = await api.get<{ data: Notice[] }>(`/notifications${suffix}`, token);
+      const notices = response.data.data ?? [];
+      setItems(notices); setError('');
+      const unread = notices.filter(item => !item.read_at).map(item => item.id);
+      if (unread.length) { await api.post('/notifications/read', token, { notification_ids: unread }); onRead?.(); }
+    } catch (reason) { setError(message(reason)); } finally { if (showSpinner) setLoading(false); }
+  }, [onRead, studentId, token]);
+  useEffect(() => {
+    void load();
+    const timer = setInterval(() => { if (AppState.currentState === 'active') void load(false); }, 15_000);
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') void load(false); });
+    return () => { clearInterval(timer); subscription.remove(); };
+  }, [load]);
+  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={colors.primary} />}><Back onPress={onBack} /><PageIntro title="Notifications" description="Live attendance, homework, results, and school updates." />{error ? <Empty text={error} /> : items.map(item => <View key={item.id} style={[styles.card, shadows.card, !item.read_at && { borderColor: colors.secondary, backgroundColor: '#FFF8E8' }]}><View style={styles.icon}><Ionicons name={notificationIcon(item.category)} size={20} color={colors.primary} /></View><View style={styles.grow}><Text style={styles.cardTitle}>{item.title}</Text><Text style={styles.body}>{item.message}</Text><Text style={styles.noticeMeta}>{notificationLabel(item.category)} · {new Date(item.created_at).toLocaleString()}</Text></View>{!item.read_at && <View style={styles.unreadDot} />}</View>)}{!loading && !error && !items.length && <Empty text="You’re all caught up." />}</ScrollView>;
 }
+
+function notificationIcon(category: string): React.ComponentProps<typeof Ionicons>['name'] { if (category.includes('attendance')) return 'checkmark-circle-outline'; if (category.includes('homework')) return 'book-outline'; if (category === 'results') return 'trophy-outline'; return 'notifications-outline'; }
+function notificationLabel(category: string) { return ({ daily_attendance: 'Daily attendance', subject_attendance: 'Subject attendance', homework: 'Homework', homework_feedback: 'Homework results', results: 'Exam results' } as Record<string, string>)[category] ?? 'School update'; }
 
 export function LeaveRequestScreen({ token, onBack }: { token: string; onBack: () => void }) {
   const [history, setHistory] = useState<Array<{ id: number; type: string; starts_on: string; ends_on: string; status: string }>>([]);
@@ -158,5 +176,5 @@ function Empty({ text }: { text: string }) { return <View style={styles.placehol
 function message(error: unknown) { return error instanceof ApiError ? error.message : 'Check your connection and try again.'; }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 40, gap: 12 }, back: { alignSelf: 'flex-start', minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, borderRadius: radius.full, backgroundColor: colors.secondary }, backText: { color: colors.primary, fontWeight: '900' }, card: { minHeight: 92, flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md }, icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }, grow: { flex: 1 }, cardTitle: { color: colors.textDark, fontSize: 15, fontWeight: '900' }, body: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 5 }, label: { color: colors.textDark, fontSize: 12, fontWeight: '800', marginBottom: 7 }, input: { minHeight: 52, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.textDark, paddingHorizontal: 14 }, multiline: { minHeight: 110, paddingTop: 14, textAlignVertical: 'top' }, primaryButton: { minHeight: 54, borderRadius: radius.md, backgroundColor: colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, primaryText: { color: colors.primary, fontSize: 14, fontWeight: '900' }, pressed: { opacity: 0.62 }, placeholder: { minHeight: 190, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', padding: 24, borderWidth: 1, borderColor: colors.border }, largeIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }, placeholderTitle: { color: colors.textDark, fontSize: 20, fontWeight: '900', marginTop: 14 }, placeholderText: { color: colors.textMuted, textAlign: 'center', lineHeight: 20, marginTop: 7 },
+  content: { padding: 20, paddingBottom: 40, gap: 12 }, back: { alignSelf: 'flex-start', minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, borderRadius: radius.full, backgroundColor: colors.secondary }, backText: { color: colors.primary, fontWeight: '900' }, card: { minHeight: 92, flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md }, icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }, grow: { flex: 1 }, cardTitle: { color: colors.textDark, fontSize: 15, fontWeight: '900' }, body: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 5 }, noticeMeta: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 8 }, unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.secondary, marginTop: 4 }, label: { color: colors.textDark, fontSize: 12, fontWeight: '800', marginBottom: 7 }, input: { minHeight: 52, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.textDark, paddingHorizontal: 14 }, multiline: { minHeight: 110, paddingTop: 14, textAlignVertical: 'top' }, primaryButton: { minHeight: 54, borderRadius: radius.md, backgroundColor: colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, primaryText: { color: colors.primary, fontSize: 14, fontWeight: '900' }, pressed: { opacity: 0.62 }, placeholder: { minHeight: 190, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', padding: 24, borderWidth: 1, borderColor: colors.border }, largeIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' }, placeholderTitle: { color: colors.textDark, fontSize: 20, fontWeight: '900', marginTop: 14 }, placeholderText: { color: colors.textMuted, textAlign: 'center', lineHeight: 20, marginTop: 7 },
 });

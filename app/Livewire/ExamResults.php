@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\AuditLog;
 use App\Models\Exam;
+use App\Services\StudentActivityNotifier;
 use App\Services\TeacherExamReport;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,6 +45,7 @@ class ExamResults extends Component
             'status' => 'published',
         ]);
         AuditLog::record($exam->school_id, 'exam.results.published', $exam);
+        app(StudentActivityNotifier::class)->results($exam);
         session()->flash('status', 'Results published to eligible learners and parents.');
     }
 

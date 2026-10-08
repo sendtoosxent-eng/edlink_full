@@ -304,6 +304,26 @@
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Notification schedule</label>
                     <input wire:model="settings.notification_schedule" class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="e.g. Daily at 8:00 AM">
                 </div>
+                <div class="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+                    <h3 class="text-sm font-bold text-slate-900">Parent & learner in-app notifications</h3>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Choose which school activities appear immediately in linked parent and learner Edlink accounts.</p>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                        @foreach([
+                            'notification_daily_attendance_enabled' => ['Daily general attendance', 'Arrival and whole-day attendance status.'],
+                            'notification_subject_attendance_enabled' => ['Subject attendance', 'Attendance recorded for an individual lesson.'],
+                            'notification_homework_enabled' => ['New homework', 'Homework published to the learner’s class.'],
+                            'notification_homework_feedback_enabled' => ['Homework results', 'Scores and feedback after work is reviewed.'],
+                            'notification_results_enabled' => ['Published exam results', 'An alert when approved examination results are released.'],
+                        ] as $key => [$label, $help])
+                            <label class="flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4">
+                                <span><span class="block text-xs font-bold text-slate-800">{{ $label }}</span><span class="mt-1 block text-[11px] leading-4 text-slate-400">{{ $help }}</span></span>
+                                <select wire:model="settings.{{ $key }}" class="shrink-0 rounded-lg border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-bold text-slate-700 focus:border-yellow-400 focus:ring-yellow-400">
+                                    <option value="enabled">On</option><option value="disabled">Off</option>
+                                </select>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </section>
 

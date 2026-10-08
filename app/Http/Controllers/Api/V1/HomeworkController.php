@@ -6,56 +6,89 @@ use App\Http\Requests\Api\HomeworkStoreRequest;
 use App\Models\AuditLog;
 use App\Models\HomeworkAssignment;
 use App\Models\HomeworkSubmission;
+use App\Models\Stream;
+use App\Services\StudentActivityNotifier;
+use App\Services\StudentSubjectSelectionService;
 use App\Support\MobileAccess;
 use App\Support\TeacherAcademicScope;
-use App\Services\StudentSubjectSelectionService;
-use App\Models\Stream;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class HomeworkController extends ApiController
 {
     public function index(Request $request)
     {
-        $user=$request->user();
-        if(TeacherAcademicScope::isTeacher($user)) $query=HomeworkAssignment::where('school_id',$user->school_id)->where('teacher_id',$user->id);
-        else { $student=MobileAccess::student($user,$request->integer('student_id')?:null); $query=HomeworkAssignment::where('school_id',$user->school_id)->whereNotNull('published_at')->where('school_class_id',$student->school_class_id)->where(fn($q)=>$q->whereNull('stream_id')->orWhere('stream_id',$student->stream_id));if(StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)){$selections=$student->subjectSelections()->where('term_id',$user->school->currentTerm()?->id);if((clone $selections)->exists())$query->whereIn('subject_id',(clone $selections)->pluck('subject_id'));} }
+        $user = $request->user();
+        if (TeacherAcademicScope::isTeacher($user)) {
+            $query = HomeworkAssignment::where('school_id', $user->school_id)->where('teacher_id', $user->id);
+        } else {
+            $student = MobileAccess::student($user, $request->integer('student_id') ?: null);
+            $query = HomeworkAssignment::where('school_id', $user->school_id)->whereNotNull('published_at')->where('school_class_id', $student->school_class_id)->where(fn ($q) => $q->whereNull('stream_id')->orWhere('stream_id', $student->stream_id));
+            if (StudentSubjectSelectionService::classUsesIndividualSelection($student->schoolClass)) {
+                $selections = $student->subjectSelections()->where('term_id', $user->school->currentTerm()?->id);
+                if ((clone $selections)->exists()) {
+                    $query->whereIn('subject_id', (clone $selections)->pluck('subject_id'));
+                }
+            }
+        }
         if (isset($student)) {
             $request->validate(['status' => ['nullable', 'in:all,pending,submitted,reviewed']]);
             $own = fn ($q) => $q->where('student_id', $student->id);
             $query->with(['submissions' => $own]);
-            if ($request->input('status') === 'pending') $query->whereDoesntHave('submissions', $own);
-            if ($request->input('status') === 'submitted') $query->whereHas('submissions', fn ($q) => $own($q)->whereIn('status', ['submitted', 'late']));
-            if ($request->input('status') === 'reviewed') $query->whereHas('submissions', fn ($q) => $own($q)->where('status', 'reviewed'));
+            if ($request->input('status') === 'pending') {
+                $query->whereDoesntHave('submissions', $own);
+            }
+            if ($request->input('status') === 'submitted') {
+                $query->whereHas('submissions', fn ($q) => $own($q)->whereIn('status', ['submitted', 'late']));
+            }
+            if ($request->input('status') === 'reviewed') {
+                $query->whereHas('submissions', fn ($q) => $own($q)->where('status', 'reviewed'));
+            }
         }
-        return $this->ok($query->with(['subject:id,name','schoolClass:id,name'])->orderBy('due_at')->paginate(20));
+
+        return $this->ok($query->with(['subject:id,name', 'schoolClass:id,name'])->orderBy('due_at')->paginate(20));
     }
+
     public function store(HomeworkStoreRequest $request)
     {
-        $user=$request->user(); abort_unless(TeacherAcademicScope::isTeacher($user),403); $data=$request->validated();
+        $user = $request->user();
+        abort_unless(TeacherAcademicScope::isTeacher($user), 403);
+        $data = $request->validated();
         $term = $user->school->currentTerm();
         abort_unless($term, 422, 'Open a term before creating homework.');
-        MobileAccess::teacherStudentQuery($user,$data['school_class_id'],$data['subject_id'])->exists();
-        if (! empty($data['stream_id'])) abort_unless(Stream::where('school_id',$user->school_id)->where('school_class_id',$data['school_class_id'])->whereKey($data['stream_id'])->exists(),422,'The selected stream does not belong to this class.');
+        MobileAccess::teacherStudentQuery($user, $data['school_class_id'], $data['subject_id'])->exists();
+        if (! empty($data['stream_id'])) {
+            abort_unless(Stream::where('school_id', $user->school_id)->where('school_class_id', $data['school_class_id'])->whereKey($data['stream_id'])->exists(), 422, 'The selected stream does not belong to this class.');
+        }
         $attachment = $request->file('attachment');
         unset($data['attachment']);
-        if ($attachment) { $data['attachment_path'] = $attachment->store('homework/assignments', 'local'); $data['attachment_name'] = $attachment->getClientOriginalName(); }
-        $assignment=HomeworkAssignment::create([...$data,'school_id'=>$user->school_id,'term_id'=>$term->id,'teacher_id'=>$user->id,'published_at'=>now()]);
-        AuditLog::record($user->school_id,'mobile.homework.created',$assignment);
+        if ($attachment) {
+            $data['attachment_path'] = $attachment->store('homework/assignments', 'local');
+            $data['attachment_name'] = $attachment->getClientOriginalName();
+        }
+        $assignment = HomeworkAssignment::create([...$data, 'school_id' => $user->school_id, 'term_id' => $term->id, 'teacher_id' => $user->id, 'published_at' => now()]);
+        app(StudentActivityNotifier::class)->homework($assignment);
+        AuditLog::record($user->school_id, 'mobile.homework.created', $assignment);
+
         return $this->ok($assignment);
     }
-    public function show(Request $request,int $assignment)
+
+    public function show(Request $request, int $assignment)
     {
-        $item=MobileAccess::homework($request->user(),$assignment,$request->integer('student_id')?:null);
-        $item->load(['subject:id,name','schoolClass:id,name']);
+        $item = MobileAccess::homework($request->user(), $assignment, $request->integer('student_id') ?: null);
+        $item->load(['subject:id,name', 'schoolClass:id,name']);
         if (TeacherAcademicScope::isTeacher($request->user())) {
             $item->load(['submissions.student:id,name,admission_no']);
         } else {
-            $student=MobileAccess::student($request->user(),$request->integer('student_id')?:null);
-            $item->setRelation('submissions',$item->submissions()->where('student_id',$student->id)->get());
+            $student = MobileAccess::student($request->user(), $request->integer('student_id') ?: null);
+            $item->setRelation('submissions', $item->submissions()->where('student_id', $student->id)->get());
         }
+
         return $this->ok($item);
     }
-    public function submit(Request $request,int $assignment)
+
+    public function submit(Request $request, int $assignment)
     {
         abort_unless($request->user()->role === 'student', 403);
         $data = $request->validate([
@@ -66,9 +99,11 @@ class HomeworkController extends ApiController
         $item = MobileAccess::homework($request->user(), $assignment, $data['student_id'] ?? null);
         $student = MobileAccess::student($request->user(), $data['student_id'] ?? null);
         $existing = HomeworkSubmission::where(['homework_assignment_id' => $item->id, 'student_id' => $student->id])->first();
-        if ($existing && !empty($data['base_version']) && $existing->updated_at->gt($data['base_version'])) return response()->json(['message' => 'Submission changed on another device. Reload the assignment before submitting.', 'code' => 'conflict'], 409);
-        if (!filled($data['answer'] ?? null) && !$request->hasFile('attachment') && !$existing?->attachment_path) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['answer' => 'Write an answer or attach your work.']);
+        if ($existing && ! empty($data['base_version']) && $existing->updated_at->gt($data['base_version'])) {
+            return response()->json(['message' => 'Submission changed on another device. Reload the assignment before submitting.', 'code' => 'conflict'], 409);
+        }
+        if (! filled($data['answer'] ?? null) && ! $request->hasFile('attachment') && ! $existing?->attachment_path) {
+            throw ValidationException::withMessages(['answer' => 'Write an answer or attach your work.']);
         }
         $file = $request->file('attachment');
         $path = $file?->store('homework/submissions', 'local');
@@ -81,10 +116,15 @@ class HomeworkController extends ApiController
                 'score' => null, 'feedback' => null, 'reviewed_at' => null,
             ]);
         } catch (\Throwable $exception) {
-            if ($path) \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }
             throw $exception;
         }
-        if ($path && $existing?->attachment_path) \Illuminate\Support\Facades\Storage::disk('local')->delete($existing->attachment_path);
+        if ($path && $existing?->attachment_path) {
+            Storage::disk('local')->delete($existing->attachment_path);
+        }
+
         return $this->ok($submission);
     }
 
@@ -92,22 +132,27 @@ class HomeworkController extends ApiController
     {
         $item = MobileAccess::homework($request->user(), $assignment);
         $record = $submission ? HomeworkSubmission::where('homework_assignment_id', $item->id)->findOrFail($submission) : $item;
-        if ($submission && !TeacherAcademicScope::isTeacher($request->user())) {
+        if ($submission && ! TeacherAcademicScope::isTeacher($request->user())) {
             abort_unless($record->student_id === MobileAccess::student($request->user(), $request->integer('student_id') ?: null)->id, 403);
         }
-        abort_unless($record->attachment_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($record->attachment_path), 404);
-        return \Illuminate\Support\Facades\Storage::disk('local')->download($record->attachment_path, $record->attachment_name, ['Cache-Control' => 'private, no-store']);
+        abort_unless($record->attachment_path && Storage::disk('local')->exists($record->attachment_path), 404);
+
+        return Storage::disk('local')->download($record->attachment_path, $record->attachment_name, ['Cache-Control' => 'private, no-store']);
     }
 
-    public function review(Request $request,int $assignment,int $submission)
+    public function review(Request $request, int $assignment, int $submission)
     {
-        $data=$request->validate(['score'=>['nullable','numeric','min:0'],'feedback'=>['nullable','string','max:10000']]);
-        $item=MobileAccess::homework($request->user(),$assignment);
-        abort_unless(TeacherAcademicScope::isTeacher($request->user()),403);
-        if($data['score']!==null) abort_if($data['score']>$item->maximum_score,422,'The score exceeds the assignment maximum.');
-        $record=HomeworkSubmission::where('homework_assignment_id',$item->id)->whereKey($submission)->firstOrFail();
-        $record->update(['score'=>$data['score'],'feedback'=>$data['feedback']??null,'reviewed_at'=>now(),'status'=>'reviewed']);
-        AuditLog::record($request->user()->school_id,'mobile.homework.reviewed',$record,['assignment_id'=>$item->id]);
+        $data = $request->validate(['score' => ['nullable', 'numeric', 'min:0'], 'feedback' => ['nullable', 'string', 'max:10000']]);
+        $item = MobileAccess::homework($request->user(), $assignment);
+        abort_unless(TeacherAcademicScope::isTeacher($request->user()), 403);
+        if ($data['score'] !== null) {
+            abort_if($data['score'] > $item->maximum_score, 422, 'The score exceeds the assignment maximum.');
+        }
+        $record = HomeworkSubmission::where('homework_assignment_id', $item->id)->whereKey($submission)->firstOrFail();
+        $record->update(['score' => $data['score'], 'feedback' => $data['feedback'] ?? null, 'reviewed_at' => now(), 'status' => 'reviewed']);
+        app(StudentActivityNotifier::class)->homeworkFeedback($record);
+        AuditLog::record($request->user()->school_id, 'mobile.homework.reviewed', $record, ['assignment_id' => $item->id]);
+
         return $this->ok($record);
     }
 }

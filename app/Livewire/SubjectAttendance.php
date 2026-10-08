@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\AttendanceRecord;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Services\StudentActivityNotifier;
 use App\Services\StudentSubjectSelectionService;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,7 +78,7 @@ class SubjectAttendance extends Component
 
         DB::transaction(function () use ($school, $term, $slot, $students): void {
             foreach ($students as $student) {
-                AttendanceRecord::updateOrCreate(
+                $record = AttendanceRecord::updateOrCreate(
                     ['student_id' => $student->id, 'attendance_date' => today()->toDateString(), 'session_key' => $this->sessionKey($slot)],
                     [
                         'school_id' => $school->id,
@@ -90,6 +91,7 @@ class SubjectAttendance extends Component
                         'recorded_by' => Auth::id(),
                     ],
                 );
+                app(StudentActivityNotifier::class)->attendance($record);
             }
         });
 

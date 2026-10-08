@@ -16,7 +16,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { api, ApiError } from './src/api';
 import { AuthFlow } from './src/screens/auth/AuthFlow';
@@ -93,15 +93,19 @@ export default function App() {
 function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: string; user: User; onSignOut: () => Promise<void>; onUserUpdated: (user: User) => void }) {
   const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : user.role === 'student' ? ['home', 'homework', 'results', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
   const [tab, setTab] = useState<Tab>('home'); const [activeRoot, setActiveRoot] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const clearUnreadNotifications = useCallback(() => setUnreadNotifications(0), []);
   useEffect(() => { if (tabs.includes(tab)) setActiveRoot(tab); }, [tab]);
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
+  const refreshUnread = useCallback(async () => { try { const suffix = studentId ? `?student_id=${studentId}` : ''; const response = await api.get<{ data: unknown[] }>(`/notifications${suffix}`, token); setUnreadNotifications(Number(response.meta?.unread_count ?? 0)); } catch { /* Keep the app usable while notification refresh retries. */ } }, [studentId, token]);
+  useEffect(() => { void refreshUnread(); const timer = setInterval(() => { if (AppState.currentState === 'active') void refreshUnread(); }, 15_000); const subscription = AppState.addEventListener('change', state => { if (state === 'active') void refreshUnread(); }); return () => { clearInterval(timer); subscription.remove(); }; }, [refreshUnread]);
   return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
     {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
     <TabTransition screen={tab} order={tabs}>
       {user.role === 'teacher' && ACCESS_SECTIONS.some(section => section.tab === tab) && <TeacherAccessScreen key={tab} token={token} section={tab as AccessTab} navigate={setTab} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'class_students' && <TeacherDirectoryScreen token={token} onBack={() => setTab('class_access')} />}
       {user.role === 'teacher' && tab === 'teacher_schedule' && <TeacherScheduleScreen token={token} onBack={() => setTab('teaching_access')} />}
-      {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} />}
+      {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
       {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
       {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
       {user.role === 'student' && tab === 'student_schedule' && <TeacherScheduleScreen token={token} backLabel="Dashboard" onBack={() => setTab('home')} />}
@@ -111,7 +115,7 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
       {tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'more' && <ProfileScreen onUserUpdated={onUserUpdated} token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
-      {tab === 'notifications' && <NotificationsScreen token={token} onBack={() => setTab('home')} />}
+      {tab === 'notifications' && <NotificationsScreen token={token} studentId={studentId} onRead={clearUnreadNotifications} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'view_marks' && <TeacherMarksScreen token={token} readOnly onBack={() => setTab('home')} />}
@@ -123,13 +127,13 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   </SafeAreaView>;
 }
 
-function Home({ token, user, studentId, navigate, onSignOut }: { token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; onSignOut: () => Promise<void> }) {
+function Home({ token, user, studentId, navigate, onSignOut, unreadNotifications }: { token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
   const [data, setData] = useState<Dashboard>(); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (user.role === 'parent' && !studentId) { setLoading(false); return; } setLoading(true); try { setData((await api.get<Dashboard>(`/dashboard${studentId ? `?student_id=${studentId}` : ''}`, token)).data); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [studentId, token, user.role]);
   useEffect(() => { void load(); }, [load]);
   if (loading && !data) return <InlineLoading />; if (error && !data) return <ErrorState message={error} retry={load} />; if (!data) return <Empty message="Choose a learner to view their dashboard." />;
   const total = Object.values(data.attendance).reduce((sum, value) => sum + Number(value), 0); const rate = total ? Math.round(Number(data.attendance.present ?? 0) / total * 100) : null;
-  const props = { data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson }, attendanceRate: rate, navigate, refreshing: loading, onRefresh: load };
+  const props = { data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson, unreadNotifications }, attendanceRate: rate, navigate, refreshing: loading, onRefresh: load };
   if (user.role === 'teacher') return <TeacherDashboardScreen {...props} />;
   if (user.role === 'parent') return <ParentDashboardScreen {...props} />;
   return <StudentDashboardScreen {...props} />;

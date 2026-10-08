@@ -1,146 +1,204 @@
 <?php
 
+use App\Models\AttendanceRecord;
 use App\Models\Designation;
 use App\Models\Exam;
 use App\Models\ExamPaper;
+use App\Models\FeePayment;
 use App\Models\HomeworkAssignment;
 use App\Models\HomeworkSubmission;
 use App\Models\School;
 use App\Models\SchoolClass;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
+use App\Notifications\QueuedVerifyEmail;
+use App\Services\StudentActivityNotifier;
+use App\Support\DesignationPermissions;
+use App\Support\MobileTeacherWorkspace;
+use Database\Seeders\EdlTeachCurrentTermDemoSeeder;
+use Database\Seeders\EdlTeachHomeworkDemoSeeder;
+use Database\Seeders\EdlTeachTimetableDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 function mobileFixture(): array
 {
-    $school=School::create(['name'=>'Edlink Mobile School','slug'=>'mobile-school','school_number'=>'EDL-MOB01','license_status'=>'active','license_expires_at'=>now()->addYear()]);
-    $other=School::create(['name'=>'Other School','slug'=>'other-school','school_number'=>'EDL-OTHER','license_status'=>'active','license_expires_at'=>now()->addYear()]);
-    $term=Term::create(['school_id'=>$school->id,'name'=>'Term 1','year'=>2026,'is_current'=>true,'status'=>'open','locked'=>false]);
-    $class=SchoolClass::create(['school_id'=>$school->id,'name'=>'S2','education_stage'=>'secondary','sort_order'=>1]);
-    $otherClass=SchoolClass::create(['school_id'=>$other->id,'name'=>'S2','education_stage'=>'secondary','sort_order'=>1]);
-    $designation=Designation::create(['school_id'=>$school->id,'name'=>'Subject Teacher','permissions'=>['attendance.subject','exams.marks']]);
-    $teacher=User::factory()->create(['school_id'=>$school->id,'designation_id'=>$designation->id,'role'=>'teacher','email'=>'teacher@mobile.test']);
-    $parent=User::factory()->create(['school_id'=>$school->id,'role'=>'parent']);
-    $studentUser=User::factory()->create(['school_id'=>$school->id,'role'=>'student']);
-    $student=Student::create(['school_id'=>$school->id,'school_class_id'=>$class->id,'name'=>'Linked Learner','admission_no'=>'M-1','status'=>'active']);
-    $unlinked=Student::create(['school_id'=>$school->id,'school_class_id'=>$class->id,'name'=>'Unlinked Learner','admission_no'=>'M-2','status'=>'active']);
-    $foreign=Student::create(['school_id'=>$other->id,'school_class_id'=>$otherClass->id,'name'=>'Foreign Learner','admission_no'=>'O-1','status'=>'active']);
-    foreach([$parent,$studentUser] as $user) DB::table('portal_user_students')->insert(['school_id'=>$school->id,'user_id'=>$user->id,'student_id'=>$student->id,'relationship'=>$user->role,'created_at'=>now(),'updated_at'=>now()]);
-    $subject=Subject::create(['school_id'=>$school->id,'name'=>'Mathematics','code'=>'MAT']);
-    DB::table('staff_subjects')->insert(['school_id'=>$school->id,'term_id'=>$term->id,'user_id'=>$teacher->id,'subject_id'=>$subject->id,'school_class_id'=>$class->id,'created_at'=>now(),'updated_at'=>now()]);
-    $exam=Exam::create(['school_id'=>$school->id,'term_id'=>$term->id,'school_class_id'=>$class->id,'name'=>'Midterm']);
-    $paper=ExamPaper::create(['exam_id'=>$exam->id,'subject_id'=>$subject->id,'maximum_score'=>100,'weighting'=>1]);
-    return compact('school','term','class','teacher','parent','studentUser','student','unlinked','foreign','subject','paper');
+    $school = School::create(['name' => 'Edlink Mobile School', 'slug' => 'mobile-school', 'school_number' => 'EDL-MOB01', 'license_status' => 'active', 'license_expires_at' => now()->addYear()]);
+    $other = School::create(['name' => 'Other School', 'slug' => 'other-school', 'school_number' => 'EDL-OTHER', 'license_status' => 'active', 'license_expires_at' => now()->addYear()]);
+    $term = Term::create(['school_id' => $school->id, 'name' => 'Term 1', 'year' => 2026, 'is_current' => true, 'status' => 'open', 'locked' => false]);
+    $class = SchoolClass::create(['school_id' => $school->id, 'name' => 'S2', 'education_stage' => 'secondary', 'sort_order' => 1]);
+    $otherClass = SchoolClass::create(['school_id' => $other->id, 'name' => 'S2', 'education_stage' => 'secondary', 'sort_order' => 1]);
+    $designation = Designation::create(['school_id' => $school->id, 'name' => 'Subject Teacher', 'permissions' => ['attendance.subject', 'exams.marks']]);
+    $teacher = User::factory()->create(['school_id' => $school->id, 'designation_id' => $designation->id, 'role' => 'teacher', 'email' => 'teacher@mobile.test']);
+    $parent = User::factory()->create(['school_id' => $school->id, 'role' => 'parent']);
+    $studentUser = User::factory()->create(['school_id' => $school->id, 'role' => 'student']);
+    $student = Student::create(['school_id' => $school->id, 'school_class_id' => $class->id, 'name' => 'Linked Learner', 'admission_no' => 'M-1', 'status' => 'active']);
+    $unlinked = Student::create(['school_id' => $school->id, 'school_class_id' => $class->id, 'name' => 'Unlinked Learner', 'admission_no' => 'M-2', 'status' => 'active']);
+    $foreign = Student::create(['school_id' => $other->id, 'school_class_id' => $otherClass->id, 'name' => 'Foreign Learner', 'admission_no' => 'O-1', 'status' => 'active']);
+    foreach ([$parent, $studentUser] as $user) {
+        DB::table('portal_user_students')->insert(['school_id' => $school->id, 'user_id' => $user->id, 'student_id' => $student->id, 'relationship' => $user->role, 'created_at' => now(), 'updated_at' => now()]);
+    }
+    $subject = Subject::create(['school_id' => $school->id, 'name' => 'Mathematics', 'code' => 'MAT']);
+    DB::table('staff_subjects')->insert(['school_id' => $school->id, 'term_id' => $term->id, 'user_id' => $teacher->id, 'subject_id' => $subject->id, 'school_class_id' => $class->id, 'created_at' => now(), 'updated_at' => now()]);
+    $exam = Exam::create(['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $class->id, 'name' => 'Midterm']);
+    $paper = ExamPaper::create(['exam_id' => $exam->id, 'subject_id' => $subject->id, 'maximum_score' => 100, 'weighting' => 1]);
+
+    return compact('school', 'term', 'class', 'teacher', 'parent', 'studentUser', 'student', 'unlinked', 'foreign', 'subject', 'paper');
 }
 
 it('issues and revokes a device-specific sanctum token', function () {
-    $data=mobileFixture();
-    $response=$this->postJson('/api/v1/auth/login',['school_number'=>'edl-mob01','email'=>'teacher@mobile.test','password'=>'password','device_name'=>'Pixel 8']);
-    $token=$response->assertOk()->assertJsonPath('data.user.role','teacher')->json('data.token');
+    $data = mobileFixture();
+    $response = $this->postJson('/api/v1/auth/login', ['school_number' => 'edl-mob01', 'email' => 'teacher@mobile.test', 'password' => 'password', 'device_name' => 'Pixel 8']);
+    $token = $response->assertOk()->assertJsonPath('data.user.role', 'teacher')->json('data.token');
     $this->withToken($token)->postJson('/api/v1/auth/logout')->assertOk();
     $this->assertDatabaseCount('personal_access_tokens', 0);
 });
 
 it('looks up an active school before asking for account details', function () {
-    $data=mobileFixture();
-    $this->postJson('/api/v1/auth/school',['school_number'=>'edl-mob01'])
-        ->assertOk()->assertJsonPath('data.number','EDL-MOB01')->assertJsonPath('data.name',$data['school']->name);
-    $this->postJson('/api/v1/auth/school',['school_number'=>'EDL-MISSING'])->assertUnprocessable();
+    $data = mobileFixture();
+    $this->postJson('/api/v1/auth/school', ['school_number' => 'edl-mob01'])
+        ->assertOk()->assertJsonPath('data.number', 'EDL-MOB01')->assertJsonPath('data.name', $data['school']->name);
+    $this->postJson('/api/v1/auth/school', ['school_number' => 'EDL-MISSING'])->assertUnprocessable();
 });
 
 it('requires and verifies a six digit otp for a real school', function () {
-    Notification::fake(); Config::set('app.otp_force',true); $data=mobileFixture();
-    $login=$this->postJson('/api/v1/auth/login',['school_number'=>$data['school']->school_number,'email'=>$data['teacher']->email,'password'=>'password','device_name'=>'Pixel 8','expected_role'=>'teacher'])
-        ->assertOk()->assertJsonPath('data.otp_required',true)->assertJsonMissingPath('data.token');
-    $challenge=$login->json('data.challenge_token'); $code=$data['teacher']->fresh()->getRawOriginal('otp_code');
-    $this->postJson('/api/v1/auth/otp/verify',['challenge_token'=>$challenge,'code'=>'000000','device_name'=>'Pixel 8'])->assertUnprocessable();
-    $this->postJson('/api/v1/auth/otp/verify',['challenge_token'=>$challenge,'code'=>$code,'device_name'=>'Pixel 8'])
-        ->assertOk()->assertJsonPath('data.otp_required',false)->assertJsonPath('data.user.role','teacher')->assertJsonStructure(['data'=>['token']]);
+    Notification::fake();
+    Config::set('app.otp_force', true);
+    $data = mobileFixture();
+    $login = $this->postJson('/api/v1/auth/login', ['school_number' => $data['school']->school_number, 'email' => $data['teacher']->email, 'password' => 'password', 'device_name' => 'Pixel 8', 'expected_role' => 'teacher'])
+        ->assertOk()->assertJsonPath('data.otp_required', true)->assertJsonMissingPath('data.token');
+    $challenge = $login->json('data.challenge_token');
+    $code = $data['teacher']->fresh()->getRawOriginal('otp_code');
+    $this->postJson('/api/v1/auth/otp/verify', ['challenge_token' => $challenge, 'code' => '000000', 'device_name' => 'Pixel 8'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/otp/verify', ['challenge_token' => $challenge, 'code' => $code, 'device_name' => 'Pixel 8'])
+        ->assertOk()->assertJsonPath('data.otp_required', false)->assertJsonPath('data.user.role', 'teacher')->assertJsonStructure(['data' => ['token']]);
     expect($data['teacher']->fresh()->getRawOriginal('otp_code'))->toBeNull();
 });
 
 it('keeps mobile password recovery school scoped and non revealing', function () {
-    Notification::fake(); $data=mobileFixture();
-    $this->postJson('/api/v1/auth/password/forgot',['school_number'=>$data['school']->school_number,'email'=>$data['teacher']->email])
-        ->assertOk()->assertJsonPath('data.message','If those details match an Edlink account, a password reset link has been sent by email.');
-    $this->postJson('/api/v1/auth/password/forgot',['school_number'=>'EDL-NONE','email'=>'missing@example.test'])
-        ->assertOk()->assertJsonPath('data.message','If those details match an Edlink account, a password reset link has been sent by email.');
+    Notification::fake();
+    $data = mobileFixture();
+    $this->postJson('/api/v1/auth/password/forgot', ['school_number' => $data['school']->school_number, 'email' => $data['teacher']->email])
+        ->assertOk()->assertJsonPath('data.message', 'If those details match an Edlink account, a password reset link has been sent by email.');
+    $this->postJson('/api/v1/auth/password/forgot', ['school_number' => 'EDL-NONE', 'email' => 'missing@example.test'])
+        ->assertOk()->assertJsonPath('data.message', 'If those details match an Edlink account, a password reset link has been sent by email.');
 });
 
 it('does not allow a parent to select an unlinked or cross-school learner', function () {
-    $data=mobileFixture(); Sanctum::actingAs($data['parent'],['mobile']);
+    $data = mobileFixture();
+    Sanctum::actingAs($data['parent'], ['mobile']);
     $this->getJson('/api/v1/results?student_id='.$data['student']->id)->assertOk();
     $this->getJson('/api/v1/results?student_id='.$data['unlinked']->id)->assertNotFound();
     $this->getJson('/api/v1/results?student_id='.$data['foreign']->id)->assertNotFound();
 });
 
 it('rejects hostile learner identifiers in teacher attendance writes', function () {
-    $data=mobileFixture(); Sanctum::actingAs($data['teacher'],['mobile']);
-    $payload=['school_class_id'=>$data['class']->id,'subject_id'=>$data['subject']->id,'attendance_date'=>today()->toDateString(),'session_key'=>'math-1','records'=>[['student_id'=>$data['foreign']->id,'status'=>'present']]];
-    $this->postJson('/api/v1/attendance',$payload)->assertForbidden();
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $payload = ['school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'attendance_date' => today()->toDateString(), 'session_key' => 'math-1', 'records' => [['student_id' => $data['foreign']->id, 'status' => 'present']]];
+    $this->postJson('/api/v1/attendance', $payload)->assertForbidden();
 });
 
 it('gives a class teacher a daily register and permits saving only that class', function () {
-    $data=mobileFixture();
-    $data['class']->update(['class_teacher_user_id'=>$data['teacher']->id]);
-    Sanctum::actingAs($data['teacher'],['mobile']);
+    $data = mobileFixture();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
 
     $this->getJson('/api/v1/teaching-assignments')->assertOk()
-        ->assertJsonFragment(['school_class_id'=>$data['class']->id,'subject_id'=>null,'attendance_type'=>'daily']);
+        ->assertJsonFragment(['school_class_id' => $data['class']->id, 'subject_id' => null, 'attendance_type' => 'daily']);
 
-    $payload=['school_class_id'=>$data['class']->id,'subject_id'=>null,'attendance_date'=>today()->toDateString(),'session_key'=>'daily','records'=>[['student_id'=>$data['student']->id,'status'=>'present']]];
-    $this->postJson('/api/v1/attendance',$payload)->assertOk()->assertJsonPath('data.saved',1);
-    $this->assertDatabaseHas('attendance_records',['student_id'=>$data['student']->id,'session_key'=>'daily','recorded_by'=>$data['teacher']->id]);
+    $payload = ['school_class_id' => $data['class']->id, 'subject_id' => null, 'attendance_date' => today()->toDateString(), 'session_key' => 'daily', 'records' => [['student_id' => $data['student']->id, 'status' => 'present']]];
+    $this->postJson('/api/v1/attendance', $payload)->assertOk()->assertJsonPath('data.saved', 1);
+    $this->assertDatabaseHas('attendance_records', ['student_id' => $data['student']->id, 'session_key' => 'daily', 'recorded_by' => $data['teacher']->id]);
+});
+
+it('delivers enabled student activity notifications to linked parents and learners in real time', function () {
+    $data = mobileFixture();
+    $record = AttendanceRecord::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id,
+        'student_id' => $data['student']->id, 'school_class_id' => $data['class']->id,
+        'attendance_date' => today(), 'session_key' => 'daily', 'status' => 'present', 'recorded_by' => $data['teacher']->id]);
+    app(StudentActivityNotifier::class)->attendance($record);
+
+    $this->assertDatabaseHas('school_notifications', ['user_id' => $data['parent']->id, 'student_id' => $data['student']->id, 'category' => 'daily_attendance']);
+    $this->assertDatabaseHas('school_notifications', ['user_id' => $data['studentUser']->id, 'student_id' => $data['student']->id, 'category' => 'daily_attendance']);
+
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $response = $this->getJson('/api/v1/notifications?student_id='.$data['student']->id)->assertOk()
+        ->assertJsonPath('meta.unread_count', 1)->assertJsonPath('data.data.0.category', 'daily_attendance');
+    $id = $response->json('data.data.0.id');
+    $this->postJson('/api/v1/notifications/read', ['notification_ids' => [$id]])->assertOk()->assertJsonPath('data.read', 1);
+    $this->assertDatabaseHas('school_notification_reads', ['school_notification_id' => $id, 'user_id' => $data['parent']->id]);
+});
+
+it('keeps daily and subject attendance notification settings independent', function () {
+    $data = mobileFixture();
+    SchoolSetting::create(['school_id' => $data['school']->id, 'key' => 'notification_daily_attendance_enabled', 'value' => 'disabled']);
+    SchoolSetting::create(['school_id' => $data['school']->id, 'key' => 'notification_subject_attendance_enabled', 'value' => 'enabled']);
+    $daily = AttendanceRecord::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'student_id' => $data['student']->id,
+        'school_class_id' => $data['class']->id, 'attendance_date' => today(), 'session_key' => 'daily', 'status' => 'present']);
+    $subject = AttendanceRecord::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'student_id' => $data['student']->id,
+        'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'attendance_date' => today(), 'session_key' => 'subject:math', 'status' => 'late']);
+    $notifier = app(StudentActivityNotifier::class);
+    $notifier->attendance($daily);
+    $notifier->attendance($subject);
+
+    expect(DB::table('school_notifications')->where('category', 'daily_attendance')->count())->toBe(0)
+        ->and(DB::table('school_notifications')->where('category', 'subject_attendance')->count())->toBe(2);
 });
 
 it('protects mobile payment information by learner linkage', function () {
-    $data=mobileFixture(); Sanctum::actingAs($data['parent'],['mobile']);
+    $data = mobileFixture();
+    Sanctum::actingAs($data['parent'], ['mobile']);
     $this->getJson('/api/v1/payments?student_id='.$data['student']->id)->assertOk()
-        ->assertJsonPath('data.student.id',$data['student']->id)
-        ->assertJsonStructure(['data'=>['summary'=>['due','paid','balance'],'payments']]);
+        ->assertJsonPath('data.student.id', $data['student']->id)
+        ->assertJsonStructure(['data' => ['summary' => ['due', 'paid', 'balance'], 'payments']]);
     $this->getJson('/api/v1/payments?student_id='.$data['unlinked']->id)->assertNotFound();
     $this->getJson('/api/v1/payments?student_id='.$data['foreign']->id)->assertNotFound();
 });
 
 it('allows teachers to request their own leave and blocks portal roles', function () {
-    $data=mobileFixture(); $payload=['type'=>'Sick leave','starts_on'=>today()->addDay()->toDateString(),'ends_on'=>today()->addDays(2)->toDateString(),'reason'=>'Medical appointment'];
-    Sanctum::actingAs($data['teacher'],['mobile']);
-    $this->postJson('/api/v1/leave-requests',$payload)->assertOk()->assertJsonPath('data.status','pending');
-    $this->assertDatabaseHas('staff_leaves',['school_id'=>$data['school']->id,'user_id'=>$data['teacher']->id,'status'=>'pending']);
+    $data = mobileFixture();
+    $payload = ['type' => 'Sick leave', 'starts_on' => today()->addDay()->toDateString(), 'ends_on' => today()->addDays(2)->toDateString(), 'reason' => 'Medical appointment'];
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->postJson('/api/v1/leave-requests', $payload)->assertOk()->assertJsonPath('data.status', 'pending');
+    $this->assertDatabaseHas('staff_leaves', ['school_id' => $data['school']->id, 'user_id' => $data['teacher']->id, 'status' => 'pending']);
 
-    Sanctum::actingAs($data['parent'],['mobile']);
-    $this->postJson('/api/v1/leave-requests',$payload)->assertForbidden();
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $this->postJson('/api/v1/leave-requests', $payload)->assertForbidden();
 });
 
 it('rejects marks outside the assigned paper and maximum score', function () {
-    $data=mobileFixture(); Sanctum::actingAs($data['teacher'],['mobile']);
-    $this->putJson('/api/v1/exam-papers/'.$data['paper']->id.'/marks',['marks'=>[['student_id'=>$data['student']->id,'score'=>101]]])->assertUnprocessable();
-    $this->putJson('/api/v1/exam-papers/'.$data['paper']->id.'/marks',['marks'=>[['student_id'=>$data['foreign']->id,'score'=>60]]])->assertForbidden();
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->putJson('/api/v1/exam-papers/'.$data['paper']->id.'/marks', ['marks' => [['student_id' => $data['student']->id, 'score' => 101]]])->assertUnprocessable();
+    $this->putJson('/api/v1/exam-papers/'.$data['paper']->id.'/marks', ['marks' => [['student_id' => $data['foreign']->id, 'score' => 60]]])->assertForbidden();
 });
 
 it('shows portal users only their own homework submission and protects teacher review', function () {
-    $data=mobileFixture();
-    $assignment=HomeworkAssignment::create(['school_id'=>$data['school']->id,'term_id'=>$data['term']->id,'teacher_id'=>$data['teacher']->id,'school_class_id'=>$data['class']->id,'subject_id'=>$data['subject']->id,'title'=>'Private work','instructions'=>'Answer privately.','maximum_score'=>20,'due_at'=>now()->addDay(),'published_at'=>now()]);
-    $own=HomeworkSubmission::create(['homework_assignment_id'=>$assignment->id,'student_id'=>$data['student']->id,'submitted_by'=>$data['studentUser']->id,'answer'=>'My private answer','submitted_at'=>now(),'status'=>'submitted']);
-    HomeworkSubmission::create(['homework_assignment_id'=>$assignment->id,'student_id'=>$data['unlinked']->id,'submitted_by'=>$data['studentUser']->id,'answer'=>'Another private answer','submitted_at'=>now(),'status'=>'submitted']);
+    $data = mobileFixture();
+    $assignment = HomeworkAssignment::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'teacher_id' => $data['teacher']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'title' => 'Private work', 'instructions' => 'Answer privately.', 'maximum_score' => 20, 'due_at' => now()->addDay(), 'published_at' => now()]);
+    $own = HomeworkSubmission::create(['homework_assignment_id' => $assignment->id, 'student_id' => $data['student']->id, 'submitted_by' => $data['studentUser']->id, 'answer' => 'My private answer', 'submitted_at' => now(), 'status' => 'submitted']);
+    HomeworkSubmission::create(['homework_assignment_id' => $assignment->id, 'student_id' => $data['unlinked']->id, 'submitted_by' => $data['studentUser']->id, 'answer' => 'Another private answer', 'submitted_at' => now(), 'status' => 'submitted']);
 
-    Sanctum::actingAs($data['studentUser'],['mobile']);
+    Sanctum::actingAs($data['studentUser'], ['mobile']);
     $this->getJson("/api/v1/homework/{$assignment->id}")->assertOk()
-        ->assertJsonCount(1,'data.submissions')->assertJsonPath('data.submissions.0.id',$own->id)
-        ->assertJsonMissing(['answer'=>'Another private answer']);
-    $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review",['score'=>10])->assertForbidden();
+        ->assertJsonCount(1, 'data.submissions')->assertJsonPath('data.submissions.0.id', $own->id)
+        ->assertJsonMissing(['answer' => 'Another private answer']);
+    $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review", ['score' => 10])->assertForbidden();
 
-    Sanctum::actingAs($data['teacher'],['mobile']);
-    $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review",['score'=>21])->assertUnprocessable();
-    $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review",['score'=>18,'feedback'=>'Well done'])->assertOk();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review", ['score' => 21])->assertUnprocessable();
+    $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review", ['score' => 18, 'feedback' => 'Well done'])->assertOk();
 });
 
 it('looks up only an active school account and returns just its display identity', function () {
@@ -241,8 +299,8 @@ it('renders native teacher report modules with the website scopes', function () 
 
 it('downloads homework attachments only within the teachers own assignments', function () {
     $data = mobileFixture();
-    \Illuminate\Support\Facades\Storage::fake('local');
-    \Illuminate\Support\Facades\Storage::disk('local')->put('homework/example.txt', 'Homework content');
+    Storage::fake('local');
+    Storage::disk('local')->put('homework/example.txt', 'Homework content');
     $assignment = HomeworkAssignment::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'teacher_id' => $data['teacher']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'title' => 'Native attachment', 'instructions' => 'Read', 'maximum_score' => 10, 'due_at' => now()->addDay(), 'published_at' => now(), 'attachment_path' => 'homework/example.txt', 'attachment_name' => 'example.txt']);
     Sanctum::actingAs($data['teacher'], ['mobile']);
     $this->get('/api/v1/homework/'.$assignment->id.'/attachment')->assertOk()->assertDownload('example.txt');
@@ -251,15 +309,16 @@ it('downloads homework attachments only within the teachers own assignments', fu
     $this->getJson('/api/v1/homework/'.$assignment->id.'/attachment')->assertForbidden();
 });
 
-
 it('provides a native response for every permission-granted workspace tool', function () {
     $data = mobileFixture();
-    $data['teacher']->designation->update(['permissions' => array_keys(\App\Support\DesignationPermissions::groups())]);
+    $data['teacher']->designation->update(['permissions' => array_keys(DesignationPermissions::groups())]);
     $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
     Sanctum::actingAs($data['teacher'], ['mobile']);
-    $tools = \App\Support\MobileTeacherWorkspace::forUser($data['teacher'])['tools'];
+    $tools = MobileTeacherWorkspace::forUser($data['teacher'])['tools'];
     foreach ($tools as $tool) {
-        if ($tool['native'] || $tool['id'] === 'exams.results') continue;
+        if ($tool['native'] || $tool['id'] === 'exams.results') {
+            continue;
+        }
         $this->getJson('/api/v1/teacher/tools/'.$tool['id'])->assertOk()->assertJsonStructure(['data' => ['title', 'rows', 'forms', 'page', 'last_page']]);
     }
 });
@@ -284,7 +343,7 @@ it('lets a teacher update only their own profile fields', function () {
     expect($data['teacher']->fresh()->school_id)->toBe($data['school']->id);
     expect($data['teacher']->fresh()->email_verified_at)->toBeNull();
     expect($data['parent']->fresh()->email)->not->toBe('updated@mobile.test');
-    Notification::assertSentTo($data['teacher'], \App\Notifications\QueuedVerifyEmail::class);
+    Notification::assertSentTo($data['teacher'], QueuedVerifyEmail::class);
 });
 
 it('validates profile changes and rejects non teacher writes', function () {
@@ -298,18 +357,18 @@ it('validates profile changes and rejects non teacher writes', function () {
 });
 
 it('stores a teacher profile photo and rejects invalid uploads', function () {
-    \Illuminate\Support\Facades\Storage::fake('public');
+    Storage::fake('public');
     $data = mobileFixture();
     Sanctum::actingAs($data['teacher'], ['mobile']);
     $this->post('/api/v1/auth/profile', [
         'name' => $data['teacher']->name, 'email' => $data['teacher']->email,
-        'photo' => \Illuminate\Http\UploadedFile::fake()->image('avatar.jpg'),
+        'photo' => UploadedFile::fake()->image('avatar.jpg'),
     ], ['Accept' => 'application/json'])->assertOk()->assertJsonStructure(['data' => ['avatar_url']]);
     $path = $data['teacher']->fresh()->avatar_path;
-    \Illuminate\Support\Facades\Storage::disk('public')->assertExists($path);
+    Storage::disk('public')->assertExists($path);
     $this->post('/api/v1/auth/profile', [
         'name' => $data['teacher']->name, 'email' => $data['teacher']->email,
-        'photo' => \Illuminate\Http\UploadedFile::fake()->create('invalid.pdf', 10, 'application/pdf'),
+        'photo' => UploadedFile::fake()->create('invalid.pdf', 10, 'application/pdf'),
     ], ['Accept' => 'application/json'])->assertUnprocessable();
     expect($data['teacher']->fresh()->avatar_path)->toBe($path);
 });
@@ -330,14 +389,14 @@ it('filters student homework using only their own submissions', function () {
 });
 
 it('accepts student homework attachments and clears stale review on resubmission', function () {
-    \Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
     $data = mobileFixture();
     $assignment = HomeworkAssignment::create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'teacher_id' => $data['teacher']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'title' => 'Student attachment', 'instructions' => 'Upload your work', 'maximum_score' => 10, 'due_at' => now()->subDay(), 'published_at' => now()]);
     Sanctum::actingAs($data['studentUser'], ['mobile']);
     $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => ''])->assertUnprocessable();
-    $this->post('/api/v1/homework/'.$assignment->id.'/submit', ['attachment' => \Illuminate\Http\UploadedFile::fake()->create('answer.txt', 1, 'text/plain')], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('data.status', 'late');
+    $this->post('/api/v1/homework/'.$assignment->id.'/submit', ['attachment' => UploadedFile::fake()->create('answer.txt', 1, 'text/plain')], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('data.status', 'late');
     $submission = HomeworkSubmission::where('student_id', $data['student']->id)->firstOrFail();
-    \Illuminate\Support\Facades\Storage::disk('local')->assertExists($submission->attachment_path);
+    Storage::disk('local')->assertExists($submission->attachment_path);
     $submission->update(['status' => 'reviewed', 'score' => 8, 'feedback' => 'Good', 'reviewed_at' => now()]);
     $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Revised', 'base_version' => now()->subHour()->toISOString()])->assertConflict();
     $this->postJson('/api/v1/homework/'.$assignment->id.'/submit', ['answer' => 'Revised', 'base_version' => $submission->fresh()->updated_at->toISOString()])->assertOk()->assertJsonPath('data.score', null)->assertJsonPath('data.feedback', null)->assertJsonPath('data.status', 'late');
@@ -347,23 +406,23 @@ it('accepts student homework attachments and clears stale review on resubmission
 it('seeds current-term demo data visible through the student mobile API without duplicate payments', function () {
     $data = mobileFixture();
     $data['school']->update(['school_number' => 'EDL-TEACH', 'is_demo' => true]);
-    $this->seed(\Database\Seeders\EdlTeachCurrentTermDemoSeeder::class);
-    $this->seed(\Database\Seeders\EdlTeachCurrentTermDemoSeeder::class);
+    $this->seed(EdlTeachCurrentTermDemoSeeder::class);
+    $this->seed(EdlTeachCurrentTermDemoSeeder::class);
     Sanctum::actingAs($data['studentUser'], ['mobile']);
     $this->getJson('/api/v1/payments')->assertOk()->assertJsonCount(2, 'data.payments')->assertJsonPath('data.summary.paid', 150000);
     $this->getJson('/api/v1/attendance')->assertOk()->assertJsonCount(7, 'data.data');
     $results = $this->getJson('/api/v1/results')->assertOk();
     expect(collect($results->json('data'))->firstWhere('name', 'App Demo Current Term Assessment')['papers'])->toHaveCount(3);
-    expect(\App\Models\AttendanceRecord::where('student_id', $data['student']->id)->where('term_id', $data['term']->id)->count())->toBe(7);
-    expect(\App\Models\FeePayment::where('school_id', $data['foreign']->school_id)->count())->toBe(0);
+    expect(AttendanceRecord::where('student_id', $data['student']->id)->where('term_id', $data['term']->id)->count())->toBe(7);
+    expect(FeePayment::where('school_id', $data['foreign']->school_id)->count())->toBe(0);
 });
 
 it('adds a full demo week for every class without duplicates or cross-school lessons', function () {
     $data = mobileFixture();
     $data['school']->update(['school_number' => 'EDL-TEACH', 'is_demo' => true]);
     $emptyClass = SchoolClass::create(['school_id' => $data['school']->id, 'name' => 'Empty class']);
-    $this->seed(\Database\Seeders\EdlTeachTimetableDemoSeeder::class);
-    $this->seed(\Database\Seeders\EdlTeachTimetableDemoSeeder::class);
+    $this->seed(EdlTeachTimetableDemoSeeder::class);
+    $this->seed(EdlTeachTimetableDemoSeeder::class);
     expect(DB::table('timetable_slots')->where('school_class_id', $emptyClass->id)->count())->toBe(21);
     expect(DB::table('timetable_slots')->where('school_id', $data['foreign']->school_id)->count())->toBe(0);
     Sanctum::actingAs($data['studentUser'], ['mobile']);
@@ -374,8 +433,8 @@ it('adds a full demo week for every class without duplicates or cross-school les
 it('seeds published demo homework that students can open without duplicating assignments', function () {
     $data = mobileFixture();
     $data['school']->update(['school_number' => 'EDL-TEACH', 'is_demo' => true]);
-    $this->seed(\Database\Seeders\EdlTeachHomeworkDemoSeeder::class);
-    $this->seed(\Database\Seeders\EdlTeachHomeworkDemoSeeder::class);
+    $this->seed(EdlTeachHomeworkDemoSeeder::class);
+    $this->seed(EdlTeachHomeworkDemoSeeder::class);
     Sanctum::actingAs($data['studentUser'], ['mobile']);
     $response = $this->getJson('/api/v1/homework')->assertOk()->assertJsonCount(3, 'data.data');
     $assignment = $response->json('data.data.0');

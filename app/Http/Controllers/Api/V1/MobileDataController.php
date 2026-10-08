@@ -157,6 +157,47 @@ class MobileDataController extends ApiController
             ->whereIn('target_audience', ['all', $role, $role.'s'])->latest('sent_at')->paginate(20));
     }
 
+    public function notifications(Request $request)
+    {
+        $user = $request->user();
+        $studentId = $request->integer('student_id') ?: null;
+        if ($studentId) {
+            MobileAccess::student($user, $studentId);
+        }
+
+        $query = DB::table('school_notifications as notifications')
+            ->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
+                $join->on('reads.school_notification_id', '=', 'notifications.id')->where('reads.user_id', $user->id);
+            })
+            ->where('notifications.school_id', $user->school_id)
+            ->where(fn ($builder) => $builder->whereNull('notifications.user_id')->orWhere('notifications.user_id', $user->id))
+            ->when($studentId, fn ($builder) => $builder->where(fn ($items) => $items->whereNull('notifications.student_id')->orWhere('notifications.student_id', $studentId)))
+            ->latest('notifications.created_at');
+
+        $unreadCount = (clone $query)->whereNull('reads.read_at')->count();
+        $notifications = $query->paginate(30, ['notifications.id', 'notifications.student_id', 'notifications.title',
+            'notifications.message', 'notifications.type', 'notifications.category', 'notifications.created_at', 'reads.read_at']);
+
+        return $this->ok($notifications, ['unread_count' => $unreadCount]);
+    }
+
+    public function markNotificationsRead(Request $request)
+    {
+        $data = $request->validate(['notification_ids' => ['nullable', 'array'], 'notification_ids.*' => ['integer']]);
+        $user = $request->user();
+        $ids = DB::table('school_notifications')->where('school_id', $user->school_id)
+            ->where(fn ($query) => $query->whereNull('user_id')->orWhere('user_id', $user->id))
+            ->when(! empty($data['notification_ids']), fn ($query) => $query->whereIn('id', $data['notification_ids']))->pluck('id');
+        foreach ($ids as $id) {
+            DB::table('school_notification_reads')->updateOrInsert(
+                ['school_notification_id' => $id, 'user_id' => $user->id],
+                ['read_at' => now(), 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
+        return $this->ok(['read' => $ids->count()]);
+    }
+
     public function children(Request $request)
     {
         abort_unless($request->user()->role === 'parent', 403);
