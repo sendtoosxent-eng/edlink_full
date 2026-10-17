@@ -92,6 +92,7 @@
             <dl class="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2">
                 @foreach([
                     ['Email', $school->email ?: 'Not provided'],
+                    ['Login address', \App\Support\SchoolSubdomain::url($school->subdomain) ?: 'Not configured'],
                     ['Phone', $school->phone ?: 'Not provided'],
                     ['Address', $school->address ?: 'Not provided'],
                     ['Website', $school->website ?: 'Not provided'],

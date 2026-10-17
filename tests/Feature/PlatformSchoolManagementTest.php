@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\DemoRegistration;
 use App\Models\PlatformAdmin;
 use App\Models\PlatformAuditLog;
-use App\Models\DemoRegistration;
 use App\Models\School;
 use App\Models\User;
 use App\Notifications\QueuedResetPassword;
@@ -168,6 +168,7 @@ it('creates a school and its first administrator together', function () {
         ->withSession(['platform_mfa_passed' => true, 'platform_last_activity' => now()->timestamp])
         ->post(route('platform.schools.store'), [
             'name' => 'New Trial Academy',
+            'subdomain' => 'new-trial-academy',
             'school_type' => 'secondary',
             'email' => 'office@newtrial.test',
             'license_plan' => 'basic',
@@ -185,6 +186,7 @@ it('creates a school and its first administrator together', function () {
 
     $this->assertDatabaseHas('schools', [
         'id' => $school->id,
+        'subdomain' => 'new-trial-academy',
         'license_status' => 'trial',
         'status' => 'demo',
         'is_demo' => true,
@@ -198,4 +200,52 @@ it('creates a school and its first administrator together', function () {
 
     expect($school->demo_expires_at?->equalTo($school->license_expires_at))->toBeTrue()
         ->and(PlatformAuditLog::where('event', 'platform.school.created')->exists())->toBeTrue();
+});
+
+it('redirects a configured school subdomain homepage directly to login', function () {
+    config(['edlink.root_domain' => 'edlink.space']);
+    School::create([
+        'name' => 'Godisable School',
+        'slug' => 'godisable-school',
+        'subdomain' => 'godisable',
+        'license_status' => 'active',
+        'is_demo' => false,
+    ]);
+
+    $this->get('http://godisable.edlink.space/')
+        ->assertRedirect('/login');
+
+    $this->get('http://godisable.edlink.space/login')
+        ->assertOk()
+        ->assertSee('School number');
+});
+
+it('keeps the public welcome page on the main domain', function () {
+    config(['edlink.root_domain' => 'edlink.space']);
+
+    $this->get('http://edlink.space/')
+        ->assertOk();
+});
+
+it('requires a unique valid subdomain during platform onboarding', function () {
+    $admin = platformSchoolAdmin();
+    School::create(['name' => 'Existing School', 'slug' => 'existing-school', 'subdomain' => 'existing']);
+
+    $payload = [
+        'name' => 'Another School',
+        'subdomain' => 'existing',
+        'school_type' => 'secondary',
+        'license_plan' => 'basic',
+        'license_status' => 'active',
+        'license_started_at' => now()->toDateString(),
+        'admin_name' => 'School Administrator',
+        'admin_email' => 'admin@another.test',
+        'admin_password' => 'Temporary123!',
+        'admin_password_confirmation' => 'Temporary123!',
+    ];
+
+    $this->actingAs($admin, 'platform')
+        ->withSession(['platform_mfa_passed' => true, 'platform_last_activity' => now()->timestamp])
+        ->post(route('platform.schools.store'), $payload)
+        ->assertSessionHasErrors('subdomain');
 });

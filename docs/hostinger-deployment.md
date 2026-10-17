@@ -17,6 +17,26 @@ requests to Laravel's public directory.
 
 Never upload a real `.env` file to Git or include it in a public download.
 
+## School login subdomains
+
+Set the tenant root domain in production:
+
+```env
+APP_URL=https://edlink.space
+EDLINK_ROOT_DOMAIN=edlink.space
+```
+
+Create a wildcard DNS record for `*.edlink.space` that points to the same server
+as `edlink.space`, configure the wildcard host to use this application's `public`
+directory, and enable an SSL certificate that covers `*.edlink.space`. If the
+hosting plan does not support wildcard hosts, each school subdomain must be added
+to hPanel when it is assigned in the platform dashboard.
+
+The platform school-onboarding form stores only the subdomain label, such as
+`godisable`. A request to `https://godisable.edlink.space/` then redirects to
+`https://godisable.edlink.space/login`. The normal school-number field remains
+part of the login process.
+
 ## First deployment
 
 1. In hPanel, select PHP 8.3 or newer and create a MySQL database and user.

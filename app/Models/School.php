@@ -20,7 +20,7 @@ class School extends Model
     protected $fillable = [
         'school_number', 'school_group_id', 'branch_name',
         'name', 'school_type',
-        'slug',
+        'slug', 'subdomain',
         'status',
         'is_demo',
         'demo_expires_at',

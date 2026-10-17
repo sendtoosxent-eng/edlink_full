@@ -7,9 +7,9 @@ use App\Models\PlatformAuditLog;
 use App\Models\School;
 use App\Models\User;
 use App\Support\SubscriptionPlans;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -40,8 +40,11 @@ class PlatformSchoolController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['subdomain' => Str::lower(trim((string) $request->input('subdomain')))]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'subdomain' => ['required', 'string', 'max:63', 'regex:/^(?!-)[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::notIn(['www', 'app', 'api', 'platform', 'mail', 'admin', 'support']), Rule::unique('schools', 'subdomain')],
             'school_type' => ['required', Rule::in(['kindergarten', 'primary', 'secondary', 'combined', 'tertiary'])],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -56,7 +59,7 @@ class PlatformSchoolController extends Controller
         ]);
 
         $schoolData = collect($validated)->only([
-            'name', 'school_type', 'email', 'phone', 'address', 'license_plan',
+            'name', 'subdomain', 'school_type', 'email', 'phone', 'address', 'license_plan',
             'license_status', 'license_started_at', 'license_expires_at',
         ])->all();
         $schoolData['slug'] = Str::slug($schoolData['name']).'-'.Str::lower(Str::random(5));
@@ -139,8 +142,12 @@ class PlatformSchoolController extends Controller
 
     public function update(Request $request, School $school): RedirectResponse
     {
+        $subdomain = Str::lower(trim((string) $request->input('subdomain')));
+        $request->merge(['subdomain' => $subdomain !== '' ? $subdomain : null]);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'subdomain' => ['nullable', 'string', 'max:63', 'regex:/^(?!-)[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::notIn(['www', 'app', 'api', 'platform', 'mail', 'admin', 'support']), Rule::unique('schools', 'subdomain')->ignore($school->id)],
             'school_type' => ['required', Rule::in(['kindergarten', 'primary', 'secondary', 'combined', 'tertiary'])],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -223,57 +230,57 @@ class PlatformSchoolController extends Controller
 
         try {
             DB::transaction(function () use ($school, $request, $snapshot): void {
-            $tenantEmails = $school->users()->whereNotNull('email')->pluck('email');
+                $tenantEmails = $school->users()->whereNotNull('email')->pluck('email');
 
-            // Releasing these claims lets a deliberately removed demo register again.
-            if ($tenantEmails->isNotEmpty()) {
-                DemoRegistration::whereIn('email', $tenantEmails)->delete();
-            }
+                // Releasing these claims lets a deliberately removed demo register again.
+                if ($tenantEmails->isNotEmpty()) {
+                    DemoRegistration::whereIn('email', $tenantEmails)->delete();
+                }
 
-            // Users are nullable on school deletion, so remove tenant accounts explicitly.
-            // A deliberate platform-level demo purge may remove accounting evidence; normal
-            // operational deletion remains restricted so posted evidence cannot disappear.
-            // Operational finance rows use restrictive links to cash accounts and accounting
-            // dimensions. Remove those children before their parent ledgers and dimensions.
-            DB::table('cash_pool_entries')->where('school_id', $school->id)->delete();
-            DB::table('finance_reconciliations')->where('school_id', $school->id)->delete();
-            DB::table('finance_ledger_entries')->where('school_id', $school->id)->update(['reversal_of_id' => null]);
-            DB::table('finance_ledger_entries')->where('school_id', $school->id)->delete();
-            DB::table('financial_account_transfers')->where('school_id', $school->id)->delete();
-            DB::table('expenses')->where('school_id', $school->id)->delete();
-            DB::table('fee_payments')->where('school_id', $school->id)->delete();
-            DB::table('payroll_runs')->where('school_id', $school->id)->delete();
-            DB::table('graduation_records')->where('school_id', $school->id)->delete();
-            DB::table('fixed_asset_depreciations')->where('school_id', $school->id)->delete();
-            DB::table('fixed_assets')->where('school_id', $school->id)->delete();
-            DB::table('fixed_asset_categories')->where('school_id', $school->id)->delete();
-            DB::table('accounting_budget_lines')->whereIn('accounting_budget_id', DB::table('accounting_budgets')->where('school_id', $school->id)->select('id'))->delete();
-            DB::table('accounting_budgets')->where('school_id', $school->id)->delete();
-            DB::table('student_fee_assessments')->where('school_id', $school->id)->delete();
-            DB::table('accounting_journal_lines')->where('school_id', $school->id)->delete();
-            DB::table('students')->where('school_id', $school->id)->delete();
-            DB::table('accounting_journals')->where('school_id', $school->id)->whereNotNull('reversal_of_id')->delete();
-            DB::table('accounting_journals')->where('school_id', $school->id)->delete();
-            DB::table('account_mappings')->where('school_id', $school->id)->delete();
-            DB::table('financial_accounts')->where('school_id', $school->id)->update(['ledger_account_id' => null]);
-            while (DB::table('ledger_accounts')->where('school_id', $school->id)->exists()) {
-                DB::table('ledger_accounts')->where('school_id', $school->id)->whereNotIn('id', DB::table('ledger_accounts')->where('school_id', $school->id)->whereNotNull('parent_id')->select('parent_id'))->delete();
-            }
-            DB::table('cost_centres')->where('school_id', $school->id)->delete();
-            DB::table('accounting_funds')->where('school_id', $school->id)->delete();
-            DB::table('accounting_suppliers')->where('school_id', $school->id)->delete();
-            DB::table('accounting_periods')->where('school_id', $school->id)->delete();
-            DB::table('fiscal_years')->where('school_id', $school->id)->delete();
-            $school->users()->delete();
-            $school->delete();
+                // Users are nullable on school deletion, so remove tenant accounts explicitly.
+                // A deliberate platform-level demo purge may remove accounting evidence; normal
+                // operational deletion remains restricted so posted evidence cannot disappear.
+                // Operational finance rows use restrictive links to cash accounts and accounting
+                // dimensions. Remove those children before their parent ledgers and dimensions.
+                DB::table('cash_pool_entries')->where('school_id', $school->id)->delete();
+                DB::table('finance_reconciliations')->where('school_id', $school->id)->delete();
+                DB::table('finance_ledger_entries')->where('school_id', $school->id)->update(['reversal_of_id' => null]);
+                DB::table('finance_ledger_entries')->where('school_id', $school->id)->delete();
+                DB::table('financial_account_transfers')->where('school_id', $school->id)->delete();
+                DB::table('expenses')->where('school_id', $school->id)->delete();
+                DB::table('fee_payments')->where('school_id', $school->id)->delete();
+                DB::table('payroll_runs')->where('school_id', $school->id)->delete();
+                DB::table('graduation_records')->where('school_id', $school->id)->delete();
+                DB::table('fixed_asset_depreciations')->where('school_id', $school->id)->delete();
+                DB::table('fixed_assets')->where('school_id', $school->id)->delete();
+                DB::table('fixed_asset_categories')->where('school_id', $school->id)->delete();
+                DB::table('accounting_budget_lines')->whereIn('accounting_budget_id', DB::table('accounting_budgets')->where('school_id', $school->id)->select('id'))->delete();
+                DB::table('accounting_budgets')->where('school_id', $school->id)->delete();
+                DB::table('student_fee_assessments')->where('school_id', $school->id)->delete();
+                DB::table('accounting_journal_lines')->where('school_id', $school->id)->delete();
+                DB::table('students')->where('school_id', $school->id)->delete();
+                DB::table('accounting_journals')->where('school_id', $school->id)->whereNotNull('reversal_of_id')->delete();
+                DB::table('accounting_journals')->where('school_id', $school->id)->delete();
+                DB::table('account_mappings')->where('school_id', $school->id)->delete();
+                DB::table('financial_accounts')->where('school_id', $school->id)->update(['ledger_account_id' => null]);
+                while (DB::table('ledger_accounts')->where('school_id', $school->id)->exists()) {
+                    DB::table('ledger_accounts')->where('school_id', $school->id)->whereNotIn('id', DB::table('ledger_accounts')->where('school_id', $school->id)->whereNotNull('parent_id')->select('parent_id'))->delete();
+                }
+                DB::table('cost_centres')->where('school_id', $school->id)->delete();
+                DB::table('accounting_funds')->where('school_id', $school->id)->delete();
+                DB::table('accounting_suppliers')->where('school_id', $school->id)->delete();
+                DB::table('accounting_periods')->where('school_id', $school->id)->delete();
+                DB::table('fiscal_years')->where('school_id', $school->id)->delete();
+                $school->users()->delete();
+                $school->delete();
 
-            PlatformAuditLog::create([
-                'platform_admin_id' => Auth::guard('platform')->id(),
-                'event' => 'platform.school.deleted',
-                'metadata' => $snapshot,
-                'ip_address' => $request->ip(),
-                'user_agent' => str($request->userAgent() ?? '')->limit(500)->toString() ?: null,
-            ]);
+                PlatformAuditLog::create([
+                    'platform_admin_id' => Auth::guard('platform')->id(),
+                    'event' => 'platform.school.deleted',
+                    'metadata' => $snapshot,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => str($request->userAgent() ?? '')->limit(500)->toString() ?: null,
+                ]);
             });
         } catch (QueryException $exception) {
             report($exception);

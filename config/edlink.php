@@ -1,6 +1,9 @@
 <?php
 
+use App\Support\DemoAccounts;
+
 return [
+    'root_domain' => env('EDLINK_ROOT_DOMAIN', parse_url(env('APP_URL', 'https://edlink.space'), PHP_URL_HOST) ?: 'edlink.space'),
     'finance_approval_threshold' => (float) env('FINANCE_APPROVAL_THRESHOLD', 1000000),
     'backup_retention_days' => (int) env('BACKUP_RETENTION_DAYS', 30),
     'privacy_retention_days' => (int) env('PRIVACY_RETENTION_DAYS', 2555),
@@ -14,7 +17,7 @@ return [
     'demo' => [
         'school_number' => env('EDLINK_DEMO_SCHOOL_NUMBER', 'EDL-TEACH'),
         'password' => env('EDLINK_DEMO_PASSWORD', 'TeacherTest@2026'),
-        'school_types' => \App\Support\DemoAccounts::SCHOOL_TYPES,
+        'school_types' => DemoAccounts::SCHOOL_TYPES,
         'roles' => [
             'administrator' => ['label' => 'School Administrator', 'email' => 'admin@edlink.local', 'description' => 'Explore school setup, staff, academics, finance and reports.'],
             'class-teacher' => ['label' => 'Class Teacher', 'email' => 'class.teacher@edlink.local', 'description' => 'View every subject and learner in the assigned class.'],
