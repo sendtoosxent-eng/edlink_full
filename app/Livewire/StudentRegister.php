@@ -28,6 +28,8 @@ class StudentRegister extends Component
     // Step 1 — Bio data
     public string $name = '';
 
+    public string $lin = '';
+
     public string $date_of_birth = '';
 
     public string $gender = '';
@@ -73,8 +75,11 @@ class StudentRegister extends Component
 
     public function goToStep2(): void
     {
+        $schoolId = Auth::user()->school_id;
+        $this->lin = strtoupper(trim($this->lin));
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'lin' => ['nullable', 'string', 'max:100', Rule::unique('students', 'lin')->where('school_id', $schoolId)],
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'in:male,female'],
             'admission_date' => ['required', 'date'],
@@ -148,7 +153,9 @@ class StudentRegister extends Component
         ]);
 
         $school = Auth::user()->school;
+        $this->lin = strtoupper(trim($this->lin));
         $this->validate([
+            'lin' => ['nullable', 'string', 'max:100', Rule::unique('students', 'lin')->where('school_id', $school->id)],
             'school_class_id' => ['required', Rule::exists('school_classes', 'id')->where('school_id', $school->id)],
             'stream_id' => ['nullable', Rule::exists('streams', 'id')->where(fn ($query) => $query->where('school_id', $school->id)->where('school_class_id', $this->school_class_id))],
             'student_category_id' => ['required', Rule::exists('student_categories', 'id')->where('school_id', $school->id)],
@@ -183,6 +190,7 @@ class StudentRegister extends Component
                 'status' => 'active',
                 'name' => $this->name,
                 'admission_no' => null,
+                'lin' => filled($this->lin) ? strtoupper(trim($this->lin)) : null,
                 'date_of_birth' => $this->date_of_birth ?: null,
                 'gender' => $this->gender ?: null,
                 'admission_date' => $this->admission_date,

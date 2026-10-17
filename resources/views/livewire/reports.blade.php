@@ -47,7 +47,7 @@
     <div class="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm print:hidden">
         <div class="mb-4">
             <span class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Filter Records</span>
-            <p class="text-xs text-slate-500">Verified school records, filtered by branch, term, category, and date range. The logged-in branch is selected by default.</p>
+            <p class="text-xs text-slate-500">Verified school records, filtered by branch, term, class, category, and date range. The logged-in branch is selected by default.</p>
         </div>
         
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -76,6 +76,22 @@
                         <option value="">{{ $allBranches ? 'Current term in each branch' : 'Current term' }}</option>
                         @foreach($terms as $item)
                             <option value="{{ $item->id }}">{{ $item->name }}, {{ $item->year }} · {{ ucfirst($item->status) }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Selector -->
+            <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Class</label>
+                <div class="relative">
+                    <select wire:model.live="classId" @disabled($allBranches) class="w-full appearance-none text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-medium text-slate-800 transition">
+                        <option value="">{{ $allBranches ? 'Choose one branch to filter' : 'All classes' }}</option>
+                        @foreach($classes as $class)
+                            <option value="{{ $class->id }}">{{ $class->name }}</option>
                         @endforeach
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
@@ -146,11 +162,11 @@
             <!-- Clear Action -->
             <div class="flex items-end lg:col-span-2">
                 <button type="button" wire:click="clearFilters" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-200 transition duration-200">
-                    Clear Student Filters
+                    Clear Class & Student Filters
                 </button>
             </div>
         </div>
-        <p class="mt-3 text-[11px] text-slate-400">Gender, category, and fee-status filters apply to learner-based reports. In All branches mode, each branch uses its own current term; all results and exports remain read-only.</p>
+        <p class="mt-3 text-[11px] text-slate-400">Class, gender, category, and fee-status filters apply to relevant learner, finance, attendance, and academic reports. Choose one branch to filter by class.</p>
     </div>
 
     <!-- REPORT TYPES SELECTOR GRID -->
@@ -190,7 +206,7 @@
         <header class="flex items-center justify-between gap-4 border-b border-slate-100 p-5 sm:p-6 bg-slate-50/50">
             <div>
                 <h2 class="text-base font-extrabold text-slate-900">{{ ucwords(str_replace('_',' ',$report)) }}</h2>
-                <p class="mt-0.5 text-xs text-slate-500">{{ $allBranches ? 'All authorised branches · current term per branch' : ($term ? $term->name.', '.$term->year : 'All available school records') }}</p>
+                <p class="mt-0.5 text-xs text-slate-500">{{ $allBranches ? 'All authorised branches · current term per branch' : (($term ? $term->name.', '.$term->year : 'All available school records').($selectedClass ? ' · '.$selectedClass->name : ' · All classes')) }}</p>
             </div>
             <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-white transition shadow-sm print:hidden">
                 <i class="fa fa-print text-[11px]"></i>

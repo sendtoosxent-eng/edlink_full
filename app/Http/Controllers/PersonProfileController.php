@@ -29,9 +29,13 @@ class PersonProfileController extends Controller
     {
         $this->authorizeStudent($student);
         abort_unless($request->user()->hasPermission('students.manage'), 403);
+        $request->merge([
+            'lin' => filled($request->input('lin')) ? strtoupper(trim((string) $request->input('lin'))) : null,
+        ]);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'admission_no' => ['nullable', 'string', 'max:100', Rule::unique('students', 'admission_no')->where('school_id', $request->user()->school_id)->ignore($student->id)],
+            'lin' => ['nullable', 'string', 'max:100', Rule::unique('students', 'lin')->where('school_id', $request->user()->school_id)->ignore($student->id)],
             'date_of_birth' => ['nullable', 'date'], 'gender' => ['nullable', 'in:male,female'],
             'nationality' => ['nullable', 'string', 'max:100'], 'religion' => ['nullable', 'string', 'max:100'],
             'blood_group' => ['nullable', 'string', 'max:10'], 'home_address' => ['nullable', 'string', 'max:500'],

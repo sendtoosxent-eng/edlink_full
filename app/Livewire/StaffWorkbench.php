@@ -31,17 +31,51 @@ class StaffWorkbench extends Component
         $isTeacherWorkspace = ! $isFinanceWorkspace && TeacherAcademicScope::isTeacher($user);
 
         $moduleDefinitions = [
-            'students' => ['Students & admissions', 'students.index'],
-            'finance' => ['Finance', 'fee-payments.index'],
-            'attendance' => ['Attendance', $user->hasPermission('attendance.daily') ? 'attendance.index' : 'attendance.subject'],
-            'academics' => ['Academics', 'subjects.index'],
-            'exams' => ['Exams & results', $user->hasPermission('exams.marks') ? 'exams.marks' : 'exams.results'],
-            'staff' => ['Staff', $user->hasPermission('staff.payroll') ? 'payroll.index' : 'staff.index'],
-            'parents' => ['Parents & communication', 'parents.index'],
+            'students' => ['Students & admissions', match (true) {
+                $user->hasPermission('students.manage') => 'students.register',
+                $user->hasPermission('students.view') => 'students.index',
+                $user->hasPermission('students.activities') => 'students.activities',
+                default => null,
+            }],
+            'finance' => ['Finance', match (true) {
+                $user->hasPermission('finance.payments') => 'fee-payments.index',
+                $user->hasPermission('finance.adjustments') => 'fee-adjustments.index',
+                $user->hasPermission('finance.expenses') => 'expenses.index',
+                $user->hasPermission('finance.ledger') => 'terms.index',
+                default => null,
+            }],
+            'attendance' => ['Attendance', match (true) {
+                $user->hasPermission('attendance.daily') => 'attendance.index',
+                $user->hasPermission('attendance.subject') => 'attendance.subject',
+                default => 'attendance.reports',
+            }],
+            'academics' => ['Academics', match (true) {
+                $user->hasPermission('academics.classes') => 'classes.index',
+                $user->hasPermission('academics.subjects') => 'subjects.index',
+                $user->hasPermission('academics.timetable') => 'timetable.index',
+                $user->hasPermission('academics.events') => 'events.index',
+                $user->hasPermission('academics.promotions') => 'promotions.index',
+                default => null,
+            }],
+            'exams' => ['Exams & results', match (true) {
+                $user->hasPermission('exams.marks') => 'exams.marks',
+                $user->hasPermission('exams.results') => 'exams.results',
+                default => 'exams.setup',
+            }],
+            'staff' => ['Staff', match (true) {
+                $user->hasPermission('staff.directory') => 'staff.index',
+                $user->hasPermission('staff.manage') => 'staff.register',
+                $user->hasPermission('staff.payroll') => 'payroll.index',
+                $user->hasPermission('staff.attendance') => 'staff.attendance',
+                $user->hasPermission('staff.leaves') => 'leaves.index',
+                $user->hasPermission('staff.designations') => 'designations.index',
+                default => null,
+            }],
+            'parents' => ['Parents & communication', $user->hasPermission('parents.manage') ? 'parents.index' : 'communications.index'],
             'reports' => ['Reports', 'reports.index'],
             'settings' => ['Settings', 'settings.index'],
         ];
-        $visibleModules = collect($moduleDefinitions)->filter(fn ($definition, $module) => $user->hasModuleAccess($module));
+        $visibleModules = collect($moduleDefinitions)->filter(fn ($definition, $module) => $definition[1] && $user->hasModuleAccess($module));
 
         $finance = [];
         if ($isFinanceWorkspace) {

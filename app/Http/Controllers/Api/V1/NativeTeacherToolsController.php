@@ -170,7 +170,13 @@ class NativeTeacherToolsController extends ApiController
 
             return $this->ok(['title' => 'Exams', 'rows' => collect($rows->items())->map(fn ($r) => ['id' => $r->id, 'title' => $r->name, 'details' => ['Class' => $r->schoolClass?->name, 'Term' => $r->term?->name, 'Status' => $r->status]]), 'forms' => $forms, 'page' => $rows->currentPage(), 'last_page' => $rows->lastPage()]);
         }
-        if ($tool === 'settings.index') {
+        if (in_array($tool, ['settings.index', 'settings.result-access'], true)) {
+            $value = DB::table('school_settings')->where('school_id', $school)->where('key', 'results_fee_clearance_required')->value('value') ?? 'disabled';
+
+            if ($tool === 'settings.result-access') {
+                return $this->ok(['title' => 'Result access settings', 'rows' => [['id' => 'fee-clearance', 'title' => 'Require fee clearance for results', 'details' => ['Status' => $value]]], 'forms' => [['action' => 'save_result_access', 'label' => 'Save result access', 'fields' => [['key' => 'value', 'label' => 'Require fee clearance', 'options' => [['value' => 'enabled', 'label' => 'Enabled'], ['value' => 'disabled', 'label' => 'Disabled']]]]]], 'page' => 1, 'last_page' => 1]);
+            }
+
             $component = Livewire::new(SchoolSettings::class);
             $component->mount();
             $keys = ['name', 'email', 'phone', 'address', 'motto', 'website', 'principal_name'];
@@ -180,11 +186,6 @@ class NativeTeacherToolsController extends ApiController
             }
 
             return $this->ok(['title' => 'School settings', 'rows' => [['id' => 'school', 'title' => $user->school->name, 'details' => collect($keys)->mapWithKeys(fn ($key) => [ucfirst(str_replace('_', ' ', $key)) => $component->{$key}])]], 'forms' => [['action' => 'save_school_settings', 'label' => 'Edit school settings', 'fields' => $fields]], 'page' => 1, 'last_page' => 1]);
-        }
-        if (in_array($tool, ['settings.index', 'settings.result-access'], true)) {
-            $value = DB::table('school_settings')->where('school_id', $school)->where('key', 'results_fee_clearance_required')->value('value') ?? 'disabled';
-
-            return $this->ok(['title' => 'Result access settings', 'rows' => [['id' => 'fee-clearance', 'title' => 'Require fee clearance for results', 'details' => ['Status' => $value]]], 'forms' => [['action' => 'save_result_access', 'label' => 'Save result access', 'fields' => [['key' => 'value', 'label' => 'Require fee clearance', 'options' => [['value' => 'enabled', 'label' => 'Enabled'], ['value' => 'disabled', 'label' => 'Disabled']]]]]], 'page' => 1, 'last_page' => 1]);
         }
         if ($tool === 'timetable.index') {
             $rows = DB::table('timetable_slots as t')->leftJoin('subjects as s', 's.id', '=', 't.subject_id')->leftJoin('school_classes as c', 'c.id', '=', 't.school_class_id')->leftJoin('users as u', 'u.id', '=', 't.user_id')->where('t.school_id', $school)->orderBy('t.day_of_week')->orderBy('t.starts_at')->paginate(30, ['t.*', 's.name as subject', 'c.name as class_name', 'u.name as teacher']);

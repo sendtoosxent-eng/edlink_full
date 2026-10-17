@@ -112,6 +112,7 @@ export function StudentDashboardScreen({ data, user, attendanceRate, navigate, r
     { title: 'School fees', description: 'Payments and your balance', icon: 'wallet-outline', tab: 'payments' },
     { title: 'School calendar', description: 'Upcoming events and dates', icon: 'today-outline', tab: 'student_calendar' },
   ];
+
   return <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
     <TopBar user={user} />
     <GreetingCard user={user} title={`Hi, ${firstName(student?.name ?? user.name)}!`} subtitle={`${student?.class ?? 'Student'}${student?.stream ? ` · ${student.stream}` : ''} · ${user.school.name}`} imageName={student?.name} imageUri={student?.photo_url} />

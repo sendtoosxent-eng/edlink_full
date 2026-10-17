@@ -16,7 +16,7 @@ class Student extends Model
 
     protected $fillable = [
         'school_id', 'school_class_id', 'stream_id', 'student_category_id', 'term_id', 'status',
-        'name', 'admission_no',
+        'name', 'admission_no', 'lin',
         'date_of_birth', 'gender', 'admission_date', 'photo_path',
         'nationality', 'religion', 'blood_group', 'home_address', 'medical_notes',
     ];

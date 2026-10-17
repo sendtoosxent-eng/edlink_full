@@ -47,11 +47,18 @@
                             @error('name') <span class="text-rose-600 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Admission no.</label>
                                 <input type="text" wire:model="admission_no" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 focus:outline-none transition">
                             </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Learner Identification Number (LIN)</label>
+                                <input type="text" wire:model="lin" maxlength="100" class="w-full uppercase border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 focus:outline-none transition">
+                                @error('lin') <span class="text-rose-600 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Gender</label>
                                 <select wire:model="gender" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 focus:outline-none transition">

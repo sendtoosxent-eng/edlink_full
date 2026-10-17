@@ -62,7 +62,8 @@ class StudentsIndex extends Component
             ->when($this->statusFilter !== 'all', fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->search, fn ($q) => $q->where(function ($q) {
                 $q->where('name', 'like', '%'.$this->search.'%')
-                  ->orWhere('admission_no', 'like', '%'.$this->search.'%');
+                  ->orWhere('admission_no', 'like', '%'.$this->search.'%')
+                  ->orWhere('lin', 'like', '%'.$this->search.'%');
             }))
             ->orderBy('name')
             ->paginate(15);

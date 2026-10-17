@@ -28,6 +28,8 @@ class StudentEditModal extends Component
 
     public string $admission_no = '';
 
+    public string $lin = '';
+
     public string $date_of_birth = '';
 
     public string $gender = '';
@@ -75,6 +77,7 @@ class StudentEditModal extends Component
         $this->studentId = $student->id;
         $this->name = $student->name;
         $this->admission_no = $student->admission_no ?? '';
+        $this->lin = $student->lin ?? '';
         $this->date_of_birth = $student->date_of_birth?->format('Y-m-d') ?? '';
         $this->gender = $student->gender ?? '';
         $this->photo = null;
@@ -134,10 +137,12 @@ class StudentEditModal extends Component
     {
         abort_unless(Auth::user()->hasPermission('students.manage'), 403);
         $student = Student::where('school_id', Auth::user()->school_id)->findOrFail($this->studentId);
+        $this->lin = strtoupper(trim($this->lin));
 
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'admission_no' => ['nullable', 'string', 'max:255'],
+            'lin' => ['nullable', 'string', 'max:100', Rule::unique('students', 'lin')->where('school_id', Auth::user()->school_id)->ignore($student->id)],
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'in:male,female'],
             'photo' => ['nullable', 'image', 'max:2048'],
@@ -150,6 +155,7 @@ class StudentEditModal extends Component
 
         $student->name = $this->name;
         $student->admission_no = $this->admission_no ?: null;
+        $student->lin = $this->lin ?: null;
         $student->date_of_birth = $this->date_of_birth ?: null;
         $student->gender = $this->gender ?: null;
         $student->school_class_id = $this->school_class_id;

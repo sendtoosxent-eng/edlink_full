@@ -27,6 +27,34 @@
         <div class="pointer-events-none absolute -bottom-20 -right-12 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl"></div>
     </section>
 
+    @if(auth('platform')->user()?->role === 'platform_owner')
+        <section class="grid gap-4 lg:grid-cols-2">
+            <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+                <p class="text-[10px] font-black uppercase tracking-wider text-amber-700">All schools</p>
+                <h2 class="mt-1 text-base font-black text-slate-900">Download a full database backup</h2>
+                <p class="mt-2 text-xs leading-5 text-slate-500">Creates and verifies a complete snapshot containing every school and platform record. Treat this file as highly confidential.</p>
+                <a href="{{ route('platform.backups.download') }}" class="mt-5 inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-xs font-black text-white hover:bg-slate-800">Create and download all schools</a>
+            </article>
+
+            <article class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+                <p class="text-[10px] font-black uppercase tracking-wider text-amber-700">One school</p>
+                <h2 class="mt-1 text-base font-black text-slate-900">Download a school-scoped backup</h2>
+                <p class="mt-2 text-xs leading-5 text-slate-500">Creates a compressed JSON database archive containing the selected school and its related records only.</p>
+                <form method="POST" action="{{ route('platform.backups.school.download') }}" class="mt-5 flex flex-col gap-3 sm:flex-row">
+                    @csrf
+                    <select name="school_id" required class="min-w-0 flex-1 rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-800 focus:border-amber-400 focus:ring-amber-400">
+                        <option value="">Choose a school</option>
+                        @foreach($schools as $school)
+                            <option value="{{ $school->id }}">{{ $school->name }} · {{ $school->school_number }}</option>
+                        @endforeach
+                    </select>
+                    <button class="rounded-xl bg-amber-400 px-5 py-3 text-xs font-black text-slate-950 hover:bg-amber-300">Create and download</button>
+                </form>
+                @error('school_id')<p class="mt-2 text-xs font-bold text-rose-600">{{ $message }}</p>@enderror
+            </article>
+        </section>
+    @endif
+
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
             ['Latest backup', $latest?->created_at?->diffForHumans() ?? 'Never', $latest ? basename($latest->path) : 'No backup record exists', $isHealthy ? 'emerald' : 'rose'],

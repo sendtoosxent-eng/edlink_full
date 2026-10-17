@@ -79,10 +79,12 @@
                     </div>
 
                     <div class="grid sm:grid-cols-2 gap-5">
-                        <div class="flex items-end">
-                            <p class="w-full rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-2.5 text-xs text-gray-500">
-                                Student ID is generated automatically when registration is completed.
-                            </p>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Learner Identification Number (LIN)</label>
+                            <input type="text" wire:model.blur="lin" maxlength="100" autocomplete="off" placeholder="Enter the learner's LIN"
+                                class="w-full border border-gray-200 bg-gray-50/50 rounded-xl px-4 py-2.5 text-sm uppercase focus:bg-white focus:outline-none focus:ring-4 focus:ring-yellow-400/30 focus:border-yellow-400 transition-all">
+                            @error('lin') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <span class="mt-1 block text-[10px] text-gray-400">Optional for now. It must be unique within this school.</span>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Gender</label>
@@ -320,8 +322,11 @@
                     {{ trim($name ?? '') ?: 'Student Name' }}
                 </h4>
                 <p class="text-xs text-gray-400 mt-0.5 font-medium uppercase tracking-wider">
-                    ID: GENERATED ON SAVE
+                    Admission ID: generated on save
                 </p>
+                @if(filled($lin))
+                    <p class="mt-1 font-mono text-xs font-bold text-slate-600">LIN: {{ strtoupper(trim($lin)) }}</p>
+                @endif
                 
                 @if($gender)
                     <span class="mt-2 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium capitalize {{ $gender === 'male' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-pink-50 text-pink-700 border border-pink-100' }}">

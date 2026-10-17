@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Edlink</title>
     <script>
-        // Apply the saved demo theme before paint so the dashboard never flashes light.
-        if (localStorage.getItem('edlink_admin_dashboard_theme') === 'dark') {
-            document.documentElement.classList.add('dark');
-        }
+        localStorage.removeItem('edlink_admin_dashboard_theme');
+        document.documentElement.classList.remove('dark');
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -66,67 +64,6 @@
         }
         .nav-sub-link:hover { color: #facc15; }
 
-        /* Admin dashboard dark-theme prototype. Intentionally scoped to this view. */
-        html.dark { color-scheme: dark; }
-        html.dark body { background: #0b1220 !important; color: #f1f5f9; }
-        html.dark #app-main { background: #0b1220; }
-        html.dark #app-sidebar { background: #080f1c !important; }
-        html.dark header,
-        html.dark footer,
-        html.dark .fixed.bottom-0 { background-color: #111c2e !important; border-color: #293750 !important; }
-        html.dark main .bg-white,
-        html.dark header .bg-white,
-        html.dark .fixed.bottom-0.bg-white { background-color: #111c2e !important; }
-        html.dark main .bg-gray-50,
-        html.dark main .bg-gray-50\/50,
-        html.dark header .bg-gray-50,
-        html.dark header .bg-gray-100 { background-color: #17243a !important; }
-        html.dark main .bg-slate-50,
-        html.dark main .bg-slate-50\/50,
-        html.dark header .hover\:bg-slate-50:hover,
-        html.dark header .hover\:bg-gray-50:hover { background-color: #17243a !important; }
-        html.dark main [class*="bg-gray-50/"] { background-color: #17243a !important; }
-        html.dark main .chart-surface {
-            background: #0d1728 !important;
-            border-color: #293750 !important;
-        }
-        html.dark .border-gray-100,
-        html.dark .border-gray-200,
-        html.dark .border-slate-200 { border-color: #293750 !important; }
-        html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #293750 !important; }
-        html.dark .text-darken,
-        html.dark .text-gray-900,
-        html.dark .text-gray-800,
-        html.dark .text-slate-900,
-        html.dark .text-slate-800,
-        html.dark .text-slate-700 { color: #f1f5f9 !important; }
-        html.dark .text-gray-700,
-        html.dark .text-gray-600,
-        html.dark .text-slate-600 { color: #cbd5e1 !important; }
-        html.dark .text-gray-500,
-        html.dark .text-slate-500 { color: #94a3b8 !important; }
-        html.dark .text-gray-400,
-        html.dark .text-slate-400 { color: #7f91aa !important; }
-        html.dark input,
-        html.dark select,
-        html.dark textarea { background-color: #17243a !important; border-color: #33445f !important; color: #f1f5f9 !important; }
-        html.dark input::placeholder { color: #7f91aa; }
-        html.dark main .shadow-sm,
-        html.dark main .shadow-md,
-        html.dark header .shadow-lg,
-        html.dark header .shadow-2xl { box-shadow: 0 14px 35px rgba(2, 6, 23, .28) !important; }
-        html.dark #remindersList > *,
-        html.dark #notificationsList > * { background-color: #17243a !important; border-color: #293750 !important; }
-        html.dark #remindersList > *:hover,
-        html.dark #notificationsList > *:hover { background-color: #1d2c45 !important; }
-        html.dark .dashboard-stat-icon {
-            background: #facc15 !important;
-            color: #252641 !important;
-            box-shadow: 0 8px 20px rgba(250, 204, 21, .18);
-        }
-        html.dark .theme-toggle { background: #17243a; border-color: #33445f; color: #facc15; }
-        html.dark .theme-toggle:hover { background: #21314b; }
-        @media print { html.dark body { background: white !important; color: #111827 !important; } }
     </style>
     <script>
         document.addEventListener('alpine:init', () => {
@@ -136,15 +73,6 @@
                     this.collapsed = !this.collapsed;
                     localStorage.setItem('edlink_sidebar_collapsed', this.collapsed);
                     setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
-                }
-            });
-            Alpine.store('theme', {
-                dark: document.documentElement.classList.contains('dark'),
-                toggle() {
-                    this.dark = !this.dark;
-                    document.documentElement.classList.toggle('dark', this.dark);
-                    localStorage.setItem('edlink_admin_dashboard_theme', this.dark ? 'dark' : 'light');
-                    window.dispatchEvent(new CustomEvent('edlink-theme-changed', { detail: { dark: this.dark } }));
                 }
             });
         });
@@ -345,15 +273,6 @@
                 </div>
 
                 <!-- Notification bell (hover dropdown) -->
-                <button type="button"
-                        @click="$store.theme.toggle()"
-                        class="theme-toggle flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        :aria-label="$store.theme.dark ? 'Switch to light theme' : 'Switch to dark theme'"
-                        :title="$store.theme.dark ? 'Switch to light theme' : 'Switch to dark theme'">
-                    <svg x-show="!$store.theme.dark" x-cloak class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75 9.75 9.75 0 018.25 6a9.718 9.718 0 01.748-3.752A9.753 9.753 0 003 11.25 9.75 9.75 0 0012.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
-                    <svg x-show="$store.theme.dark" x-cloak class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-                </button>
-
                 <div class="group relative" x-data="{ open: '' }">
                     <a href="{{ route('notifications.index') }}" wire:navigate aria-label="Open notification center" aria-describedby="notificationsDropdownPanel" title="Notifications" class="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
@@ -1122,6 +1041,48 @@
 
 </div>
 
+            @php
+                $adminQuickActions = [
+                    ['label' => 'Register Student', 'description' => 'Add a new learner', 'route' => 'students.register', 'icon' => 'heroicon-o-user-plus', 'iconClass' => 'bg-amber-100 text-amber-700', 'hoverClass' => 'hover:border-amber-300'],
+                    ['label' => 'Record Fee Payment', 'description' => 'Post a learner payment', 'route' => 'fee-payments.index', 'icon' => 'heroicon-o-banknotes', 'iconClass' => 'bg-emerald-100 text-emerald-700', 'hoverClass' => 'hover:border-emerald-300'],
+                    ['label' => 'Register Staff', 'description' => 'Create a staff account', 'route' => 'staff.register', 'icon' => 'heroicon-o-identification', 'iconClass' => 'bg-blue-100 text-blue-700', 'hoverClass' => 'hover:border-blue-300'],
+                    ['label' => 'Mark Attendance', 'description' => 'Open today\'s register', 'route' => 'attendance.index', 'icon' => 'heroicon-o-clipboard-document-check', 'iconClass' => 'bg-violet-100 text-violet-700', 'hoverClass' => 'hover:border-violet-300'],
+                    ['label' => 'Create Announcement', 'description' => 'Message the school community', 'route' => 'communications.index', 'icon' => 'heroicon-o-megaphone', 'iconClass' => 'bg-rose-100 text-rose-700', 'hoverClass' => 'hover:border-rose-300'],
+                    ['label' => 'View Debtors', 'description' => 'Follow up outstanding fees', 'route' => 'fee-payments.index', 'icon' => 'heroicon-o-exclamation-triangle', 'iconClass' => 'bg-orange-100 text-orange-700', 'hoverClass' => 'hover:border-orange-300'],
+                    ['label' => 'Create Expense', 'description' => 'Record school spending', 'route' => 'expenses.index', 'icon' => 'heroicon-o-receipt-percent', 'iconClass' => 'bg-cyan-100 text-cyan-700', 'hoverClass' => 'hover:border-cyan-300'],
+                    ['label' => 'Manage Current Term', 'description' => 'Open, close or review terms', 'route' => 'terms.index', 'icon' => 'heroicon-o-calendar-days', 'iconClass' => 'bg-indigo-100 text-indigo-700', 'hoverClass' => 'hover:border-indigo-300'],
+                    ['label' => 'View Reports', 'description' => 'Open school-wide reports', 'route' => 'reports.index', 'icon' => 'heroicon-o-chart-bar-square', 'iconClass' => 'bg-teal-100 text-teal-700', 'hoverClass' => 'hover:border-teal-300'],
+                    ['label' => 'School Settings', 'description' => 'Update school configuration', 'route' => 'settings.index', 'icon' => 'heroicon-o-cog-6-tooth', 'iconClass' => 'bg-slate-100 text-slate-700', 'hoverClass' => 'hover:border-slate-400'],
+                ];
+            @endphp
+
+            <section aria-labelledby="quick-actions-heading" class="mb-16 mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">One-click shortcuts</p>
+                        <h2 id="quick-actions-heading" class="mt-1 text-xl font-bold text-slate-900">Quick actions</h2>
+                        <p class="mt-1 text-sm text-slate-500">Jump directly to the tasks you handle most often.</p>
+                    </div>
+                    <span class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 sm:inline-flex">Administrator tools</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+                    @foreach($adminQuickActions as $action)
+                        <a href="{{ route($action['route']) }}"
+                           wire:navigate
+                           data-quick-action="{{ Str::slug($action['label']) }}"
+                           class="group relative min-h-40 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 {{ $action['hoverClass'] }} hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 sm:p-5">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl {{ $action['iconClass'] }} transition-transform duration-200 group-hover:scale-110">
+                                <x-dynamic-component :component="$action['icon']" class="h-6 w-6" stroke-width="1.8" />
+                            </span>
+                            <span class="mt-5 block text-sm font-bold leading-5 text-slate-900">{{ $action['label'] }}</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">{{ $action['description'] }}</span>
+                            <span class="absolute right-4 top-4 text-slate-300 transition-all duration-200 group-hover:translate-x-1 group-hover:text-amber-600" aria-hidden="true">→</span>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+
         </main>
     </div>
     
@@ -1496,9 +1457,8 @@ performanceClassFilter.addEventListener('change', function () {
 
     <script>
         function applyDashboardChartTheme() {
-            const dark = document.documentElement.classList.contains('dark');
-            const textColor = dark ? '#cbd5e1' : '#475569';
-            const gridColor = dark ? 'rgba(148, 163, 184, .16)' : 'rgba(148, 163, 184, .22)';
+            const textColor = '#475569';
+            const gridColor = 'rgba(148, 163, 184, .22)';
 
             Object.values(Chart.instances).forEach(chart => {
                 const legend = chart.options.plugins?.legend;
@@ -1515,20 +1475,20 @@ performanceClassFilter.addEventListener('change', function () {
 
                 chart.data.datasets.forEach(dataset => {
                     if (dataset.label === 'Absent' || dataset.label === 'Expenditure') {
-                        dataset.backgroundColor = dark ? '#60a5fa' : '#252641';
+                        dataset.backgroundColor = '#252641';
                     }
                     if (dataset.label === 'Collections') {
-                        dataset.borderColor = dark ? '#facc15' : '#252641';
-                        dataset.backgroundColor = dark ? 'rgba(250, 204, 21, .12)' : 'rgba(37, 38, 65, .05)';
-                        dataset.pointBorderColor = dark ? '#111c2e' : '#252641';
+                        dataset.borderColor = '#252641';
+                        dataset.backgroundColor = 'rgba(37, 38, 65, .05)';
+                        dataset.pointBorderColor = '#252641';
                     }
                     if (dataset.label === 'Class Average') {
-                        dataset.pointBackgroundColor = dark ? '#f8fafc' : '#252641';
-                        dataset.backgroundColor = dark ? 'rgba(250, 204, 21, .12)' : 'rgba(250, 204, 21, .05)';
+                        dataset.pointBackgroundColor = '#252641';
+                        dataset.backgroundColor = 'rgba(250, 204, 21, .05)';
                     }
                     if (chart.config.type === 'pie') {
-                        dataset.backgroundColor = ['#facc15', dark ? '#60a5fa' : '#252641'];
-                        dataset.borderColor = dark ? '#111c2e' : '#ffffff';
+                        dataset.backgroundColor = ['#facc15', '#252641'];
+                        dataset.borderColor = '#ffffff';
                     }
                 });
 
@@ -1537,7 +1497,6 @@ performanceClassFilter.addEventListener('change', function () {
         }
 
         applyDashboardChartTheme();
-        window.addEventListener('edlink-theme-changed', () => setTimeout(applyDashboardChartTheme, 0));
 
         const refreshDashboardCharts = () => setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
         window.addEventListener('load', refreshDashboardCharts);

@@ -124,6 +124,7 @@
                                     <span class="font-mono text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-lg inline-block">
                                         {{ $student->admission_no }}
                                     </span>
+                                    @if($student->lin)<span class="mt-1 block font-mono text-[10px] font-semibold text-slate-400">LIN: {{ $student->lin }}</span>@endif
                                 </td>
                                 
                                 <!-- Class / Stream -->

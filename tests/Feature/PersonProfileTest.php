@@ -13,17 +13,19 @@ it('shows and updates a branch-owned student profile photograph', function () {
     Storage::fake('public');
     $school = School::create(['name' => 'Profile School', 'slug' => 'profile-school']);
     $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
-    $student = Student::create(['school_id' => $school->id, 'name' => 'Profile Learner', 'admission_no' => 'PS-001', 'status' => 'active']);
+    $student = Student::create(['school_id' => $school->id, 'name' => 'Profile Learner', 'admission_no' => 'PS-001', 'lin' => 'LIN-OLD', 'status' => 'active']);
 
     $this->actingAs($admin)->get(route('students.profile', $student))
-        ->assertOk()->assertSee('Student Profile')->assertSee('Profile Learner');
+        ->assertOk()->assertSee('Student Profile')->assertSee('Profile Learner')->assertSee('LIN-OLD');
 
     $this->patch(route('students.profile.update', $student), [
         'name' => 'Profile Learner', 'admission_no' => 'PS-001',
+        'lin' => 'lin-new-002',
         'photo' => UploadedFile::fake()->image('learner.jpg', 600, 800),
     ])->assertSessionHasNoErrors();
 
     $student->refresh();
+    expect($student->lin)->toBe('LIN-NEW-002');
     Storage::disk('public')->assertExists($student->photo_path);
     $firstUrl = $student->photoUrl();
     $this->get($firstUrl)->assertOk();

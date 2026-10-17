@@ -187,3 +187,57 @@ Think of an exam as an assessment sitting, and an exam paper as the subject-
   category based term calculation, so that field’s effect needs refinement.
 
 
+### SSH deployment
+
+Replace the SSH and directory placeholders:
+
+```
+ssh -p SSH_PORT SSH_USER@SSH_HOST
+cd /home/ACCOUNT/domains/edlink.space/public_html
+```
+
+Check that the server has no uncommitted changes:
+
+```
+git status --short
+```
+
+If this prints anything, stop before continuing.
+
+Then deploy:
+
+```
+php artisan down
+php artisan edlink:backup --restore-test --keep-days=30
+
+git fetch origin main
+git merge --ff-only origin/main
+
+composer install --no-dev --prefer-dist --optimize-autoloader
+php artisan migrate --force
+php artisan optimize:clear
+php artisan optimize
+php artisan up
+```
+
+Because the GitHub history was previously force-rewritten, `git merge --ff-only` might refuse. If it does, and `git status --short` was definitely empty, use this recoverable procedure:
+
+```
+git branch server-backup-before-subdomains
+git reset --hard origin/main
+
+composer install --no-dev --prefer-dist --optimize-autoloader
+php artisan migrate --force
+php artisan optimize:clear
+php artisan optimize
+php artisan up
+```
+
+Ensure the production `.env` contains:
+
+```
+APP_URL=https://edlink.space
+EDLINK_ROOT_DOMAIN=edlink.space
+```
+
+You must also configure wildcard DNS, hosting, and SSL for `*.edlink.space` in Hostinger. After that one-time configuration, every subdomain entered through Platform onboarding will work automatically.

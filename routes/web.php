@@ -110,6 +110,7 @@ Route::prefix('platform')->name('platform.')->group(function () {
         Route::get('/', [PlatformAuthController::class, 'dashboard'])->name('dashboard');
         Route::middleware('platform.role:platform_owner,operations_admin')->group(function () {
             Route::get('backups/download', DatabaseBackupController::class)->middleware('platform.role:platform_owner')->name('backups.download');
+            Route::post('backups/schools/download', [DatabaseBackupController::class, 'school'])->middleware('platform.role:platform_owner')->name('backups.school.download');
             Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools');
             Route::get('groups', [PlatformSchoolGroupController::class, 'index'])->name('groups.index');
             Route::post('groups', [PlatformSchoolGroupController::class, 'store'])->name('groups.store');
