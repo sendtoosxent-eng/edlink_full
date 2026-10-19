@@ -1,5 +1,5 @@
 <script src="{{ asset('js/chart.umd.js') }}"></script>
-<div wire:key="portal-dashboard-{{ $student?->id ?? 'none' }}" class="space-y-6 pb-12">
+<div class="space-y-6 pb-12">
     @if(!$student)
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">No learner is linked to this account yet. Please contact the school registrar.</div>
     @else
