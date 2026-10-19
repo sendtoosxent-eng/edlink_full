@@ -12,6 +12,15 @@ class EnsureDesignationAccess
     public function handle(Request $request, Closure $next): Response
     {
         $route = $request->route()?->getName() ?? '';
+        if ($route === 'students.profile' && $request->user() && TeacherAcademicScope::isTeacher($request->user())) {
+            // The profile controller enforces the teacher's assigned learner scope.
+            return $next($request);
+        }
+        if ($route === 'reports.student-term-report.show'
+            && in_array($request->user()?->role, ['parent', 'student'], true)) {
+            // The report component checks the learner link and published marks.
+            return $next($request);
+        }
         $permission = match ($route) {
             'students.index', 'graduates.index', 'graduates.certificate', 'graduates.recommendation' => 'students.view',
             'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage',

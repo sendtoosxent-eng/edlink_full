@@ -6,7 +6,7 @@
         <div wire:key="selected-learner-content-{{ $student->id }}" class="space-y-6">
         @php
             $portalQuickActions = $isParent ? [
-                ['label' => 'Learner Results', 'description' => 'Open published report cards', 'url' => route('my-results'), 'icon' => 'heroicon-o-document-chart-bar', 'iconClass' => 'bg-violet-100 text-violet-700', 'hoverClass' => 'hover:border-violet-300'],
+                ['label' => 'Learner Results', 'description' => 'Open published report cards', 'url' => route('my-results', ['student' => $student->id]), 'icon' => 'heroicon-o-document-chart-bar', 'iconClass' => 'bg-violet-100 text-violet-700', 'hoverClass' => 'hover:border-violet-300'],
                 ['label' => 'Attendance', 'description' => 'Review the learner register', 'url' => '#attendance', 'navigate' => false, 'icon' => 'heroicon-o-clipboard-document-check', 'iconClass' => 'bg-emerald-100 text-emerald-700', 'hoverClass' => 'hover:border-emerald-300'],
                 ['label' => 'Performance', 'description' => 'See subject-by-subject progress', 'url' => '#performance', 'navigate' => false, 'icon' => 'heroicon-o-chart-bar-square', 'iconClass' => 'bg-blue-100 text-blue-700', 'hoverClass' => 'hover:border-blue-300'],
                 ['label' => 'Fees & Payments', 'description' => 'Check balances and receipts', 'url' => '#payments', 'navigate' => false, 'icon' => 'heroicon-o-banknotes', 'iconClass' => 'bg-amber-100 text-amber-700', 'hoverClass' => 'hover:border-amber-300'],
@@ -15,7 +15,7 @@
                 ['label' => 'Notifications', 'description' => 'Read recent school updates', 'url' => '#notifications', 'navigate' => false, 'icon' => 'heroicon-o-bell', 'iconClass' => 'bg-cyan-100 text-cyan-700', 'hoverClass' => 'hover:border-cyan-300'],
             ] : [
                 ['label' => 'My Homework', 'description' => 'View and submit assignments', 'url' => route('homework.index'), 'icon' => 'heroicon-o-book-open', 'iconClass' => 'bg-amber-100 text-amber-700', 'hoverClass' => 'hover:border-amber-300'],
-                ['label' => 'My Results', 'description' => 'Open published report cards', 'url' => route('my-results'), 'icon' => 'heroicon-o-document-chart-bar', 'iconClass' => 'bg-violet-100 text-violet-700', 'hoverClass' => 'hover:border-violet-300'],
+                ['label' => 'My Results', 'description' => 'Open published report cards', 'url' => route('my-results', ['student' => $student->id]), 'icon' => 'heroicon-o-document-chart-bar', 'iconClass' => 'bg-violet-100 text-violet-700', 'hoverClass' => 'hover:border-violet-300'],
                 ['label' => 'My Attendance', 'description' => 'Review your attendance record', 'url' => '#attendance', 'navigate' => false, 'icon' => 'heroicon-o-clipboard-document-check', 'iconClass' => 'bg-emerald-100 text-emerald-700', 'hoverClass' => 'hover:border-emerald-300'],
                 ['label' => 'My Performance', 'description' => 'See your subject progress', 'url' => '#performance', 'navigate' => false, 'icon' => 'heroicon-o-chart-bar-square', 'iconClass' => 'bg-blue-100 text-blue-700', 'hoverClass' => 'hover:border-blue-300'],
                 ['label' => 'Today\'s Timetable', 'description' => 'Check your lesson schedule', 'url' => '#timetable', 'navigate' => false, 'icon' => 'heroicon-o-calendar-days', 'iconClass' => 'bg-indigo-100 text-indigo-700', 'hoverClass' => 'hover:border-indigo-300'],

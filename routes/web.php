@@ -435,7 +435,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
         );
         $isStaff = in_array($user->role, ['admin', 'academic_admin', 'teacher', 'registrar', 'bursar'], true);
         $isLinked = $user->portalStudents()->whereKey($student->id)->exists() || ($user->role === 'parent' && $student->guardians()->where('email', $user->email)->exists());
-        abort_unless($isStaff || ($isLinked && $exam->isPublished()), 404);
+        abort_unless($isStaff || ($isLinked && $exam->isPublished()
+            && Exam::whereKey($exam->id)->withResultsForStudent($student->id)->exists()), 404);
         $school = $user->school;
         $blocked = SchoolSetting::where(['school_id' => $school->id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled' && $student->balance($exam->term) > 0;
         $scales = GradingScale::where('school_id', $school->id)->get();

@@ -130,7 +130,9 @@
                         @forelse($students as $student)
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="p-4 whitespace-nowrap">
-                                    <span class="font-bold text-slate-800">{{ $student->name }}</span>
+                                    @if(\App\Support\TeacherAcademicScope::isTeacher(auth()->user()) || auth()->user()->hasPermission('students.view') || auth()->user()->hasPermission('students.manage'))
+                                        <a href="{{ route('students.profile', $student) }}" wire:navigate class="font-bold text-slate-800 hover:text-amber-700">{{ $student->name }}</a>
+                                    @else<span class="font-bold text-slate-800">{{ $student->name }}</span>@endif
                                     <span class="ml-2 text-[11px] font-normal text-slate-400">{{ $student->admission_no }}</span>
                                 </td>
                                 <td class="p-4 whitespace-nowrap text-slate-500 font-medium">

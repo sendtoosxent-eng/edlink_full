@@ -6,6 +6,8 @@ use App\Models\Student;
 use App\Models\PayrollRun;
 use App\Models\User;
 use App\Services\PublicImageStorage;
+use App\Services\StudentProfileData;
+use App\Support\TeacherAcademicScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,13 +21,7 @@ class PersonProfileController extends Controller
     {
         $this->authorizeStudent($student);
 
-        return view('profiles.person', [
-            'type' => 'student',
-            'person' => $student->load(['schoolClass', 'stream', 'category', 'guardians']),
-            'backRoute' => route('students.index'),
-            'updateRoute' => route('students.profile.update', $student),
-            'canEdit' => request()->user()->hasPermission('students.manage'),
-        ]);
+        return view('profiles.student', app(StudentProfileData::class)->build($student, request()->user(), request()->integer('term') ?: null));
     }
 
     public function updateStudent(Request $request, Student $student, PublicImageStorage $images): RedirectResponse
@@ -40,6 +36,7 @@ class PersonProfileController extends Controller
             'admission_no' => ['nullable', 'string', 'max:100', Rule::unique('students', 'admission_no')->where('school_id', $request->user()->school_id)->ignore($student->id)],
             'lin' => ['nullable', 'string', 'max:100', Rule::unique('students', 'lin')->where('school_id', $request->user()->school_id)->ignore($student->id)],
             'date_of_birth' => ['nullable', 'date'], 'gender' => ['nullable', 'in:male,female'],
+            'admission_date' => ['nullable', 'date'],
             'nationality' => ['nullable', 'string', 'max:100'], 'religion' => ['nullable', 'string', 'max:100'],
             'blood_group' => ['nullable', 'string', 'max:10'], 'home_address' => ['nullable', 'string', 'max:500'],
             'medical_notes' => ['nullable', 'string', 'max:1000'],
@@ -157,7 +154,12 @@ class PersonProfileController extends Controller
     private function authorizeStudent(Student $student): void
     {
         abort_unless($student->school_id === request()->user()->school_id, 404);
-        abort_unless(request()->user()->hasPermission('students.view') || request()->user()->hasPermission('students.manage'), 403);
+        $user = request()->user();
+        if (TeacherAcademicScope::isTeacher($user) && ! $user->hasPermission('students.manage')) {
+            abort_unless(TeacherAcademicScope::scopeStudents(Student::query(), $user, $user->school->currentTerm()?->id)->whereKey($student->id)->exists(), 404);
+            return;
+        }
+        abort_unless($user->hasPermission('students.view') || $user->hasPermission('students.manage'), 403);
     }
 
     private function authorizeUser(User $user, array $roles, string $permission): void

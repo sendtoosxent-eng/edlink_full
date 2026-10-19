@@ -4,6 +4,19 @@
         <p class="text-slate-500">View every published result for your linked learner account and preview the official report card.</p>
     </div>
 
+    @if($availableStudents->count() > 1)
+        <form method="GET" action="{{ route('my-results') }}" class="mb-6">
+            <label class="text-sm font-bold text-slate-700">Results for
+                <select name="student" onchange="this.form.requestSubmit()" class="mt-2 w-full rounded-xl border-slate-300 text-sm">
+                    @foreach($availableStudents as $linkedStudent)
+                        <option value="{{ $linkedStudent->id }}" @selected((int) $selectedStudentId === $linkedStudent->id)>{{ $linkedStudent->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <noscript><button type="submit" class="mt-2 rounded-xl bg-yellow-400 px-4 py-2 font-bold">Show results</button></noscript>
+        </form>
+    @endif
+
     @if($students->isEmpty())
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
             No learner account is linked to this login yet. Please ask the school registrar to link your account.

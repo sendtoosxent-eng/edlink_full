@@ -172,6 +172,10 @@ it('opens historical portal reports using the learner term enrolment', function 
         'school_class_id' => $oldClass->id, 'student_category_id' => $studentCategory->id, 'status' => 'active', 'enrolled_at' => '2025-09-01']);
     $exam = Exam::create(['school_id' => $school->id, 'term_id' => $oldTerm->id, 'school_class_id' => $oldClass->id,
         'name' => 'Old Final', 'status' => 'published', 'published_at' => now()]);
+    $subject = Subject::create(['school_id' => $school->id, 'name' => 'History Maths', 'code' => 'H-MATH']);
+    $paper = ExamPaper::create(['exam_id' => $exam->id, 'subject_id' => $subject->id, 'maximum_score' => 100]);
+    DB::table('exam_marks')->insert(['exam_paper_id' => $paper->id, 'student_id' => $student->id, 'score' => 60]);
+    DB::table('exam_paper_submissions')->insert(['exam_paper_id' => $paper->id, 'status' => 'approved']);
     $parent = User::factory()->create(['school_id' => $school->id, 'role' => 'parent']);
     DB::table('portal_user_students')->insert(['school_id' => $school->id, 'user_id' => $parent->id, 'student_id' => $student->id,
         'relationship' => 'parent', 'created_at' => now(), 'updated_at' => now()]);

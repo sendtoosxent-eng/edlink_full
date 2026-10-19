@@ -25,10 +25,12 @@ class PortalHome extends Component
     public function mount(): void
     {
         $studentIds = $this->linkedStudentIds();
-        $requestedStudentId = request()->integer('student');
+        $selectionKey = 'portal_student.'.Auth::id().'.'.Auth::user()->school_id;
+        $requestedStudentId = request()->integer('student') ?: (int) session($selectionKey, 0);
         $this->selectedStudentId = (string) ($studentIds->contains($requestedStudentId)
             ? $requestedStudentId
             : ($studentIds->first() ?? ''));
+        session([$selectionKey => $this->selectedStudentId]);
     }
 
     public function updatedSelectedStudentId($studentId): void
@@ -95,6 +97,7 @@ class PortalHome extends Component
         $resultClassId = $termEnrolment?->school_class_id ?? $student?->school_class_id;
         $resultStreamId = $termEnrolment?->stream_id ?? $student?->stream_id;
         $exams = $student ? Exam::with('term')->where('school_id', $school->id)->whereNotNull('published_at')
+            ->withResultsForStudent($student->id)
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
             ->where('school_class_id', $resultClassId)
             ->where(fn ($query) => $query->whereNull('stream_id')->when($resultStreamId, fn ($stream) => $stream->orWhere('stream_id', $resultStreamId)))

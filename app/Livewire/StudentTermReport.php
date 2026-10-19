@@ -45,7 +45,8 @@ class StudentTermReport extends Component
                 && (! TeacherAcademicScope::isTeacher(Auth::user()) || TeacherAcademicScope::canViewExam(Auth::user(), $exam->school_class_id, $exam->term_id))
                 && $exam->school_class_id === $classId
                 && (! $exam->stream_id || $exam->stream_id === $streamId)
-                && (! $this->isPortalUser() || $exam->isPublished()), 404);
+                && (! $this->isPortalUser() || ($exam->isPublished()
+                    && Exam::whereKey($exam->id)->withResultsForStudent($student->id)->exists())), 404);
             $this->studentId = (string) $student->id;
             $this->examId = (string) $exam->id;
 
@@ -182,6 +183,7 @@ class StudentTermReport extends Component
         $streamId = $enrolment?->stream_id ?? $student->stream_id;
 
         return $query->where('school_class_id', $classId)
+            ->when($this->isPortalUser(), fn (Builder $scope) => $scope->withResultsForStudent($student->id))
             ->where(fn (Builder $scope) => $scope->whereNull('stream_id')->when($streamId, fn (Builder $stream) => $stream->orWhere('stream_id', $streamId)))
             ->orderByDesc('created_at');
     }

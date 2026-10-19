@@ -12,6 +12,13 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class MyResults extends Component
 {
+    public string $selectedStudentId = '';
+
+    public function mount(): void
+    {
+        $this->selectedStudentId = (string) (request()->integer('student') ?: '');
+    }
+
     public function render()
     {
         $user = Auth::user();
@@ -27,12 +34,18 @@ class MyResults extends Component
         }
 
         $students = Student::with(['schoolClass', 'stream'])->where('school_id', $school->id)->whereIn('id', $studentIds)->orderBy('name')->get();
-        $publishedExams = Exam::with(['term', 'schoolClass'])
-            ->where('school_id', $school->id)
-            ->whereNotNull('published_at')
-            ->latest('published_at')
-            ->get();
-        $examsByStudent = $students->mapWithKeys(function (Student $student) use ($publishedExams) {
+        $availableStudents = $students;
+        $selectionKey = 'portal_student.'.$user->id.'.'.$user->school_id;
+        if ($this->selectedStudentId === '') {
+            $savedStudent = $students->firstWhere('id', (int) session($selectionKey, 0));
+            $this->selectedStudentId = (string) ($savedStudent?->id ?? $students->first()?->id ?? '');
+        }
+        abort_unless($this->selectedStudentId === '' || $students->contains('id', (int) $this->selectedStudentId), 404);
+        session([$selectionKey => $this->selectedStudentId]);
+        $students = $students->where('id', (int) $this->selectedStudentId)->values();
+        $examsByStudent = $students->mapWithKeys(function (Student $student) use ($school) {
+            $publishedExams = Exam::with(['term', 'schoolClass'])->where('school_id', $school->id)
+                ->whereNotNull('published_at')->withResultsForStudent($student->id)->latest('published_at')->get();
             $enrolments = $student->enrolments()->get(['term_id', 'school_class_id', 'stream_id'])->keyBy('term_id');
 
             return [$student->id => $publishedExams->filter(function (Exam $exam) use ($student, $enrolments) {
@@ -46,6 +59,6 @@ class MyResults extends Component
 
         $feeRule = SchoolSetting::where(['school_id' => $school->id, 'key' => 'results_fee_clearance_required'])->value('value') === 'enabled';
 
-        return view('livewire.my-results', compact('students', 'examsByStudent', 'feeRule'), ['pageTitle' => 'My Results']);
+        return view('livewire.my-results', compact('students', 'availableStudents', 'examsByStudent', 'feeRule'), ['pageTitle' => 'My Results']);
     }
 }

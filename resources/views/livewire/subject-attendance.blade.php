@@ -207,7 +207,9 @@
                                         <div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
                                             {{ strtoupper(substr($student->name, 0, 1)) }}
                                         </div>
-                                        <span class="font-bold text-slate-900">{{ $student->name }}</span>
+                                        @if(\App\Support\TeacherAcademicScope::isTeacher(auth()->user()) || auth()->user()->hasPermission('students.view') || auth()->user()->hasPermission('students.manage'))
+                                            <a href="{{ route('students.profile', $student) }}" wire:navigate class="font-bold text-slate-900 hover:text-amber-700">{{ $student->name }}</a>
+                                        @else<span class="font-bold text-slate-900">{{ $student->name }}</span>@endif
                                     </div>
                                 </td>
                                 <td class="px-5 py-3.5 font-mono text-slate-500">
