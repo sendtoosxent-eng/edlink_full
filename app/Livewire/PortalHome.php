@@ -22,7 +22,11 @@ class PortalHome extends Component
 
     public function mount(): void
     {
-        $this->selectedStudentId = (string) ($this->linkedStudentIds()->first() ?? '');
+        $studentIds = $this->linkedStudentIds();
+        $requestedStudentId = request()->integer('student');
+        $this->selectedStudentId = (string) ($studentIds->contains($requestedStudentId)
+            ? $requestedStudentId
+            : ($studentIds->first() ?? ''));
     }
 
     public function updatedSelectedStudentId($studentId): void
@@ -139,7 +143,7 @@ class PortalHome extends Component
 
         $timetable = $student && $term ? DB::table('timetable_slots')->leftJoin('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
             ->where('timetable_slots.school_id', $school->id)->where('timetable_slots.term_id', $term->id)
-            ->where('timetable_slots.school_class_id', $student->school_class_id)->where('day_of_week', now()->format('l'))
+            ->where('timetable_slots.school_class_id', $resultClassId)->where('day_of_week', now()->format('l'))
             ->orderBy('starts_at')->get(['starts_at', 'ends_at', 'label', 'subjects.name as subject']) : collect();
 
         $fees = [
