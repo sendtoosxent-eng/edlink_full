@@ -167,6 +167,9 @@ Route::post('contact', function (Request $request) {
 })->middleware('throttle:5,1')->name('contact.store');
 
 Route::get('dashboard', function () {
+    if (in_array(auth()->user()->role, ['parent', 'student'], true)) {
+        return redirect()->route('portal.home');
+    }
     if (! auth()->user()->isSuperadmin() && auth()->user()->role !== 'admin') {
         return redirect()->route('workbench.home');
     }
