@@ -34,6 +34,14 @@ class PortalHome extends Component
         }
     }
 
+    public function selectStudent(string $studentId): void
+    {
+        $studentId = (int) $studentId;
+        if ($this->linkedStudentIds()->contains($studentId)) {
+            $this->selectedStudentId = (string) $studentId;
+        }
+    }
+
     protected function linkedStudentIds(): Collection
     {
         $user = Auth::user();
