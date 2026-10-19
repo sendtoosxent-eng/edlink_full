@@ -94,6 +94,8 @@
                 </span>
             </div>
 
+            <input wire:model.live.debounce.300ms="studentSearch" type="search" placeholder="Search learner by name or admission number..." class="mb-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
+
             <div class="grid max-h-72 gap-2.5 overflow-y-auto p-1 md:grid-cols-2">
                 @forelse ($students as $student)
                     <label class="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition hover:bg-slate-100/60 hover:border-slate-300 cursor-pointer select-none">
