@@ -7,6 +7,7 @@
     $tabs = ['details' => 'Student details', 'academics' => 'Academics & subjects', 'finance' => 'Financial status', 'family' => 'Parents & guardians', 'history' => 'Attendance & history'];
     $photoUrl = $student->photoUrl();
     $latestReport = $examProgress->first();
+    $termReport = $studentReports->firstWhere('term_id', $term?->id);
 @endphp
 <div x-data="{
     tab: 'details', photoPreview: null,
@@ -48,11 +49,12 @@
         @endif
         @if($latestReport && auth()->user()->hasPermission('reports.view'))
             <a href="{{ route('reports.student-term-report.show', [$student, $latestReport['exam_id']]) }}" target="_blank" rel="noopener" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700">View report</a>
-        @else
-            <button type="button" @click="openTab('academics')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View academic progress</button>
         @endif
-        @if($canViewFinance)
-            <button type="button" @click="openTab('finance')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View balance</button>
+        <button type="button" @click="openTab('academics')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View academic progress</button>
+        @if($student->isActive() && (auth()->user()->hasPermission('finance.payments') || auth()->user()->hasPermission('finance.adjustments')))
+            <a href="{{ route('fee-payments.index', ['student' => $student->id]) }}" wire:navigate class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View balance</a>
+        @elseif($canViewFinance)
+            <button type="button" @click="openTab('finance')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Financial summary</button>
         @endif
         @if($student->isActive() && $term?->is_current && auth()->user()->hasPermission('finance.payments'))
             <a href="{{ route('fee-payments.index', ['student' => $student->id]) }}" wire:navigate class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100">Record payment</a>
@@ -119,9 +121,40 @@
     </section>
 
     <section id="panel-academics" role="tabpanel" aria-labelledby="tab-academics" x-show="tab === 'academics'" x-cloak class="space-y-5">
-        <div class="overflow-hidden rounded-2xl border bg-white"><div class="border-b p-5"><h2 class="text-lg font-black">Academic progress</h2><p class="mt-1 text-xs text-slate-500">Average percentages across recorded, approved papers. These are not class rankings.</p></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="{{ $head }}"><tr><th class="{{ $cell }}">Exam</th><th class="{{ $cell }}">Subjects recorded</th><th class="{{ $cell }}">Recorded average</th><th class="{{ $cell }}">Publication</th></tr></thead><tbody class="divide-y">@forelse($examProgress as $exam)<tr><td class="{{ $cell }} font-bold">{{ $exam['exam'] }}</td><td class="{{ $cell }}">{{ $exam['subjects'] }}</td><td class="{{ $cell }} font-mono">{{ $exam['average'] !== null ? number_format($exam['average'], 1).'%' : '—' }}</td><td class="{{ $cell }}"><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{{ $exam['published'] ? 'Published' : 'Not published' }}</span></td></tr>@empty<tr><td colspan="4" class="{{ $cell }} text-slate-400">No approved academic results for this term.</td></tr>@endforelse</tbody></table></div></div>
+        <div x-data="{ reportScope: 'term', reportId: {{ $termReport['id'] ?? 0 }} }" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div class="flex flex-col justify-between gap-4 border-b p-5 sm:flex-row sm:items-center">
+                <div><h2 class="text-lg font-black">Student reports</h2><p class="mt-1 text-xs text-slate-500">Select a report to see {{ $student->name }}’s approved marks or open the full report.</p></div>
+                <div class="flex gap-1 rounded-xl bg-slate-100 p-1" aria-label="Report history filter">
+                    <button type="button" @click="reportScope = 'term'; reportId = {{ $termReport['id'] ?? 0 }}" :aria-pressed="reportScope === 'term'" :class="reportScope === 'term' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold">Selected term</button>
+                    <button type="button" @click="reportScope = 'all'; reportId = {{ $studentReports->first()['id'] ?? 0 }}" :aria-pressed="reportScope === 'all'" :class="reportScope === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'" class="whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold">All terms</button>
+                </div>
+            </div>
+            @if($studentReports->isNotEmpty())
+                <div role="tablist" aria-label="Available student reports" class="flex gap-2 overflow-x-auto border-b bg-slate-50 p-3">
+                    @foreach($studentReports as $report)
+                        <button type="button" role="tab" id="report-tab-{{ $report['id'] }}" aria-controls="report-panel-{{ $report['id'] }}" x-show="reportScope === 'all' || {{ $report['term_id'] }} === {{ $term?->id ?? 0 }}" @click="reportId = {{ $report['id'] }}" :aria-selected="reportId === {{ $report['id'] }}" :class="reportId === {{ $report['id'] }} ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-amber-300'" class="shrink-0 rounded-xl border px-4 py-3 text-left text-sm font-bold">
+                            {{ $report['name'] }}<span class="mt-1 block text-[11px] font-normal opacity-70">{{ $report['term_name'] }} · {{ $report['year'] }}</span>
+                        </button>
+                    @endforeach
+                </div>
+                @foreach($studentReports as $report)
+                    <div role="tabpanel" id="report-panel-{{ $report['id'] }}" aria-labelledby="report-tab-{{ $report['id'] }}" data-student-report="{{ $report['id'] }}" x-show="reportId === {{ $report['id'] }} && (reportScope === 'all' || {{ $report['term_id'] }} === {{ $term?->id ?? 0 }})" x-cloak>
+                        <div class="flex flex-wrap items-center justify-between gap-4 p-5">
+                            <div><h3 class="font-black text-slate-900">{{ $report['name'] }}</h3><p class="mt-1 text-xs text-slate-500">{{ $report['term_name'] }} · {{ $report['year'] }} · {{ $report['published'] ? 'Published' : 'Approved marks · not published' }}</p></div>
+                            @if($report['can_open'])<a href="{{ route('reports.student-term-report.show', [$student, $report['id']]) }}" target="_blank" rel="noopener" class="rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-300">Open full report</a>@endif
+                        </div>
+                        <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="{{ $head }}"><tr><th class="{{ $cell }}">Subject</th><th class="{{ $cell }}">Marks scored</th><th class="{{ $cell }}">Out of</th><th class="{{ $cell }}">Percentage</th></tr></thead><tbody class="divide-y">
+                            @foreach($report['marks'] as $mark)<tr><td class="{{ $cell }} font-semibold">{{ $mark->subject_name }}</td><td class="{{ $cell }} font-mono">{{ number_format($mark->score, 1) }}</td><td class="{{ $cell }} font-mono">{{ number_format($mark->maximum_score, 1) }}</td><td class="{{ $cell }} font-mono">{{ $mark->percentage !== null ? number_format($mark->percentage, 1).'%' : '—' }}</td></tr>@endforeach
+                        </tbody></table></div>
+                        <div class="flex flex-wrap justify-between gap-2 border-t bg-slate-50 px-5 py-4 text-xs text-slate-500"><span>{{ $report['marks']->count() }} approved papers</span><span>Recorded average: <b class="text-slate-800">{{ $report['average'] !== null ? number_format($report['average'], 1).'%' : '—' }}</b></span></div>
+                    </div>
+                @endforeach
+                <p x-show="reportScope === 'term' && reportId === 0" class="p-5 text-sm text-slate-500">No approved reports for the selected term. Choose All terms to view earlier reports.</p>
+            @else
+                <p class="p-5 text-sm text-slate-500">No approved reports or marks have been recorded for this student.</p>
+            @endif
+        </div>
         <div class="overflow-hidden rounded-2xl border bg-white"><div class="border-b p-5"><h2 class="text-lg font-black">Subjects & progress</h2><p class="mt-1 text-xs text-slate-500">Subjects offered for this class and term, including individual selections where applicable.</p></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="{{ $head }}"><tr><th class="{{ $cell }}">Subject</th><th class="{{ $cell }}">Selection</th><th class="{{ $cell }}">Approved papers</th><th class="{{ $cell }}">Recorded average</th></tr></thead><tbody class="divide-y">@forelse($subjects as $subject)<tr><td class="{{ $cell }}"><b>{{ $subject->name }}</b><span class="ml-2 text-xs text-slate-400">{{ $subject->code }}</span></td><td class="{{ $cell }}">{{ $subject->selection_type ? ucfirst($subject->selection_type) : 'Class subject' }}</td><td class="{{ $cell }}">{{ $subject->assessments }}</td><td class="{{ $cell }} font-mono">{{ $subject->average !== null ? number_format($subject->average, 1).'%' : 'Not assessed' }}</td></tr>@empty<tr><td colspan="4" class="{{ $cell }} text-slate-400">No subjects have been assigned for this term.</td></tr>@endforelse</tbody></table></div></div>
-        <div class="overflow-hidden rounded-2xl border bg-white"><div class="border-b p-5"><h2 class="font-black">Approved marks</h2></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="{{ $head }}"><tr><th class="{{ $cell }}">Exam</th><th class="{{ $cell }}">Subject</th><th class="{{ $cell }}">Score</th><th class="{{ $cell }}">Percentage</th></tr></thead><tbody class="divide-y">@forelse($marks as $mark)<tr><td class="{{ $cell }}">{{ $mark->exam_name }}</td><td class="{{ $cell }}">{{ $mark->subject_name }}</td><td class="{{ $cell }} font-mono">{{ $mark->score }} / {{ $mark->maximum_score }}</td><td class="{{ $cell }} font-mono">{{ $mark->percentage !== null ? $mark->percentage.'%' : '—' }}</td></tr>@empty<tr><td colspan="4" class="{{ $cell }} text-slate-400">No approved marks recorded.</td></tr>@endforelse</tbody></table></div></div>
     </section>
 
     <section id="panel-finance" role="tabpanel" aria-labelledby="tab-finance" x-show="tab === 'finance'" x-cloak class="space-y-5">

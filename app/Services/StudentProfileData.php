@@ -33,20 +33,40 @@ class StudentProfileData
         $canViewFinance = $viewer->hasPermission('finance.payments') || $viewer->hasPermission('finance.reports') || $viewer->hasPermission('finance.ledger');
         $currency = (string) SchoolSetting::getValue($student->school_id, 'currency', 'UGX');
 
-        $marks = $term ? DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
+        $reportMarks = DB::table('exam_marks')->join('exam_papers', 'exam_papers.id', '=', 'exam_marks.exam_paper_id')
             ->join('exams', 'exams.id', '=', 'exam_papers.exam_id')
+            ->join('terms', 'terms.id', '=', 'exams.term_id')
             ->join('subjects', 'subjects.id', '=', 'exam_papers.subject_id')
             ->join('exam_paper_submissions', 'exam_paper_submissions.exam_paper_id', '=', 'exam_papers.id')
-            ->where('exams.school_id', $student->school_id)->where('exams.term_id', $term->id)
+            ->where('exams.school_id', $student->school_id)
             ->where('exam_marks.student_id', $student->id)->whereNotNull('exam_marks.score')
             ->where('exam_paper_submissions.status', 'approved')
-            ->when($subjectIds !== null, fn ($query) => $query->whereIn('subjects.id', $subjectIds))
-            ->orderByDesc('exams.created_at')->orderBy('subjects.name')
-            ->get(['exams.id as exam_id', 'exams.name as exam_name', 'exams.published_at', 'subjects.id as subject_id', 'subjects.name as subject_name', 'exam_marks.score', 'exam_papers.maximum_score'])
+            ->orderByDesc('terms.year')->orderByDesc('terms.term_number')->orderByDesc('exams.created_at')->orderByDesc('exams.id')->orderBy('subjects.name')
+            ->get(['exams.id as exam_id', 'exams.name as exam_name', 'exams.published_at', 'exams.term_id', 'exams.school_class_id', 'exams.stream_id', 'terms.name as term_name', 'terms.year', 'subjects.id as subject_id', 'subjects.name as subject_name', 'exam_marks.score', 'exam_papers.maximum_score']);
+        if ($teacher) {
+            $classIds = TeacherAcademicScope::classIds($viewer);
+            $assignments = $reportMarks->pluck('term_id')->unique()->mapWithKeys(fn ($id) => [$id => TeacherAcademicScope::subjectAssignments($viewer, $id)]);
+            $reportMarks = $reportMarks->filter(fn ($mark) => $classIds->contains($mark->school_class_id)
+                || $assignments->get($mark->term_id)->contains(fn ($assignment) => (int) $assignment->school_class_id === (int) $mark->school_class_id && (int) $assignment->subject_id === (int) $mark->subject_id));
+        }
+        $reportMarks = $reportMarks
             ->map(function ($mark) {
                 $mark->percentage = (float) $mark->maximum_score > 0 ? round((float) $mark->score / (float) $mark->maximum_score * 100, 1) : null;
                 return $mark;
-            }) : collect();
+            });
+        $marks = $reportMarks->where('term_id', $term?->id)->values();
+        $studentReports = $reportMarks->groupBy('exam_id')->map(function ($rows) use ($student, $viewer, $enrolments) {
+            $first = $rows->first();
+            $placement = $enrolments->firstWhere('term_id', $first->term_id);
+            $matchesPlacement = (int) ($placement?->school_class_id ?? $student->school_class_id) === (int) $first->school_class_id
+                && (! $first->stream_id || (int) ($placement ? $placement->stream_id : $student->stream_id) === (int) $first->stream_id);
+            return [
+                'id' => $first->exam_id, 'name' => $first->exam_name, 'term_id' => $first->term_id,
+                'term_name' => $first->term_name, 'year' => $first->year, 'published' => (bool) $first->published_at,
+                'average' => $rows->whereNotNull('percentage')->avg('percentage'), 'marks' => $rows->values(),
+                'can_open' => $viewer->hasPermission('reports.view') && $matchesPlacement,
+            ];
+        })->values();
         $examProgress = $marks->groupBy('exam_id')->map(fn ($rows) => [
             'exam' => $rows->first()->exam_name, 'exam_id' => $rows->first()->exam_id,
             'published' => (bool) $rows->first()->published_at, 'subjects' => $rows->count(),
@@ -92,7 +112,7 @@ class StudentProfileData
             ->where('student_club_memberships.school_id', $student->school_id)->where('student_id', $student->id)->pluck('student_clubs.name');
 
         return compact('student', 'terms', 'term', 'enrolments', 'placementClass', 'placementStream', 'placementCategory',
-            'canEdit', 'canViewFinance', 'currency', 'finance', 'payments', 'marks', 'examProgress', 'subjects',
+            'canEdit', 'canViewFinance', 'currency', 'finance', 'payments', 'marks', 'examProgress', 'studentReports', 'subjects',
             'attendance', 'attendanceCounts', 'attendanceTotal', 'attendanceRate', 'parentAccounts', 'houses', 'clubs');
     }
 }

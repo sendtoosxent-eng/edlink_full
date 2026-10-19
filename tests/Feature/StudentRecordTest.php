@@ -88,8 +88,33 @@ it('uses the selected historical term without changing the current placement', f
     StudentEnrolment::create(['school_id' => $this->school->id, 'student_id' => $this->student->id, 'term_id' => $old->id, 'school_class_id' => $oldClass->id, 'student_category_id' => $this->category->id, 'base_fee_amount' => 700000, 'status' => 'active', 'enrolled_at' => '2025-01-15']);
     $this->actingAs($this->admin)->get(route('students.profile', [$this->student, 'term' => $old->id]))->assertOk()
         ->assertViewHas('placementClass', fn ($class) => $class->id === $oldClass->id)
-        ->assertSee('700,000.00')->assertDontSee('POSTED-RECORD')->assertDontSee('Progress Mathematics');
+        ->assertSee('700,000.00')->assertDontSee('POSTED-RECORD')
+        ->assertViewHas('marks', fn ($marks) => $marks->isEmpty())
+        ->assertViewHas('studentReports', fn ($reports) => $reports->count() === 2);
     $otherSchool = School::create(['name' => 'Foreign School', 'slug' => 'foreign-record-school']);
     $foreignTerm = Term::create(['school_id' => $otherSchool->id, 'name' => 'Foreign term', 'year' => 2026]);
     $this->get(route('students.profile', [$this->student, 'term' => $foreignTerm->id]))->assertNotFound();
+});
+
+it('offers report tabs with approved marks across terms for this learner only', function () {
+    $old = Term::create(['school_id' => $this->school->id, 'name' => 'Previous Term', 'year' => 2025, 'status' => 'closed']);
+    StudentEnrolment::create(['school_id' => $this->school->id, 'student_id' => $this->student->id, 'term_id' => $old->id, 'school_class_id' => $this->class->id, 'student_category_id' => $this->category->id, 'base_fee_amount' => 600000, 'status' => 'active', 'enrolled_at' => '2025-01-15']);
+    $exam = Exam::create(['school_id' => $this->school->id, 'term_id' => $old->id, 'school_class_id' => $this->class->id, 'name' => 'Historical Final', 'published_at' => now()]);
+    $subject = Subject::where('name', 'Mathematics')->firstOrFail();
+    $paper = ExamPaper::create(['exam_id' => $exam->id, 'subject_id' => $subject->id, 'maximum_score' => 100]);
+    DB::table('exam_marks')->insert(['exam_paper_id' => $paper->id, 'student_id' => $this->student->id, 'score' => 0]);
+    DB::table('exam_paper_submissions')->insert(['exam_paper_id' => $paper->id, 'status' => 'approved']);
+    $other = Student::create(['school_id' => $this->school->id, 'school_class_id' => $this->class->id, 'name' => 'Other learner', 'status' => 'active']);
+    $otherExam = Exam::create(['school_id' => $this->school->id, 'term_id' => $old->id, 'school_class_id' => $this->class->id, 'name' => 'Other learner only', 'published_at' => now()]);
+    $otherPaper = ExamPaper::create(['exam_id' => $otherExam->id, 'subject_id' => $subject->id, 'maximum_score' => 100]);
+    DB::table('exam_marks')->insert(['exam_paper_id' => $otherPaper->id, 'student_id' => $other->id, 'score' => 99]);
+    DB::table('exam_paper_submissions')->insert(['exam_paper_id' => $otherPaper->id, 'status' => 'approved']);
+    $this->actingAs($this->admin)->get(route('students.profile', $this->student))->assertOk()
+        ->assertSee('View academic progress')->assertSee('All terms')->assertSee('Historical Final')
+        ->assertSee('data-student-report="'.$exam->id.'"', false)
+        ->assertSee(route('reports.student-term-report.show', [$this->student, $exam]), false)
+        ->assertSee('Open full report')->assertDontSee('Other learner only')
+        ->assertViewHas('studentReports', fn ($reports) => $reports->count() === 3)
+        ->assertViewHas('marks', fn ($marks) => $marks->count() === 2);
+    $this->get(route('reports.student-term-report.show', [$this->student, $exam]))->assertOk();
 });
