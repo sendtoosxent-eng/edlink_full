@@ -53,16 +53,20 @@ new #[Layout('layouts.guest-split')] class extends Component
 
         RateLimiter::clear($key);
         $user->clearOtp();
+        // The OTP was delivered to this address, so successfully entering it
+        // also proves email ownership. Do not send the user through a second
+        // email-verification screen after the same verification event.
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
         $user->forceFill(['last_login_ip' => request()->ip()])->save();
 
         Auth::login($user, (bool) session('otp_remember', false));
-        request()->session()->regenerate();
+        session()->regenerate();
         session()->forget(['otp_pending_user_id', 'otp_remember']);
+        session()->put('active_school_id', $user->school_id);
 
-        $this->redirect(
-            $user->hasVerifiedEmail() ? route($user->portalHomeRoute(), absolute: false) : route('verification.notice', absolute: false),
-            navigate: false
-        );
+        $this->redirect(route($user->portalHomeRoute(), absolute: false), navigate: false);
     }
 
     public function resend(): void

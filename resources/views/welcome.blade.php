@@ -434,16 +434,17 @@
 		</div>
 	</section>
 	
-	<!-- ============ MOBILE APP ============ -->
+	
+    <!-- ============ MOBILE APP ============ -->
 <section class="mobile-section py-24 max-w-7xl mx-auto px-4 sm:px-6">
     <div data-aos="fade-up" class="relative rounded-2xl sm:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-darken via-[#2a2560] to-darken">
         <div class="absolute -left-10 -top-10 w-72 h-72 bg-yellow-400/10 rounded-full animate-blob"></div>
         <div class="absolute -right-10 -bottom-16 w-72 h-72 bg-teal-400/10 rounded-full animate-blob-slow"></div>
 
-        <div class="relative z-10 grid lg:grid-cols-2 gap-10 items-center px-6 sm:px-10 lg:px-16 py-14 lg:py-20">
+        <div class="relative z-10 grid lg:grid-cols-2 gap-10 items-end px-6 sm:px-10 lg:px-16 pt-14 lg:pt-20">
 
             <!-- copy -->
-            <div class="text-center lg:text-left">
+            <div class="text-center lg:text-left pb-2 lg:pb-20">
                 <span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-yellow-400 mb-5">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                     <span>Now on Android</span>
@@ -476,26 +477,28 @@
                 </div>
             </div>
 
-            <!-- phone mockup -->
-            <div class="relative flex justify-center lg:justify-end">
-                <div class="absolute w-64 h-64 bg-yellow-400/10 rounded-full blur-3xl"></div>
-                <div class="relative animate-float">
-                    <div class="w-52 sm:w-60 aspect-[9/19] rounded-[2.5rem] border-[6px] border-white/10 bg-darken shadow-2xl overflow-hidden">
-                        <img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'mobile_app_image') }}" class="w-full h-full object-cover" alt="Edlink Android app">
-                    </div>
-                    <!-- floating badge -->
-                    <div class="absolute -bottom-4 -left-6 sm:-left-10 glass bg-white/90 dark:bg-darken/90 rounded-2xl shadow-xl border border-white/10 px-4 py-3 flex items-center space-x-2">
-                        <span class="w-8 h-8 rounded-lg bg-teal-400/20 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                        </span>
-                        <span class="text-xs font-semibold text-darken dark:text-white">Works offline-ready</span>
-                    </div>
+            <!-- hero image (cutout sits on the bottom edge of the card) -->
+            <div class="relative flex justify-center lg:justify-end self-end">
+                <div class="absolute bottom-10 left-1/2 lg:left-auto lg:right-10 -translate-x-1/2 lg:translate-x-0 w-64 h-64 sm:w-80 sm:h-80 bg-yellow-400/20 rounded-full blur-3xl"></div>
+
+                <img src="{{ asset('img/edlinkww.png') }}"
+                     alt="Woman showing the Edlink Android app on her phone"
+                     loading="lazy"
+                     class="relative block w-full max-w-[17rem] sm:max-w-sm lg:max-w-md h-auto object-contain drop-shadow-2xl">
+
+                <!-- floating badge -->
+                <div class="absolute bottom-8 left-2 sm:left-6 lg:-left-6 animate-float glass bg-white/90 dark:bg-darken/90 rounded-2xl shadow-xl border border-white/10 px-4 py-3 flex items-center space-x-2">
+                    <span class="w-8 h-8 rounded-lg bg-teal-400/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    </span>
+                    <span class="text-xs font-semibold text-darken dark:text-white">Works offline-ready</span>
                 </div>
             </div>
 
         </div>
     </div>
 </section>
+
 
 	<!-- ============ PRICING ============ -->
 	<section id="pricing" class="mobile-section py-28 bg-gray-50/60 dark:bg-white/[0.02]">
