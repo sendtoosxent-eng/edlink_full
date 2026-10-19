@@ -145,6 +145,23 @@ class Term extends Model
         return DB::transaction(function () use ($targetTerm) {
             $created = 0;
 
+            // Fee structures are term-scoped snapshots. Carry the previous
+            // term's values forward as defaults, but never overwrite a
+            // target-term value that the school has intentionally changed.
+            FeeStructure::where('school_id', $this->school_id)
+                ->where('term_id', $this->id)
+                ->get()
+                ->each(function (FeeStructure $sourceFee) use ($targetTerm) {
+                    FeeStructure::firstOrCreate([
+                        'school_id' => $this->school_id,
+                        'school_class_id' => $sourceFee->school_class_id,
+                        'student_category_id' => $sourceFee->student_category_id,
+                        'term_id' => $targetTerm->id,
+                    ], [
+                        'amount' => $sourceFee->amount,
+                    ]);
+                });
+
             $this->enrolments()->where('status', 'active')->each(function (StudentEnrolment $enrolment) use ($targetTerm, &$created) {
                 $exists = StudentEnrolment::where('student_id', $enrolment->student_id)
                     ->where('term_id', $targetTerm->id)
