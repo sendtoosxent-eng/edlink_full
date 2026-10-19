@@ -48,6 +48,11 @@ it('brings the learner record into one prefilled screen with correct posted tota
         ->assertSee('Mathematics')->assertSee('English')->assertSee('Progress Mathematics')->assertSee('80.0%')
         ->assertSee('50%')->assertSee('900,000.00')->assertSee('250,000.00')->assertSee('650,000.00')
         ->assertSee('POSTED-RECORD')->assertDontSee('PENDING-RECORD')->assertSee('Private medical record')
+        ->assertSee('Print ID card')->assertSee('View report')->assertSee('View balance')->assertSee('Record payment')
+        ->assertSee('View attendance')->assertSee('View parents')->assertSee('Add photo')
+        ->assertSee(route('students.id-cards.generate'), false)
+        ->assertSee('name="ids[]" value="'.$this->student->id.'"', false)
+        ->assertSee('class="w-full max-w-none space-y-6 pb-10"', false)
         ->assertSee('Editable')->assertSee('Read only')->assertViewHas('canEdit', true);
 });
 
@@ -57,7 +62,8 @@ it('lets assigned teachers view the record but preserves editing finance and sub
     DB::table('staff_subjects')->insert(['school_id' => $this->school->id, 'term_id' => $this->term->id, 'user_id' => $teacher->id, 'subject_id' => $math->id, 'school_class_id' => $this->class->id]);
     $this->actingAs($teacher)->get(route('students.profile', $this->student))->assertOk()
         ->assertViewHas('canEdit', false)->assertSee('Progress Mathematics')->assertDontSee('Progress English')
-        ->assertDontSee('POSTED-RECORD')->assertDontSee('Private medical record')->assertDontSee('Save student details');
+        ->assertDontSee('POSTED-RECORD')->assertDontSee('Private medical record')->assertDontSee('Save student details')
+        ->assertDontSee('Print ID card')->assertDontSee('Record payment')->assertDontSee('View balance')->assertDontSee('Add photo');
     $this->patch(route('students.profile.update', $this->student), ['name' => 'Not allowed'])->assertForbidden();
     $otherClass = SchoolClass::create(['school_id' => $this->school->id, 'name' => 'Another class']);
     $unassigned = Student::create(['school_id' => $this->school->id, 'school_class_id' => $otherClass->id, 'name' => 'Unassigned learner', 'status' => 'active']);

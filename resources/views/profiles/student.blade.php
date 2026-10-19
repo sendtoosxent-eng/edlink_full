@@ -5,13 +5,26 @@
     $head = 'bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500';
     $backRoute = \App\Support\TeacherAcademicScope::canViewStudentDirectory(auth()->user()) ? route('students.index') : route('workbench.home');
     $tabs = ['details' => 'Student details', 'academics' => 'Academics & subjects', 'finance' => 'Financial status', 'family' => 'Parents & guardians', 'history' => 'Attendance & history'];
+    $photoUrl = $student->photoUrl();
+    $latestReport = $examProgress->first();
 @endphp
-<div x-data="{ tab: 'details' }" class="mx-auto max-w-7xl space-y-6 pb-10">
+<div x-data="{
+    tab: 'details', photoPreview: null,
+    openTab(section) {
+        this.tab = section;
+        this.$nextTick(() => document.getElementById('panel-' + section)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+}" class="w-full max-w-none space-y-6 pb-10">
     <header class="overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-lg sm:p-8">
         <div class="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-            <div class="flex items-center gap-5">
-                <div class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/10 text-3xl font-black text-amber-300">
-                    @if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-full w-full object-cover">@else{{ str($student->name)->substr(0, 1)->upper() }}@endif
+            <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+                <div class="flex h-32 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/20 bg-white/10 text-3xl font-black text-amber-300 sm:h-40 sm:w-36">
+                    @if($photoUrl)
+                        <img src="{{ $photoUrl }}" data-original="{{ $photoUrl }}" :src="photoPreview || $el.dataset.original" alt="{{ $student->name }} student photograph" class="h-full w-full object-cover">
+                    @else
+                        <img x-show="photoPreview" x-cloak :src="photoPreview" alt="New student photograph preview" class="h-full w-full object-cover">
+                        <div x-show="!photoPreview" class="px-2 text-center">{{ str($student->name)->substr(0, 1)->upper() }}<span class="mt-2 block text-[10px] font-medium text-slate-300">No photo uploaded</span></div>
+                    @endif
                 </div>
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[.2em] text-amber-300">Student Profile</p>
@@ -23,6 +36,33 @@
             <a href="{{ $backRoute }}" wire:navigate class="self-start rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10">Back to learners</a>
         </div>
     </header>
+
+    <div aria-label="Student quick actions" class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        @if($student->isActive() && auth()->user()->hasPermission('students.view'))
+            <form method="POST" action="{{ route('students.id-cards.generate') }}" target="_blank" rel="noopener">
+                @csrf
+                <input type="hidden" name="type" value="student">
+                <input type="hidden" name="ids[]" value="{{ $student->id }}">
+                <button type="submit" class="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-300">Print ID card</button>
+            </form>
+        @endif
+        @if($latestReport && auth()->user()->hasPermission('reports.view'))
+            <a href="{{ route('reports.student-term-report.show', [$student, $latestReport['exam_id']]) }}" target="_blank" rel="noopener" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700">View report</a>
+        @else
+            <button type="button" @click="openTab('academics')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View academic progress</button>
+        @endif
+        @if($canViewFinance)
+            <button type="button" @click="openTab('finance')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View balance</button>
+        @endif
+        @if($student->isActive() && $term?->is_current && auth()->user()->hasPermission('finance.payments'))
+            <a href="{{ route('fee-payments.index', ['student' => $student->id]) }}" wire:navigate class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100">Record payment</a>
+        @endif
+        <button type="button" @click="openTab('history')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View attendance</button>
+        <button type="button" @click="openTab('family')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View parents</button>
+        @if($canEdit)
+            <button type="button" @click="openTab('details'); $nextTick(() => document.getElementById('student-photo').click())" class="ml-auto rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">{{ $photoUrl ? 'Change photo' : 'Add photo' }}</button>
+        @endif
+    </div>
 
     @if(session('status'))<div role="status" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{{ session('status') }}</div>@endif
     @if($errors->any())<div role="alert" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -74,7 +114,7 @@
                     <tr class="bg-slate-50/50"><th scope="row" class="{{ $cell }} text-left font-semibold text-slate-600">{{ $label }}</th><td class="{{ $cell }} text-slate-800">{{ $value ?: 'Not recorded' }}</td><td class="{{ $cell }} whitespace-nowrap text-xs text-slate-400">Read only</td></tr>
                 @endforeach
             </tbody></table></div>
-            @if($canEdit)<div class="flex flex-col gap-4 border-t bg-slate-50 p-5 sm:flex-row sm:items-end sm:justify-between"><label class="text-xs font-bold text-slate-600">Update profile photograph<input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="mt-2 block max-w-full text-xs"><span class="mt-1 block font-normal text-slate-400">JPG, PNG or WebP · maximum 4 MB</span></label><button class="rounded-xl bg-amber-400 px-6 py-3 text-sm font-black text-slate-950 hover:bg-amber-300">Save student details</button></div>@endif
+            @if($canEdit)<div class="flex flex-col gap-4 border-t bg-slate-50 p-5 sm:flex-row sm:items-end sm:justify-between"><label class="text-xs font-bold text-slate-600">Update profile photograph<input id="student-photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp" @change="if (photoPreview) URL.revokeObjectURL(photoPreview); photoPreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null" class="mt-2 block max-w-full text-xs"><span class="mt-1 block font-normal text-slate-400">JPG, PNG or WebP · maximum 4 MB. Choose a photo, then save to apply it.</span></label><button class="rounded-xl bg-amber-400 px-6 py-3 text-sm font-black text-slate-950 hover:bg-amber-300">Save student details</button></div>@endif
         </form>
     </section>
 
