@@ -1,4 +1,0 @@
-<x-app-layout>
-    <div class="mx-auto max-w-6xl p-6"><h1 class="text-2xl font-black">Verified backups</h1><p class="mb-6 text-sm text-slate-500">Daily private snapshots with integrity and restoration tests.</p>
-    <div class="overflow-x-auto rounded-2xl bg-white shadow"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">Created</th><th>Status</th><th>Size</th><th>Integrity verified</th><th>Restore tested</th></tr></thead><tbody>@forelse($backups as $backup)<tr class="border-t"><td class="p-3">{{ $backup->created_at }}</td><td>{{ $backup->status }}</td><td>{{ number_format($backup->size/1048576,2) }} MB</td><td>{{ $backup->verified_at ?: '—' }}</td><td>{{ $backup->restored_tested_at ?: '—' }}</td></tr>@empty<tr><td colspan="5" class="p-8 text-center">No automated backup has run yet.</td></tr>@endforelse</tbody></table></div>{{ $backups->links() }}</div>
-</x-app-layout>

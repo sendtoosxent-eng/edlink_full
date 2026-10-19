@@ -7,12 +7,22 @@ return [
     'finance_approval_threshold' => (float) env('FINANCE_APPROVAL_THRESHOLD', 1000000),
     'backup_retention_days' => (int) env('BACKUP_RETENTION_DAYS', 30),
     'privacy_retention_days' => (int) env('PRIVACY_RETENTION_DAYS', 2555),
+    'legal' => [
+        'policy_version' => env('LEGAL_POLICY_VERSION', '2026-10-18'),
+        'contact_email' => env('LEGAL_CONTACT_EMAIL', env('EDLINK_SUPPORT_EMAIL', 'support@edlink.space')),
+    ],
     'mail' => [
         'support_address' => env('EDLINK_SUPPORT_EMAIL', 'support@edlink.space'),
         'support_name' => env('EDLINK_SUPPORT_NAME', 'Edlink Support'),
     ],
     'backup' => [
         'mysql_dump_binary' => env('MYSQLDUMP_BINARY', 'mysqldump'),
+        'offsite_required' => (bool) env('BACKUP_OFFSITE_REQUIRED', false),
+        'offsite_disk' => env('BACKUP_OFFSITE_DISK'),
+        'offsite_prefix' => trim(env('BACKUP_OFFSITE_PREFIX', 'edlink-production'), '/'),
+    ],
+    'monitoring' => [
+        'alert_webhook_url' => env('SYSTEM_ALERT_WEBHOOK_URL'),
     ],
     'demo' => [
         'school_number' => env('EDLINK_DEMO_SCHOOL_NUMBER', 'EDL-TEACH'),

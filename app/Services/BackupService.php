@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\SystemBackup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 
 class BackupService
 {
@@ -25,11 +27,11 @@ class BackupService
     private function createSqliteBackup(string $connection, array $configuration): SystemBackup
     {
         $source = $configuration['database'] ?? null;
-        if (! is_string($source) || ! File::exists($source)) {
+        if (! is_string($source) || ($source !== ':memory:' && ! File::exists($source))) {
             throw new RuntimeException('SQLite database file not found.');
         }
 
-        $path = $this->backupDirectory().DIRECTORY_SEPARATOR.'edlink-'.now()->format('Ymd-His').'.sqlite';
+        $path = $this->backupPath('sqlite');
         $quoted = DB::connection($connection)->getPdo()->quote($path);
         DB::connection($connection)->unprepared("VACUUM INTO {$quoted}");
 
@@ -38,7 +40,7 @@ class BackupService
 
     private function createMysqlBackup(array $configuration): SystemBackup
     {
-        $path = $this->backupDirectory().DIRECTORY_SEPARATOR.'edlink-'.now()->format('Ymd-His').'.sql.gz';
+        $path = $this->backupPath('sql.gz');
         $credentialsPath = tempnam(sys_get_temp_dir(), '.mysqldump-');
 
         if ($credentialsPath === false) {
@@ -70,6 +72,7 @@ class BackupService
             $exitCode = $process->run(function (string $type, string $buffer) use ($output, &$error): void {
                 if ($type === Process::OUT) {
                     gzwrite($output, $buffer);
+
                     return;
                 }
 
@@ -113,18 +116,29 @@ class BackupService
                 $this->verifyMysqlDump($backup->path);
             }
 
-            $backup->update(['status'=>'verified','verified_at'=>now(),'restored_tested_at'=>$restorationTest?now():$backup->restored_tested_at,'failure'=>null]);
+            $backup->update(['status' => 'verified', 'verified_at' => now(), 'restored_tested_at' => $restorationTest ? now() : $backup->restored_tested_at, 'failure' => null]);
         } catch (\Throwable $error) {
-            $backup->update(['status'=>'failed','failure'=>$error->getMessage()]);
+            $backup->update(['status' => 'failed', 'failure' => $error->getMessage()]);
             throw $error;
         }
+
         return $backup->fresh();
     }
 
     public function prune(int $keepDays = 30): int
     {
-        $expired = SystemBackup::where('created_at','<',now()->subDays(max(1, $keepDays)))->get();
-        foreach ($expired as $backup) { File::delete($backup->path); $backup->delete(); }
+        $expired = SystemBackup::where('created_at', '<', now()->subDays(max(1, $keepDays)))->get();
+        foreach ($expired as $backup) {
+            $disk = config('edlink.backup.offsite_disk');
+            if (filled($disk)) {
+                $prefix = trim((string) config('edlink.backup.offsite_prefix'), '/');
+                $remotePath = ($prefix !== '' ? $prefix.'/' : '').basename($backup->path);
+                Storage::disk($disk)->delete($remotePath);
+            }
+            File::delete($backup->path);
+            $backup->delete();
+        }
+
         return $expired->count();
     }
 
@@ -134,15 +148,65 @@ class BackupService
             throw new RuntimeException('Backup file was not created or is empty.');
         }
 
-        $backup = SystemBackup::create(['disk'=>'local','path'=>$path,'size'=>File::size($path),'checksum'=>hash_file('sha256',$path),'status'=>'created']);
-        return $this->verify($backup);
+        $backup = SystemBackup::create(['disk' => 'local', 'path' => $path, 'size' => File::size($path), 'checksum' => hash_file('sha256', $path), 'status' => 'created']);
+        $backup = $this->verify($backup);
+        $this->replicateOffsite($backup);
+
+        return $backup;
+    }
+
+    private function replicateOffsite(SystemBackup $backup): void
+    {
+        $disk = config('edlink.backup.offsite_disk');
+        $required = (bool) config('edlink.backup.offsite_required');
+
+        if (! filled($disk)) {
+            if ($required) {
+                $backup->update([
+                    'status' => 'failed',
+                    'failure' => 'Off-site backups are required but BACKUP_OFFSITE_DISK is not configured.',
+                ]);
+                throw new RuntimeException('Off-site backups are required but BACKUP_OFFSITE_DISK is not configured.');
+            }
+
+            return;
+        }
+
+        $stream = fopen($backup->path, 'rb');
+        if ($stream === false) {
+            throw new RuntimeException('The verified backup could not be opened for off-site replication.');
+        }
+
+        $prefix = trim((string) config('edlink.backup.offsite_prefix'), '/');
+        $remotePath = ($prefix !== '' ? $prefix.'/' : '').basename($backup->path);
+
+        try {
+            Storage::disk($disk)->writeStream($remotePath, $stream, ['visibility' => 'private']);
+            if (! Storage::disk($disk)->exists($remotePath)) {
+                throw new RuntimeException('The off-site backup could not be verified after upload.');
+            }
+        } catch (\Throwable $error) {
+            $backup->update(['status' => 'failed', 'failure' => 'Off-site replication failed: '.$error->getMessage()]);
+            throw new RuntimeException('Off-site backup replication failed.', previous: $error);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 
     private function backupDirectory(): string
     {
         $directory = storage_path('app/private/backups');
         File::ensureDirectoryExists($directory);
+
         return $directory;
+    }
+
+    private function backupPath(string $extension): string
+    {
+        return $this->backupDirectory().DIRECTORY_SEPARATOR
+            .'edlink-'.now()->format('Ymd-His').'-'.Str::lower(Str::random(8)).'.'.$extension;
     }
 
     private function mysqlCredentials(array $configuration): string

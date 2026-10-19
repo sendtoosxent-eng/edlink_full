@@ -1,4 +1,3 @@
-import { api } from '../../api';
 import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
@@ -6,13 +5,12 @@ import Animated, { useAnimatedStyle, withTiming, Easing, ReduceMotion } from 're
 import { AuthProgress } from './AuthProgress';
 import { ActivityIndicator, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../../theme';
-import type { AccountIdentity, Role, SchoolIdentity } from '../../types';
+import type { Role, SchoolIdentity } from '../../types';
 import { AuthLayout } from './AuthLayout';
 
 export function LoginScreen({ role, school, email, password, error, busy, biometricAvailable, onEmailChange, onPasswordChange, onChangeSchool, onChangeRole, onForgotPassword, onBiometricSignIn, onSubmit }: { role: Role; school: SchoolIdentity; email: string; password: string; error: string; busy: boolean; biometricAvailable: boolean; onEmailChange: (value: string) => void; onPasswordChange: (value: string) => void; onChangeSchool: () => void; onChangeRole: () => void; onForgotPassword: () => void; onBiometricSignIn: () => void; onSubmit: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const [stage, setStage] = useState<'email' | 'password'>('email');
-  const [account, setAccount] = useState<AccountIdentity>();
   const [checking, setChecking] = useState(false);
   const lookupVersion = useRef(0);
   const [emailError, setEmailError] = useState('');
@@ -24,16 +22,11 @@ export function LoginScreen({ role, school, email, password, error, busy, biomet
     if (checking || busy) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setEmailError('Enter a valid email address to continue.'); return; }
     const version = ++lookupVersion.current;
-    setEmailError(''); setChecking(true); setAccount(undefined);
-    try {
-      const { data } = await api.account(school.number, email.trim(), role);
-      if (version !== lookupVersion.current) return;
-      setAccount(data); onEmailChange(email.trim()); changeStage('password');
-    } catch (caught) {
-      if (version === lookupVersion.current) setEmailError(caught instanceof Error ? caught.message : 'Could not check your account. Please try again.');
-    } finally { if (version === lookupVersion.current) setChecking(false); }
+    setEmailError(''); setChecking(true);
+    if (version !== lookupVersion.current) return;
+    onEmailChange(email.trim()); changeStage('password'); setChecking(false);
   };
-  return <AuthLayout eyebrow="Welcome back" school={school} account={stage === 'password' ? account : undefined} navigation={
+  return <AuthLayout eyebrow="Welcome back" school={school} navigation={
     <View style={styles.headingRow}>
       <Pressable disabled={busy || checking} accessibilityLabel={stage === 'email' ? 'Change school' : 'Back to email'} onPress={() => stage === 'email' ? onChangeSchool() : changeStage('email')} style={styles.back}><Ionicons name="chevron-back" size={23} color={colors.navy} /></Pressable>
       <AuthProgress step={stage === 'email' ? 2 : 3} />
@@ -43,7 +36,7 @@ export function LoginScreen({ role, school, email, password, error, busy, biomet
         <View style={[styles.panel, { width: width || '50%' }]} pointerEvents={stage === 'email' ? 'auto' : 'none'} accessibilityElementsHidden={stage !== 'email'} importantForAccessibility={stage === 'email' ? 'auto' : 'no-hide-descendants'}>
           <Text style={styles.title}>Your email address</Text><Text style={styles.lead}>Enter the email registered with your school.</Text>
           <Text style={styles.label}>Email address</Text>
-          <View style={[styles.field, !!emailError && styles.fieldError]}><Ionicons name="mail-outline" size={21} color={colors.navy} /><TextInput accessibilityLabel="Email address" value={email} onChangeText={value => { lookupVersion.current += 1; setChecking(false); setAccount(undefined); setEmailError(''); onEmailChange(value); }} placeholder="you@school.com" placeholderTextColor="#85838B" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" returnKeyType="next" onSubmitEditing={next} style={styles.input} /></View>
+          <View style={[styles.field, !!emailError && styles.fieldError]}><Ionicons name="mail-outline" size={21} color={colors.navy} /><TextInput accessibilityLabel="Email address" value={email} onChangeText={value => { lookupVersion.current += 1; setChecking(false); setEmailError(''); onEmailChange(value); }} placeholder="you@school.com" placeholderTextColor="#85838B" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" returnKeyType="next" onSubmitEditing={next} style={styles.input} /></View>
           {!!emailError && <Text accessibilityLiveRegion="polite" style={styles.validation}>{emailError}</Text>}
           <Pressable disabled={checking || busy} onPress={() => void next()} style={({ pressed }) => [styles.button, pressed && styles.buttonMuted]}><Text style={styles.buttonText}>{checking ? 'Finding your account…' : 'Continue'}</Text>{checking ? <ActivityIndicator color={colors.gold} /> : <Ionicons name="arrow-forward-circle" size={23} color={colors.gold} />}</Pressable>
           <Pressable disabled={checking || busy} onPress={onChangeRole} style={[styles.role, styles.roleChoice]}><Ionicons name="person-circle-outline" size={20} color={colors.navy} /><Text style={styles.roleText}>Signing in as {roleLabel}</Text><Ionicons name="chevron-down" size={15} color={colors.navy} /></Pressable>

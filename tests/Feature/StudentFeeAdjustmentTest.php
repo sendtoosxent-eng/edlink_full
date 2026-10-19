@@ -1,7 +1,8 @@
 <?php
 
-use App\Livewire\FeePayments;
 use App\Livewire\FeeAdjustments;
+use App\Livewire\FeePayments;
+use App\Models\AccountingJournal;
 use App\Models\Arrears;
 use App\Models\AuditLog;
 use App\Models\Designation;
@@ -66,6 +67,40 @@ it('keeps a requested adjustment out of the balance until an administrator appro
     expect($student->fresh()->totalDue($term))->toBe(800000.0)
         ->and($adjustment->fresh()->status)->toBe('cancelled')
         ->and(AuditLog::where('event', 'finance.fee_adjustment.cancelled')->exists())->toBeTrue();
+});
+
+it('reduces dashboard expected fees only after the adjustment is approved', function () {
+    extract(feeAdjustmentFixture('dashboard-adjustment-school'));
+
+    $adjustment = StudentFeeAdjustment::create([
+        'school_id' => $school->id,
+        'student_id' => $student->id,
+        'term_id' => $term->id,
+        'requested_by' => $admin->id,
+        'type' => 'negotiated',
+        'calculation_type' => 'fixed',
+        'value' => 200000,
+        'amount' => 200000,
+        'reason' => 'A proposed lower individual fee for this learner.',
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($admin)->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewHas('expectedFees', 800000.0)
+        ->assertViewHas('totalExpected', 800000.0);
+
+    $adjustment->update([
+        'status' => 'approved',
+        'reviewed_by' => $admin->id,
+        'reviewed_at' => now(),
+    ]);
+
+    $this->actingAs($admin)->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewHas('expectedFees', 600000.0)
+        ->assertViewHas('totalExpected', 600000.0)
+        ->assertViewHas('pendingFees', 600000.0);
 });
 
 it('allows finance adjustment staff to open the screen, request, and approve an adjustment', function () {
@@ -173,7 +208,9 @@ it('never approves combined adjustments above the initial term fee', function ()
     expect($first->fresh()->status)->toBe('approved')
         ->and($second->fresh()->status)->toBe('pending')
         ->and($student->fresh()->feeAdjustmentTotal($term))->toBe(500000.0)
-        ->and($student->fresh()->totalDue($term))->toBe(300000.0);
+        ->and($student->fresh()->totalDue($term))->toBe(300000.0)
+        ->and(AccountingJournal::where('source_type', StudentFeeAdjustment::class)
+            ->where('source_id', $first->id)->where('status', 'posted')->exists())->toBeTrue();
 });
 
 it('uses approved adjusted balances when rolling arrears', function () {

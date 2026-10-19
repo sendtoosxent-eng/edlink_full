@@ -84,6 +84,7 @@ use App\Models\HomeworkSubmission;
 use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\StudentEnrolment;
+use App\Models\StudentFeeAdjustment;
 use App\Services\StudentSubjectSelectionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -177,6 +178,16 @@ Route::get('dashboard', function () {
         ->where('student_enrolments.term_id', $term->id)
         ->whereHas('student', fn ($query) => $query->where('status', 'active'))
         ->sum('base_fee_amount') : 0;
+    if ($term) {
+        // A pending request is only a proposal. Once approved, its reduction
+        // becomes part of the school's effective fee demand everywhere.
+        $expectedFees -= (float) StudentFeeAdjustment::where('school_id', $school->id)
+            ->where('term_id', $term->id)
+            ->where('status', 'approved')
+            ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+            ->sum('amount');
+        $expectedFees = max(0, $expectedFees);
+    }
     $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->whereHas('student', fn ($query) => $query->where('status', 'active'))->sum('amount') : 0;
     $feesPaid = $term ? (float) FeePayment::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
     $termExpenses = $term ? (float) Expense::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;

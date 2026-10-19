@@ -6,9 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/Typography';
 import { BrandLogo } from '../../components/BrandLogo';
 import { colors } from '../../theme';
-import type { AccountIdentity, SchoolIdentity } from '../../types';
+import type { SchoolIdentity } from '../../types';
 
-export function AuthLayout({ children, navigation, school, account, eyebrow, heroTitle, heroSubtitle }: { children: ReactNode; navigation?: ReactNode; school?: SchoolIdentity; account?: AccountIdentity; eyebrow: string; heroTitle?: string; heroSubtitle?: string }) {
+export function AuthLayout({ children, navigation, school, eyebrow, heroTitle, heroSubtitle }: { children: ReactNode; navigation?: ReactNode; school?: SchoolIdentity; eyebrow: string; heroTitle?: string; heroSubtitle?: string }) {
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
   const expandedHeight = (school || heroTitle ? 342 : 255) + insets.top;
@@ -18,7 +18,7 @@ export function AuthLayout({ children, navigation, school, account, eyebrow, her
   return <View style={styles.page}>
     <Animated.View style={[styles.hero, { paddingTop: insets.top }, heroMotion]}>
       <View style={styles.glowLarge} /><View style={styles.glowSmall} />
-      {school ? <SchoolHeader school={school} account={account} greeting={eyebrow} /> : <>
+      {school ? <SchoolHeader school={school} greeting={eyebrow} /> : <>
         <Animated.View style={[styles.identity, logoMotion]}><BrandLogo /></Animated.View>
         <Animated.View style={[styles.heroCopy, copyMotion]}>
           <View style={styles.kicker}><Text style={styles.eyebrow}>{eyebrow}</Text></View>
@@ -31,10 +31,10 @@ export function AuthLayout({ children, navigation, school, account, eyebrow, her
   </View>;
 }
 
-function SchoolHeader({ school, account, greeting }: { school: SchoolIdentity; account?: AccountIdentity; greeting: string }) {
-  const name = account?.name ?? school.name;
-  const photo = account ? account.avatar_url : school.logo_url;
-  const subtitle = account ? 'Welcome to your workspace' : school.number;
+function SchoolHeader({ school, greeting }: { school: SchoolIdentity; greeting: string }) {
+  const name = school.name;
+  const photo = school.logo_url;
+  const subtitle = school.number;
   const [width, setWidth] = useState(320);
   const { progress } = useReanimatedKeyboardAnimation();
   const greetingMotion = useAnimatedStyle(() => ({ opacity: interpolate(progress.value, [0, 0.65, 1], [1, 0, 0]), transform: [{ translateY: -8 * progress.value }] }));
@@ -50,7 +50,7 @@ function SchoolHeader({ school, account, greeting }: { school: SchoolIdentity; a
   return <View style={styles.schoolHeader} onLayout={event => setWidth(event.nativeEvent.layout.width)} accessible accessibilityLabel={`${greeting}. ${name}. ${subtitle}`}>
     <Animated.View style={[styles.schoolGreeting, greetingMotion]}><Text style={styles.greetingText}>{greeting}</Text></Animated.View>
     <Animated.View style={[styles.schoolBadge, badgeMotion]}>
-      {photo ? <Image source={{ uri: photo }} style={account ? styles.avatarImage : styles.badgeImage} resizeMode={account ? "cover" : "contain"} /> : <Text style={styles.badgeInitial}>{name.charAt(0)}</Text>}
+      {photo ? <Image source={{ uri: photo }} style={styles.badgeImage} resizeMode="contain" /> : <Text style={styles.badgeInitial}>{name.charAt(0)}</Text>}
     </Animated.View>
     <Animated.View style={[styles.stackedSchool, stackedMotion]}>
       <Text numberOfLines={3} style={styles.largeSchoolName}>{name}</Text><Text style={styles.schoolCode}>{subtitle}</Text>

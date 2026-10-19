@@ -1,2 +1,0 @@
-<?php
-namespace App\Models;use Illuminate\Database\Eloquent\Model;class FinancialAccountTransfer extends Model{protected $fillable=['school_id','from_account_id','to_account_id','amount','transfer_date','reference','notes','evidence_path','status','recorded_by','approved_by','approved_at'];protected $casts=['amount'=>'decimal:2','transfer_date'=>'date','approved_at'=>'datetime'];public function fromAccount(){return $this->belongsTo(FinancialAccount::class,'from_account_id');}public function toAccount(){return $this->belongsTo(FinancialAccount::class,'to_account_id');}}

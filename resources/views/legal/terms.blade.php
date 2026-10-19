@@ -76,7 +76,7 @@
 		<div class="lg:col-span-3">
 			<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">Legal</span>
 			<h1 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">Terms and Conditions</h1>
-			<p class="mt-3 text-gray-500 dark:text-gray-400">Last updated: {{ now()->format('d F Y') }}</p>
+			<p class="mt-3 text-gray-500 dark:text-gray-400">Last updated: {{ \Carbon\Carbon::parse(config('edlink.legal.policy_version'))->format('d F Y') }}</p>
 
 			<div class="mt-6 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-300">
 				These Terms form a binding agreement between you and Spotnet Technologies. If you use Edlink on behalf of a school or organization, you confirm that you have authority to bind that entity.
@@ -219,7 +219,7 @@
 
 				<section id="s16" class="pb-4">
 					<h2 class="text-xl font-bold text-darken dark:text-white mb-3">16. Contact</h2>
-					<p>Questions about these Terms can be sent to <a href="mailto:contact@edlink.com" class="text-yellow-600 dark:text-yellow-400 font-medium">contact@edlink.com</a>. Notices to you may be sent to the email address associated with your account or through the Service.</p>
+					<p>Questions about these Terms can be sent to <a href="mailto:{{ config('edlink.legal.contact_email') }}" class="text-yellow-600 dark:text-yellow-400 font-medium">{{ config('edlink.legal.contact_email') }}</a>. Notices to you may be sent to the email address associated with your account or through the Service.</p>
 				</section>
 
 			</div>

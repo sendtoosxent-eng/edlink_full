@@ -154,7 +154,7 @@
                 <!-- SUMMARY BADGES GRID -->
                 <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     <div class="rounded-2xl bg-slate-50 border border-slate-200/80 p-3">
-                        <p class="text-[11px] font-semibold text-slate-500">Expected this term</p>
+                        <p class="text-[11px] font-semibold text-slate-500">Original mapped fee</p>
                         <p class="mt-1 text-sm font-black text-slate-900 font-mono">UGX {{number_format($fee)}}</p>
                     </div>
                     <div class="rounded-2xl bg-violet-50/80 border border-violet-200/60 p-3">
@@ -162,7 +162,7 @@
                         <p class="mt-1 text-sm font-black text-violet-700 font-mono">- UGX {{number_format($adjustments)}}</p>
                     </div>
                     <div class="rounded-2xl bg-blue-50/80 border border-blue-200/60 p-3">
-                        <p class="text-[11px] font-semibold text-blue-600">Adjusted term fee</p>
+                        <p class="text-[11px] font-semibold text-blue-600">Expected this term</p>
                         <p class="mt-1 text-sm font-black text-blue-700 font-mono">UGX {{number_format($adjustedFee)}}</p>
                     </div>
                     <div class="rounded-2xl bg-rose-50/80 border border-rose-200/60 p-3">

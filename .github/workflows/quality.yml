@@ -1,0 +1,65 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer validate --strict
+      - run: composer audit --locked
+      - name: Check formatting of changed PHP files
+        shell: bash
+        run: |
+          base="${{ github.event.before }}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          fi
+          if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}"; then
+            base="$(git rev-list --max-parents=0 HEAD)"
+          fi
+          mapfile -d '' php_files < <(git diff --name-only -z --diff-filter=ACMR "$base" "$GITHUB_SHA" -- '*.php')
+          if (( ${#php_files[@]} )); then
+            ./vendor/bin/pint --test "${php_files[@]}"
+          fi
+      - run: php -d memory_limit=768M artisan test
+      - run: npm ci
+      - run: npm run build
+
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npx expo install --check
+      - run: npx tsc --noEmit
+      # Expo's current dependency graph still contains non-critical transitive
+      # advisories. Block critical regressions without forcing an SDK downgrade.
+      - run: npm audit --omit=dev --audit-level=critical

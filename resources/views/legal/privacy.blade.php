@@ -71,7 +71,7 @@
 		<div class="lg:col-span-3">
 			<span class="text-xs font-bold tracking-widest text-yellow-500 uppercase">Legal</span>
 			<h1 class="mt-3 text-3xl sm:text-4xl font-extrabold text-darken dark:text-white">Privacy Policy</h1>
-			<p class="mt-3 text-gray-500 dark:text-gray-400">Last updated: {{ now()->format('d F Y') }}</p>
+			<p class="mt-3 text-gray-500 dark:text-gray-400">Last updated: {{ \Carbon\Carbon::parse(config('edlink.legal.policy_version'))->format('d F Y') }}</p>
 
 			<div class="mt-6 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-300">
 				This policy explains how Spotnet Technologies handles personal data in Edlink. Schools remain responsible for the lawfulness of the student, guardian, and staff data they enter into the Service.
@@ -161,7 +161,7 @@
 				<section id="p12">
 					<h2 class="text-xl font-bold text-darken dark:text-white mb-3">12. Changes and Contact</h2>
 					<p>We may update this Privacy Policy from time to time. If we make material changes, we will post the updated version on this page or otherwise provide notice as required by law. Continued use of the Service after the updated policy becomes effective means you accept it.</p>
-					<p class="mt-3">Questions or requests about this Privacy Policy can be sent to <a href="mailto:contact@edlink.com" class="text-yellow-600 dark:text-yellow-400 font-medium">contact@edlink.com</a>.</p>
+					<p class="mt-3">Questions, privacy requests, or suspected data breaches can be sent to <a href="mailto:{{ config('edlink.legal.contact_email') }}" class="text-yellow-600 dark:text-yellow-400 font-medium">{{ config('edlink.legal.contact_email') }}</a>.</p>
 				</section>
 
 			</div>

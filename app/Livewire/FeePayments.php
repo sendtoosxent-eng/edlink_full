@@ -11,6 +11,7 @@ use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\StudentFeeAdjustment;
 use App\Services\DoubleEntryService;
+use App\Services\StudentReceivablesService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -305,6 +306,9 @@ class FeePayments extends Component
                 'review_notes' => $this->reviewNotes ?: null,
                 'reviewed_at' => now(),
             ]);
+            if ($decision === 'approved') {
+                app(StudentReceivablesService::class)->postAdjustment($adjustment->fresh(), $user->id);
+            }
             AuditLog::record($user->school_id, 'finance.fee_adjustment.'.$decision, $adjustment, [
                 'student_id' => $adjustment->student_id,
                 'term_id' => $adjustment->term_id,

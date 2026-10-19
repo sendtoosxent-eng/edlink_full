@@ -8,6 +8,7 @@ use App\Models\School;
 use App\Models\SchoolSetting;
 use App\Models\User;
 use App\Notifications\OtpCodeNotification;
+use App\Services\PublicImageStorage;
 use App\Support\DemoAccounts;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -18,7 +19,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends ApiController
@@ -48,14 +51,13 @@ class AuthController extends ApiController
             'expected_role' => ['required', 'in:teacher,student,parent'],
         ]);
         $school = School::where('school_number', strtoupper(trim($data['school_number'])))->first();
-        $user = $school?->users()->whereRaw('LOWER(email) = ?', [strtolower(trim($data['email']))])
-            ->where('role', $data['expected_role'])->first();
-        if (! $school || ! $school->isLicenceUsable() || $school->isExpiredDemo()
-            || ! $user || ! $user->hasVerifiedEmail() || $user->employment_status === 'inactive') {
-            throw ValidationException::withMessages(['email' => ['We could not find an active account for this school and role.']]);
+        if (! $school || ! $school->isLicenceUsable() || $school->isExpiredDemo()) {
+            throw ValidationException::withMessages(['school_number' => ['We could not find an active school with that number.']]);
         }
 
-        return $this->ok(['name' => $user->name, 'avatar_url' => $user->avatarUrl()]);
+        // Keep this compatibility endpoint non-revealing. Password verification is
+        // the first point at which the API confirms whether an account exists.
+        return $this->ok(['accepted' => true]);
     }
 
     public function login(LoginRequest $request)
@@ -114,6 +116,7 @@ class AuthController extends ApiController
 
         RateLimiter::clear($key);
         $user->clearOtp();
+
         return $this->completeLogin($request, $user, $challenge['device_name'] ?? $data['device_name']);
     }
 
@@ -193,15 +196,18 @@ class AuthController extends ApiController
         return $this->ok(['otp_required' => false, 'token' => $token, 'user' => $this->userPayload($user)]);
     }
 
-    public function me(Request $request) { return $this->ok($this->userPayload($request->user())); }
+    public function me(Request $request)
+    {
+        return $this->ok($this->userPayload($request->user()));
+    }
 
-    public function updateProfile(Request $request, \App\Services\PublicImageStorage $images)
+    public function updateProfile(Request $request, PublicImageStorage $images)
     {
         $user = $request->user();
         abort_unless($user->role === 'teacher', 403);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->where('school_id', $user->school_id)->ignore($user->id)],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->where('school_id', $user->school_id)->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:50'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
@@ -211,16 +217,29 @@ class AuthController extends ApiController
         try {
             $user->name = $data['name'];
             $user->email = $data['email'];
-            if (array_key_exists('phone', $data)) $user->phone = $data['phone'];
-            if ($newPath) $user->avatar_path = $newPath;
-            if ($emailChanged) $user->email_verified_at = null;
+            if (array_key_exists('phone', $data)) {
+                $user->phone = $data['phone'];
+            }
+            if ($newPath) {
+                $user->avatar_path = $newPath;
+            }
+            if ($emailChanged) {
+                $user->email_verified_at = null;
+            }
             $user->save();
         } catch (\Throwable $exception) {
-            if ($newPath) \Illuminate\Support\Facades\Storage::disk('public')->delete($newPath);
+            if ($newPath) {
+                Storage::disk('public')->delete($newPath);
+            }
             throw $exception;
         }
-        if ($newPath) $images->deleteReplacement($oldPath, $newPath);
-        if ($emailChanged) $user->sendEmailVerificationNotification();
+        if ($newPath) {
+            $images->deleteReplacement($oldPath, $newPath);
+        }
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
+
         return $this->ok($this->userPayload($user));
     }
 
@@ -228,12 +247,14 @@ class AuthController extends ApiController
     {
         AuditLog::record($request->user()->school_id, 'mobile.logout', $request->user());
         $request->user()->currentAccessToken()?->delete();
+
         return $this->ok(['logged_out' => true]);
     }
 
     private function userPayload(User $user): array
     {
         $user->loadMissing('school', 'designation');
+
         return [
             'id' => $user->id, 'name' => $user->name, 'email' => $user->email,
             'phone' => $user->phone, 'role' => $user->role, 'avatar_url' => $user->avatarUrl(),
@@ -266,12 +287,14 @@ class AuthController extends ApiController
         if (! $user || $user->employment_status === 'inactive' || ! $user->school?->isLicenceUsable() || $user->school->isExpiredDemo()) {
             throw ValidationException::withMessages(['code' => ['This verification request is no longer valid.']]);
         }
+
         return [$user, $challenge];
     }
 
     private function maskEmail(string $email): string
     {
         [$name, $domain] = array_pad(explode('@', $email, 2), 2, '');
+
         return mb_substr($name, 0, 2).str_repeat('•', max(2, mb_strlen($name) - 2)).'@'.$domain;
     }
 }

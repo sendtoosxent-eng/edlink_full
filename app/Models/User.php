@@ -192,7 +192,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $code = (string) random_int(100000, 999999);
 
         $this->forceFill([
-            'otp_code' => $code,
+            'otp_code' => password_hash($code, PASSWORD_DEFAULT),
             'otp_expires_at' => now()->addMinutes(10),
         ])->save();
 
@@ -226,7 +226,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function otpIsValid(string $code): bool
     {
         return $this->otp_code
-            && hash_equals($this->otp_code, $code)
+            && password_verify($code, $this->otp_code)
             && $this->otp_expires_at
             && $this->otp_expires_at->isFuture();
     }

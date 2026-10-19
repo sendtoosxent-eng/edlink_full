@@ -77,9 +77,12 @@ On a VPS, use a process supervisor for `queue:work` instead of the second cron
 entry. The scheduler runs expiry, MySQL backups, monitoring, renewal reminders,
 and model pruning. Backups are compressed into
 `storage/app/private/backups`, verified by checksum and dump-header validation,
-and pruned after `BACKUP_RETENTION_DAYS` (30 by default). They remain on the
-same Hostinger account, so use Hostinger's own backup service or an off-site
-object-storage copy for disaster recovery.
+and pruned after `BACKUP_RETENTION_DAYS` (30 by default). Production must set
+`BACKUP_OFFSITE_REQUIRED=true`, `BACKUP_OFFSITE_DISK=s3`, and valid S3-compatible
+credentials. Each verified backup is then copied to private object storage and
+the command fails if the required remote copy cannot be confirmed. Use a bucket
+in a separate account or failure domain, with encryption, versioning, retention,
+and least-privilege credentials enabled.
 
 Test the production backup manually after confirming that `mysqldump` is
 available on the account:
@@ -89,6 +92,11 @@ command -v mysqldump
 php artisan edlink:backup --restore-test --keep-days=30
 ls -lh storage/app/private/backups
 ```
+
+Confirm the same backup exists in the configured off-site bucket. Also configure
+`SYSTEM_ALERT_WEBHOOK_URL` to a channel monitored outside the hosting account;
+the scheduled health check reports database, queue, scheduler, disk, backup, and
+off-site configuration failures there.
 
 The MySQL `--restore-test` verifies the compressed dump and checksum; a full
 restore should still be rehearsed against a separate database, never the live

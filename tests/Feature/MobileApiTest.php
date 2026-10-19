@@ -16,6 +16,7 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
+use App\Notifications\OtpCodeNotification;
 use App\Notifications\QueuedVerifyEmail;
 use App\Services\StudentActivityNotifier;
 use App\Support\DesignationPermissions;
@@ -80,7 +81,13 @@ it('requires and verifies a six digit otp for a real school', function () {
     $login = $this->postJson('/api/v1/auth/login', ['school_number' => $data['school']->school_number, 'email' => $data['teacher']->email, 'password' => 'password', 'device_name' => 'Pixel 8', 'expected_role' => 'teacher'])
         ->assertOk()->assertJsonPath('data.otp_required', true)->assertJsonMissingPath('data.token');
     $challenge = $login->json('data.challenge_token');
-    $code = $data['teacher']->fresh()->getRawOriginal('otp_code');
+    $code = null;
+    Notification::assertSentTo($data['teacher'], OtpCodeNotification::class, function ($notification) use (&$code) {
+        $code = $notification->code;
+
+        return true;
+    });
+    expect($data['teacher']->fresh()->getRawOriginal('otp_code'))->not->toBe($code);
     $this->postJson('/api/v1/auth/otp/verify', ['challenge_token' => $challenge, 'code' => '000000', 'device_name' => 'Pixel 8'])->assertUnprocessable();
     $this->postJson('/api/v1/auth/otp/verify', ['challenge_token' => $challenge, 'code' => $code, 'device_name' => 'Pixel 8'])
         ->assertOk()->assertJsonPath('data.otp_required', false)->assertJsonPath('data.user.role', 'teacher')->assertJsonStructure(['data' => ['token']]);
@@ -225,19 +232,19 @@ it('shows portal users only their own homework submission and protects teacher r
     $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review", ['score' => 18, 'feedback' => 'Well done'])->assertOk();
 });
 
-it('looks up only an active school account and returns just its display identity', function () {
+it('keeps account discovery non revealing while validating the active school', function () {
     $data = mobileFixture();
     $payload = ['school_number' => strtolower($data['school']->school_number), 'email' => strtoupper($data['teacher']->email), 'expected_role' => 'teacher'];
     $this->postJson('/api/v1/auth/account', $payload)->assertOk()
-        ->assertExactJson(['data' => ['name' => $data['teacher']->name, 'avatar_url' => null], 'meta' => []]);
+        ->assertExactJson(['data' => ['accepted' => true], 'meta' => []]);
     expect($data['teacher']->tokens()->count())->toBe(0);
-    $this->postJson('/api/v1/auth/account', [...$payload, 'expected_role' => 'parent'])->assertUnprocessable();
-    $this->postJson('/api/v1/auth/account', [...$payload, 'school_number' => 'EDL-OTHER'])->assertUnprocessable();
-    $this->postJson('/api/v1/auth/account', [...$payload, 'email' => 'missing@example.test'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'expected_role' => 'parent'])->assertOk();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'school_number' => 'EDL-MISSING'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'email' => 'missing@example.test'])->assertOk();
     $data['teacher']->update(['employment_status' => 'inactive']);
-    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', $payload)->assertOk();
     $data['teacher']->forceFill(['employment_status' => 'active', 'email_verified_at' => null])->save();
-    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', $payload)->assertOk();
     $data['teacher']->forceFill(['email_verified_at' => now()])->save();
     $data['school']->update(['license_status' => 'expired', 'license_expires_at' => now()->subDay()]);
     $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();

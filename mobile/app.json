@@ -7,7 +7,8 @@
     "icon": "./assets/img/Edlink 1logo.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.edlink.school"
     },
     "androidStatusBar": {
       "backgroundColor": "#00000000",
@@ -48,7 +49,8 @@
         }
       ],
       "expo-font",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store"
     ],
     "runtimeVersion": {
       "policy": "fingerprint"

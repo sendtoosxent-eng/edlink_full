@@ -9,7 +9,6 @@ use App\Models\StudentCategory;
 use App\Models\StudentGuardian;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
@@ -50,11 +49,12 @@ it('cannot update a guardian by tampering with a livewire guardian id', function
     $foreignStudent = Student::create(['school_id' => $other->id, 'name' => 'Foreign Student', 'status' => 'active']);
     $foreignGuardian = StudentGuardian::create(['student_id' => $foreignStudent->id, 'name' => 'Foreign Guardian', 'is_primary' => true]);
 
-    expect(fn () => Livewire::actingAs($admin)->test(StudentEditModal::class)
+    Livewire::actingAs($admin)->test(StudentEditModal::class)
         ->call('open', $student->id)
         ->set('guardianId', $foreignGuardian->id)
         ->set('guardian_name', 'Compromised')
-        ->call('save'))->toThrow(ModelNotFoundException::class);
+        ->call('save')
+        ->assertStatus(404);
 
     expect($foreignGuardian->fresh()->name)->toBe('Foreign Guardian')
         ->and($ownGuardian->fresh()->name)->toBe('Own Guardian');
