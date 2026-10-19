@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Support\NotificationVisibility;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +20,7 @@ class NotificationCenter extends Component
         }
 
         $user = Auth::user();
-        $allowed = DB::table('school_notifications')
+        $allowed = NotificationVisibility::forUser($user)
             ->where('id', $notificationId)
             ->where('school_id', $user->school_id)
             ->where(fn ($query) => $query->whereNull('user_id')->orWhere('user_id', $user->id))
@@ -39,7 +41,7 @@ class NotificationCenter extends Component
         }
 
         $user = Auth::user();
-        $ids = DB::table('school_notifications')
+        $ids = NotificationVisibility::forUser($user)
             ->where('school_id', $user->school_id)
             ->where(fn ($query) => $query->whereNull('user_id')->orWhere('user_id', $user->id))
             ->pluck('id');
@@ -55,7 +57,7 @@ class NotificationCenter extends Component
     public function render()
     {
         $user = Auth::user();
-        $query = DB::table('school_notifications as notifications')
+        $query = NotificationVisibility::forUser($user, 'notifications')
             ->where('notifications.school_id', $user->school_id)
             ->where(fn ($query) => $query->whereNull('notifications.user_id')->orWhere('notifications.user_id', $user->id))
             ->latest('notifications.created_at');

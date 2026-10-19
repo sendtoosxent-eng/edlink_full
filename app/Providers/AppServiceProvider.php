@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Support\NotificationVisibility;
+
 use App\Livewire\FeeAdjustments;
 use App\Http\Controllers\PersonProfileController;
 use App\Http\Controllers\ProfilePhotoController;
@@ -100,7 +102,7 @@ class AppServiceProvider extends ServiceProvider
             $notifications = collect();
 
             if ($user && $user->school_id && Schema::hasTable('school_notifications')) {
-                $query = DB::table('school_notifications as notifications')
+                $query = NotificationVisibility::forUser($user, 'notifications')
                     ->when(Schema::hasTable('school_notification_reads'), function ($query) use ($user): void {
                         $query->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
                         $join->on('reads.school_notification_id', '=', 'notifications.id')

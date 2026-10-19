@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-5xl space-y-6">
+<div wire:poll.30s class="mx-auto max-w-5xl space-y-6">
     <header class="relative overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-8">
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

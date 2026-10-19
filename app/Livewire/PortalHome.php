@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Support\NotificationVisibility;
+
 use App\Models\AttendanceRecord;
 use App\Models\Exam;
 use App\Models\FeePayment;
@@ -103,12 +105,13 @@ class PortalHome extends Component
             ->whereIn('target_audience', ['all', $user->role === 'parent' ? 'parents' : 'students'])
             ->whereDate('event_date', '>=', today())->orderBy('event_date')->take(5)->get();
 
-        $notifications = DB::table('school_notifications')
+        $notifications = NotificationVisibility::forUser($user)
             ->where('school_id', $school->id)
             ->where(fn ($query) => $query->whereNull('user_id')->orWhere('user_id', $user->id))
+            ->where(fn ($query) => $query->whereNull('student_id')->orWhere('student_id', $student?->id))
             ->latest()->limit(10)->get()
             ->map(fn ($notification) => [
-                'type' => 'announcement',
+                'type' => $notification->category === 'general' ? 'announcement' : $notification->category,
                 'message' => $notification->title.': '.$notification->message,
             ]);
         if ($student) {

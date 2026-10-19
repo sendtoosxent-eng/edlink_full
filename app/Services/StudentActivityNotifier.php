@@ -25,7 +25,7 @@ class StudentActivityNotifier
 
     public function attendance(AttendanceRecord $record): void
     {
-        $isDaily = $record->session_key === 'daily';
+        $isDaily = ! $record->subject_id && in_array($record->session_key, [null, '', 'daily'], true);
         $setting = $isDaily ? self::SETTINGS[0] : self::SETTINGS[1];
         if (! $this->enabled($record->school_id, $setting)) {
             return;
@@ -129,9 +129,17 @@ class StudentActivityNotifier
 
     private function recipientIds(Student $student, array $roles): Collection
     {
-        return DB::table('portal_user_students')->join('users', 'users.id', '=', 'portal_user_students.user_id')
+        $ids = DB::table('portal_user_students')->join('users', 'users.id', '=', 'portal_user_students.user_id')
             ->where('portal_user_students.school_id', $student->school_id)->where('portal_user_students.student_id', $student->id)
             ->whereIn('users.role', $roles)->where('users.school_id', $student->school_id)
-            ->pluck('users.id')->unique()->values();
+            ->pluck('users.id');
+
+        if (in_array('parent', $roles, true)) {
+            $emails = $student->guardians()->whereNotNull('email')->where('email', '!=', '')->pluck('email');
+            $ids = $ids->merge(DB::table('users')->where('school_id', $student->school_id)
+                ->where('role', 'parent')->whereIn('email', $emails)->pluck('id'));
+        }
+
+        return $ids->unique()->values();
     }
 }

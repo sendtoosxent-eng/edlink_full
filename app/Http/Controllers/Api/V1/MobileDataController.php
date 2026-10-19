@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Support\NotificationVisibility;
+
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\Exam;
@@ -167,7 +169,7 @@ class MobileDataController extends ApiController
             MobileAccess::student($user, $studentId);
         }
 
-        $query = DB::table('school_notifications as notifications')
+        $query = NotificationVisibility::forUser($user, 'notifications')
             ->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
                 $join->on('reads.school_notification_id', '=', 'notifications.id')->where('reads.user_id', $user->id);
             })
@@ -188,7 +190,7 @@ class MobileDataController extends ApiController
     {
         $data = $request->validate(['notification_ids' => ['nullable', 'array'], 'notification_ids.*' => ['integer']]);
         $user = $request->user();
-        $ids = DB::table('school_notifications')->where('school_id', $user->school_id)
+        $ids = NotificationVisibility::forUser($user)->where('school_id', $user->school_id)
             ->where(fn ($query) => $query->whereNull('user_id')->orWhere('user_id', $user->id))
             ->when(! empty($data['notification_ids']), fn ($query) => $query->whereIn('id', $data['notification_ids']))->pluck('id');
         foreach ($ids as $id) {

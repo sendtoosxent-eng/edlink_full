@@ -55,8 +55,10 @@ class MonitorSystemHealth extends Command
             Log::critical('Edlink system health check failed.', ['issues' => $issues]);
             if ($databaseAvailable) {
                 try {
-                    foreach (School::pluck('id') as $schoolId) {
-                        DB::table('school_notifications')->insert(['school_id' => $schoolId, 'title' => 'Edlink system health alert', 'message' => implode(' ', $issues), 'type' => 'warning', 'created_at' => now(), 'updated_at' => now()]);
+                    foreach (School::with(['users' => fn ($query) => $query->whereIn('role', ['admin', 'superadmin'])])->get() as $school) {
+                        foreach ($school->users as $admin) {
+                            DB::table('school_notifications')->insert(['school_id' => $school->id, 'user_id' => $admin->id, 'category' => 'system_health', 'title' => 'Edlink system health alert', 'message' => implode(' ', $issues), 'type' => 'warning', 'created_at' => now(), 'updated_at' => now()]);
+                        }
                     }
                 } catch (\Throwable $error) {
                     Log::error('Could not create in-app health alerts.', ['error' => $error->getMessage()]);
