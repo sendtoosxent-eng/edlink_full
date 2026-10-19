@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\PayrollRun;
 use App\Models\User;
 use App\Services\PublicImageStorage;
 use Illuminate\Http\RedirectResponse;
@@ -58,7 +59,21 @@ class PersonProfileController extends Controller
     {
         $this->authorizeUser($user, ['admin', 'superadmin', 'teacher', 'bursar', 'registrar', 'academic_admin'], 'staff.directory');
 
-        return $this->userView($user->load('designation'), 'staff', route('staff.index'), route('staff.profile.update', $user), request()->user()->hasPermission('staff.manage'));
+        $viewerCanSeePayroll = request()->user()->hasPermission('staff.payroll');
+        $payrollRuns = $viewerCanSeePayroll
+            ? PayrollRun::posted()->where('school_id', $user->school_id)->where('user_id', $user->id)->latest('paid_at')->limit(24)->get()
+            : collect();
+        $payrollPeriod = now()->format('Y-m');
+        $salaryPaid = (float) $payrollRuns->where('period', $payrollPeriod)->where('payment_type', 'salary')->sum('amount');
+        $salaryOutstanding = max(0, (float) $user->base_salary - $salaryPaid);
+
+        return $this->userView($user->load('designation'), 'staff', route('staff.index'), route('staff.profile.update', $user), request()->user()->hasPermission('staff.manage'), [
+            'payrollRuns' => $payrollRuns,
+            'payrollPeriod' => $payrollPeriod,
+            'salaryPaid' => $salaryPaid,
+            'salaryOutstanding' => $salaryOutstanding,
+            'viewerCanSeePayroll' => $viewerCanSeePayroll,
+        ]);
     }
 
     public function parent(User $user): View
@@ -106,9 +121,9 @@ class PersonProfileController extends Controller
         return back()->with('status', ucfirst($staff ? 'staff' : 'parent').' profile and photo saved.');
     }
 
-    private function userView(User $user, string $type, string $backRoute, string $updateRoute, bool $canEdit): View
+    private function userView(User $user, string $type, string $backRoute, string $updateRoute, bool $canEdit, array $profileData = []): View
     {
-        return view('profiles.person', compact('user', 'type', 'backRoute', 'updateRoute', 'canEdit') + ['person' => $user]);
+        return view('profiles.person', compact('user', 'type', 'backRoute', 'updateRoute', 'canEdit') + ['person' => $user] + $profileData);
     }
 
     private function authorizeStudent(Student $student): void

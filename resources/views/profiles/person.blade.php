@@ -61,5 +61,36 @@
             @if($canEdit)<div class="flex justify-end border-t bg-slate-50 px-6 py-4"><button class="rounded-xl bg-amber-400 px-6 py-3 text-sm font-black text-slate-950 hover:bg-amber-300">Save profile</button></div>@endif
         </form>
     </div>
+
+    @if($isStaff && ($viewerCanSeePayroll ?? false))
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-black text-slate-900">Payroll financial track</h2>
+                    <p class="mt-1 text-xs text-slate-500">Posted salary and advance history for {{ $person->name }}.</p>
+                </div>
+                <span class="rounded-full {{ $salaryOutstanding > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }} px-3 py-1.5 text-xs font-black">
+                    {{ $salaryOutstanding > 0 ? 'UGX '.number_format($salaryOutstanding).' outstanding' : 'Current salary paid' }}
+                </span>
+            </div>
+            <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Base salary</p><p class="mt-1 font-mono text-lg font-black text-slate-900">UGX {{ number_format($person->base_salary) }}</p></div>
+                <div class="rounded-2xl bg-emerald-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Paid {{ $payrollPeriod }}</p><p class="mt-1 font-mono text-lg font-black text-emerald-700">UGX {{ number_format($salaryPaid) }}</p></div>
+                <div class="rounded-2xl bg-rose-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wider text-rose-600">Outstanding {{ $payrollPeriod }}</p><p class="mt-1 font-mono text-lg font-black text-rose-700">UGX {{ number_format($salaryOutstanding) }}</p></div>
+            </div>
+            <div class="mt-5 overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400"><tr><th class="px-3 py-3">Period</th><th class="px-3 py-3">Type</th><th class="px-3 py-3">Paid on</th><th class="px-3 py-3 text-right">Amount</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        @forelse($payrollRuns as $run)
+                            <tr><td class="px-3 py-3 font-semibold">{{ $run->period }}</td><td class="px-3 py-3 capitalize">{{ $run->payment_type }}</td><td class="px-3 py-3">{{ $run->paid_at?->format('d M Y') }}</td><td class="px-3 py-3 text-right font-mono font-bold">UGX {{ number_format($run->amount) }}</td></tr>
+                        @empty
+                            <tr><td colspan="4" class="px-3 py-6 text-center text-slate-400">No posted payroll transactions recorded.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
 </div>
 </x-app-layout>

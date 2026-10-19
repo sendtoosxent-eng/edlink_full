@@ -74,7 +74,7 @@
                             <th class="px-6 py-3.5">Staff</th>
                             <th class="px-6 py-3.5">Title</th>
                             <th class="px-6 py-3.5">Salary</th>
-                            <th class="px-6 py-3.5">Remaining ({{ $period }})</th>
+                            <th class="px-6 py-3.5">Salary outstanding ({{ $period }})</th>
                             <th class="px-6 py-3.5 text-right">Action</th>
                         </tr>
                     </thead>
@@ -97,11 +97,15 @@
                                     <span class="text-xs text-slate-400 font-normal">UGX</span> {{ number_format($member->base_salary) }}
                                 </td>
                                 <td class="px-6 py-4 font-mono whitespace-nowrap">
-                                    <span class="font-semibold text-slate-800"><span class="text-xs text-slate-400 font-normal">UGX</span> {{ number_format($memberSummary['remaining'] ?? 0) }}</span>
-                                    @if (($memberSummary['remaining'] ?? 0) <= 0)
+                                    <span class="font-semibold {{ ($memberSummary['salary_outstanding'] ?? 0) > 0 ? 'text-rose-700' : 'text-slate-800' }}"><span class="text-xs text-slate-400 font-normal">UGX</span> {{ number_format($memberSummary['salary_outstanding'] ?? 0) }}</span>
+                                    @if (($memberSummary['salary_status'] ?? 'unpaid') === 'paid')
                                         <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-600/20">
                                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Fully Paid
                                         </span>
+                                    @elseif (($memberSummary['salary_status'] ?? 'unpaid') === 'partial')
+                                        <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700 ring-1 ring-amber-600/20">Partially Paid</span>
+                                    @else
+                                        <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-700 ring-1 ring-rose-600/20">Not Paid</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
