@@ -181,7 +181,7 @@ class Payroll extends Component
         $salary = (float) $staff->base_salary;
         $advances = (float) $runs->where('payment_type', 'advance')->sum('amount');
         $salaryPaid = (float) $runs->where('payment_type', 'salary')->sum('amount');
-        $salaryOutstanding = max(0, $salary - $salaryPaid);
+        $salaryOutstanding = max(0, $salary - $advances - $salaryPaid);
 
         return [
             'salary' => $salary,
@@ -190,7 +190,7 @@ class Payroll extends Component
             'remaining' => max(0, $salary - $advances - $salaryPaid),
             'salary_paid' => $salaryPaid,
             'salary_outstanding' => $salaryOutstanding,
-            'salary_status' => $salaryOutstanding <= 0 ? 'paid' : ($salaryPaid > 0 ? 'partial' : 'unpaid'),
+            'salary_status' => $salaryOutstanding <= 0 ? 'paid' : ($advances + $salaryPaid > 0 ? 'partial' : 'unpaid'),
         ];
     }
 

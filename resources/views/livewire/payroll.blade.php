@@ -74,7 +74,7 @@
                             <th class="px-6 py-3.5">Staff</th>
                             <th class="px-6 py-3.5">Title</th>
                             <th class="px-6 py-3.5">Salary</th>
-                            <th class="px-6 py-3.5">Salary outstanding ({{ $period }})</th>
+                            <th class="px-6 py-3.5">Balance outstanding ({{ $period }})</th>
                             <th class="px-6 py-3.5 text-right">Action</th>
                         </tr>
                     </thead>

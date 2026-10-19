@@ -25,9 +25,11 @@ class PortalHome extends Component
         $this->selectedStudentId = (string) ($this->linkedStudentIds()->first() ?? '');
     }
 
-    public function updatedSelectedStudentId(): void
+    public function updatedSelectedStudentId($studentId): void
     {
-        if (! $this->linkedStudentIds()->contains((int) $this->selectedStudentId)) {
+        $studentId = (int) $studentId;
+
+        if (! $this->linkedStudentIds()->contains($studentId)) {
             $this->selectedStudentId = (string) ($this->linkedStudentIds()->first() ?? '');
         }
     }
