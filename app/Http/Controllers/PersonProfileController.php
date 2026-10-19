@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Services\PublicImageStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -80,7 +82,9 @@ class PersonProfileController extends Controller
     {
         $this->authorizeUser($user, ['parent'], 'parents.manage');
 
-        return $this->userView($user->load('portalStudents.schoolClass'), 'parent', route('parents.index'), route('parents.profile.update', $user), request()->user()->hasPermission('parents.manage'));
+        return $this->userView($user->load('portalStudents.schoolClass'), 'parent', route('parents.index'), route('parents.profile.update', $user), request()->user()->hasPermission('parents.manage'), [
+            'availableStudents' => Student::where('school_id', $user->school_id)->orderBy('name')->get(),
+        ]);
     }
 
     public function updateStaff(Request $request, User $user): RedirectResponse
@@ -94,7 +98,31 @@ class PersonProfileController extends Controller
     {
         $this->authorizeUser($user, ['parent'], 'parents.manage');
 
-        return $this->updateUser($request, $user, false, app(PublicImageStorage::class));
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->where('school_id', $request->user()->school_id)->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'password' => ['nullable', 'string', 'min:8'],
+            'studentIds' => ['nullable', 'array'],
+            'studentIds.*' => [Rule::exists('students', 'id')->where('school_id', $request->user()->school_id)],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+        $photo = $data['photo'] ?? null;
+        unset($data['photo'], $data['studentIds']);
+        if (blank($data['password'] ?? null)) unset($data['password']);
+        else $data['password'] = Hash::make($data['password']);
+        if ($photo) {
+            $oldPath = $user->avatar_path;
+            $data['avatar_path'] = app(PublicImageStorage::class)->store($photo, 'avatars/'.$user->school_id);
+            app(PublicImageStorage::class)->deleteReplacement($oldPath, $data['avatar_path']);
+        }
+        DB::transaction(function () use ($user, $data, $request): void {
+            $user->update($data);
+            $studentIds = collect($request->input('studentIds', []))->map(fn ($id) => (int) $id)->unique();
+            DB::table('portal_user_students')->where('school_id', $user->school_id)->where('user_id', $user->id)->delete();
+            foreach ($studentIds as $studentId) DB::table('portal_user_students')->insert(['school_id' => $user->school_id, 'user_id' => $user->id, 'student_id' => $studentId, 'relationship' => 'Parent', 'created_at' => now(), 'updated_at' => now()]);
+        });
+        return back()->with('status', 'Parent profile, password, and learner links saved.');
     }
 
     private function updateUser(Request $request, User $user, bool $staff, PublicImageStorage $images): RedirectResponse
