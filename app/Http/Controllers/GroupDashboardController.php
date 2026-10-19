@@ -31,6 +31,7 @@ class GroupDashboardController extends Controller
             ->groupBy('school_id')
             ->pluck('total', 'school_id');
         $payments = FeePayment::posted()->whereIn('school_id', $schoolIds)
+            ->whereHas('student', fn ($query) => $query->where('status', 'active'))
             ->selectRaw('school_id, sum(amount) total')
             ->groupBy('school_id')
             ->pluck('total', 'school_id');
@@ -49,6 +50,7 @@ class GroupDashboardController extends Controller
         $monthStart = $months->first()->copy()->startOfMonth();
         $monthEnd = $months->last()->copy()->endOfMonth();
         $monthlyPayments = FeePayment::posted()->whereIn('school_id', $schoolIds)
+            ->whereHas('student', fn ($query) => $query->where('status', 'active'))
             ->whereBetween('paid_at', [$monthStart, $monthEnd])
             ->get(['amount', 'paid_at'])
             ->groupBy(fn (FeePayment $payment) => $payment->paid_at->format('Y-m'))

@@ -2,6 +2,8 @@
 
 use App\Models\Exam;
 use App\Models\ExamPaper;
+use App\Models\FeePayment;
+use App\Models\FinanceLedgerEntry;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -59,7 +61,7 @@ it('provides working year and class datasets to the administrator line charts', 
     ]);
     $subject = Subject::create(['school_id' => $school->id, 'name' => 'Mathematics']);
 
-    DB::table('fee_payments')->insert([
+    $paymentIds = [
         [
             'school_id' => $school->id, 'student_id' => $studentOne->id, 'term_id' => $term->id,
             'amount' => 150000, 'method' => 'cash', 'paid_at' => '2026-01-15',
@@ -70,7 +72,26 @@ it('provides working year and class datasets to the administrator line charts', 
             'amount' => 90000, 'method' => 'cash', 'paid_at' => '2025-02-10',
             'created_at' => now(), 'updated_at' => now(),
         ],
-    ]);
+    ];
+    foreach ($paymentIds as $paymentData) {
+        $paymentId = DB::table('fee_payments')->insertGetId($paymentData);
+        FinanceLedgerEntry::create([
+            'school_id' => $school->id,
+            'term_id' => $term->id,
+            'reference' => 'TEST-PAY-'.$paymentId,
+            'source_type' => FeePayment::class,
+            'source_id' => $paymentId,
+            'entry_type' => 'fee_payment',
+            'direction' => 'credit',
+            'amount' => $paymentData['amount'],
+            'description' => 'Test posted fee payment',
+            'status' => 'posted',
+            'recorded_by' => $admin->id,
+            'approved_by' => $admin->id,
+            'approved_at' => now(),
+            'posted_at' => $paymentData['paid_at'],
+        ]);
+    }
 
     DB::table('cash_pool_entries')->insert([
         [

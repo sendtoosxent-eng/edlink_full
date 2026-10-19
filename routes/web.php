@@ -189,7 +189,9 @@ Route::get('dashboard', function () {
         $expectedFees = max(0, $expectedFees);
     }
     $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->whereHas('student', fn ($query) => $query->where('status', 'active'))->sum('amount') : 0;
-    $feesPaid = $term ? (float) FeePayment::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
+    $feesPaid = $term ? (float) FeePayment::posted()->where('school_id', $school->id)->where('term_id', $term->id)
+        ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+        ->sum('amount') : 0;
     $termExpenses = $term ? (float) Expense::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
     $poolCredits = $school ? (float) CashPoolEntry::where('school_id', $school->id)->where('direction', 'credit')->sum('amount') : 0;
     $poolDebits = $school ? (float) CashPoolEntry::where('school_id', $school->id)->where('direction', 'debit')->sum('amount') : 0;
@@ -227,7 +229,9 @@ Route::get('dashboard', function () {
         }
     }
     $genderCounts = $school ? $school->students()->where('status', 'active')->selectRaw('lower(gender) as gender, count(*) as total')->groupBy('gender')->pluck('total', 'gender') : collect();
-    $paymentRows = $school ? FeePayment::where('school_id', $school->id)->whereNotNull('paid_at')->get(['amount', 'paid_at']) : collect();
+    $paymentRows = $school ? FeePayment::posted()->where('school_id', $school->id)->whereNotNull('paid_at')
+        ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+        ->get(['amount', 'paid_at']) : collect();
     $paymentYears = collect([now()->year, now()->year - 1])
         ->merge($paymentRows->map(fn ($payment) => (int) $payment->paid_at->year))
         ->unique()->sortDesc()->values();

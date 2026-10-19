@@ -90,8 +90,12 @@ class StaffWorkbench extends Component
                     ->sum('amount');
                 $expectedFees = max(0, $expectedFees);
             }
-            $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->sum('amount') : 0;
-            $income = $term ? (float) FeePayment::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
+            $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)
+                ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+                ->sum('amount') : 0;
+            $income = $term ? (float) FeePayment::posted()->where('school_id', $school->id)->where('term_id', $term->id)
+                ->whereHas('student', fn ($query) => $query->where('status', 'active'))
+                ->sum('amount') : 0;
             $expenses = $term ? (float) Expense::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
             $credits = (float) CashPoolEntry::where('school_id', $school->id)->when($term, fn ($q) => $q->where('term_id', $term->id))->where('direction', 'credit')->sum('amount');
             $debits = (float) CashPoolEntry::where('school_id', $school->id)->when($term, fn ($q) => $q->where('term_id', $term->id))->where('direction', 'debit')->sum('amount');
@@ -103,6 +107,7 @@ class StaffWorkbench extends Component
             };
             $expenseMonthExpression = str_replace('paid_at', 'expense_date', $monthExpression);
             $payments = FeePayment::posted()->where('school_id', $school->id)->where('paid_at', '>=', $months->first())
+                ->whereHas('student', fn ($query) => $query->where('status', 'active'))
                 ->selectRaw("{$monthExpression} as period, SUM(amount) as total")->groupBy('period')->pluck('total', 'period');
             $expenseRows = Expense::posted()->where('school_id', $school->id)->where('expense_date', '>=', $months->first())
                 ->selectRaw("{$expenseMonthExpression} as period, SUM(amount) as total")->groupBy('period')->pluck('total', 'period');
