@@ -184,26 +184,26 @@
                         <summary class="cursor-pointer text-xs font-black uppercase tracking-wider text-violet-800">Request individual fee adjustment</summary>
                         <form wire:submit="requestAdjustment" class="mt-4 space-y-3">
                             <div class="grid gap-3 sm:grid-cols-2">
-                                <label class="text-xs font-semibold text-slate-700">Reason type
-                                    <select wire:model="adjustmentType" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs">
+                                <label class="block text-xs font-semibold text-slate-700">Reason type
+                                    <select wire:model="adjustmentType" class="mt-1.5 w-full text-xs px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-semibold text-slate-800 transition">
                                         <option value="negotiated">Negotiated fee</option><option value="waiver">Waiver</option><option value="scholarship">Scholarship</option><option value="staff_child">Staff-child benefit</option><option value="correction">Correction</option>
                                     </select>
                                 </label>
-                                <label class="text-xs font-semibold text-slate-700">Calculation
-                                    <select wire:model.live="adjustmentCalculation" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs">
+                                <label class="block text-xs font-semibold text-slate-700">Calculation
+                                    <select wire:model.live="adjustmentCalculation" class="mt-1.5 w-full text-xs px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-semibold text-slate-800 transition">
                                         <option value="fixed">Fixed deduction</option><option value="percentage">Percentage discount</option><option value="final_fee">Final agreed fee</option>
                                     </select>
                                 </label>
                             </div>
                             <label class="block text-xs font-semibold text-slate-700">{{ $adjustmentCalculation === 'percentage' ? 'Percentage' : ($adjustmentCalculation === 'final_fee' ? 'Final fee (UGX)' : 'Deduction amount (UGX)') }}
-                                <input wire:model="adjustmentValue" type="number" min="0.01" step="0.01" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs font-bold">
+                                <input wire:model="adjustmentValue" type="number" min="0.01" step="0.01" class="mt-1.5 w-full text-xs px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-bold text-slate-900 transition">
                                 @error('adjustmentValue')<span class="mt-1 block text-xs text-rose-600">{{$message}}</span>@enderror
                             </label>
                             <label class="block text-xs font-semibold text-slate-700">Reason and supporting details
-                                <textarea wire:model="adjustmentReason" rows="3" class="mt-1.5 w-full rounded-xl border-slate-200 bg-white text-xs" placeholder="Explain why this learner should receive a different fee..."></textarea>
+                                <textarea wire:model="adjustmentReason" rows="3" class="mt-1.5 w-full text-xs px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 font-medium text-slate-900 transition" placeholder="Explain why this learner should receive a different fee..."></textarea>
                                 @error('adjustmentReason')<span class="mt-1 block text-xs text-rose-600">{{$message}}</span>@enderror
                             </label>
-                            <button class="rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-600">Submit for approval</button>
+                            <button class="w-full inline-flex items-center justify-center rounded-xl bg-amber-400 hover:bg-amber-300 py-3 text-xs font-bold text-slate-950 transition shadow-xs active:scale-95">Submit for approval</button>
                         </form>
                     </details>
                 @endif
