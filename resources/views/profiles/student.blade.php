@@ -18,7 +18,7 @@
     <header class="overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-lg sm:p-8">
         <div class="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
             <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-                <div class="flex h-32 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/20 bg-white/10 text-3xl font-black text-amber-300 sm:h-40 sm:w-36">
+                <div class="flex h-40 w-40 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-300 bg-slate-800 text-4xl font-black text-amber-300 shadow-xl ring-4 ring-white/10 sm:h-48 sm:w-48">
                     @if($photoUrl)
                         <img src="{{ $photoUrl }}" data-original="{{ $photoUrl }}" :src="photoPreview || $el.dataset.original" alt="{{ $student->name }} student photograph" class="h-full w-full object-cover">
                     @else
