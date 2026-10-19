@@ -109,7 +109,23 @@ it('posts fee assessments, applies receipts to receivables, and defers genuine a
     $receipt = AccountingJournal::where('journal_type', 'fee_receipt')->firstOrFail();
     expect((float) $receipt->lines()->sum('debit'))->toBe(1200.0)->and((float) $receipt->lines()->sum('credit'))->toBe(1200.0)
         ->and((float) $receipt->lines()->whereHas('account', fn ($q) => $q->where('code', '1210'))->sum('credit'))->toBe(1000.0)
-        ->and((float) $receipt->lines()->whereHas('account', fn ($q) => $q->where('code', '2130'))->sum('credit'))->toBe(200.0);
+        ->and((float) $receipt->lines()->whereHas('account', fn ($q) => $q->where('code', '2130'))->sum('credit'))->toBe(200.0)
+        ->and($cash->fresh()->balance())->toBe(1200.0)
+        ->and($student->fresh()->totalPaid($term))->toBe(1200.0)
+        ->and((float) FeePayment::posted()->whereKey($payment->id)->sum('amount'))->toBe(1200.0);
+
+    $reversal = app(FinanceLedgerService::class)->reverse($legacy->fresh(), 'Fee payment was recorded in error', $checker->id);
+    expect($legacy->fresh()->status)->toBe('reversed')
+        ->and($reversal->direction)->toBe('debit')
+        ->and($cash->fresh()->balance())->toBe(0.0)
+        ->and($student->fresh()->totalPaid($term))->toBe(0.0)
+        ->and((float) FeePayment::posted()->whereKey($payment->id)->sum('amount'))->toBe(0.0)
+        ->and($receipt->fresh()->status)->toBe('reversed');
+    $this->assertDatabaseHas('cash_pool_entries', [
+        'finance_ledger_entry_id' => $reversal->id,
+        'direction' => 'debit',
+        'amount' => 1200,
+    ]);
     $summary = app(AccountingReportService::class)->summary($school->id);
     expect($summary['debits'])->toBe($summary['credits']);
 });

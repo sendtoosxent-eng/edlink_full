@@ -91,7 +91,7 @@ class StaffWorkbench extends Component
                 $expectedFees = max(0, $expectedFees);
             }
             $arrears = $term ? (float) Arrears::where('school_id', $school->id)->where('applied_term_id', $term->id)->sum('amount') : 0;
-            $income = $term ? (float) FeePayment::where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
+            $income = $term ? (float) FeePayment::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
             $expenses = $term ? (float) Expense::posted()->where('school_id', $school->id)->where('term_id', $term->id)->sum('amount') : 0;
             $credits = (float) CashPoolEntry::where('school_id', $school->id)->when($term, fn ($q) => $q->where('term_id', $term->id))->where('direction', 'credit')->sum('amount');
             $debits = (float) CashPoolEntry::where('school_id', $school->id)->when($term, fn ($q) => $q->where('term_id', $term->id))->where('direction', 'debit')->sum('amount');
@@ -102,7 +102,7 @@ class StaffWorkbench extends Component
                 default => "strftime('%Y-%m', paid_at)",
             };
             $expenseMonthExpression = str_replace('paid_at', 'expense_date', $monthExpression);
-            $payments = FeePayment::where('school_id', $school->id)->where('paid_at', '>=', $months->first())
+            $payments = FeePayment::posted()->where('school_id', $school->id)->where('paid_at', '>=', $months->first())
                 ->selectRaw("{$monthExpression} as period, SUM(amount) as total")->groupBy('period')->pluck('total', 'period');
             $expenseRows = Expense::posted()->where('school_id', $school->id)->where('expense_date', '>=', $months->first())
                 ->selectRaw("{$expenseMonthExpression} as period, SUM(amount) as total")->groupBy('period')->pluck('total', 'period');
@@ -113,7 +113,7 @@ class StaffWorkbench extends Component
                 'labels' => $months->map(fn ($month) => $month->format('M Y'))->values(),
                 'incomeSeries' => $months->map(fn ($month) => (float) ($payments[$month->format('Y-m')] ?? 0))->values(),
                 'expenseSeries' => $months->map(fn ($month) => (float) ($expenseRows[$month->format('Y-m')] ?? 0))->values(),
-                'recentPayments' => FeePayment::with('student:id,name')->where('school_id', $school->id)->latest('paid_at')->take(6)->get(),
+                'recentPayments' => FeePayment::posted()->with('student:id,name')->where('school_id', $school->id)->latest('paid_at')->take(6)->get(),
                 'recentExpenses' => Expense::posted()->where('school_id', $school->id)->latest('expense_date')->take(6)->get(),
             ];
         }

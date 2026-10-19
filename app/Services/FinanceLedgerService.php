@@ -54,13 +54,14 @@ class FinanceLedgerService
 
     public function reverse(FinanceLedgerEntry $entry, string $reason, int $userId): FinanceLedgerEntry
     {
-        if ($entry->status !== 'posted' || $entry->reversal_of_id) {
-            throw ValidationException::withMessages(['entry' => 'Only unreversed posted entries can be reversed.']);
-        }if (FinanceLedgerEntry::where('reversal_of_id', $entry->id)->exists()) {
-            throw ValidationException::withMessages(['entry' => 'This entry was already reversed.']);
-        }
-
         return DB::transaction(function () use ($entry, $reason, $userId) {
+            $entry = FinanceLedgerEntry::lockForUpdate()->findOrFail($entry->id);
+            if ($entry->status !== 'posted' || $entry->reversal_of_id) {
+                throw ValidationException::withMessages(['entry' => 'Only unreversed posted entries can be reversed.']);
+            }
+            if (FinanceLedgerEntry::where('reversal_of_id', $entry->id)->exists()) {
+                throw ValidationException::withMessages(['entry' => 'This entry was already reversed.']);
+            }
             app(AccountingPostingService::class)->reverseForLegacyEntry($entry, $reason, $userId);
             $reversal = FinanceLedgerEntry::create(['school_id' => $entry->school_id, 'term_id' => $entry->term_id, 'financial_account_id' => $entry->financial_account_id, 'reference' => 'REV-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)), 'entry_type' => 'reversal', 'direction' => $entry->direction === 'credit' ? 'debit' : 'credit', 'amount' => $entry->amount, 'description' => 'Reversal of '.$entry->reference.': '.$reason, 'status' => 'posted', 'recorded_by' => $userId, 'approved_by' => $userId, 'approved_at' => now(), 'reversal_of_id' => $entry->id, 'reversal_reason' => $reason, 'posted_at' => now()]);
             $entry->update(['status' => 'reversed', 'reversal_reason' => $reason]);

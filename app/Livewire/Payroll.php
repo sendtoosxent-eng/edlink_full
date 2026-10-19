@@ -168,7 +168,7 @@ class Payroll extends Component
 
     protected function runsFor(User $staff, ?string $period = null): Collection
     {
-        return PayrollRun::where('school_id', Auth::user()->school_id)
+        return PayrollRun::posted()->where('school_id', Auth::user()->school_id)
             ->where('user_id', $staff->id)
             ->when($period, fn ($query) => $query->where('period', $period))
             ->latest('paid_at')

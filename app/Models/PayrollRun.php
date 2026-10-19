@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Services\FinanceLedgerService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PayrollRun extends Model
 {
@@ -47,5 +49,15 @@ class PayrollRun extends Model
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function ledgerEntry(): HasOne
+    {
+        return $this->hasOne(FinanceLedgerEntry::class, 'source_id')->where('source_type', self::class);
+    }
+
+    public function scopePosted(Builder $query): Builder
+    {
+        return $query->whereHas('ledgerEntry', fn (Builder $ledger) => $ledger->where('status', 'posted'));
     }
 }

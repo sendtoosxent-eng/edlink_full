@@ -82,10 +82,10 @@ it('posts approved entries to the pool and reverses both records atomically', fu
     $entry = \App\Models\FinanceLedgerEntry::create(['school_id'=>$school->id,'financial_account_id'=>$account->id,'reference'=>'TEST-CONTROL-1','entry_type'=>'expense','direction'=>'debit','amount'=>500000,'description'=>'Controlled test','status'=>'pending','recorded_by'=>$recorder->id,'posted_at'=>now()]);
     $service = app(\App\Services\FinanceLedgerService::class);
     $service->approve($entry, $approver->id);
-    expect($entry->fresh()->status)->toBe('posted');
+    expect($entry->fresh()->status)->toBe('posted')->and($account->fresh()->balance())->toBe(-500000.0);
     $this->assertDatabaseHas('cash_pool_entries',['finance_ledger_entry_id'=>$entry->id,'direction'=>'debit','amount'=>500000]);
     $reversal = $service->reverse($entry->fresh(), 'Incorrect controlled test entry', $approver->id);
-    expect($entry->fresh()->status)->toBe('reversed')->and($reversal->direction)->toBe('credit');
+    expect($entry->fresh()->status)->toBe('reversed')->and($reversal->direction)->toBe('credit')->and($account->fresh()->balance())->toBe(0.0);
     $this->assertDatabaseHas('cash_pool_entries',['finance_ledger_entry_id'=>$reversal->id,'direction'=>'credit','amount'=>500000]);
     $reconciliation = $service->reconcile($school->id, $account->id, now()->toDateString(), 0, null, $approver->id);
     expect((float)$reconciliation->ledger_balance)->toBe(0.0)->and((float)$reconciliation->difference)->toBe(0.0);

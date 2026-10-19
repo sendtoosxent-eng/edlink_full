@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\AttendanceRecord;
 use App\Models\Exam;
+use App\Models\FeePayment;
 use App\Models\SchoolEvent;
 use App\Models\SchoolSetting;
 use App\Models\Student;
@@ -70,7 +71,7 @@ class PortalHome extends Component
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
             ->where('student_id', $student->id)->latest('attendance_date')->get() : collect();
 
-        $payments = $student ? DB::table('fee_payments')->where('school_id', $school->id)
+        $payments = $student ? FeePayment::posted()->where('school_id', $school->id)
             ->when($term, fn ($query) => $query->where('term_id', $term->id))
             ->where('student_id', $student->id)->latest('paid_at')->get() : collect();
 
