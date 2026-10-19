@@ -343,9 +343,17 @@
         @endif
 
         <!-- MAIN LEDGER ENTRIES LISTING -->
-        <section class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+        <section id="ledger-transactions" class="scroll-mt-6 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
             <div class="border-b border-slate-100 p-5 bg-slate-50/50">
-                <h2 class="text-base font-extrabold text-slate-900">Ledger Transactions</h2>
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900">Ledger Transactions</h2>
+                        <p class="text-xs text-slate-500">Confirm requested fee adjustments here before they change a learner's balance.</p>
+                    </div>
+                    @if($feeAdjustments->where('status', 'pending')->isNotEmpty())
+                        <span class="self-start rounded-full bg-amber-100 px-3 py-1 text-[11px] font-extrabold text-amber-800">{{ $feeAdjustments->where('status', 'pending')->count() }} fee adjustment(s) awaiting confirmation</span>
+                    @endif
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-xs text-left">
@@ -360,6 +368,45 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                        @foreach($feeAdjustments as $adjustment)
+                            <tr class="{{ $adjustment->status === 'pending' ? 'bg-amber-50/40' : '' }} hover:bg-slate-50/80 transition">
+                                <td class="px-6 py-3.5">
+                                    <div class="font-mono font-bold text-slate-900">ADJ-{{ $adjustment->id }}</div>
+                                    <div class="mt-1 text-[10px] text-slate-400">{{ $adjustment->student?->name ?? 'Former learner' }} · requested by {{ $adjustment->requester?->name ?? 'Former user' }}</div>
+                                </td>
+                                <td class="px-6 py-3.5">
+                                    <div class="font-bold text-slate-900">Fee adjustment</div>
+                                    <div class="mt-1 text-[10px] capitalize text-slate-500">{{ str_replace('_', ' ', $adjustment->type) }} · {{ $adjustment->term?->name }}</div>
+                                    <div class="mt-1 max-w-sm text-[10px] text-slate-500">{{ $adjustment->reason }}</div>
+                                </td>
+                                <td class="px-6 py-3.5">
+                                    <span class="inline-flex items-center rounded-md border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-extrabold uppercase text-violet-700">Reduction</span>
+                                </td>
+                                <td class="px-6 py-3.5 font-mono font-bold text-slate-900">{{ number_format($adjustment->amount, 2) }}</td>
+                                <td class="px-6 py-3.5">
+                                    <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase {{ $adjustment->status === 'approved' ? 'bg-emerald-50 text-emerald-700' : ($adjustment->status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700') }}">
+                                        {{ $adjustment->status === 'pending' ? 'Awaiting confirmation' : ucfirst($adjustment->status) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-3.5 text-right whitespace-nowrap">
+                                    @if($adjustment->status === 'pending')
+                                        <form class="inline-block mr-1" method="POST" action="{{ route('accounting.fee-adjustments.review', $adjustment) }}" onsubmit="return confirm('Confirm and post this fee adjustment?')">
+                                            @csrf
+                                            <input type="hidden" name="decision" value="approved">
+                                            <button class="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 transition hover:bg-emerald-100">Confirm</button>
+                                        </form>
+                                        <form class="inline-flex items-center gap-1" method="POST" action="{{ route('accounting.fee-adjustments.review', $adjustment) }}">
+                                            @csrf
+                                            <input type="hidden" name="decision" value="rejected">
+                                            <input name="review_notes" placeholder="Rejection note" class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium focus:border-rose-500 focus:outline-none">
+                                            <button class="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-800 transition hover:bg-rose-100">Reject</button>
+                                        </form>
+                                    @else
+                                        <span class="text-[10px] text-slate-400">{{ $adjustment->reviewer?->name ? 'By '.$adjustment->reviewer->name : 'Decision recorded' }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
                         @forelse($entries as $entry)
                             <tr class="hover:bg-slate-50/80 transition">
                                 <td class="px-6 py-3.5 font-mono font-bold text-slate-900">{{ $entry->reference }}</td>
@@ -398,11 +445,13 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="6" class="p-12 text-center text-slate-400 italic">
-                                    No ledger entries recorded yet.
-                                </td>
-                            </tr>
+                            @if($feeAdjustments->isEmpty())
+                                <tr>
+                                    <td colspan="6" class="p-12 text-center text-slate-400 italic">
+                                        No ledger transactions or fee adjustment requests recorded yet.
+                                    </td>
+                                </tr>
+                            @endif
                         @endforelse
                     </tbody>
                 </table>

@@ -374,6 +374,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::post('finance/transfers', [SchoolOperationsController::class, 'storeTransfer'])->name('finance.transfers.store');
     Route::post('finance/transfers/{transfer}/approve', [SchoolOperationsController::class, 'approveTransfer'])->name('finance.transfers.approve');
     Route::post('accounting/reconciliations/{reconciliation}/reopen', [SchoolOperationsController::class, 'reopenReconciliation'])->name('accounting.reconciliations.reopen');
+    Route::post('accounting/reconciliation/fee-adjustments/{adjustment}/review', [SchoolOperationsController::class, 'reviewFeeAdjustment'])->name('accounting.fee-adjustments.review');
     Route::post('finance/ledger/{entry}/reverse', [SchoolOperationsController::class, 'reverse'])->name('finance.ledger.reverse');
     Route::post('accounting/reconciliations', [SchoolOperationsController::class, 'reconcile'])->name('accounting.reconciliations.store');
     Route::get('attendance', Attendance::class)->name('attendance.index');

@@ -69,6 +69,40 @@ it('keeps a requested adjustment out of the balance until an administrator appro
         ->and(AuditLog::where('event', 'finance.fee_adjustment.cancelled')->exists())->toBeTrue();
 });
 
+it('shows requested fee adjustments in reconciliation transactions and confirms them there', function () {
+    extract(feeAdjustmentFixture('reconciliation-adjustment-school'));
+
+    $adjustment = StudentFeeAdjustment::create([
+        'school_id' => $school->id,
+        'student_id' => $student->id,
+        'term_id' => $term->id,
+        'requested_by' => $admin->id,
+        'type' => 'negotiated',
+        'calculation_type' => 'fixed',
+        'value' => 200000,
+        'amount' => 200000,
+        'reason' => 'Management requested a lower fee for this learner.',
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($admin)->get(route('accounting.reconciliations'))
+        ->assertOk()
+        ->assertSee('ADJ-'.$adjustment->id)
+        ->assertSee('Awaiting confirmation')
+        ->assertSee('Confirm');
+
+    $this->actingAs($admin)->post(route('accounting.fee-adjustments.review', $adjustment), [
+        'decision' => 'approved',
+        'review_notes' => 'Confirmed during transaction reconciliation.',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($adjustment->fresh()->status)->toBe('approved')
+        ->and($adjustment->fresh()->reviewed_by)->toBe($admin->id)
+        ->and($student->fresh()->totalDue($term))->toBe(600000.0)
+        ->and(AuditLog::where('event', 'finance.fee_adjustment.approved')
+            ->where('metadata->confirmed_from', 'account_reconciliation')->exists())->toBeTrue();
+});
+
 it('reduces dashboard expected fees only after the adjustment is approved', function () {
     extract(feeAdjustmentFixture('dashboard-adjustment-school'));
 
@@ -121,7 +155,7 @@ it('allows finance adjustment staff to open the screen, request, and approve an 
     $this->actingAs($financeUser)->get(route('fee-payments.index'))
         ->assertOk()
         ->assertSee('Review Fee Adjustments')
-        ->assertSee('href="'.route('fee-adjustments.index').'"', false);
+        ->assertSee('href="'.route('accounting.reconciliations').'#ledger-transactions"', false);
     $this->actingAs($financeUser)->get(route('fee-adjustments.index'))
         ->assertOk()
         ->assertSee('Fee Adjustments')

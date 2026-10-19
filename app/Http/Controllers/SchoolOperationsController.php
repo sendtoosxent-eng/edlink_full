@@ -10,8 +10,10 @@ use App\Models\FinancialAccountTransfer;
 use App\Models\PrivacyRequest;
 use App\Models\SchoolSetting;
 use App\Models\Student;
+use App\Models\StudentFeeAdjustment;
 use App\Models\SystemBackup;
 use App\Services\FinanceLedgerService;
+use App\Services\StudentReceivablesService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -41,9 +43,16 @@ class SchoolOperationsController extends Controller
     {
         $this->authorizeReconciliationAccess();
         $schoolId = auth()->user()->school_id;
+        $feeAdjustmentQuery = StudentFeeAdjustment::with(['student.schoolClass', 'term', 'requester', 'reviewer'])
+            ->where('school_id', $schoolId);
+        $feeAdjustments = (clone $feeAdjustmentQuery)->where('status', 'pending')->latest()->get()
+            ->concat((clone $feeAdjustmentQuery)->where('status', '!=', 'pending')->latest()->limit(30)->get())
+            ->sortByDesc('created_at')
+            ->values();
 
         return view('operations.finance', [
             'entries' => FinanceLedgerEntry::where('school_id', $schoolId)->latest()->paginate(30),
+            'feeAdjustments' => $feeAdjustments,
             'reconciliations' => FinanceReconciliation::with('account')->where('school_id', $schoolId)->latest('period_ending')->limit(12)->get(),
             'accounts' => FinancialAccount::where('school_id', $schoolId)->where('is_active', true)->orderBy('name')->get(),
             'transfers' => FinancialAccountTransfer::with(['fromAccount', 'toAccount'])->where('school_id', $schoolId)->latest()->limit(20)->get(),
@@ -69,6 +78,71 @@ class SchoolOperationsController extends Controller
         AuditLog::record($entry->school_id, 'finance.ledger.rejected', $entry, ['reason' => $data['reason']]);
 
         return back()->with('status', 'Transaction rejected; it did not enter the cash pool.');
+    }
+
+    public function reviewFeeAdjustment(Request $request, StudentFeeAdjustment $adjustment)
+    {
+        $this->authorizeReconciliationAccess();
+        $user = auth()->user();
+        abort_unless($adjustment->school_id === $user->school_id, 404);
+
+        $data = $request->validate([
+            'decision' => ['required', Rule::in(['approved', 'rejected'])],
+            'review_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+        $term = $user->school->currentTerm();
+        if (! $term?->isEditable() || $adjustment->term_id !== $term->id) {
+            return back()->withErrors(['adjustment' => 'Only fee adjustments in the current editable term can be confirmed.']);
+        }
+
+        $reviewed = DB::transaction(function () use ($adjustment, $data, $term, $user): bool {
+            $student = Student::where('school_id', $user->school_id)
+                ->lockForUpdate()
+                ->findOrFail($adjustment->student_id);
+            $lockedAdjustment = StudentFeeAdjustment::where('school_id', $user->school_id)
+                ->where('term_id', $term->id)
+                ->lockForUpdate()
+                ->findOrFail($adjustment->id);
+
+            if ($lockedAdjustment->status !== 'pending') {
+                return false;
+            }
+
+            if ($data['decision'] === 'approved') {
+                $baseFee = (float) ($student->mappedFeeAmount($term) ?? 0);
+                $approved = (float) $student->feeAdjustments()
+                    ->where('term_id', $term->id)
+                    ->where('status', 'approved')
+                    ->sum('amount');
+                if ($baseFee <= 0 || (float) $lockedAdjustment->amount <= 0 || $approved + (float) $lockedAdjustment->amount > $baseFee) {
+                    return false;
+                }
+            }
+
+            $lockedAdjustment->update([
+                'status' => $data['decision'],
+                'reviewed_by' => $user->id,
+                'review_notes' => $data['review_notes'] ?? null,
+                'reviewed_at' => now(),
+            ]);
+            if ($data['decision'] === 'approved') {
+                app(StudentReceivablesService::class)->postAdjustment($lockedAdjustment->fresh(), $user->id);
+            }
+            AuditLog::record($user->school_id, 'finance.fee_adjustment.'.$data['decision'], $lockedAdjustment, [
+                'student_id' => $lockedAdjustment->student_id,
+                'term_id' => $lockedAdjustment->term_id,
+                'amount' => (float) $lockedAdjustment->amount,
+                'confirmed_from' => 'account_reconciliation',
+            ]);
+
+            return true;
+        });
+
+        if (! $reviewed) {
+            return back()->withErrors(['adjustment' => 'This fee adjustment is no longer pending or would exceed the learner’s original term fee.']);
+        }
+
+        return back()->with('status', 'Fee adjustment '.($data['decision'] === 'approved' ? 'confirmed and posted' : 'rejected').' successfully.');
     }
 
     public function reverse(Request $request, FinanceLedgerEntry $entry, FinanceLedgerService $ledger)

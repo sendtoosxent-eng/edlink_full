@@ -20,7 +20,7 @@
 
             <div class="flex flex-col items-start gap-3 sm:items-end">
             @if($canApproveAdjustments)
-                <a href="{{ route('fee-adjustments.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-900 shadow-sm hover:bg-amber-400">
+                <a href="{{ auth()->user()->hasPermission('accounting.reconciliations.manage') ? route('accounting.reconciliations').'#ledger-transactions' : route('fee-adjustments.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-900 shadow-sm hover:bg-amber-400">
                     Review Fee Adjustments
                     @if($pendingAdjustments->isNotEmpty())<span class="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] text-slate-950">{{ $pendingAdjustments->count() }}</span>@endif
                 </a>
