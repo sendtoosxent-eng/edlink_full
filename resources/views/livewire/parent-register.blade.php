@@ -83,7 +83,7 @@
         </div>
 
         <!-- Student Link Section -->
-        <fieldset class="pt-4 border-t border-slate-100">
+        <fieldset x-data="{ learnerSearch: '' }" class="pt-4 border-t border-slate-100">
             <div class="flex items-center justify-between mb-3">
                 <div>
                     <legend class="text-sm font-extrabold text-slate-900">Link Learners</legend>
@@ -94,11 +94,11 @@
                 </span>
             </div>
 
-            <input wire:model.live.debounce.300ms="studentSearch" type="search" placeholder="Search learner by name or admission number..." class="mb-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
+            <input x-model="learnerSearch" type="search" placeholder="Search learner by name or admission number..." class="mb-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
 
             <div class="grid max-h-72 gap-2.5 overflow-y-auto p-1 md:grid-cols-2">
                 @forelse ($students as $student)
-                    <label class="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition hover:bg-slate-100/60 hover:border-slate-300 cursor-pointer select-none">
+                    <label x-show="!learnerSearch || '{{ strtolower($student->name.' '.$student->admission_no) }}'.includes(learnerSearch.toLowerCase())" class="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition hover:bg-slate-100/60 hover:border-slate-300 cursor-pointer select-none">
                         <input wire:model="studentIds" type="checkbox" value="{{ $student->id }}" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-yellow-500 transition focus:ring-4 focus:ring-yellow-400/30 focus:ring-offset-0">
                         <div class="text-xs">
                             <span class="font-bold text-slate-900 block text-sm">{{ $student->name }}</span>
