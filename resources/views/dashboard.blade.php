@@ -78,6 +78,7 @@
         });
     </script>
     @include('partials.mobile-shell-styles')
+    @include('partials.sidebar-tree-styles')
     @livewireStyles
 </head>
 <body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
@@ -143,7 +144,7 @@
                         </span>
                         <svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === '{{ $key }}' && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
-                    <div x-cloak x-show="open === '{{ $key }}' && !$store.ui.collapsed" class="pl-11 pr-3 py-1 space-y-1">
+                    <div x-cloak x-show="open === '{{ $key }}' && !$store.ui.collapsed" class="nav-submenu space-y-1">
                         @foreach($group['items'] as $item)
                             @php
                                 $itemRoute = match($item) {
@@ -184,9 +185,9 @@
                                 };
                             @endphp
                             @if($itemRoute)
-                                <a href="{{ route($itemRoute) }}" wire:navigate class="nav-sub-link {{ request()->routeIs($itemRoute) ? 'active' : '' }} block py-1.5 text-sm">{{ $item }}</a>
+                                <a href="{{ route($itemRoute) }}" wire:navigate class="nav-sub-link {{ request()->routeIs($itemRoute) ? 'active' : '' }} text-sm"><x-sidebar-sub-icon /><span>{{ $item }}</span></a>
                             @else
-                                <a href="#" class="nav-sub-link block py-1.5 text-sm">{{ $item }}</a>
+                                <a href="#" class="nav-sub-link text-sm"><x-sidebar-sub-icon /><span>{{ $item }}</span></a>
                             @endif
                         @endforeach
                 </div>
