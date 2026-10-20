@@ -4,7 +4,7 @@
     $cell = 'px-5 py-3.5';
     $head = 'bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500';
     $backRoute = \App\Support\TeacherAcademicScope::canViewStudentDirectory(auth()->user()) ? route('students.index') : route('workbench.home');
-    $tabs = ['details' => 'Student details', 'academics' => 'Academics & subjects', 'finance' => 'Financial status', 'family' => 'Parents & guardians', 'history' => 'Attendance & history'];
+    $tabs = ['details' => 'Student details', 'academics' => 'Academics & subjects', 'finance' => 'Financial status', 'family' => 'Parents & guardians', 'history' => 'Attendance & history', 'discipline' => 'Discipline & conduct'];
     $photoUrl = $student->photoUrl();
     $latestReport = $examProgress->first();
     $termReport = $studentReports->firstWhere('term_id', $term?->id);
@@ -61,6 +61,7 @@
         @endif
         <button type="button" @click="openTab('history')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View attendance</button>
         <button type="button" @click="openTab('family')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View parents</button>
+        <button type="button" @click="openTab('discipline')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View conduct</button>
         @if($canEdit)
             <button type="button" @click="openTab('details'); $nextTick(() => document.getElementById('student-photo').click())" class="ml-auto rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">{{ $photoUrl ? 'Change photo' : 'Add photo' }}</button>
         @endif
@@ -92,6 +93,10 @@
             <button type="button" role="tab" id="tab-{{ $key }}" aria-controls="panel-{{ $key }}" :aria-selected="tab === '{{ $key }}'" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'" class="whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold">{{ $label }}</button>
         @endforeach
     </nav>
+
+    <section id="panel-discipline" role="tabpanel" aria-labelledby="tab-discipline" x-show="tab === 'discipline'" x-cloak>
+        <livewire:student-conduct-log :student="$student" :key="'conduct-log-'.$student->id" />
+    </section>
 
     <section id="panel-details" role="tabpanel" aria-labelledby="tab-details" x-show="tab === 'details'" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div class="border-b px-5 py-5 sm:px-6"><h2 class="text-lg font-black text-slate-900">Identity & personal information</h2><p class="mt-1 text-xs text-slate-500">{{ $canEdit ? 'Details are prefilled. Update the editable fields and save below.' : 'You are viewing this learner’s record. Personal details are read-only for your account.' }}</p></div>

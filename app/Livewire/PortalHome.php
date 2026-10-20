@@ -10,6 +10,7 @@ use App\Models\FeePayment;
 use App\Models\SchoolEvent;
 use App\Models\SchoolSetting;
 use App\Models\Student;
+use App\Models\StudentConduct;
 use App\Models\StudentEnrolment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -158,10 +159,12 @@ class PortalHome extends Component
             'balance' => $student && $term ? max(0, $student->balance($term)) : 0,
         ];
         $isParent = $user->role === 'parent';
+        $conducts = $isParent && $student ? StudentConduct::with('recordedBy')
+            ->where('school_id', $school->id)->where('student_id', $student->id)->latest('occurred_on')->latest('id')->get() : collect();
 
         return view('livewire.student-dashboard', compact(
             'school', 'term', 'students', 'student', 'studentAttendance', 'attendanceSeries', 'absenceSeries',
-            'performance', 'timetable', 'events', 'exams', 'feeRule', 'notifications', 'payments', 'fees', 'isParent', 'graduation'
+            'performance', 'timetable', 'events', 'exams', 'feeRule', 'notifications', 'payments', 'fees', 'isParent', 'graduation', 'conducts'
         ), ['pageTitle' => $isParent ? 'Parent Dashboard' : 'Student Dashboard']);
     }
 }

@@ -10,6 +10,7 @@
                 ['label' => 'Attendance', 'description' => 'Review the learner register', 'url' => '#attendance', 'navigate' => false, 'icon' => 'heroicon-o-clipboard-document-check', 'iconClass' => 'bg-emerald-100 text-emerald-700', 'hoverClass' => 'hover:border-emerald-300'],
                 ['label' => 'Performance', 'description' => 'See subject-by-subject progress', 'url' => '#performance', 'navigate' => false, 'icon' => 'heroicon-o-chart-bar-square', 'iconClass' => 'bg-blue-100 text-blue-700', 'hoverClass' => 'hover:border-blue-300'],
                 ['label' => 'Fees & Payments', 'description' => 'Check balances and receipts', 'url' => '#payments', 'navigate' => false, 'icon' => 'heroicon-o-banknotes', 'iconClass' => 'bg-amber-100 text-amber-700', 'hoverClass' => 'hover:border-amber-300'],
+                ['label' => 'Discipline & Conduct', 'description' => 'View this child’s conduct log', 'url' => '#discipline', 'navigate' => false, 'icon' => 'heroicon-o-clipboard-document-check', 'iconClass' => 'bg-orange-100 text-orange-700', 'hoverClass' => 'hover:border-orange-300'],
                 ['label' => 'Today\'s Timetable', 'description' => 'View the learner schedule', 'url' => '#timetable', 'navigate' => false, 'icon' => 'heroicon-o-calendar-days', 'iconClass' => 'bg-indigo-100 text-indigo-700', 'hoverClass' => 'hover:border-indigo-300'],
                 ['label' => 'School Events', 'description' => 'See upcoming activities', 'url' => '#events', 'navigate' => false, 'icon' => 'heroicon-o-calendar', 'iconClass' => 'bg-rose-100 text-rose-700', 'hoverClass' => 'hover:border-rose-300'],
                 ['label' => 'Notifications', 'description' => 'Read recent school updates', 'url' => '#notifications', 'navigate' => false, 'icon' => 'heroicon-o-bell', 'iconClass' => 'bg-cyan-100 text-cyan-700', 'hoverClass' => 'hover:border-cyan-300'],
@@ -60,6 +61,12 @@
             <section id="events" class="rounded-2xl border bg-white p-5 shadow-sm"><h2 class="font-bold">Upcoming school events</h2><div class="mt-4 space-y-3">@forelse($events as $event)<div class="rounded-xl bg-slate-50 p-3"><b>{{ $event->title }}</b><span class="mt-1 block text-sm text-slate-500">{{ $event->event_date->format('l, d M Y') }}</span></div>@empty<p class="text-sm text-slate-500">No upcoming events.</p>@endforelse</div></section>
         </div>
 
+        @if($isParent)
+            <section id="discipline" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b p-5"><div><h2 class="font-black text-slate-900">Discipline & conduct — {{ $student->name }}</h2><p class="mt-1 text-xs text-slate-500">Rewards, penalties and conduct history for this child across all dates.</p></div><div class="flex gap-2 text-xs font-bold"><span class="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">{{ $conducts->where('kind', 'good')->count() }} good</span><span class="rounded-full bg-rose-50 px-3 py-1.5 text-rose-700">{{ $conducts->where('kind', 'bad')->count() }} bad</span></div></div>
+                <x-student-conduct-table :records="$conducts" :preview="true" />
+            </section>
+        @endif
         <x-dashboard-quick-actions :actions="$portalQuickActions" :badge="$isParent ? 'Parent tools' : 'Student tools'" description="Open the information and tasks you use most often." />
         </div>
     @endif

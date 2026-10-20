@@ -9,6 +9,7 @@ use App\Models\HomeworkAssignment;
 use App\Models\HomeworkSubmission;
 use App\Models\SchoolSetting;
 use App\Models\Student;
+use App\Models\StudentConduct;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -104,6 +105,19 @@ class StudentActivityNotifier
         $this->send($payment->student, 'payment_receipt', 'School fee payment received',
             $currency.' '.number_format((float) $payment->amount, 2).' was received for '.$payment->student->name.'. Your official receipt is attached.',
             'payment:'.$payment->id, 'success', 'receipt-'.$reference.'.pdf', '/payments/'.$payment->id.'/receipt', ['parent']);
+    }
+
+    public function conduct(StudentConduct $record, bool $updated = false): void
+    {
+        $student = $record->student;
+        $label = $record->kind === 'good' ? 'Good conduct' : 'Bad conduct';
+        $outcome = $record->kind === 'good' ? 'Reward' : 'Penalty';
+        $message = $student->name.' — '.$record->occurred_on->format('d M Y').': '.$record->description;
+        if ($record->action) {
+            $message .= ' '.$outcome.': '.$record->action;
+        }
+        $this->send($student, 'discipline', $label.($updated ? ' updated' : ' recorded'), $message,
+            'conduct:'.$record->id, $record->kind === 'good' ? 'success' : 'warning', roles: ['parent']);
     }
 
     private function enabled(int $schoolId, string $key): bool
