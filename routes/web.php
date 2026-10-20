@@ -347,6 +347,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('students', StudentsIndex::class)->name('students.index');
     Route::get('students/{student}/profile', [PersonProfileController::class, 'student'])->name('students.profile');
     Route::patch('students/{student}/profile', [PersonProfileController::class, 'updateStudent'])->name('students.profile.update');
+    Route::patch('students/{student}/status', [PersonProfileController::class, 'updateStudentStatus'])->name('students.profile.status');
     Route::get('students/graduates', Graduates::class)->name('graduates.index');
     Route::get('students/graduates/{graduationRecord}/certificate', GraduationCertificateController::class)->name('graduates.certificate');
     Route::get('students/graduates/{graduationRecord}/recommendation', [GraduationCertificateController::class, 'recommendation'])->name('graduates.recommendation');

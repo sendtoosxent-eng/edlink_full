@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\PayrollRun;
 use App\Models\User;
+use App\Models\AuditLog;
 use App\Services\PublicImageStorage;
 use App\Services\StudentProfileData;
 use App\Support\TeacherAcademicScope;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PersonProfileController extends Controller
@@ -52,6 +54,29 @@ class PersonProfileController extends Controller
         $student->update($data);
 
         return back()->with('status', 'Student profile and photo saved. The same photo will be used on ID cards.');
+    }
+
+    public function updateStudentStatus(Request $request, Student $student): RedirectResponse
+    {
+        $this->authorizeStudent($student);
+        abort_unless($request->user()->hasPermission('students.manage'), 403);
+        $data = $request->validate(['status' => ['required', Rule::in(['active', 'inactive'])]]);
+        DB::transaction(function () use ($student, $data): void {
+            $record = Student::where('school_id', $student->school_id)->lockForUpdate()->findOrFail($student->id);
+            if ($record->status === 'graduated') {
+                throw ValidationException::withMessages(['status' => 'Graduates can only be restored from the Graduates & Alumni register.']);
+            }
+            $previous = $record->status;
+            $record->update(['status' => $data['status']]);
+            $term = $record->school->currentTerm();
+            if ($term) {
+                $record->enrolments()->where('school_id', $record->school_id)->where('term_id', $term->id)->update(['status' => $data['status']]);
+            }
+            if ($previous !== $data['status']) {
+                AuditLog::record($record->school_id, 'student.status.updated', $record, ['previous_status' => $previous, 'status' => $data['status']]);
+            }
+        });
+        return back()->with('status', $student->name.' marked as '.$data['status'].'.');
     }
 
     public function staff(User $user): View

@@ -83,7 +83,7 @@ it('keeps placement and derived records read-only even if submitted in a profile
 });
 
 it('uses the selected historical term without changing the current placement', function () {
-    $old = Term::create(['school_id' => $this->school->id, 'name' => 'Old Term', 'year' => 2025, 'status' => 'closed']);
+    $old = Term::create(['school_id' => $this->school->id, 'name' => 'Old Term', 'year' => 2025, 'status' => 'closed', 'is_current' => false]);
     $oldClass = SchoolClass::create(['school_id' => $this->school->id, 'name' => 'Primary Four']);
     StudentEnrolment::create(['school_id' => $this->school->id, 'student_id' => $this->student->id, 'term_id' => $old->id, 'school_class_id' => $oldClass->id, 'student_category_id' => $this->category->id, 'base_fee_amount' => 700000, 'status' => 'active', 'enrolled_at' => '2025-01-15']);
     $this->actingAs($this->admin)->get(route('students.profile', [$this->student, 'term' => $old->id]))->assertOk()
@@ -97,7 +97,7 @@ it('uses the selected historical term without changing the current placement', f
 });
 
 it('offers report tabs with approved marks across terms for this learner only', function () {
-    $old = Term::create(['school_id' => $this->school->id, 'name' => 'Previous Term', 'year' => 2025, 'status' => 'closed']);
+    $old = Term::create(['school_id' => $this->school->id, 'name' => 'Previous Term', 'year' => 2025, 'status' => 'closed', 'is_current' => false]);
     StudentEnrolment::create(['school_id' => $this->school->id, 'student_id' => $this->student->id, 'term_id' => $old->id, 'school_class_id' => $this->class->id, 'student_category_id' => $this->category->id, 'base_fee_amount' => 600000, 'status' => 'active', 'enrolled_at' => '2025-01-15']);
     $exam = Exam::create(['school_id' => $this->school->id, 'term_id' => $old->id, 'school_class_id' => $this->class->id, 'name' => 'Historical Final', 'published_at' => now()]);
     $subject = Subject::where('name', 'Mathematics')->firstOrFail();
@@ -117,4 +117,37 @@ it('offers report tabs with approved marks across terms for this learner only', 
         ->assertViewHas('studentReports', fn ($reports) => $reports->count() === 3)
         ->assertViewHas('marks', fn ($marks) => $marks->count() === 2);
     $this->get(route('reports.student-term-report.show', [$this->student, $exam]))->assertOk();
+});
+
+it('deactivates and reactivates the learner while preserving history and parent links', function () {
+    $parent = User::where('role', 'parent')->firstOrFail();
+    $parent->portalStudents()->attach($this->student->id, ['school_id' => $this->school->id]);
+    $old = Term::create(['school_id' => $this->school->id, 'name' => 'Historical enrolment', 'year' => 2025, 'status' => 'closed', 'is_current' => false]);
+    StudentEnrolment::create(['school_id' => $this->school->id, 'student_id' => $this->student->id, 'term_id' => $old->id, 'school_class_id' => $this->class->id, 'student_category_id' => $this->category->id, 'base_fee_amount' => 700000, 'status' => 'active', 'enrolled_at' => '2025-01-15']);
+    $this->actingAs($this->admin)->get(route('students.profile', $this->student))->assertOk()->assertSee('Deactivate student');
+    $this->from(route('students.profile', $this->student))->patch(route('students.profile.status', $this->student), ['status' => 'inactive'])->assertRedirect(route('students.profile', $this->student))->assertSessionHasNoErrors();
+    expect($this->student->fresh()->status)->toBe('inactive')
+        ->and($this->student->enrolments()->where('term_id', $this->term->id)->value('status'))->toBe('inactive')
+        ->and($this->student->enrolments()->where('term_id', $old->id)->value('status'))->toBe('active')
+        ->and($parent->portalStudents()->whereKey($this->student->id)->exists())->toBeTrue()
+        ->and($this->student->feePayments()->count())->toBe(2);
+    $this->get(route('students.profile', $this->student))->assertOk()->assertSee('Reactivate student');
+    $this->patch(route('students.profile.status', $this->student), ['status' => 'active'])->assertSessionHasNoErrors();
+    expect($this->student->fresh()->status)->toBe('active');
+    $this->assertDatabaseHas('audit_logs', ['subject_id' => $this->student->id, 'event' => 'student.status.updated']);
+});
+
+it('protects status changes by permission school and graduation status', function () {
+    $teacher = User::factory()->create(['school_id' => $this->school->id, 'role' => 'teacher']);
+    $this->class->update(['class_teacher_user_id' => $teacher->id]);
+    $this->actingAs($teacher)->get(route('students.profile', $this->student))->assertOk()->assertDontSee('Deactivate student');
+    $this->patch(route('students.profile.status', $this->student), ['status' => 'inactive'])->assertForbidden();
+    $otherSchool = School::create(['name' => 'Other status school', 'slug' => 'other-status-school']);
+    $outsider = Student::create(['school_id' => $otherSchool->id, 'name' => 'Another learner', 'status' => 'active']);
+    $this->actingAs($this->admin)->patch(route('students.profile.status', $outsider), ['status' => 'inactive'])->assertNotFound();
+    $this->patch(route('students.profile.status', $this->student), ['status' => 'graduated'])->assertSessionHasErrors('status');
+    $this->student->update(['status' => 'graduated']);
+    $this->get(route('students.profile', $this->student))->assertOk()->assertDontSee('Deactivate student')->assertDontSee('Reactivate student');
+    $this->patch(route('students.profile.status', $this->student), ['status' => 'active'])->assertSessionHasErrors('status');
+    expect($this->student->fresh()->status)->toBe('graduated');
 });

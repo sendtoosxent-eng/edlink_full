@@ -71,6 +71,12 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Hostinger may deploy new views before rebuilding the cached route table.
+        if ($this->app->routesAreCached() && ! Route::has('students.profile.status')) {
+            Route::middleware(['web', 'auth', 'verified', 'branch.context', 'active.user', 'designation.access'])
+                ->patch('students/{student}/status', [PersonProfileController::class, 'updateStudentStatus'])->name('students.profile.status');
+        }
+
+        // Hostinger may deploy new views before rebuilding the cached route table.
         // Register profile routes at runtime so those views never fail with a
         // RouteNotFoundException during that deployment window.
         if ($this->app->routesAreCached() && ! Route::has('profile-photo.show')) {

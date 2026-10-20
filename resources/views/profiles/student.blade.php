@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[.2em] text-amber-300">Student Profile</p>
-                    <h1 class="mt-2 text-2xl font-black sm:text-3xl">{{ $student->name }}</h1>
+                    <h1 class="mt-2 text-2xl font-black sm:text-3xl text-slate-300">{{ $student->name }}</h1>
                     <p class="mt-2 text-sm text-slate-300">{{ $student->admission_no ?: 'Admission number pending' }} · {{ $student->schoolClass?->name ?? 'No class assigned' }}{{ $student->stream ? ' · '.$student->stream->name : '' }}</p>
                     <span class="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-amber-200">{{ ucfirst($student->status) }}</span>
                 </div>
@@ -63,6 +63,13 @@
         <button type="button" @click="openTab('family')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View parents</button>
         <button type="button" @click="openTab('discipline')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View conduct</button>
         @if($canEdit)
+            @if(in_array($student->status, ['active', 'inactive'], true))
+                <form method="POST" action="{{ route('students.profile.status', $student) }}" onsubmit="return confirm('{{ $student->isActive() ? 'Deactivate this student? Their history and parent links will be kept.' : 'Reactivate this student?' }}')">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="status" value="{{ $student->isActive() ? 'inactive' : 'active' }}">
+                    <button type="submit" class="rounded-xl border px-4 py-2.5 text-sm font-bold {{ $student->isActive() ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">{{ $student->isActive() ? 'Deactivate student' : 'Reactivate student' }}</button>
+                </form>
+            @endif
             <button type="button" @click="openTab('details'); $nextTick(() => document.getElementById('student-photo').click())" class="ml-auto rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">{{ $photoUrl ? 'Change photo' : 'Add photo' }}</button>
         @endif
     </div>

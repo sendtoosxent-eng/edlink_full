@@ -23,7 +23,7 @@ class EnsureDesignationAccess
         }
         $permission = match ($route) {
             'students.index', 'graduates.index', 'graduates.certificate', 'graduates.recommendation' => 'students.view',
-            'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage',
+            'students.register', 'student-categories.index', 'students.portal-access', 'students.profile.status' => 'students.manage',
             'students.activities', 'students.activities.export' => null,
             'fee-payments.index' => null,
             'fee-adjustments.index' => 'finance.adjustments',
