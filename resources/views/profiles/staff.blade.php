@@ -1,0 +1,76 @@
+<x-app-layout>
+@php
+    $input = 'w-full rounded-xl border-slate-200 bg-slate-50 text-sm disabled:text-slate-600';
+    $tabs = ['details' => 'Personal details', 'employment' => 'Employment', 'assignments' => 'Classes & subjects', 'timetable' => 'Timetable'];
+    if ($canViewAttendance) $tabs['attendance'] = 'Attendance';
+    if ($canViewPayroll) $tabs['payroll'] = 'Salary & advances';
+    if ($canViewLeave) $tabs['leave'] = 'Leave history';
+@endphp
+<div class="w-full space-y-6" x-data="{ tab: 'details', photoPreview: null }">
+    <header class="rounded-3xl bg-slate-900 p-6 text-white sm:p-8">
+        <div class="flex flex-wrap items-center gap-6">
+            <div class="flex h-40 w-40 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-300 bg-slate-800 text-6xl font-black text-amber-300 shadow-xl">
+                <img x-show="photoPreview" :src="photoPreview" alt="Photo preview" class="h-full w-full object-cover" style="display:none">
+                <span x-show="!photoPreview" class="flex h-full w-full items-center justify-center">@if($staff->avatarUrl())<img src="{{ $staff->avatarUrl() }}" alt="{{ $staff->name }}" class="h-full w-full object-cover">@else{{ str($staff->name)->substr(0, 1)->upper() }}@endif</span>
+            </div>
+            <div class="flex-1"><p class="text-xs font-black uppercase tracking-widest text-amber-300">{{ $staff->role === 'teacher' ? 'Teacher Profile' : 'Staff Profile' }}</p><h1 class="mt-2 text-3xl font-black text-slate-100">{{ $staff->name }}</h1><p class="mt-2 text-sm text-slate-300">{{ $staff->staff_number ?: 'Staff number pending' }} · {{ $staff->job_title ?: 'No job title' }} · {{ ucfirst($staff->employment_status ?: 'Not specified') }}</p><p class="mt-1 text-sm text-slate-300">{{ $staff->email }}</p></div>
+            <a href="{{ route('staff.index') }}" wire:navigate class="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold">Back to staff</a>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-3">
+            @if(auth()->user()->hasPermission('students.view'))<form method="POST" action="{{ route('students.id-cards.generate') }}" target="_blank">@csrf<input type="hidden" name="type" value="staff"><input type="hidden" name="ids[]" value="{{ $staff->id }}"><button class="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold">Print staff ID card</button></form>@endif
+            <button type="button" @click="tab = 'assignments'" class="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold">View teaching assignments</button>
+            @if($canViewPayroll)<button type="button" @click="tab = 'payroll'" class="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold">View salary balance</button>@endif
+            @if($canViewPayroll && $period === now()->format('Y-m') && $staff->employment_status === 'active')<a href="{{ route('payroll.index', ['staff' => $staff->id]) }}" class="rounded-xl bg-amber-400 px-4 py-2 text-sm font-bold text-slate-950">Pay salary / advance</a>@endif
+        </div>
+    </header>
+    @if(session('status'))<p class="rounded-xl bg-emerald-50 p-4 text-emerald-800">{{ session('status') }}</p>@endif
+    @if($errors->any())<div class="rounded-xl bg-rose-50 p-4 text-rose-700">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+    <form method="GET" action="{{ route('staff.profile', $staff) }}" class="flex flex-wrap items-end gap-4 rounded-2xl border bg-white p-5">
+        <label class="text-sm font-bold">Academic term<select name="term" class="ml-2 rounded-xl border-slate-200" onchange="this.form.submit()">@foreach($terms as $option)<option value="{{ $option->id }}" @selected($term?->id === $option->id)>{{ $option->name }} · {{ $option->year }}</option>@endforeach</select></label>
+        <label class="text-sm font-bold">Record month<input type="month" name="period" value="{{ $period }}" class="ml-2 rounded-xl border-slate-200" onchange="this.form.submit()"></label><button class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white">Apply</button>
+        <p class="w-full text-xs text-slate-500">Term filters subjects and timetable. Month filters attendance, leave and payroll. Class teacher roles show current assignments.</p>
+    </form>
+    <div class="grid gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl border bg-white p-5"><p class="text-xs text-slate-500">Current class teacher roles</p><p class="mt-2 text-2xl font-black">{{ $classRoles->count() }}</p></div>
+        <div class="rounded-2xl border bg-white p-5"><p class="text-xs text-slate-500">Subjects in selected term</p><p class="mt-2 text-2xl font-black">{{ $assignments->unique('subject_id')->count() }}</p></div>
+        <div class="rounded-2xl border bg-white p-5"><p class="text-xs text-slate-500">Weekly timetable periods</p><p class="mt-2 text-2xl font-black">{{ $timetable->count() }}</p></div>
+    </div>
+    <nav class="flex flex-wrap gap-2" aria-label="Teacher profile sections">@foreach($tabs as $key => $label)<button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'" :aria-pressed="tab === '{{ $key }}'" class="rounded-xl border px-4 py-3 text-sm font-bold">{{ $label }}</button>@endforeach</nav>
+    <div class="rounded-3xl border bg-white p-5 sm:p-7">
+        <form method="POST" action="{{ route('staff.profile.update', $staff) }}" enctype="multipart/form-data">
+            @csrf @method('PATCH')
+            <section x-show="tab === 'details'">
+                <h2 class="mb-5 text-lg font-black">Identity and contact information</h2>
+                <table class="w-full text-left text-sm"><tbody class="divide-y">
+                    @foreach(['name' => 'Full name', 'email' => 'Email address', 'phone' => 'Phone number', 'job_title' => 'Job title'] as $field => $label)<tr><th class="w-1/3 py-4 pr-4">{{ $label }}</th><td class="py-3"><input type="{{ $field === 'email' ? 'email' : 'text' }}" name="{{ $field }}" value="{{ old($field, $staff->$field) }}" @disabled(!$canEdit) @required(in_array($field, ['name','email','job_title'])) class="{{ $input }}"></td></tr>@endforeach
+                    @foreach(['Staff number' => $staff->staff_number, 'Designation' => $staff->designation?->name, 'Account role' => $staff->role, 'Employment status' => $staff->employment_status, 'School' => $staff->school->name] as $label => $value)<tr><th class="py-4 pr-4">{{ $label }}</th><td class="py-4">{{ $value ?: 'Not assigned' }} <span class="ml-2 text-xs text-slate-400">Read only</span></td></tr>@endforeach
+                    @if($canEdit)<tr><th class="py-4 pr-4">Profile photograph</th><td class="py-4"><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" @change="if (photoPreview) URL.revokeObjectURL(photoPreview); photoPreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null" class="w-full text-sm"><p class="mt-2 text-xs text-slate-500">JPG, PNG or WebP, up to 4 MB.</p></td></tr>@endif
+                </tbody></table>
+            </section>
+            <section x-show="tab === 'employment'" x-cloak>
+                <h2 class="mb-5 text-lg font-black">Employment and HR details</h2>
+                @if($canEdit)
+                    <table class="w-full text-left text-sm"><tbody class="divide-y">
+                        @foreach(['joined_at' => 'Joining date', 'probation_ends_at' => 'Probation end date', 'emergency_contact_name' => 'Emergency contact name', 'emergency_contact_phone' => 'Emergency contact phone', 'national_id' => 'National ID', 'bank_name' => 'Bank name', 'bank_account_name' => 'Bank account name', 'bank_account_number' => 'Bank account number', 'base_salary' => 'Current monthly base salary ('.$currency.')'] as $field => $label)
+                            <tr><th class="w-1/3 py-4 pr-4">{{ $label }}</th><td class="py-3"><input name="{{ $field }}" type="{{ in_array($field, ['joined_at','probation_ends_at']) ? 'date' : ($field === 'base_salary' ? 'number' : 'text') }}" value="{{ old($field, in_array($field, ['joined_at','probation_ends_at']) ? $staff->$field?->toDateString() : $staff->$field) }}" @if($field === 'base_salary') min="0" step="0.01" required @endif class="{{ $input }}"></td></tr>
+                        @endforeach
+                        <tr><th class="py-4 pr-4">Contract type</th><td class="py-3"><select name="contract_type" class="{{ $input }}"><option value="">Not specified</option>@foreach(['permanent','contract','part_time','volunteer'] as $type)<option value="{{ $type }}" @selected(old('contract_type', $staff->contract_type) === $type)>{{ ucfirst(str_replace('_',' ', $type)) }}</option>@endforeach</select></td></tr>
+                        <tr><th class="py-4 pr-4">Employment document</th><td class="py-4">{{ $staff->staff_document_path ? 'On file' : 'No document recorded' }}</td></tr>
+                    </tbody></table>
+                @else<p class="text-sm text-slate-500">Private employment and banking information is restricted to authorised staff managers.</p>@endif
+            </section>
+            @if($canEdit)<div x-show="tab === 'details' || tab === 'employment'" class="mt-6 flex justify-end"><button class="rounded-xl bg-amber-400 px-6 py-3 text-sm font-black text-slate-950">Save profile</button></div>@endif
+        </form>
+        <section x-show="tab === 'assignments'" x-cloak>
+            <h2 class="text-lg font-black">Current class teacher responsibilities</h2>
+            <div class="my-4 space-y-2">@forelse($classRoles as $class)<p class="rounded-xl bg-slate-50 p-3 text-sm font-bold">{{ $class->name }} · {{ $class->students_count }} active students</p>@empty<p class="text-sm text-slate-500">No class teacher roles assigned.</p>@endforelse</div>
+            <h2 class="mb-4 text-lg font-black">Subject assignments · {{ $term?->name ?: 'No term' }}</h2>
+            <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b"><th class="p-3">Subject</th><th class="p-3">Code</th><th class="p-3">Class</th><th class="p-3">Scope</th></tr></thead><tbody class="divide-y">@forelse($assignments as $assignment)<tr><td class="p-3">{{ $assignment->subject_name }}</td><td class="p-3">{{ $assignment->code }}</td><td class="p-3">{{ $assignment->class_name ?: 'All assigned classes' }}</td><td class="p-3">{{ $assignment->term_id ? 'Selected term' : 'All terms' }}</td></tr>@empty<tr><td colspan="4" class="p-5 text-slate-500">No subjects assigned for this term.</td></tr>@endforelse</tbody></table></div>
+        </section>
+        <section x-show="tab === 'timetable'" x-cloak><h2 class="mb-4 text-lg font-black">Teaching timetable</h2><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b">@foreach(['Day','Time','Class / stream','Subject / activity'] as $heading)<th class="p-3">{{ $heading }}</th>@endforeach</tr></thead><tbody class="divide-y">@forelse($timetable as $slot)<tr><td class="p-3">{{ $slot->day_of_week }}</td><td class="p-3 whitespace-nowrap">{{ substr($slot->starts_at,0,5) }} – {{ substr($slot->ends_at,0,5) }}</td><td class="p-3">{{ $slot->class_name }} {{ $slot->stream_name }}</td><td class="p-3">{{ $slot->subject_name ?: $slot->label }}</td></tr>@empty<tr><td colspan="4" class="p-5 text-slate-500">No timetable periods for this term.</td></tr>@endforelse</tbody></table></div></section>
+        @if($canViewAttendance)<section x-show="tab === 'attendance'" x-cloak><h2 class="text-lg font-black">Attendance · {{ $period }}</h2><p class="my-4 text-sm text-slate-600">Present: {{ $counts->get('present',0) }} · Late: {{ $counts->get('late',0) }} · Absent: {{ $counts->get('absent',0) }} · Excused: {{ $counts->get('excused',0) }} · On leave: {{ $counts->get('on_leave',0) }}</p><p class="mb-4 text-sm font-bold">Attendance rate: {{ $attendanceRate !== null ? $attendanceRate.'%' : 'No working-day records' }} <span class="font-normal text-slate-500">(present and late / recorded working days)</span></p><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b"><th class="p-3">Date</th><th class="p-3">Status</th><th class="p-3">Note</th><th class="p-3">Recorded by</th></tr></thead><tbody class="divide-y">@forelse($attendance as $record)<tr><td class="p-3">{{ $record->attendance_date->format('d M Y') }}</td><td class="p-3">{{ ucfirst(str_replace('_',' ',$record->status)) }}</td><td class="p-3">{{ $record->note ?: '—' }}</td><td class="p-3">{{ $record->recorder?->name ?: '—' }}</td></tr>@empty<tr><td colspan="4" class="p-5 text-slate-500">No attendance records this month.</td></tr>@endforelse</tbody></table></div></section>@endif
+        @if($canViewPayroll)<section x-show="tab === 'payroll'" x-cloak><h2 class="text-lg font-black">Salary and advances · {{ $period }}</h2><p class="mt-2 text-xs text-slate-500">Only posted transactions reduce the balance. {{ $snapshot !== null ? 'Historical salary snapshot used.' : 'Current base salary used where no historical snapshot is available.' }}</p><div class="my-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">@foreach(['Salary basis' => $salaryBasis, 'Salary paid' => $salaryPaid, 'Advances paid' => $advances, 'Remaining balance' => $remaining, 'Pending approval' => $pending] as $label => $amount)<div class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">{{ $label }}</p><p class="mt-2 font-black">{{ $currency }} {{ number_format($amount,2) }}</p></div>@endforeach</div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b">@foreach(['Paid on','Type','Amount','Ledger status','Recorded by'] as $heading)<th class="p-3">{{ $heading }}</th>@endforeach</tr></thead><tbody class="divide-y">@forelse($payrollRuns as $run)<tr><td class="p-3">{{ $run->paid_at?->format('d M Y') }}</td><td class="p-3">{{ ucfirst($run->payment_type) }}</td><td class="p-3">{{ $currency }} {{ number_format($run->amount,2) }}</td><td class="p-3">{{ ucfirst($run->ledgerEntry?->status ?: 'Unposted') }}</td><td class="p-3">{{ $run->recordedBy?->name ?: '—' }}</td></tr>@empty<tr><td colspan="5" class="p-5 text-slate-500">No payroll transactions this month.</td></tr>@endforelse</tbody></table></div></section>@endif
+        @if($canViewLeave)<section x-show="tab === 'leave'" x-cloak><h2 class="mb-4 text-lg font-black">Leave overlapping {{ $period }}</h2><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b">@foreach(['Type','From','Until','Status','Reason','Approved by'] as $heading)<th class="p-3">{{ $heading }}</th>@endforeach</tr></thead><tbody class="divide-y">@forelse($leaves as $leave)<tr><td class="p-3">{{ ucfirst($leave->type) }}</td><td class="p-3">{{ $leave->starts_on->format('d M Y') }}</td><td class="p-3">{{ $leave->ends_on->format('d M Y') }}</td><td class="p-3">{{ ucfirst($leave->status) }}</td><td class="p-3">{{ $leave->reason ?: '—' }}</td><td class="p-3">{{ $leave->approver?->name ?: '—' }}</td></tr>@empty<tr><td colspan="6" class="p-5 text-slate-500">No leave records this month.</td></tr>@endforelse</tbody></table></div></section>@endif
+    </div>
+</div>
+</x-app-layout>

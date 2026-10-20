@@ -6,6 +6,9 @@
     $backRoute = \App\Support\TeacherAcademicScope::canViewStudentDirectory(auth()->user()) ? route('students.index') : route('workbench.home');
     $tabs = ['details' => 'Student details', 'academics' => 'Academics & subjects', 'finance' => 'Financial status', 'family' => 'Parents & guardians', 'history' => 'Attendance & history', 'discipline' => 'Discipline & conduct'];
     $photoUrl = $student->photoUrl();
+    $statusConfirmation = $student->isActive()
+        ? 'Deactivate this student? Their history and parent links will be kept.'
+        : 'Reactivate this student?';
     $latestReport = $examProgress->first();
     $termReport = $studentReports->firstWhere('term_id', $term?->id);
 @endphp
@@ -64,7 +67,7 @@
         <button type="button" @click="openTab('discipline')" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View conduct</button>
         @if($canEdit)
             @if(in_array($student->status, ['active', 'inactive'], true))
-                <form method="POST" action="{{ route('students.profile.status', $student) }}" onsubmit="return confirm('{{ $student->isActive() ? 'Deactivate this student? Their history and parent links will be kept.' : 'Reactivate this student?' }}')">
+                <form method="POST" action="{{ route('students.profile.status', $student) }}" onsubmit="return confirm('{{ $statusConfirmation }}')">
                     @csrf @method('PATCH')
                     <input type="hidden" name="status" value="{{ $student->isActive() ? 'inactive' : 'active' }}">
                     <button type="submit" class="rounded-xl border px-4 py-2.5 text-sm font-bold {{ $student->isActive() ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">{{ $student->isActive() ? 'Deactivate student' : 'Reactivate student' }}</button>

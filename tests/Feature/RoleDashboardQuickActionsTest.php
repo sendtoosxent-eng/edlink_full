@@ -22,12 +22,14 @@ it('shows permission-safe quick actions on teacher and bursar dashboards', funct
         'permissions' => DesignationPermissions::defaults()['Bursar'],
     ]);
     $teacher = User::factory()->create(['school_id' => $school->id, 'designation_id' => $teacherDesignation->id, 'role' => 'teacher', 'employment_status' => 'active']);
+    \App\Models\SchoolClass::create(['school_id' => $school->id, 'name' => 'Assigned class', 'class_teacher_user_id' => $teacher->id]);
     $bursar = User::factory()->create(['school_id' => $school->id, 'designation_id' => $bursarDesignation->id, 'role' => 'bursar', 'employment_status' => 'active']);
 
     $teacherResponse = $this->actingAs($teacher)->get(route('workbench.home'));
     $teacherResponse->assertOk()
         ->assertSee('Quick actions')
         ->assertSee('Teacher tools')
+        ->assertSee('data-quick-action="student-profile"', false)
         ->assertSee('data-quick-action="homework"', false)
         ->assertSee('data-quick-action="subject-attendance"', false)
         ->assertSee('data-quick-action="enter-marks"', false)
@@ -85,11 +87,18 @@ it('shows distinct quick actions for parent and student portals', function () {
     $parentResponse = $this->actingAs($parent)->get(route('portal.home'));
     $parentResponse->assertOk()
         ->assertSee('Parent tools')
+        ->assertSee('data-quick-action="student-profile"', false)
+        ->assertSee('id="student-profile"', false)
         ->assertSee('data-quick-action="learner-results"', false)
         ->assertSee('data-quick-action="fees-payments"', false)
         ->assertSee('data-quick-action="notifications"', false)
         ->assertDontSee('data-quick-action="my-homework"', false);
     expect(substr_count($parentResponse->getContent(), 'data-quick-action='))->toBeLessThanOrEqual(10);
+
+    $sibling = Student::create(['school_id' => $school->id, 'name' => 'Second Profile Learner', 'admission_no' => 'PROFILE-SIBLING-002', 'status' => 'active']);
+    $parent->portalStudents()->attach($sibling->id, ['school_id' => $school->id, 'relationship' => 'Guardian']);
+    $this->get(route('portal.home', ['student' => $sibling->id]))->assertOk()
+        ->assertSee('PROFILE-SIBLING-002')->assertDontSee('PA-001');
 
     $studentResponse = $this->actingAs($studentUser)->get(route('portal.home'));
     $studentResponse->assertOk()

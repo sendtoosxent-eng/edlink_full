@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
-use App\Models\PayrollRun;
 use App\Models\User;
 use App\Models\AuditLog;
 use App\Services\PublicImageStorage;
 use App\Services\StudentProfileData;
+use App\Services\StaffProfileData;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -82,22 +82,8 @@ class PersonProfileController extends Controller
     public function staff(User $user): View
     {
         $this->authorizeUser($user, ['admin', 'superadmin', 'teacher', 'bursar', 'registrar', 'academic_admin'], 'staff.directory');
-
-        $viewerCanSeePayroll = request()->user()->hasPermission('staff.payroll');
-        $payrollRuns = $viewerCanSeePayroll
-            ? PayrollRun::posted()->where('school_id', $user->school_id)->where('user_id', $user->id)->latest('paid_at')->limit(24)->get()
-            : collect();
-        $payrollPeriod = now()->format('Y-m');
-        $salaryPaid = (float) $payrollRuns->where('period', $payrollPeriod)->where('payment_type', 'salary')->sum('amount');
-        $salaryOutstanding = max(0, (float) $user->base_salary - $salaryPaid);
-
-        return $this->userView($user->load('designation'), 'staff', route('staff.index'), route('staff.profile.update', $user), request()->user()->hasPermission('staff.manage'), [
-            'payrollRuns' => $payrollRuns,
-            'payrollPeriod' => $payrollPeriod,
-            'salaryPaid' => $salaryPaid,
-            'salaryOutstanding' => $salaryOutstanding,
-            'viewerCanSeePayroll' => $viewerCanSeePayroll,
-        ]);
+        request()->validate(['period' => ['nullable', 'date_format:Y-m']]);
+        return view('profiles.staff', app(StaffProfileData::class)->build($user, request()->user(), request()->integer('term') ?: null, request('period') ?: now()->format('Y-m')));
     }
 
     public function parent(User $user): View
@@ -112,6 +98,7 @@ class PersonProfileController extends Controller
     public function updateStaff(Request $request, User $user): RedirectResponse
     {
         $this->authorizeUser($user, ['admin', 'superadmin', 'teacher', 'bursar', 'registrar', 'academic_admin'], 'staff.manage');
+        abort_if(in_array($user->role, ['admin', 'superadmin'], true) && ! in_array($request->user()->role, ['admin', 'superadmin'], true), 403);
 
         return $this->updateUser($request, $user, true, app(PublicImageStorage::class));
     }
@@ -155,6 +142,15 @@ class PersonProfileController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'job_title' => [$staff ? 'required' : 'nullable', 'nullable', 'string', 'max:100'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            ...($staff ? [
+                'joined_at' => ['nullable', 'date'],
+                'contract_type' => ['nullable', Rule::in(['permanent', 'contract', 'part_time', 'volunteer'])],
+                'probation_ends_at' => ['nullable', 'date', 'after_or_equal:'.($request->input('joined_at') ?: $user->joined_at?->toDateString() ?: '1900-01-01')],
+                'base_salary' => ['sometimes', 'required', 'numeric', 'min:0', 'max:9999999999.99'],
+                'emergency_contact_name' => ['nullable', 'string', 'max:255'], 'emergency_contact_phone' => ['nullable', 'string', 'max:50'],
+                'national_id' => ['nullable', 'string', 'max:100'], 'bank_name' => ['nullable', 'string', 'max:255'],
+                'bank_account_name' => ['nullable', 'string', 'max:255'], 'bank_account_number' => ['nullable', 'string', 'max:100'],
+            ] : []),
         ]);
         $photo = $data['photo'] ?? null;
         unset($data['photo']);

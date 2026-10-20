@@ -6,6 +6,7 @@
         <div wire:key="selected-learner-content-{{ $student->id }}" class="space-y-6">
         @php
             $portalQuickActions = $isParent ? [
+                ['label' => 'Student Profile', 'description' => 'View the selected child’s details', 'url' => '#student-profile', 'navigate' => false, 'icon' => 'heroicon-o-identification', 'iconClass' => 'bg-slate-100 text-slate-700', 'hoverClass' => 'hover:border-slate-400'],
                 ['label' => 'Learner Results', 'description' => 'Open published report cards', 'url' => route('my-results', ['student' => $student->id]), 'icon' => 'heroicon-o-document-chart-bar', 'iconClass' => 'bg-violet-100 text-violet-700', 'hoverClass' => 'hover:border-violet-300'],
                 ['label' => 'Attendance', 'description' => 'Review the learner register', 'url' => '#attendance', 'navigate' => false, 'icon' => 'heroicon-o-clipboard-document-check', 'iconClass' => 'bg-emerald-100 text-emerald-700', 'hoverClass' => 'hover:border-emerald-300'],
                 ['label' => 'Performance', 'description' => 'See subject-by-subject progress', 'url' => '#performance', 'navigate' => false, 'icon' => 'heroicon-o-chart-bar-square', 'iconClass' => 'bg-blue-100 text-blue-700', 'hoverClass' => 'hover:border-blue-300'],
@@ -65,6 +66,18 @@
             <section id="discipline" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b p-5"><div><h2 class="font-black text-slate-900">Discipline & conduct — {{ $student->name }}</h2><p class="mt-1 text-xs text-slate-500">Rewards, penalties and conduct history for this child across all dates.</p></div><div class="flex gap-2 text-xs font-bold"><span class="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">{{ $conducts->where('kind', 'good')->count() }} good</span><span class="rounded-full bg-rose-50 px-3 py-1.5 text-rose-700">{{ $conducts->where('kind', 'bad')->count() }} bad</span></div></div>
                 <x-student-conduct-table :records="$conducts" :preview="true" />
+            </section>
+        @endif
+        @if($isParent)
+            <section id="student-profile" class="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-5 flex items-center gap-5">
+                    <div class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-200 bg-slate-100 text-4xl font-black text-slate-500">@if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-full w-full object-cover">@else{{ str($student->name)->substr(0,1)->upper() }}@endif</div>
+                    <div><h2 class="text-lg font-black">Student Profile</h2><p class="mt-1 font-bold text-slate-700">{{ $student->name }}</p><p class="mt-1 text-xs text-slate-500">Read-only details for your selected child. Contact the school to request a correction.</p></div>
+                </div>
+                <table class="w-full text-left text-sm"><tbody class="divide-y divide-slate-100">
+                    @foreach(['Full name' => $student->name, 'Admission number' => $student->admission_no, 'LIN' => $student->lin, 'Class' => $student->schoolClass?->name, 'Stream' => $student->stream?->name, 'Date of birth' => $student->date_of_birth?->format('d M Y'), 'Gender' => ucfirst($student->gender ?? ''), 'Admission date' => $student->admission_date?->format('d M Y'), 'Status' => ucfirst($student->status ?? ''), 'School' => $school->name] as $label => $value)<tr><th class="w-1/3 py-3 pr-4 text-slate-600">{{ $label }}</th><td class="py-3">{{ $value ?: 'Not recorded' }}</td></tr>@endforeach
+                </tbody></table>
+                <div class="mt-5 flex flex-wrap gap-3 text-sm font-bold text-amber-700"><a href="#results">View reports</a><a href="#payments">View payments</a><a href="#attendance">View attendance</a><a href="#discipline">View conduct</a></div>
             </section>
         @endif
         <x-dashboard-quick-actions :actions="$portalQuickActions" :badge="$isParent ? 'Parent tools' : 'Student tools'" description="Open the information and tasks you use most often." />
