@@ -2,7 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\School;
+use App\Models\PlatformAdmin;
+use App\Models\PlatformNotification;
 use App\Models\SystemBackup;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,7 @@ class MonitorSystemHealth extends Command
 {
     protected $signature = 'edlink:monitor';
 
-    protected $description = 'Check backups, queues, logs, and storage and notify school administrators.';
+    protected $description = 'Check backups, queues, logs, and storage and notify platform owners.';
 
     public function handle(): int
     {
@@ -55,10 +56,11 @@ class MonitorSystemHealth extends Command
             Log::critical('Edlink system health check failed.', ['issues' => $issues]);
             if ($databaseAvailable) {
                 try {
-                    foreach (School::with(['users' => fn ($query) => $query->whereIn('role', ['admin', 'superadmin'])])->get() as $school) {
-                        foreach ($school->users as $admin) {
-                            DB::table('school_notifications')->insert(['school_id' => $school->id, 'user_id' => $admin->id, 'category' => 'system_health', 'title' => 'Edlink system health alert', 'message' => implode(' ', $issues), 'type' => 'warning', 'created_at' => now(), 'updated_at' => now()]);
-                        }
+                    $eventKey = 'health:'.now()->toDateString().':'.hash('sha256', implode('|', $issues));
+                    foreach (PlatformAdmin::where('role', 'platform_owner')->where('is_active', true)->get() as $owner) {
+                        PlatformNotification::firstOrCreate(['platform_admin_id' => $owner->id, 'event_key' => $eventKey], [
+                            'title' => 'Edlink system health alert', 'message' => implode(' ', $issues),
+                        ]);
                     }
                 } catch (\Throwable $error) {
                     Log::error('Could not create in-app health alerts.', ['error' => $error->getMessage()]);

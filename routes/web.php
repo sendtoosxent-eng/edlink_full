@@ -147,6 +147,8 @@ Route::prefix('platform')->name('platform.')->group(function () {
             Route::patch('support/{contactMessage}/status', [PlatformSupportController::class, 'toggleStatus'])->name('support.status');
         });
         Route::middleware('platform.role:platform_owner')->group(function () {
+            Route::get('notifications', [\App\Http\Controllers\PlatformNotificationController::class, 'index'])->name('notifications.index');
+            Route::patch('notifications/{notification}/read', [\App\Http\Controllers\PlatformNotificationController::class, 'read'])->name('notifications.read');
             Route::get('administrators', [PlatformOperationsController::class, 'administrators'])->name('administrators');
             Route::post('administrators', [PlatformOperationsController::class, 'storeAdministrator'])->name('administrators.store');
             Route::patch('administrators/{platformAdmin}', [PlatformOperationsController::class, 'updateAdministrator'])->name('administrators.update');
@@ -264,7 +266,7 @@ Route::get('dashboard', function () {
         $dashboardReminders->push(['icon' => 'L', 'text' => ucfirst($school->license_plan).' licence renewal', 'due' => $school->license_expires_at->diffForHumans()]);
     }
     $dashboardReminders = $dashboardReminders->take(8)->values();
-    $notifications = $school ? DB::table('school_notifications')->where('school_id', $school->id)->latest()->limit(6)->get(['title', 'message', 'type', 'created_at']) : collect();
+    $notifications = $school ? \App\Support\NotificationVisibility::forUser(auth()->user())->latest()->limit(6)->get(['title', 'message', 'type', 'created_at']) : collect();
 
     return view('dashboard', [
         'school' => $school,

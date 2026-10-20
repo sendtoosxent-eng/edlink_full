@@ -38,7 +38,8 @@ it('hides existing system alerts from portal accounts and their notification bel
         $healthId = DB::table('school_notifications')->where('title', 'Edlink system health alert')->value('id');
         $this->assertDatabaseMissing('school_notification_reads', ['user_id' => $user->id, 'school_notification_id' => $healthId]);
     }
-    $this->actingAs($this->admin)->get(route('notifications.index'))->assertOk()->assertSee('Edlink system health alert');
+    $this->actingAs($this->admin)->get(route('notifications.index'))->assertOk()->assertDontSee('Edlink system health alert');
+    $this->get(route('dashboard'))->assertOk()->assertDontSee('Edlink system health alert');
 });
 
 it('also excludes internal alerts from mobile notifications and unread counts', function () {
@@ -67,10 +68,17 @@ it('notifies portal-linked and guardian-linked parents when attendance is saved 
     expect(DB::table('school_notifications')->where('user_id', $this->parent->id)->count())->toBe(1);
 });
 
-it('creates new health alerts only for administrators', function () {
+it('creates deduplicated health alerts only for active platform owners', function () {
+    $owner = \App\Models\PlatformAdmin::create(['name' => 'Owner', 'email' => 'alerts-owner@edlink.test', 'password' => 'StrongPassword!123', 'role' => 'platform_owner', 'is_active' => true]);
+    $inactive = \App\Models\PlatformAdmin::create(['name' => 'Inactive Owner', 'email' => 'inactive-owner@edlink.test', 'password' => 'StrongPassword!123', 'role' => 'platform_owner', 'is_active' => false]);
+    $operator = \App\Models\PlatformAdmin::create(['name' => 'Operator', 'email' => 'operator@edlink.test', 'password' => 'StrongPassword!123', 'role' => 'operations_admin', 'is_active' => true]);
     config(['edlink.monitoring.alert_webhook_url' => null]);
     $this->artisan('edlink:monitor')->assertExitCode(1);
-    $this->assertDatabaseHas('school_notifications', ['user_id' => $this->admin->id, 'category' => 'system_health']);
+    $this->artisan('edlink:monitor')->assertExitCode(1);
+    expect(\App\Models\PlatformNotification::where('platform_admin_id', $owner->id)->count())->toBe(1);
+    $this->assertDatabaseMissing('platform_notifications', ['platform_admin_id' => $inactive->id]);
+    $this->assertDatabaseMissing('platform_notifications', ['platform_admin_id' => $operator->id]);
+    $this->assertDatabaseMissing('school_notifications', ['user_id' => $this->admin->id, 'category' => 'system_health']);
     expect(DB::table('school_notifications')->where('category', 'system_health')->whereNull('user_id')->exists())->toBeFalse();
     $this->assertDatabaseMissing('school_notifications', ['user_id' => $this->parent->id, 'category' => 'system_health']);
     $this->assertDatabaseMissing('school_notifications', ['user_id' => $this->learner->id, 'category' => 'system_health']);

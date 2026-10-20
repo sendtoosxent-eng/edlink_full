@@ -1,12 +1,15 @@
 <x-app-layout>
 @php
-    $input = 'w-full rounded-xl border-slate-200 bg-slate-50 text-sm disabled:text-slate-600';
+    $input = 'w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-800 transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:opacity-60';
+    $fileInput = 'block w-full rounded-xl border border-dashed border-slate-300 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-600 transition file:mr-4 file:rounded-lg file:border-0 file:bg-amber-400 file:px-4 file:py-2 file:text-xs file:font-bold file:text-slate-950 hover:border-amber-300 hover:bg-amber-50/50 focus:outline-none focus:ring-4 focus:ring-amber-400/20';
     $tabs = ['details' => 'Personal details', 'employment' => 'Employment', 'assignments' => 'Classes & subjects', 'timetable' => 'Timetable'];
     if ($canViewAttendance) $tabs['attendance'] = 'Attendance';
     if ($canViewPayroll) $tabs['payroll'] = 'Salary & advances';
     if ($canViewLeave) $tabs['leave'] = 'Leave history';
+    $employmentFields = ['joined_at', 'probation_ends_at', 'contract_type', 'base_salary', 'emergency_contact_name', 'emergency_contact_phone', 'national_id', 'bank_name', 'bank_account_name', 'bank_account_number'];
+    $initialTab = $canEdit && collect($employmentFields)->contains(fn ($field) => $errors->has($field)) ? 'employment' : 'details';
 @endphp
-<div class="w-full space-y-6" x-data="{ tab: 'details', photoPreview: null }">
+<div class="w-full space-y-6" x-data="{ tab: @js($initialTab), photoPreview: null }">
     <header class="rounded-3xl bg-slate-900 p-6 text-white sm:p-8">
         <div class="flex flex-wrap items-center gap-6">
             <div class="flex h-40 w-40 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-300 bg-slate-800 text-6xl font-black text-amber-300 shadow-xl">
@@ -16,18 +19,18 @@
             <div class="flex-1"><p class="text-xs font-black uppercase tracking-widest text-amber-300">{{ $staff->role === 'teacher' ? 'Teacher Profile' : 'Staff Profile' }}</p><h1 class="mt-2 text-3xl font-black text-slate-100">{{ $staff->name }}</h1><p class="mt-2 text-sm text-slate-300">{{ $staff->staff_number ?: 'Staff number pending' }} · {{ $staff->job_title ?: 'No job title' }} · {{ ucfirst($staff->employment_status ?: 'Not specified') }}</p><p class="mt-1 text-sm text-slate-300">{{ $staff->email }}</p></div>
             <a href="{{ route('staff.index') }}" wire:navigate class="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold">Back to staff</a>
         </div>
-        <div class="mt-6 flex flex-wrap gap-3">
-            @if(auth()->user()->hasPermission('students.view'))<form method="POST" action="{{ route('students.id-cards.generate') }}" target="_blank">@csrf<input type="hidden" name="type" value="staff"><input type="hidden" name="ids[]" value="{{ $staff->id }}"><button class="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold">Print staff ID card</button></form>@endif
-            <button type="button" @click="tab = 'assignments'" class="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold">View teaching assignments</button>
-            @if($canViewPayroll)<button type="button" @click="tab = 'payroll'" class="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold">View salary balance</button>@endif
-            @if($canViewPayroll && $period === now()->format('Y-m') && $staff->employment_status === 'active')<a href="{{ route('payroll.index', ['staff' => $staff->id]) }}" class="rounded-xl bg-amber-400 px-4 py-2 text-sm font-bold text-slate-950">Pay salary / advance</a>@endif
-        </div>
     </header>
+    <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4" aria-label="Staff profile actions">
+        @if(auth()->user()->hasPermission('students.view'))<form method="POST" action="{{ route('students.id-cards.generate') }}" target="_blank">@csrf<input type="hidden" name="type" value="staff"><input type="hidden" name="ids[]" value="{{ $staff->id }}"><button class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Print staff ID card</button></form>@endif
+        <button type="button" @click="tab = 'assignments'" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View teaching assignments</button>
+        @if($canViewPayroll)<button type="button" @click="tab = 'payroll'" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">View salary balance</button>@endif
+        @if($canViewPayroll && $period === now()->format('Y-m') && $staff->employment_status === 'active')<a href="{{ route('payroll.index', ['staff' => $staff->id]) }}" class="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-300">Pay salary / advance</a>@endif
+    </div>
     @if(session('status'))<p class="rounded-xl bg-emerald-50 p-4 text-emerald-800">{{ session('status') }}</p>@endif
     @if($errors->any())<div class="rounded-xl bg-rose-50 p-4 text-rose-700">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
     <form method="GET" action="{{ route('staff.profile', $staff) }}" class="flex flex-wrap items-end gap-4 rounded-2xl border bg-white p-5">
-        <label class="text-sm font-bold">Academic term<select name="term" class="ml-2 rounded-xl border-slate-200" onchange="this.form.submit()">@foreach($terms as $option)<option value="{{ $option->id }}" @selected($term?->id === $option->id)>{{ $option->name }} · {{ $option->year }}</option>@endforeach</select></label>
-        <label class="text-sm font-bold">Record month<input type="month" name="period" value="{{ $period }}" class="ml-2 rounded-xl border-slate-200" onchange="this.form.submit()"></label><button class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white">Apply</button>
+        <label class="text-sm font-bold">Academic term<select name="term" class="{{ $input }} mt-2" onchange="this.form.requestSubmit()">@foreach($terms as $option)<option value="{{ $option->id }}" @selected($term?->id === $option->id)>{{ $option->name }} · {{ $option->year }}</option>@endforeach</select></label>
+        <label class="text-sm font-bold">Record month<input type="month" name="period" value="{{ $period }}" class="{{ $input }} mt-2" onchange="this.form.requestSubmit()"></label><button class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white">Apply</button>
         <p class="w-full text-xs text-slate-500">Term filters subjects and timetable. Month filters attendance, leave and payroll. Class teacher roles show current assignments.</p>
     </form>
     <div class="grid gap-4 sm:grid-cols-3">
@@ -37,22 +40,22 @@
     </div>
     <nav class="flex flex-wrap gap-2" aria-label="Teacher profile sections">@foreach($tabs as $key => $label)<button type="button" @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'" :aria-pressed="tab === '{{ $key }}'" class="rounded-xl border px-4 py-3 text-sm font-bold">{{ $label }}</button>@endforeach</nav>
     <div class="rounded-3xl border bg-white p-5 sm:p-7">
-        <form method="POST" action="{{ route('staff.profile.update', $staff) }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('staff.profile.update', $staff) }}" enctype="multipart/form-data" @invalid.capture="tab = $event.target.closest('[data-profile-tab]')?.dataset.profileTab || 'details'">
             @csrf @method('PATCH')
-            <section x-show="tab === 'details'">
+            <section data-profile-tab="details" x-show="tab === 'details'">
                 <h2 class="mb-5 text-lg font-black">Identity and contact information</h2>
                 <table class="w-full text-left text-sm"><tbody class="divide-y">
-                    @foreach(['name' => 'Full name', 'email' => 'Email address', 'phone' => 'Phone number', 'job_title' => 'Job title'] as $field => $label)<tr><th class="w-1/3 py-4 pr-4">{{ $label }}</th><td class="py-3"><input type="{{ $field === 'email' ? 'email' : 'text' }}" name="{{ $field }}" value="{{ old($field, $staff->$field) }}" @disabled(!$canEdit) @required(in_array($field, ['name','email','job_title'])) class="{{ $input }}"></td></tr>@endforeach
+                    @foreach(['name' => 'Full name', 'email' => 'Email address', 'phone' => 'Phone number', 'job_title' => 'Job title'] as $field => $label)<tr><th class="w-1/3 py-4 pr-4"><label for="staff-{{ $field }}">{{ $label }}</label></th><td class="py-3"><input id="staff-{{ $field }}" type="{{ $field === 'email' ? 'email' : ($field === 'phone' ? 'tel' : 'text') }}" name="{{ $field }}" value="{{ old($field, $staff->$field) }}" @disabled(!$canEdit) @required(in_array($field, ['name','email','job_title'])) class="{{ $input }}" aria-invalid="{{ $errors->has($field) ? 'true' : 'false' }}">@error($field)<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror</td></tr>@endforeach
                     @foreach(['Staff number' => $staff->staff_number, 'Designation' => $staff->designation?->name, 'Account role' => $staff->role, 'Employment status' => $staff->employment_status, 'School' => $staff->school->name] as $label => $value)<tr><th class="py-4 pr-4">{{ $label }}</th><td class="py-4">{{ $value ?: 'Not assigned' }} <span class="ml-2 text-xs text-slate-400">Read only</span></td></tr>@endforeach
-                    @if($canEdit)<tr><th class="py-4 pr-4">Profile photograph</th><td class="py-4"><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" @change="if (photoPreview) URL.revokeObjectURL(photoPreview); photoPreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null" class="w-full text-sm"><p class="mt-2 text-xs text-slate-500">JPG, PNG or WebP, up to 4 MB.</p></td></tr>@endif
+                    @if($canEdit)<tr><th class="py-4 pr-4">Profile photograph</th><td class="py-4"><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" @change="if (photoPreview) URL.revokeObjectURL(photoPreview); photoPreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null" class="{{ $fileInput }}"><p class="mt-2 text-xs text-slate-500">JPG, PNG or WebP, up to 4 MB.</p></td></tr>@endif
                 </tbody></table>
             </section>
-            <section x-show="tab === 'employment'" x-cloak>
+            <section data-profile-tab="employment" x-show="tab === 'employment'" x-cloak>
                 <h2 class="mb-5 text-lg font-black">Employment and HR details</h2>
                 @if($canEdit)
                     <table class="w-full text-left text-sm"><tbody class="divide-y">
                         @foreach(['joined_at' => 'Joining date', 'probation_ends_at' => 'Probation end date', 'emergency_contact_name' => 'Emergency contact name', 'emergency_contact_phone' => 'Emergency contact phone', 'national_id' => 'National ID', 'bank_name' => 'Bank name', 'bank_account_name' => 'Bank account name', 'bank_account_number' => 'Bank account number', 'base_salary' => 'Current monthly base salary ('.$currency.')'] as $field => $label)
-                            <tr><th class="w-1/3 py-4 pr-4">{{ $label }}</th><td class="py-3"><input name="{{ $field }}" type="{{ in_array($field, ['joined_at','probation_ends_at']) ? 'date' : ($field === 'base_salary' ? 'number' : 'text') }}" value="{{ old($field, in_array($field, ['joined_at','probation_ends_at']) ? $staff->$field?->toDateString() : $staff->$field) }}" @if($field === 'base_salary') min="0" step="0.01" required @endif class="{{ $input }}"></td></tr>
+                            <tr><th class="w-1/3 py-4 pr-4"><label for="staff-{{ $field }}">{{ $label }}</label></th><td class="py-3"><input id="staff-{{ $field }}" name="{{ $field }}" type="{{ in_array($field, ['joined_at','probation_ends_at']) ? 'date' : ($field === 'base_salary' ? 'number' : 'text') }}" value="{{ old($field, in_array($field, ['joined_at','probation_ends_at']) ? $staff->$field?->toDateString() : $staff->$field) }}" @if($field === 'base_salary') min="0" step="0.01" required @endif class="{{ $input }}" aria-invalid="{{ $errors->has($field) ? 'true' : 'false' }}">@error($field)<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror</td></tr>
                         @endforeach
                         <tr><th class="py-4 pr-4">Contract type</th><td class="py-3"><select name="contract_type" class="{{ $input }}"><option value="">Not specified</option>@foreach(['permanent','contract','part_time','volunteer'] as $type)<option value="{{ $type }}" @selected(old('contract_type', $staff->contract_type) === $type)>{{ ucfirst(str_replace('_',' ', $type)) }}</option>@endforeach</select></td></tr>
                         <tr><th class="py-4 pr-4">Employment document</th><td class="py-4">{{ $staff->staff_document_path ? 'On file' : 'No document recorded' }}</td></tr>

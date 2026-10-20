@@ -12,6 +12,8 @@ class NotificationVisibility
     {
         $query = DB::table($alias === 'school_notifications' ? $alias : 'school_notifications as '.$alias)
             ->where($alias.'.school_id', $user->school_id)
+            ->where(fn ($items) => $items->whereNull($alias.'.category')->orWhere($alias.'.category', '!=', 'system_health'))
+            ->where($alias.'.title', 'not like', '%system health%')
             ->where(fn ($items) => $items->whereNull($alias.'.user_id')->orWhere($alias.'.user_id', $user->id));
 
         if (in_array($user->role, ['parent', 'student'], true)) {
