@@ -9,7 +9,7 @@
                 
                 <div>
                     <div class="flex items-center gap-3 flex-wrap">
-                        <h1 class="text-2xl font-extrabold text-amber-300 tracking-tight">Expenses Management</h1>
+                        <h1 class="text-2xl font-bold tracking-tight text-amber-300">School Expenses Management</h1>
                         
                         {{-- Term Status Badge --}}
                         @if($this->selectedTerm)

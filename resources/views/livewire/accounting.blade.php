@@ -8,7 +8,7 @@
 
                     <div>
                         <div class="flex flex-wrap items-center gap-3">
-                            <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">{{ $ledgerSettingsPage ? 'Ledger Mapping Settings' : 'Accounting Workspace' }}</h1>
+                            <h1 class="text-2xl font-bold tracking-tight text-amber-300">{{ $ledgerSettingsPage ? 'Ledger Mapping Settings' : 'Accounting Workspace' }}</h1>
                             <span class="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Double-entry enabled
                             </span>
@@ -175,7 +175,7 @@
                             <div class="mb-3 flex items-center justify-between gap-3">
                                 <div><p class="font-bold text-darken">{{ $financial->name }}</p><p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ str($financial->type)->headline() }}</p></div>
                                 <span class="rounded-full bg-white px-3 py-1 text-[10px] font-black text-slate-600 ring-1 ring-gray-200">{{ $financial->currency }}</span>
-                            </div>
+                            </div>. <br>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">Mapped ledger account</label>
                             <select wire:model="financialMappings.{{ $financial->id }}" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium transition-all focus:border-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-400/30">
                                 <option value="">Select an asset account</option>

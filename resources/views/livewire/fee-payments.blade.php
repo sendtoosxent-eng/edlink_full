@@ -9,8 +9,8 @@
                     <div class="flex items-center gap-2">
                         
                     </div>
-                    <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">
-                        Fee Payments
+                    <h1 class="text-2xl font-bold tracking-tight text-amber-300">
+                        Student Fees Payments
                     </h1>
                     <p class="text-xs text-slate-400 max-w-md">
                         Select a learner to review their financial profile, check balance, and record a payment.

@@ -5,7 +5,7 @@
         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Promotion Preview &amp; Confirmation
                 </h1>
                 <p class="mt-1 text-sm text-slate-500 max-w-2xl">

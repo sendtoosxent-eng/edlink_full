@@ -4,7 +4,7 @@
         <!-- HEADER BLOCK -->
           <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-amber-300">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Student Categories
                 </h1>
                 <p class="text-sm font-medium text-slate-500 mt-1 max-w-3xl">

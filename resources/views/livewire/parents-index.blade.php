@@ -5,10 +5,10 @@
         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300 ">
                     Parents &amp; Guardians
                 </h1>
-                <p class="mt-1 text-sm text-slate-500 max-w-xl">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed ">
                     Manage parent portal accounts, track contact info, and monitor linked learners across all classes.
                 </p>
             </div>

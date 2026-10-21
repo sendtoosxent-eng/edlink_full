@@ -3,7 +3,7 @@
     <div class="space-y-6">
         <header class="relative overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-8">
             <div class="relative z-10 max-w-2xl">
-                <h1 class="mt-2 text-2xl font-extrabold sm:text-3xl text-amber-300">Create school ID cards</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Create school ID cards</h1>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Choose students or staff, narrow the list, select the people you need, then generate branded portrait cards.</p></div>
             <div class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-amber-400/15 blur-3xl"></div>
         </header>

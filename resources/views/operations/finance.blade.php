@@ -7,7 +7,7 @@
                 <div class="flex items-start gap-4">
                    
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Account Reconciliation</h1>
+                        <h1 class="text-2xl font-bold tracking-tight text-amber-300">Account Reconciliation</h1>
                         <p class="mt-1 text-xs sm:text-sm text-slate-400 max-w-xl">
                             Compare bank and cash statement balances with posted general ledger records.
                         </p>

@@ -2,7 +2,7 @@
     <!-- Header Block with Background -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div class="relative z-10 max-w-3xl">
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-300">Classes & Streams</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-amber-300">Classes & Streams</h1>
             <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                 Manage your school's academic tiers. Create main classes (e.g., Primary 1) and divide them into streams or sections (e.g., North, West) for granular student tracking.
             </p>

@@ -3,7 +3,7 @@
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div class="relative z-10 max-w-3xl">
             
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-300">School Events</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-amber-300">School Events</h1>
             <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                 Schedule academic, sports, and general school events across terms. Dispatch targeted email reminders to parents, guardians, and staff members.
             </p>

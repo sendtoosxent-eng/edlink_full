@@ -4,7 +4,7 @@
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="max-w-2xl">
                 
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-300">Academic Terms Calendar</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Academic Terms Calendar</h1>
                 <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Configure structural lifecycle schedules, track historical term logs, and handle year-over-year financial rolls.
                 </p>

@@ -5,7 +5,7 @@
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 
-                <h1 class="mt-3 text-2xl font-black sm:text-3xl text-amber-300 tracking-tight">Marks Entry</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Marks Entry</h1>
                 <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
                     Enter, review, and submit learner exam scores for official academic approval.
                 </p>

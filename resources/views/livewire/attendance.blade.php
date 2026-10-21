@@ -12,7 +12,7 @@
                         </span>
                     @endif
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-300 mt-2">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Attendance Register
                 </h1>
                 <p class="text-xs sm:text-sm font-normal text-slate-500 mt-1 max-w-2xl leading-relaxed">

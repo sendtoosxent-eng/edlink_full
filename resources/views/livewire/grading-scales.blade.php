@@ -4,7 +4,7 @@
         <div class="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div class="max-w-2xl">
                 
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-amber-300">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Grading Scales
                 </h1>
                 <p class="text-sm font-medium text-slate-400 mt-1.5 leading-relaxed">

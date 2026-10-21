@@ -2,7 +2,7 @@
     <div class="rounded-3xl bg-[#252641] p-6 text-white shadow-md sm:p-8">
         <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="mt-2 text-2xl font-black text-amber-300 sm:text-3xl">Fee Adjustments</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Fee Adjustments</h1>
                 <p class="mt-2 max-w-xl text-xs leading-5 text-slate-300">Review individual fee reductions submitted for the active term. A learner’s balance changes only after approval.</p>
             </div>
             <a href="{{ url('/finance/payments') }}" class="self-start rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-300">← Back to Fee Payments</a>

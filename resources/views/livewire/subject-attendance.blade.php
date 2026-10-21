@@ -4,7 +4,7 @@
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-1.5">
                 
-                <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Subject Attendance
                     <span class="text-xs text-slate-400">•</span>
                     <span class="text-xs font-medium text-slate-300">{{ now()->format('l, d M Y') }}</span>

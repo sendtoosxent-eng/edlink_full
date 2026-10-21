@@ -3,8 +3,8 @@
     <header class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-xs">
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="mt-3 text-2xl font-black sm:text-3xl text-amber-300 tracking-tight">Homework & Assignments</h1>
-                <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Homework & Assignments</h1>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     {{ $isStudent ? 'View your course assignments, submit your completed work, and review teacher feedback.' : 'Create and publish class assignments, track submissions, and evaluate learner work.' }}
                 </p>
             </div>
