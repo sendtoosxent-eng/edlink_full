@@ -8,10 +8,11 @@
         localStorage.removeItem('edlink_admin_dashboard_theme');
         document.documentElement.classList.remove('dark');
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/chart.umd.js') }}"></script>
+@include('partials.chart-fonts')
     <script>
         tailwind.config = {
             theme: {
@@ -80,6 +81,7 @@
     @include('partials.mobile-shell-styles')
     @include('partials.sidebar-tree-styles')
     @livewireStyles
+@include('partials.ui-styles')
 </head>
 <body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
       x-data="{ mobileNavOpen: false }"
@@ -354,7 +356,7 @@
             <div class="rounded-2xl p-6 lg:p-8 mb-8 relative overflow-hidden shadow-lg ring-2 ring-yellow-400/20" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
                 <div class="relative z-10">
                     <h2 class="text-2xl font-bold tracking-tight text-amber-300">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} 👋</h2>
-                    <p class="text-gray-300 text-sm">Here's what's happening at {{ $school->name ?? 'your school' }} today.</p>
+                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">Here's what's happening at {{ $school->name ?? 'your school' }} today.</p>
                     <p class="text-yellow-400 text-xs font-medium mt-3" id="greetingDateTime">Loading...</p>
                 </div>
                 <div class="absolute -right-6 -bottom-10 w-40 h-40 bg-yellow-400/10 rounded-full"></div>
@@ -456,7 +458,7 @@
 
         @if(false)
         <!-- Inside here, your dynamic script will render student layout components like this: -->
-         
+
         <!-- Record 1 -->
 <div class="p-4 rounded-xl border border-gray-100 ring-2 ring-yellow-400/20 bg-gray-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50 hover:ring-yellow-400/40 transition-all duration-200 shadow-sm">
     <div class="flex items-center justify-between sm:justify-start gap-4 flex-1">
@@ -470,7 +472,7 @@
     </div>
     <!-- Actions with Instant Tooltips -->
     <div class="flex items-center gap-1.5 self-end sm:self-center border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100 w-full sm:w-auto justify-end">
-        
+
         <!-- View Account -->
         <div class="relative group">
             <button class="p-2 text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg border border-transparent hover:border-gray-200 transition active:scale-95 shadow-sm hover:shadow-xs">
@@ -660,10 +662,10 @@
     </div>
 </div>
         @endif
-        
+
     </div>
 </div>
-       
+
 <!-- Attendance & Demographics -->
 <form method='GET' action='/dashboard' class='mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm'>
     <label for='dashboardTermFilter' class='text-xs font-bold uppercase text-gray-500'>Dashboard term</label>
@@ -674,10 +676,10 @@
     <button class='rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white'>Apply term</button>
 </form>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    
+
     <!-- Attendance Card (Takes 2 columns on desktop) -->
     <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 ring-2 ring-yellow-400/30 p-5 hover:shadow-md hover:ring-yellow-400/50 transition-all duration-300">
-        
+
         <!-- Header & Controls -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div class="space-y-1">
@@ -686,31 +688,31 @@
                     Sample data — connects when Attendance module is live
                 </span>
             </div>
-            
+
             <!-- Filter Controls -->
             <div class="flex items-center gap-2 w-full sm:w-auto">
-                <select id="attendanceClassFilter" 
+                <select id="attendanceClassFilter"
                     class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none min-w-[130px] shadow-sm">
                     <option value="all">All classes</option>
                     @foreach($school->classes ?? [] as $class)
                         <option value="{{ $class->id }}">{{ $class->name }}</option>
                     @endforeach
                 </select>
-                
-                <input type="date" id="attendanceDateFilter" 
+
+                <input type="date" id="attendanceDateFilter"
                     class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none shadow-sm">
             </div>
         </div>
-        
+
         <!-- Chart Canvas Area -->
         <div class="chart-surface relative w-full h-64 sm:h-72 bg-gray-50/30 rounded-xl border border-gray-100/50 p-2">
             <canvas id="attendanceChart"></canvas>
         </div>
     </div>
-    
+
     <!-- Gender Breakdown Card (Takes 1 column on desktop) -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 ring-2 ring-yellow-400/30 p-5 hover:shadow-md hover:ring-yellow-400/50 transition-all duration-300 flex flex-col justify-between">
-        
+
         <!-- Header -->
         <div class="space-y-1 mb-6">
             <h3 class="font-bold text-gray-900 text-base tracking-tight">School Demographics</h3>
@@ -718,7 +720,7 @@
                 Gender Ratio
             </span>
         </div>
-        
+
         <!-- Pie Chart Canvas Area -->
         <div class="chart-surface relative w-full h-64 sm:h-72 bg-gray-50/30 rounded-xl border border-gray-100/50 p-4 flex items-center justify-center">
             <div class="relative w-full h-full max-h-[200px] flex items-center justify-center">
@@ -726,11 +728,11 @@
             </div>
         </div>
     </div>
-    
+
 </div>
             <!-- Revenue -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 ring-2 ring-yellow-400/30 p-5 mb-8 hover:shadow-md hover:ring-yellow-400/50 transition-all duration-300">
-    
+
     <!-- Header & Controls -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div class="space-y-1">
@@ -739,19 +741,19 @@
                 January–December {{ $cashFlowYear }} cash-pool activity
             </span>
         </div>
-        
+
         <!-- Filter Controls -->
         <div class="flex items-center gap-2 w-full sm:w-auto">
-            <select id="revenueTypeFilter" 
+            <select id="revenueTypeFilter"
                 class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none min-w-[150px] shadow-sm">
                 <option value="both">Income &amp; Expenditure</option>
                 <option value="income">Income only</option>
                 <option value="expenditure">Expenditure only</option>
             </select>
-            
+
         </div>
     </div>
-    
+
     <!-- Chart Canvas Area -->
     <div class="chart-surface relative w-full h-64 sm:h-72 bg-gray-50/30 rounded-xl border border-gray-100/50 p-2">
         <canvas id="revenueChart"></canvas>
@@ -767,10 +769,10 @@
                 <h3 class="font-bold text-gray-900 text-base tracking-tight">Payment Trends</h3>
                 <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Financial Insights</span>
             </div>
-            
+
             <!-- Filters -->
             <div class="flex items-center gap-2 w-full sm:w-auto">
-                <select id="paymentYearFilter" 
+                <select id="paymentYearFilter"
                     class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none shadow-sm">
                     @foreach($paymentYears as $year)
                         <option value="{{ $year }}">{{ $year }} Academic Year</option>
@@ -778,7 +780,7 @@
                 </select>
             </div>
         </div>
-        
+
         <div class="chart-surface relative w-full h-64 sm:h-72 bg-gray-50/30 rounded-xl border border-gray-100/50 p-2">
             <canvas id="paymentTrendChart"></canvas>
         </div>
@@ -791,10 +793,10 @@
                 <h3 class="font-bold text-gray-900 text-base tracking-tight">Academic Performance</h3>
                 <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Grade Averages</span>
             </div>
-            
+
             <!-- Filters -->
             <div class="flex items-center gap-2 w-full sm:w-auto">
-                <select id="performanceClassFilter" 
+                <select id="performanceClassFilter"
                     class="text-xs font-semibold border border-gray-200 rounded-xl px-3 py-2 text-gray-700 bg-gray-50/50 hover:bg-white hover:border-gray-300 focus:outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/10 transition-all flex-1 sm:flex-none min-w-[120px] shadow-sm">
                     <option value="all">All Classes</option>
                     @foreach($school->classes ?? [] as $class)
@@ -803,7 +805,7 @@
                 </select>
             </div>
         </div>
-        
+
         <div class="chart-surface relative w-full h-64 sm:h-72 bg-gray-50/30 rounded-xl border border-gray-100/50 p-2">
             <canvas id="classPerformanceChart"></canvas>
         </div>
@@ -816,7 +818,7 @@
                 <!-- Calendar -->
                 <!-- Calendar Widget -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 ring-2 ring-yellow-400/30 p-5 hover:shadow-md hover:ring-yellow-400/50 transition-all duration-300">
-    
+
     <!-- Inject styling directly for dynamically generated items -->
     <style>
         /* Styles standard day items generated by your script */
@@ -870,7 +872,7 @@
             <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
             <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Upcoming Agenda</p>
         </div>
-        
+
         <!-- Target container for Javascript rendered events list -->
         <div id="calendarEventsList" class="space-y-2 text-sm text-gray-600"></div>
     </div>
@@ -878,7 +880,7 @@
 </div>
 
                 <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 ring-2 ring-yellow-400/30 p-5 overflow-x-auto hover:shadow-md hover:ring-yellow-400/50 transition-all duration-300">
-    
+
     <!-- Inject style framework directly for dynamic JavaScript row data -->
     <style>
         #timetableBody tr {
@@ -947,7 +949,7 @@
             <!-- Classes overview -->
            <!-- Classes overview -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 ring-2 ring-yellow-400/30 p-5 mb-8 hover:shadow-md hover:ring-yellow-400/50 transition-all duration-300">
-    
+
     <!-- Header Controls -->
     <div class="flex items-center justify-between mb-5">
         <h3 class="font-bold text-gray-900 text-base tracking-tight">Your classes</h3>
@@ -997,7 +999,7 @@
 </div>
 
             <div class="grid lg:grid-cols-2 gap-6">
-    
+
     <!-- Inject style framework for dynamic items in both containers -->
     <style>
         #remindersList > *, #notificationsList > * {
@@ -1016,7 +1018,7 @@
             border-color: #e5e7eb; /* border-gray-200 */
         }
     </style>
-    
+
 
     <!-- Reminders Panel -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-yellow-400 ring-2 ring-yellow-400/20 p-5 hover:shadow-md hover:ring-yellow-400/40 transition-all duration-300">
@@ -1024,7 +1026,7 @@
             <h3 class="font-bold text-gray-900 text-base tracking-tight">Reminders</h3>
             <span class="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]"></span>
         </div>
-        
+
         <!-- Target container for Javascript rendered items -->
         <div id="remindersList" class="text-gray-700 font-medium"></div>
     </div>
@@ -1035,7 +1037,7 @@
             <h3 class="font-bold text-gray-900 text-base tracking-tight ">Notifications</h3>
             <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Recent</span>
         </div>
-        
+
         <!-- Target container for Javascript rendered items -->
         <div id="notificationsList" class="text-gray-700 font-medium "></div>
     </div>
@@ -1086,7 +1088,7 @@
 
         </main>
     </div>
-    
+
 
     <script>
         // Shared palette, available to every block below.
@@ -1508,7 +1510,7 @@ performanceClassFilter.addEventListener('change', function () {
 
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-center z-20 shadow-sm">
     <p class="text-xs text #252641 text-center">
-        Copyright &copy; {{ date('Y') }} <span class="font-semibold text-yellow-400">{{ config('app.name', 'Edlink') }}</span>. All rights reserved. 
+        Copyright &copy; {{ date('Y') }} <span class="font-semibold text-yellow-400">{{ config('app.name', 'Edlink') }}</span>. All rights reserved.
         <a href="{{ url('/') }}" class="text-yellow-400 hover:underline">
             Spotnet Technologies
         </a>

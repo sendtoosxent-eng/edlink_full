@@ -13,9 +13,9 @@
                     @endif
                 </div>
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">
-                    Attendance Register
+                    Students Attendance Register
                 </h1>
-                <p class="text-xs sm:text-sm font-normal text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Daily register and learner attendance performance.
                 </p>
             </div>

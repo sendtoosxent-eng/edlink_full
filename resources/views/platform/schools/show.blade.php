@@ -27,8 +27,8 @@
                         @if($school->is_demo)<span class="rounded-full border border-sky-300/20 bg-sky-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-sky-300">Demo school</span>@endif
                         <span class="rounded-full border border-amber-300/20 bg-amber-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">{{ $school->license_status }}</span>
                     </div>
-                    <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">{{ $school->name }}</h1>
-                    <p class="mt-1 font-mono text-xs font-semibold text-slate-400">{{ $school->school_number }} · {{ ucfirst($school->school_type) }}</p>
+                    <h1 class="text-2xl font-bold tracking-tight text-amber-300">{{ $school->name }}</h1>
+                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">{{ $school->school_number }} · {{ ucfirst($school->school_type) }}</p>
                 </div>
             </div>
             <div class="flex flex-wrap gap-3">

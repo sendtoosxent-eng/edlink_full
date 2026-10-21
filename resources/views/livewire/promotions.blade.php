@@ -7,7 +7,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Promotion & Progression
                 </h1>
-                <p class="text-sm font-medium text-slate-400 mt-1.5 leading-relaxed">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Manage learner advancement between academic terms. Select historical source records to assign promotion outcomes and generate next-term placements.
                 </p>
             </div>

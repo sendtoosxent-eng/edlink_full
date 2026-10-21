@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $pageTitle ?? 'Learning Dashboard' }} - Edlink</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={theme:{extend:{fontFamily:{sans:['Poppins','sans-serif']},colors:{darken:'#252641'}}}}</script>
     <script src="{{asset('js/chart.umd.js')}}"></script>
+@include('partials.chart-fonts')
     <style>[x-cloak]{display:none!important}:root{--sidebar-w:288px}html,body{overflow-x:hidden}.portal-sidebar{width:var(--sidebar-w);transition:width .2s}.portal-main{transition:margin-left .2s}@media(min-width:1024px){.portal-main{margin-left:var(--sidebar-w)}}.nav-link,.nav-group-btn{color:#d1d5db;transition:.15s}.nav-link:hover,.nav-group-btn:hover{background:rgba(234,179,8,.12);color:#facc15}.nav-link.active{background:#eab308;color:#252641;font-weight:600}.nav-sub-link{color:#9ca3af}.nav-sub-link:hover{color:#facc15}.student-stat{box-shadow:0 8px 22px rgba(15,23,42,.06)}@media(max-width:1023px){.portal-sidebar{width:288px}.portal-main{margin-left:0}}</style>
     <script>document.addEventListener('alpine:init',()=>{Alpine.store('ui',{collapsed:localStorage.getItem('edlink_sidebar_collapsed')==='true',toggle(){this.collapsed=!this.collapsed;localStorage.setItem('edlink_sidebar_collapsed',this.collapsed);document.documentElement.style.setProperty('--sidebar-w',this.collapsed?'80px':'288px')}})})</script>
     @include('partials.mobile-shell-styles')
     @livewireStyles
+@include('partials.ui-styles')
 </head>
 <body class="mobile-shell-page min-h-screen bg-gray-50 font-sans" x-data="{mobileNavOpen:false}" x-init="document.documentElement.style.setProperty('--sidebar-w',$store.ui.collapsed?'80px':'288px')">
 @php($layoutTerm=auth()->user()->school->currentTerm())

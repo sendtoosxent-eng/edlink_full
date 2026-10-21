@@ -3,8 +3,8 @@
         <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Stay informed</p>
-                <h1 class="mt-2 text-2xl font-extrabold sm:text-3xl">Notification Center</h1>
-                <p class="mt-2 text-sm text-slate-300">School announcements and updates intended for your account.</p>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Notification Center</h1>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">School announcements and updates intended for your account.</p>
             </div>
             @if($unreadCount)
                 <button wire:click="markAllRead" class="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-slate-900 transition hover:-translate-y-0.5 hover:bg-amber-300">

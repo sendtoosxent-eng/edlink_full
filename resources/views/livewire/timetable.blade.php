@@ -5,7 +5,7 @@
             <div>
                 
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">Create the School Timetable</h1>
-                <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-400">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Build class lessons, breaks, and activities for {{ $term ? $term->name.', '.$term->year : 'the current term' }}. Teacher and class conflicts are checked automatically.
                 </p>
             </div>

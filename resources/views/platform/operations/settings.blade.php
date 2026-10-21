@@ -4,7 +4,7 @@
 <div class="space-y-6">
     <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm sm:p-8">
         <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div class="max-w-2xl"><span class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Platform configuration</span><h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">Operations & system health</h1><p class="mt-1.5 text-sm font-medium leading-relaxed text-slate-400">Monitor service readiness and manage the operational defaults used across Edlink.</p></div>
+            <div class="max-w-2xl"><span class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Platform configuration</span><h1 class="text-2xl font-bold tracking-tight text-amber-300">Operations & system health</h1><p class="text-sm text-slate-400 mt-2 leading-relaxed">Monitor service readiness and manage the operational defaults used across Edlink.</p></div>
             <a href="{{ route('platform.backups') }}" class="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-black text-white transition hover:bg-white/15">View backup centre <span class="ml-2">→</span></a>
         </div>
         <div class="pointer-events-none absolute -bottom-20 -right-12 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl"></div>

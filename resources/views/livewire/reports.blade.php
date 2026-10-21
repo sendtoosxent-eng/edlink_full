@@ -9,8 +9,8 @@
                 
                 <div>
                    
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Reports Center</h1>
-                    <p class="mt-1 text-xs sm:text-sm text-slate-500 max-w-xl">
+                    <h1 class="text-2xl font-bold tracking-tight text-amber-300">Reports Center</h1>
+                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                         Generate, filter, and export administrative, financial, and academic reports.
                     </p>
                 </div>

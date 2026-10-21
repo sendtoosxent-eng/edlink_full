@@ -2,9 +2,9 @@
     <!-- HEADER -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div>
-            <h1 class="text-xl font-bold tracking-tight text-amber-300">System settings</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-amber-300">System settings</h1>
             
-            <p class="text-xs text-slate-500 mt-0.5">Settings apply only to your school and affect formal documents, rules, and portal behavior.</p>
+            <p class="text-sm text-slate-400 mt-2 leading-relaxed">Settings apply only to your school and affect formal documents, rules, and portal behavior.</p>
         </div>
         <br>
         <button type="submit" form="settings-form" class="inline-flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-sm">

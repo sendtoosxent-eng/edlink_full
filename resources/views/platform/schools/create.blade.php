@@ -3,7 +3,7 @@
 @section('content')
 <div class="space-y-6">
     <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm sm:p-8">
-        <div class="relative z-10 max-w-2xl"><span class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>School onboarding</span><h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">Set up a new school</h1><p class="mt-1.5 text-sm font-medium leading-relaxed text-slate-400">Create the institution, its licence, and its first administrator in one secure transaction.</p></div>
+        <div class="relative z-10 max-w-2xl"><span class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>School onboarding</span><h1 class="text-2xl font-bold tracking-tight text-amber-300">Set up a new school</h1><p class="text-sm text-slate-400 mt-2 leading-relaxed">Create the institution, its licence, and its first administrator in one secure transaction.</p></div>
         <div class="pointer-events-none absolute -bottom-20 -right-12 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl"></div>
     </section>
 

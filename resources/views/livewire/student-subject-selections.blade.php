@@ -2,8 +2,8 @@
     <!-- Header Banner -->
     <header class="relative overflow-hidden rounded-2xl bg-slate-900 p-6 text-white shadow-md sm:p-8">
         <div class="relative z-10 max-w-3xl">
-            <h1 class="mt-3 text-2xl font-black tracking-tight sm:text-3xl text-amber-300">Individual Subject Selection</h1>
-            <p class="mt-2 text-sm leading-relaxed text-slate-500">
+            <h1 class="text-2xl font-bold tracking-tight text-amber-300">Individual Subject Selection</h1>
+            <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                 Manage subject allocations for Senior 3 to Senior 6 learners. O-Level tracks Core and Electives, while A-Level covers Principal and Subsidiary classification.
             </p>
         </div>

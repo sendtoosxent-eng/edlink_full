@@ -2,8 +2,8 @@
     <header class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 p-6 text-white shadow-sm sm:p-8">
         <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-2xl">
-                <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-amber-300 sm:text-3xl">All Staff</h1>
-                <p class="mt-2 text-sm leading-relaxed text-slate-300">Manage staff profiles, employment status, payroll details and designation-based access.</p>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">All Staff</h1>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">Manage staff profiles, employment status, payroll details and designation-based access.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <div class="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-2.5">

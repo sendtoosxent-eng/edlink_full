@@ -1,5 +1,6 @@
 <div class="space-y-6 pb-16">
     <script src="{{ asset('js/chart.umd.js') }}"></script>
+@include('partials.chart-fonts')
     @php
         $quickActions = [];
         $quickActionBadge = 'Staff tools';
@@ -55,7 +56,7 @@
         }
     @endphp
     <section class="relative overflow-hidden rounded-2xl p-6 shadow-lg ring-2 ring-yellow-400/20 lg:p-8" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
-        <div class="relative z-10 flex flex-wrap items-center justify-between gap-5"><div><h1 class="mb-1 text-2xl font-semibold text-white">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} &#128075;</h1><p class="text-sm text-gray-300">Here's what's happening at {{ $school->name }} today.</p><p class="mt-3 text-xs font-medium text-yellow-400">{{ now()->format('l, d F Y · h:i A') }} · {{ $isFinanceWorkspace ? 'Finance Dashboard' : ($isTeacherWorkspace ? 'Teacher Dashboard' : (auth()->user()->designation?->name ?? ucfirst(auth()->user()->role))) }}</p></div>@if($isFinanceWorkspace)<a wire:navigate href="{{ route('reports.index') }}" class="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-sm">Open financial reports</a>@endif</div>
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-5"><div><h1 class="text-2xl font-bold tracking-tight text-amber-300">Welcome back, {{ explode(' ', auth()->user()->name)[0] }} &#128075;</h1><p class="text-sm text-slate-400 mt-2 leading-relaxed">Here's what's happening at {{ $school->name }} today.</p><p class="mt-3 text-xs font-medium text-yellow-400">{{ now()->format('l, d F Y · h:i A') }} · {{ $isFinanceWorkspace ? 'Finance Dashboard' : ($isTeacherWorkspace ? 'Teacher Dashboard' : (auth()->user()->designation?->name ?? ucfirst(auth()->user()->role))) }}</p></div>@if($isFinanceWorkspace)<a wire:navigate href="{{ route('reports.index') }}" class="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-sm">Open financial reports</a>@endif</div>
         <div class="absolute -bottom-10 -right-6 h-40 w-40 rounded-full bg-yellow-400/10"></div><div class="absolute -top-10 right-16 h-24 w-24 rounded-full bg-yellow-400/10"></div>
     </section>
 

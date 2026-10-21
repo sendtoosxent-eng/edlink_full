@@ -8,7 +8,7 @@
                     Assessment Engine
                 </div>
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">Examination Category Groups</h1>
-                <p class="max-w-2xl text-xs font-normal text-slate-300 leading-relaxed sm:text-sm">Create assessment rules such as Lower Primary, define weighted grading categories, and assign them directly to target classes.</p>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">Create assessment rules such as Lower Primary, define weighted grading categories, and assign them directly to target classes.</p>
             </div>
             <a href="{{ route('settings.index') }}" wire:navigate class="inline-flex items-center gap-2 self-start rounded-xl bg-slate-800/90 px-4 py-2.5 text-xs font-bold text-amber-300 transition-all hover:bg-slate-800 hover:text-amber-200 sm:self-center">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>

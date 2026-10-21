@@ -18,8 +18,8 @@
 			}
 		}
 	</script>
-	<link rel="preconnect" href="https://fonts.gstatic.com">
-	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
 	<style>
 		[x-cloak] { display: none !important; }
 		html { scroll-behavior: smooth; }
@@ -27,6 +27,7 @@
 		.glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
 		.prose-legal h2 { scroll-margin-top: 6rem; }
 	</style>
+@include('partials.ui-styles')
 </head>
 <body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300">
 

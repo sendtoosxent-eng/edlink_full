@@ -12,7 +12,7 @@
                     <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                         All Students
                     </h1>
-                    <p class="text-sm font-medium text-slate-400 mt-1 max-w-2xl">
+                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                         Archive history safely. Mark students inactive instead of deleting them when they leave.
                     </p>
                 </div>

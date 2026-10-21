@@ -15,10 +15,10 @@
                     </svg>
                     <span>Platform Management</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-amber-300">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Schools & Tenant Capacity
                 </h1>
-                <p class="text-sm font-medium text-slate-400 mt-1.5 leading-relaxed">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Search registered school tenants, monitor real-time learner capacities, and audit subscription plan utilization.
                 </p>
             </div>

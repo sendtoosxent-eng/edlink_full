@@ -7,7 +7,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Student Categories
                 </h1>
-                <p class="text-sm font-medium text-slate-500 mt-1 max-w-3xl">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Categories like Day, Boarding, or Special determine which fee structure a student is automatically mapped to.
                 </p>
                 <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>

@@ -5,10 +5,10 @@
         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Report Settings
                 </h1>
-                <p class="mt-1 text-xs sm:text-sm text-slate-400 max-w-xl">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Configure calculation rules, pass marks, and display options for each education stage.
                 </p>
             </div>

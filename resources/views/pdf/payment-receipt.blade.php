@@ -58,6 +58,7 @@ body { margin: 0; color: #0f172a; background: #fff; font-family: DejaVu Sans, sa
 .footer-dark { height: 22px; background: #0f172a; }
 .footer-text { padding: 7px; color: #94a3b8; text-align: center; font-size: 8px; }
 </style>
+@include('partials.pdf-fonts')
 </head>
 <body>
 @php

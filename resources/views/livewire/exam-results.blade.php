@@ -4,7 +4,7 @@
         <div class="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div class="max-w-2xl">
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">Results & Publication</h1>
-                <p class="mt-2 text-sm leading-relaxed text-slate-400">Review approved marks, subject grades and overall class rankings before publishing.</p>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">Review approved marks, subject grades and overall class rankings before publishing.</p>
             </div>
 
             @if ($term)

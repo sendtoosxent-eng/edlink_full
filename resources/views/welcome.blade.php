@@ -40,9 +40,9 @@
 			}
 		}
 	</script>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
+
 	<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
 	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 	<style>
@@ -103,7 +103,8 @@
 	})();
 </script>
 
-	
+
+@include('partials.ui-styles')
 </head>
 <body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300">
 
@@ -111,7 +112,7 @@
 	<div x-data="{ open: false }" class="fixed top-0 inset-x-0 z-40 glass bg-white/70 dark:bg-ink/70 border-b border-gray-100 dark:border-white/10">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
 			<a href="#" class="flex items-center space-x-2">
-			
+
 				<span class="font-bold text-darken dark:text-white tracking-tight">
 					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'nav_logo') }}" class="h-9 sm:h-12 w-auto dark:hidden" alt="Edlink logo">
 					<img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,'footer_logo') }}" class="hidden h-9 sm:h-12 w-auto dark:block" alt="Edlink logo">
@@ -178,7 +179,7 @@
 		<div class="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 			<div data-aos="fade-right" data-aos-duration="800" class="text-center lg:text-left">
 				<span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-amber/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-semibold text-darken dark:text-yellow-400 shadow-sm mb-6">
-					
+
 					<span>{{ $landing['announcement'] }}</span>
 				</span>
 
@@ -433,8 +434,8 @@
 			</div>
 		</div>
 	</section>
-	
-	
+
+
     <!-- ============ MOBILE APP ============ -->
 <section class="mobile-section py-24 max-w-7xl mx-auto px-4 sm:px-6">
     <div data-aos="fade-up" class="relative rounded-2xl sm:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-darken via-[#2a2560] to-darken">

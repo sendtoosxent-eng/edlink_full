@@ -10,10 +10,10 @@
                     <span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                     <span>Edlink Operations</span>
                 </span>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-amber-300">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening') }}, {{ str($admin->name)->before(' ') }}.
                 </h1>
-                <p class="mt-1.5 text-sm font-medium text-slate-400 leading-relaxed">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Here is the current position of schools, active licenses, learner usage, and system health across the platform.
                 </p>
             </div>

@@ -6,7 +6,7 @@
             <div>
                 
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">Exam Setup</h1>
-                <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Create draft exams, scope them by class or stream, and define term subject papers with custom max scores and weightings.
                 </p>
             </div>

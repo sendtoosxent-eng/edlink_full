@@ -7,8 +7,8 @@
     <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-sm sm:p-8">
         <div class="relative z-10">
             <span class="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">School profile</span>
-            <h1 class="mt-4 text-2xl font-black text-amber-300 sm:text-3xl">Edit {{ $school->name }}</h1>
-            <p class="mt-2 text-sm text-slate-400">Update the school’s identity, email, contact information, and demo status.</p>
+            <h1 class="text-2xl font-bold tracking-tight text-amber-300">Edit {{ $school->name }}</h1>
+            <p class="text-sm text-slate-400 mt-2 leading-relaxed">Update the school’s identity, email, contact information, and demo status.</p>
         </div>
         <div class="pointer-events-none absolute -bottom-20 -right-10 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl"></div>
     </section>

@@ -12,7 +12,7 @@
                     <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                         Student Fees Payments
                     </h1>
-                    <p class="text-xs text-slate-400 max-w-md">
+                    <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                         Select a learner to review their financial profile, check balance, and record a payment.
                     </p>
                 </div>

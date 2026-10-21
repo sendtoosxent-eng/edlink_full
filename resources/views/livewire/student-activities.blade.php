@@ -7,7 +7,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Student Houses & Clubs
                 </h1>
-                <p class="text-sm font-medium text-slate-400 mt-1 max-w-3xl">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Balance learners across houses and manage club memberships with assigned teacher patrons.
                 </p>
             </div>

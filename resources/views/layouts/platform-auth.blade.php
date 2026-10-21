@@ -3,9 +3,10 @@
 <head><link rel="icon" type="image/png" href="{{ asset('img/fav.png') }}"><link rel="apple-touch-icon" href="{{ asset('img/fav.png') }}">
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title') · Edlink Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={theme:{extend:{fontFamily:{sans:['Poppins','sans-serif']},colors:{edlink:'#facc15',ink:'#0f172a'}}}}</script>
 <style>body{font-family:Poppins,sans-serif}.grid-pattern{background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px}</style>
+@include('partials.ui-styles')
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
 <div class="grid min-h-screen lg:grid-cols-[1.05fr_.95fr]">

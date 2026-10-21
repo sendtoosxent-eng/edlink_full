@@ -34,6 +34,7 @@
             }
         }
     </style>
+@include('partials.ui-styles')
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 p-4 md:p-8 min-h-screen">
 
@@ -51,7 +52,7 @@
 
     <!-- PORTRAIT RECEIPT CARD -->
     <main class="portrait-receipt max-w-[210mm] mx-auto bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden relative before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-yellow-400 p-6 md:p-10 space-y-6">
-        
+
         <!-- 1. PORTRAIT HEADER: BADGE + SCHOOL INFO -->
         <header class="border-b border-slate-200 pb-6">
             <div class="flex items-start justify-between gap-4">
@@ -111,7 +112,7 @@
         <!-- 2. STUDENT & TRANSACTION SPECIFICATIONS -->
         <section class="space-y-3">
             <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Learner & Payment Information</h2>
-            
+
             <div class="grid grid-cols-2 gap-x-6 gap-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                 <div>
                     <span class="text-slate-400 block text-[10px]">Student Name</span>
@@ -158,7 +159,7 @@
         <!-- 3. FINANCIAL BREAKDOWN LEDGER TABLE -->
         <section class="space-y-2">
             <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Financial Ledger Summary</h2>
-            
+
             <div class="border border-slate-200 rounded-xl overflow-hidden">
                 <table class="w-full text-xs text-left">
                     <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] border-b border-slate-200">

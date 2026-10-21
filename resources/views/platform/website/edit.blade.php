@@ -12,10 +12,10 @@
                     </svg>
                     <span>Public Website Manager</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-amber-300">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Landing Page Content
                 </h1>
-                <p class="text-sm font-medium text-slate-400 mt-1.5 leading-relaxed">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Update public copy, contact details, statistics, and visual messaging from one screen.
                 </p>
             </div>

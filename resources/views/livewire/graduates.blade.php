@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <header class="rounded-3xl bg-slate-900 p-6 text-white shadow-xl"><h1 class="text-2xl font-black text-amber-300">Graduates & Alumni</h1><p class="mt-1 text-sm text-slate-400">Permanent completion records, final balances and certificates.</p></header>
+    <header class="rounded-3xl bg-slate-900 p-6 text-white shadow-xl"><h1 class="text-2xl font-bold tracking-tight text-amber-300">Graduates & Alumni</h1><p class="text-sm text-slate-400 mt-2 leading-relaxed">Permanent completion records, final balances and certificates.</p></header>
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ session('status') }}</div>@endif
     <section class="rounded-3xl border bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b p-5 sm:flex-row"><input wire:model.live.debounce.300ms="search" placeholder="Search graduate or admission number" class="w-full rounded-xl border-slate-200 sm:max-w-md"><select wire:model.live="year" class="rounded-xl border-slate-200"><option value="">All years</option>@foreach($years as $item)<option value="{{ $item }}">{{ $item }}</option>@endforeach</select></div>

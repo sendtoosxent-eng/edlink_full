@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fee Receipt {{ $payment->id }} — {{ $school->name }}</title>
     <!-- Google Fonts: Poppins -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
-    
+
+
+
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -47,6 +47,7 @@
             }
         }
     </style>
+@include('partials.ui-styles')
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 p-4 md:p-8 min-h-screen">
 
@@ -64,7 +65,7 @@
 
     <!-- MAIN RECEIPT CONTAINER -->
     <main class="receipt-container max-w-[210mm] mx-auto bg-white shadow-xl relative flex flex-col justify-between min-h-[297mm]">
-        
+
         <div>
             <!-- 1. TOP HEADER BAR -->
             <header class="flex items-stretch justify-between relative overflow-hidden">
@@ -162,7 +163,7 @@
 
             <!-- 5. PAYMENT METHOD & TOTALS -->
             <div class="px-8 mt-6 grid grid-cols-12 gap-8 items-start">
-                
+
                 <!-- Left Column -->
                 <div class="col-span-7 space-y-4 text-xs">
                     <div>

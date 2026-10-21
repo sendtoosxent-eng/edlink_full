@@ -6,7 +6,7 @@
             <div>
                 
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">Marks Entry</h1>
-                <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Enter, review, and submit learner exam scores for official academic approval.
                 </p>
             </div>

@@ -360,6 +360,7 @@
             page-break-after: always;
         }
     </style>
+@include('partials.pdf-fonts')
 </head>
 <body>
 

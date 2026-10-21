@@ -16,8 +16,8 @@
                     <span class="h-1.5 w-1.5 rounded-full {{ $isHealthy ? 'bg-emerald-400' : 'bg-amber-400' }}"></span>
                     {{ $isHealthy ? 'Recovery protection healthy' : 'Backup attention required' }}
                 </span>
-                <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">Database backup centre</h1>
-                <p class="mt-1.5 text-sm font-medium leading-relaxed text-slate-400">Track automated snapshots, checksum verification, restore tests, retention, and recovery readiness.</p>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Database backup centre</h1>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">Track automated snapshots, checksum verification, restore tests, retention, and recovery readiness.</p>
             </div>
             <div class="rounded-xl border border-slate-700/80 bg-slate-800/60 px-4 py-3 backdrop-blur">
                 <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Next scheduled run</p>

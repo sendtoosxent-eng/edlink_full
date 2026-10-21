@@ -8,7 +8,7 @@
                    
                     <div>
                         <h1 class="text-2xl font-bold tracking-tight text-amber-300">Account Reconciliation</h1>
-                        <p class="mt-1 text-xs sm:text-sm text-slate-400 max-w-xl">
+                        <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                             Compare bank and cash statement balances with posted general ledger records.
                         </p>
                     </div>

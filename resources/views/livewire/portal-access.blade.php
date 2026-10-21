@@ -4,7 +4,7 @@
         <div class="relative z-10 max-w-3xl">
             
             <h1 class="text-2xl font-bold tracking-tight text-amber-300">Learner Portal Access</h1>
-            <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+            <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                 Connect parent and student user accounts directly to learner records. Portal links establish school-wide identity profiles that remain active across academic terms.
             </p>
         </div>

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Edlink' }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,6 +30,7 @@
         .guest-card input:focus-visible { outline: 2px solid #eab308; outline-offset: 2px; }
     </style>
     @livewireStyles
+@include('partials.ui-styles')
 </head>
 <body class="font-sans bg-gray-50 min-h-screen min-h-[100svh] flex items-start justify-center px-4 py-6 sm:items-center sm:py-10">
 @include('partials.global-loader')

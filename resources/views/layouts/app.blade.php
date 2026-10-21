@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Edlink' }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+
+
     <script>
         tailwind.config = {
             theme: {
@@ -23,7 +23,7 @@
     <style>
         [x-cloak] { display: none !important; }
         html, body { overflow-x: hidden; max-width: 100vw; }
-        
+
         :root { --sidebar-w: 288px; }
         #app-sidebar { width: var(--sidebar-w); transition: width .2s ease; }
         #app-main { transition: margin-left .2s ease; }
@@ -32,11 +32,11 @@
         /* Navigation Links styles */
         .nav-link, .nav-group-btn { color: #d1d5db; transition: background-color .15s ease, color .15s ease; }
         .nav-link:hover, .nav-group-btn:hover { background-color: rgba(234, 179, 8, 0.12); color: #facc15; }
-        
+
         /* Active States */
         .nav-link.active, .nav-group-btn.active { background-color: #eab308; color: #252641; font-weight: 600; }
         .nav-link.active svg, .nav-group-btn.active svg { color: #252641; }
-        
+
         /* Sub-navigation Links */
         .nav-sub-link { color: #9ca3af; transition: color .15s ease; position: relative; }
         .nav-sub-link:hover { color: #facc15; }
@@ -68,6 +68,7 @@
     @include('partials.mobile-shell-styles')
     @include('partials.sidebar-tree-styles')
     @livewireStyles
+@include('partials.ui-styles')
 </head>
 <body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
       x-data="{ mobileNavOpen: false }"
@@ -206,17 +207,17 @@
                     if ($key === 'parents' && request()->routeIs('parents.*')) { $isGroupActive = true; }
                 @endphp
                 <div x-init="if({{ $isGroupActive ? 'true' : 'false' }}) open = '{{ $key }}'">
-                    <button @click="if($store.ui.collapsed){$store.ui.toggle();open='{{ $key }}'}else{open = open === '{{ $key }}' ? '' : '{{ $key }}'}" 
-                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg {{ $isGroupActive ? 'active' : '' }}" 
+                    <button @click="if($store.ui.collapsed){$store.ui.toggle();open='{{ $key }}'}else{open = open === '{{ $key }}' ? '' : '{{ $key }}'}"
+                        class="nav-group-btn w-full flex items-center px-3 py-2.5 rounded-lg {{ $isGroupActive ? 'active' : '' }}"
                         :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === '{{ $key }}' && !$store.ui.collapsed && !{{ $isGroupActive ? 'true' : 'false' }} && 'bg-yellow-500/10 text-yellow-400']">
-                        
+
                         <span class="flex items-center space-x-3" :class="$store.ui.collapsed && 'space-x-0'">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $group['icon'] }}" /></svg>
                             <span x-show="!$store.ui.collapsed" x-cloak>{{ $group['label'] }}</span>
                         </span>
                         <svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === '{{ $key }}' && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
-                    
+
                     <div x-cloak x-show="open === '{{ $key }}' && !$store.ui.collapsed" class="nav-submenu space-y-1">
                         @foreach($group['items'] as $item)
                             @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
@@ -312,7 +313,7 @@
                         Demo — expires {{ $school->demo_expires_at?->diffForHumans() }}
                     </span>
                 @endif
-                
+
                 <div class="relative hidden md:block">
                     <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     <input type="text" placeholder="Search students, classes..." class="w-48 lg:w-64 pl-9 pr-4 py-2 text-sm bg-gray-100 border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-colors">
@@ -418,7 +419,7 @@
     @livewireScripts
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-center z-20 shadow-sm">
     <p class="text-xs text #252641 text-center">
-        Copyright &copy; {{ date('Y') }} <span class="font-semibold text-yellow-400">{{ config('app.name', 'Edlink') }}</span>. All rights reserved. 
+        Copyright &copy; {{ date('Y') }} <span class="font-semibold text-yellow-400">{{ config('app.name', 'Edlink') }}</span>. All rights reserved.
         <a href="{{ url('/') }}" class="text-yellow-400 hover:underline">
             Spotnet Technologies
         </a>

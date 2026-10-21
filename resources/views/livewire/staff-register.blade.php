@@ -7,8 +7,8 @@
                     <span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                     Staff Onboarding
                 </div>
-                <h1 class="text-2xl font-black tracking-tight text-white sm:text-3xl">Create a staff account</h1>
-                <p class="text-sm leading-relaxed text-slate-300">Set up login access, designation, payroll, and teaching responsibilities in one seamless flow.</p>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Create a staff account</h1>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">Set up login access, designation, payroll, and teaching responsibilities in one seamless flow.</p>
             </div>
             <a href="{{ route('staff.index') }}" wire:navigate class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>

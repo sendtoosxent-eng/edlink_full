@@ -8,7 +8,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Promotion Preview &amp; Confirmation
                 </h1>
-                <p class="mt-1 text-sm text-slate-500 max-w-2xl">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Promotion decisions use the final term average and stage pass mark configured in Report Settings. Preview outcomes before creating next-term placements.
                 </p>
             </div>

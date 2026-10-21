@@ -9,7 +9,7 @@
                     <span class="text-xs text-slate-400">•</span>
                     <span class="text-xs font-medium text-slate-300">{{ now()->format('l, d M Y') }}</span>
                 </h1>
-                <p class="text-xs text-slate-400 max-w-md">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Select a class lesson slot below to record or update student attendance records.
                 </p>
             </div>

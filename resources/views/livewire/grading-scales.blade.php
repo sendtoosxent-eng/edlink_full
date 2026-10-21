@@ -7,7 +7,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-amber-300">
                     Grading Scales
                 </h1>
-                <p class="text-sm font-medium text-slate-400 mt-1.5 leading-relaxed">
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">
                     Define the grade assigned to every examination percentage. Configure score bands, aggregate points, and remarks by education stage.
                 </p>
             </div>

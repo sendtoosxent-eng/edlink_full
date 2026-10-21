@@ -14,8 +14,8 @@
         <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div class="max-w-2xl">
                 <span class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>Revenue operations</span>
-                <h1 class="text-2xl font-black tracking-tight text-amber-300 sm:text-3xl">Billing & renewal control</h1>
-                <p class="mt-1.5 text-sm font-medium leading-relaxed text-slate-400">Monitor subscription health, identify upcoming renewals, and keep every school on the right licence plan.</p>
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Billing & renewal control</h1>
+                <p class="text-sm text-slate-400 mt-2 leading-relaxed">Monitor subscription health, identify upcoming renewals, and keep every school on the right licence plan.</p>
             </div>
             <a href="{{ route('platform.licences') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950 transition hover:bg-amber-300">Manage licences <span aria-hidden="true">→</span></a>
         </div>
