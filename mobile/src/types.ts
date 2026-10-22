@@ -5,9 +5,9 @@ export type AuthSuccess = { otp_required: false; token: string; user: User };
 export type OtpChallenge = { otp_required: true; challenge_token: string; masked_email: string; expires_in: number };
 export type LoginResult = AuthSuccess | OtpChallenge;
 export type Student = { id: number; name: string; admission_no: string; photo_url?: string | null; class?: string | null; stream?: string | null };
-export type Assignment = { school_class_id: number; class_name: string; subject_id: number | null; subject_name: string; attendance_type: 'daily' | 'subject' };
+export type Assignment = { school_class_id: number; class_name: string; subject_id: number | null; subject_name: string; attendance_type: 'daily' | 'subject'; streams?: Array<{ id: number; name: string }> };
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
-export type AttendanceRow = { student: Pick<Student, 'id' | 'name' | 'admission_no'>; status: AttendanceStatus };
+export type AttendanceRow = { student: Pick<Student, 'id' | 'name' | 'admission_no' | 'photo_url'>; status: AttendanceStatus };
 export type AttendanceRecord = { id: number; attendance_date: string; status: AttendanceStatus; session_key: string };
 export type Dashboard = {
   date: string; student: Student | null; teacher_workspace?: TeacherWorkspace | null;
@@ -32,7 +32,7 @@ export type TeacherWorkspace = {
   class_teacher_classes: Array<{ id: number; name: string }>;
   subject_assignments: Array<{ school_class_id: number; class_name: string; subject_id: number; subject_name: string }>;
   tools: Array<{ id: string; label: string; group: string; native: string | null; path: string }>;
-  pending_attendance?: Array<{ school_class_id: number; subject_id: number | null; attendance_type: 'daily' | 'subject'; label: string }>;
+  pending_attendance?: Array<{ school_class_id: number; subject_id: number | null; attendance_type: 'daily' | 'subject'; session_key?: string; label: string }>;
 };
 
 export type Lesson = { id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; starts_at_iso?: string; ends_at_iso?: string; class_name?: string | null; stream_name?: string | null };

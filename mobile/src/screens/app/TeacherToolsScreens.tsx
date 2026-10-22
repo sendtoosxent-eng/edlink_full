@@ -1,3 +1,4 @@
+import { NativeSelect } from '../../components/NativeSelect';
 import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 
 import { NativeAttachment } from '../../components/NativeAttachment';
@@ -256,6 +257,7 @@ export function AddHomeworkScreen({ token, onBack }: { token: string; onBack: ()
   const [assignments, setAssignments] = useState<import('../../types').Assignment[]>([]);
 
   const [selected, setSelected] = useState<number>();
+  const [streamId, setStreamId] = useState('');
 
   const [title, setTitle] = useState(''); const [instructions, setInstructions] = useState('');
 
@@ -291,7 +293,7 @@ export function AddHomeworkScreen({ token, onBack }: { token: string; onBack: ()
 
     setBusy(true); setError('');
 
-    try { const body = new FormData(); Object.entries({ school_class_id: assignment.school_class_id, subject_id: assignment.subject_id, title: title.trim(), instructions: instructions.trim(), maximum_score: Number(maximum), due_at: date.toISOString() }).forEach(([key, value]) => body.append(key, String(value))); if (attachment) body.append('attachment', { uri: attachment.uri, name: attachment.name, type: attachment.mimeType ?? 'application/octet-stream' } as unknown as Blob); await api.upload('/homework', token, body); Alert.alert('Homework published', 'Your assigned learners can now see this homework.'); onBack(); }
+    try { const body = new FormData(); Object.entries({ school_class_id: assignment.school_class_id, subject_id: assignment.subject_id, title: title.trim(), instructions: instructions.trim(), maximum_score: Number(maximum), due_at: date.toISOString() }).forEach(([key, value]) => body.append(key, String(value))); if (streamId) body.append('stream_id', streamId); if (attachment) body.append('attachment', { uri: attachment.uri, name: attachment.name, type: attachment.mimeType ?? 'application/octet-stream' } as unknown as Blob); await api.upload('/homework', token, body); Alert.alert('Homework published', 'Your assigned learners can now see this homework.'); onBack(); }
 
     catch (e) { setError(message(e)); } finally { setBusy(false); }
 
@@ -303,10 +305,11 @@ export function AddHomeworkScreen({ token, onBack }: { token: string; onBack: ()
     {!!error && <Empty text={error} icon="alert-circle-outline" />}
     {busy && <Text style={styles.helperText}>Please wait…</Text>}
     <SectionTitle title="Assign to class" caption="Choose the subject and class for this task" />
-    <View style={styles.chipList}>{assignments.map((item,index) => <Pressable key={`${item.school_class_id}:${item.subject_id}`} onPress={() => setSelected(index)} style={[styles.classChip,selected===index && styles.classChipSelected]}>
+    <View style={styles.chipList}>{assignments.map((item,index) => <Pressable key={`${item.school_class_id}:${item.subject_id}`} onPress={() => { setSelected(index); setStreamId(''); }} style={[styles.classChip,selected===index && styles.classChipSelected]}>
       <Ionicons name={selected===index?'checkmark-circle':'school-outline'} size={18} color={selected===index?'#FFFFFF':colors.primary} /><Text style={[styles.classChipText,selected===index && styles.classChipTextSelected]}>{item.class_name} · {item.subject_name}</Text>
     </Pressable>)}</View>
     {!busy && !assignments.length && <Empty text="Your school needs to assign a class and subject first." icon="school-outline" />}
+    {selected !== undefined && <NativeSelect label="Stream" value={streamId} options={[{ value: '', label: 'All streams in this class' }, ...(assignments[selected]?.streams ?? []).map(stream => ({ value: String(stream.id), label: stream.name }))]} onChange={value => setStreamId(String(value))} />}
     <SectionTitle title="Assignment details" caption="Tell learners what they need to complete" />
     <View style={styles.formCard}>
       <Field label="Homework title" value={title} onChangeText={setTitle} placeholder="e.g. Mathematics revision" icon="book-outline" />

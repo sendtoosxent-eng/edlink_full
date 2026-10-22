@@ -485,7 +485,7 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
       {!!workspace?.pending_attendance?.length && <View style={[styles.card, shadows.card]}>
         <View style={styles.cardHeading}><Text style={styles.cardTitle}>Attendance pending today</Text><Ionicons name="alert-circle-outline" size={22} color={colors.secondary} /></View>
         <Text style={styles.bodyCopy}>These registers still need your attention.</Text>
-        {workspace.pending_attendance.map(item => <Pressable key={`${item.school_class_id}-${item.subject_id}`} accessibilityRole="button" accessibilityLabel={`Take ${item.label} attendance`} onPress={() => openRegister ? openRegister(item) : navigate(item.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance')} style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}>
+        {workspace.pending_attendance.map(item => <Pressable key={`${item.school_class_id}-${item.session_key ?? item.subject_id}`} accessibilityRole="button" accessibilityLabel={`Take ${item.label} attendance`} onPress={() => openRegister ? openRegister(item) : navigate(item.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance')} style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}>
           <View style={styles.grow}><Text style={styles.rowTitle}>{item.label}</Text><Text style={styles.rowMeta}>{item.attendance_type === 'daily' ? 'Daily class register' : 'Subject register'}</Text></View><Ionicons name="arrow-forward-circle" size={26} color={colors.primary} />
         </Pressable>)}
       </View>}
