@@ -263,6 +263,56 @@ it('varies the mobile workspace by actual class responsibility', function () {
     expect($workspace['class_teacher_classes'][0]['id'])->toBe($data['class']->id);
 });
 
+it('shows pending daily and subject registers and clears each reminder after saving', function () {
+    $data = mobileFixture();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(2, 'data.teacher_workspace.pending_attendance');
+    $base = ['school_class_id' => $data['class']->id, 'attendance_date' => today()->toDateString(), 'records' => [['student_id' => $data['student']->id, 'status' => 'present']]];
+    $this->postJson('/api/v1/attendance', $base + ['session_key' => 'daily'])->assertOk();
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(1, 'data.teacher_workspace.pending_attendance')->assertJsonPath('data.teacher_workspace.pending_attendance.0.attendance_type', 'subject');
+    $this->postJson('/api/v1/attendance', $base + ['session_key' => 'subject:'.$data['subject']->id, 'subject_id' => $data['subject']->id])->assertOk();
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(0, 'data.teacher_workspace.pending_attendance')->assertJsonPath('data.analytics.stats.attendance_records', 2);
+});
+
+it('includes unpublished assigned marks and all current term lessons on the teacher dashboard', function () {
+    $data = mobileFixture();
+    DB::table('exam_marks')->insert(['exam_paper_id' => $data['paper']->id, 'student_id' => $data['student']->id, 'score' => 75, 'entered_by' => $data['teacher']->id, 'created_at' => now(), 'updated_at' => now()]);
+    for ($hour = 8; $hour < 14; $hour++) {
+        DB::table('timetable_slots')->insert(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'user_id' => $data['teacher']->id, 'day_of_week' => now()->format('l'), 'starts_at' => sprintf('%02d:00:00', $hour), 'ends_at' => sprintf('%02d:00:00', $hour + 1), 'created_at' => now(), 'updated_at' => now()]);
+    }
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(6, 'data.today_timetable')->assertJsonPath('data.analytics.performance_labels.0', 'Mathematics')->assertJsonPath('data.analytics.performance_series.0', 75)->assertJsonStructure(['data' => ['today_timetable' => [['starts_at_iso', 'ends_at_iso', 'stream_name']]]]);
+});
+
+it('shares filtered web attendance summaries and a real Excel workbook with teachers only', function () {
+    $data = mobileFixture();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    $data['teacher']->designation->update(['permissions' => ['attendance.reports', 'attendance.subject']]);
+    $category = \App\Models\StudentCategory::create(['school_id' => $data['school']->id, 'name' => 'Boarder']);
+    $data['student']->update(['gender' => 'female', 'student_category_id' => $category->id]);
+    foreach ([$data['student'], $data['foreign']] as $student) {
+        AttendanceRecord::create(['school_id' => $student->school_id, 'term_id' => $data['term']->id, 'student_id' => $student->id, 'school_class_id' => $student->school_class_id, 'attendance_date' => today(), 'session_key' => 'daily', 'status' => 'late', 'recorded_by' => $data['teacher']->id]);
+    }
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $query = '?from='.today()->toDateString().'&to='.today()->toDateString().'&subject=daily';
+    $this->getJson('/api/v1/teacher/attendance-summary'.$query)->assertOk()->assertJsonCount(1, 'data.classes')->assertJsonPath('data.classes.0.groups.female.late', 1)->assertJsonPath('data.categories.0.class', 'Boarder')->assertJsonPath('data.categories.0.total', 1)->assertJsonPath('data.records.total', 1);
+    $this->getJson('/api/v1/teacher/attendance-summary'.$query.'&status=absent')->assertOk()->assertJsonCount(0, 'data.classes')->assertJsonPath('data.categories.0.total', 0);
+    $response = $this->get('/api/v1/teacher/attendance-summary/excel'.$query)->assertOk();
+    $path = tempnam(sys_get_temp_dir(), 'attendance-test-');
+    try {
+        file_put_contents($path, $response->streamedContent());
+        $zip = new \ZipArchive;
+        expect($zip->open($path))->toBeTrue();
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        expect($sheet)->toContain('Boarder', 'Girls Late', 'Grand total', 'Category grand total')->not->toContain('Foreign Learner');
+        $zip->close();
+    } finally { unlink($path); }
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $this->getJson('/api/v1/teacher/attendance-summary'.$query)->assertForbidden();
+    $this->getJson('/api/v1/teacher/attendance-summary/excel'.$query)->assertForbidden();
+});
+
 it('rejects incomplete marks submissions and protects approved sheets', function () {
     $data = mobileFixture();
     Sanctum::actingAs($data['teacher'], ['mobile']);

@@ -32,6 +32,10 @@ class Attendance extends Component
 
     public array $statuses = [];
 
+    public array $notes = [];
+
+    public bool $showStudentImages = false;
+
     public function mount(): void
     {
         abort_unless(Auth::user()->hasPermission('attendance.daily'), 403);
@@ -63,13 +67,18 @@ class Attendance extends Component
             return;
         }
         $studentIds = $this->studentsQuery()->pluck('id');
-        $this->statuses = AttendanceRecord::where('school_id', Auth::user()->school_id)
+        $records = AttendanceRecord::where('school_id', Auth::user()->school_id)
             ->where('term_id', $term->id)
             ->where('session_key', 'daily')
             ->whereDate('attendance_date', $this->attendanceDate)
             ->whereIn('student_id', $studentIds)
-            ->pluck('status', 'student_id')
-            ->all();
+            ->get(['student_id', 'status', 'note']);
+        $this->statuses = $records->pluck('status', 'student_id')->all();
+        $this->notes = $records->mapWithKeys(fn ($record) => [
+            $record->student_id => $record->status === 'late'
+                ? preg_replace('/^Late by\s+/i', '', (string) $record->note, 1)
+                : ($record->note ?? ''),
+        ])->all();
     }
 
     public function save(): void
@@ -85,12 +94,22 @@ class Attendance extends Component
 
             return;
         }
-        $this->validate(['attendanceDate' => ['required', 'date'], 'statuses.*' => ['nullable', 'in:present,absent,late,excused']]);
+        $rules = ['attendanceDate' => ['required', 'date']];
+        foreach ($this->studentsQuery()->pluck('id') as $studentId) {
+            $status = $this->statuses[$studentId] ?? 'present';
+            $rules['statuses.'.$studentId] = ['required', 'in:present,absent,late,excused'];
+            $rules['notes.'.$studentId] = $status === 'present'
+                ? ['nullable', 'string', 'max:500']
+                : ($status === 'late' ? ['required', 'integer', 'min:1', 'max:1440'] : ['required', 'string', 'max:500']);
+        }
+        $this->validate($rules, ['notes.*.required' => 'Add a reason or the number of minutes late before saving.']);
         $students = $this->studentsQuery()->get();
         $attendanceDate = Carbon::parse($this->attendanceDate)->startOfDay();
         DB::transaction(function () use ($students, $school, $term, $attendanceDate) {
             foreach ($students as $student) {
-                $record = AttendanceRecord::updateOrCreate(['student_id' => $student->id, 'attendance_date' => $attendanceDate, 'session_key' => 'daily'], ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $student->school_class_id, 'stream_id' => $student->stream_id, 'status' => $this->statuses[$student->id] ?? 'present', 'recorded_by' => Auth::id()]);
+                $status = $this->statuses[$student->id] ?? 'present';
+                $note = $this->notes[$student->id] ?? null;
+                $record = AttendanceRecord::updateOrCreate(['student_id' => $student->id, 'attendance_date' => $attendanceDate, 'session_key' => 'daily'], ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $student->school_class_id, 'stream_id' => $student->stream_id, 'status' => $status, 'note' => $status === 'late' ? 'Late by '.$note.' minutes' : ($note ?: null), 'recorded_by' => Auth::id()]);
                 app(StudentActivityNotifier::class)->attendance($record);
             }
         });
@@ -115,16 +134,24 @@ class Attendance extends Component
     private function studentsQuery()
     {
         $user = Auth::user();
+        $term = $user->school->currentTerm();
 
         return Student::with(['schoolClass', 'stream'])
             ->where('school_id', $user->school_id)
             ->where('status', 'active')
+            ->when($term, fn ($query) => $query->whereHas('enrolments', fn ($enrolments) => $enrolments->where('term_id', $term->id)->whereIn('status', ['active', 'pending'])))
             ->when(
                 TeacherAcademicScope::isTeacher($user),
-                fn ($query) => $query->whereIn('school_class_id', TeacherAcademicScope::classIds($user)),
+                fn ($query) => $term
+                    ? $query->whereHas('enrolments', fn ($enrolments) => $enrolments->where('term_id', $term->id)->whereIn('school_class_id', TeacherAcademicScope::classIds($user)))
+                    : $query->whereIn('school_class_id', TeacherAcademicScope::classIds($user)),
             )
-            ->when($this->schoolClassId, fn ($query) => $query->where('school_class_id', $this->schoolClassId))
-            ->when($this->streamId, fn ($query) => $query->where('stream_id', $this->streamId))
+            ->when($this->schoolClassId, fn ($query) => $term
+                ? $query->whereHas('enrolments', fn ($enrolments) => $enrolments->where('term_id', $term->id)->where('school_class_id', $this->schoolClassId))
+                : $query->where('school_class_id', $this->schoolClassId))
+            ->when($this->streamId, fn ($query) => $term
+                ? $query->whereHas('enrolments', fn ($enrolments) => $enrolments->where('term_id', $term->id)->where('stream_id', $this->streamId))
+                : $query->where('stream_id', $this->streamId))
             ->orderBy('name');
     }
 
@@ -139,7 +166,7 @@ class Attendance extends Component
             $total = $items->count();
             $present = $items->whereIn('status', ['present', 'late'])->count();
 
-            return ['name' => $student->name, 'admission_no' => $student->admission_no, 'class' => $student->schoolClass?->name ?? '—', 'total' => $total, 'present' => $present, 'absent' => $items->where('status', 'absent')->count(), 'late' => $items->where('status', 'late')->count(), 'excused' => $items->where('status', 'excused')->count(), 'rate' => $total ? round($present / $total * 100, 1) : 0];
+            return ['name' => $student->name, 'photo_url' => $student->photoUrl(), 'admission_no' => $student->admission_no, 'class' => $student->schoolClass?->name ?? '—', 'total' => $total, 'present' => $present, 'absent' => $items->where('status', 'absent')->count(), 'late' => $items->where('status', 'late')->count(), 'excused' => $items->where('status', 'excused')->count(), 'rate' => $total ? round($present / $total * 100, 1) : 0];
         })->sortBy('rate')->values();
     }
 

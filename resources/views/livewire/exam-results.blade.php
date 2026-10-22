@@ -177,9 +177,15 @@
 
                                 <!-- Learner Identity -->
                                 <td class="px-4 py-3.5">
-                                    <div class="font-bold text-slate-900">{{ $result['student']->name }}</div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-50 text-xs font-black text-amber-700 ring-1 ring-inset ring-amber-200">
+                                            @if($result['student']->photoUrl())<img src="{{ $result['student']->photoUrl() }}" alt="{{ $result['student']->name }}" class="h-full w-full object-cover">@else{{ strtoupper(substr($result['student']->name, 0, 1)) }}@endif
+                                        </div>
+                                        <div><div class="font-bold text-slate-900">{{ $result['student']->name }}</div>
                                     <div class="font-mono text-[11px] font-semibold text-slate-400">
                                         {{ $result['student']->admission_no ?? 'No Reg' }}
+                                    </div>
+                                        </div>
                                     </div>
                                 </td>
 

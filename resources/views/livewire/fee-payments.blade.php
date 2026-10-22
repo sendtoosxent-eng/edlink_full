@@ -92,8 +92,8 @@
                 @forelse($students as $student)
                     <button wire:click="openPaymentForm({{ $student->id }})" class="flex w-full items-center justify-between p-4 text-left transition hover:bg-amber-50/40 {{ $payingStudentId === $student->id ? 'bg-amber-50/80 border-l-4 border-l-amber-500' : '' }}">
                         <div class="min-w-0 pr-2 flex items-center gap-3">
-                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
-                                {{ strtoupper(substr($student->name, 0, 1)) }}
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-500/10 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
+                                @if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-full w-full object-cover">@else{{ strtoupper(substr($student->name, 0, 1)) }}@endif
                             </div>
                             <div class="truncate">
                                 <span class="block text-xs font-bold text-slate-900 truncate">{{ $student->name }}</span>

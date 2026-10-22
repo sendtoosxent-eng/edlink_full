@@ -38,6 +38,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('teacher/exams', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'exams']);
         Route::get('teacher/exams/{exam}', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'show']);
         Route::get('teacher/attendance-report', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'attendance']);
+        Route::get('teacher/attendance-summary', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'attendanceSummary']);
+        Route::get('teacher/attendance-summary/excel', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'attendanceExcel']);
         Route::get('teacher/students/{student}', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'show']);
         Route::post('teacher/students/{student}', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'update']);
         Route::get('teacher/students', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'index']);

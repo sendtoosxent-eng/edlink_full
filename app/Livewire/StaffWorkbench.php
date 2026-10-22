@@ -145,6 +145,31 @@ class StaffWorkbench extends Component
                 ->where('class_teacher_user_id', $user->id)
                 ->orderBy('name')
                 ->get(['id', 'name']);
+
+            $pendingAttendance = collect();
+            if ($term) {
+                $today = today()->toDateString();
+                $dailyAttendanceClasses = AttendanceRecord::where('school_id', $school->id)
+                    ->where('term_id', $term->id)->whereDate('attendance_date', $today)
+                    ->where('session_key', 'daily')->whereNull('subject_id')
+                    ->whereIn('school_class_id', $classTeacherClasses->pluck('id'))->pluck('school_class_id')->unique();
+
+                foreach ($classTeacherClasses->reject(fn ($class) => $dailyAttendanceClasses->contains($class->id)) as $class) {
+                    $pendingAttendance->push(['type' => 'class', 'label' => $class->name, 'url' => route('attendance.index')]);
+                }
+
+                $subjectAttendancePairs = AttendanceRecord::where('school_id', $school->id)
+                    ->where('term_id', $term->id)->whereDate('attendance_date', $today)
+                    ->whereNotNull('subject_id')->get(['school_class_id', 'subject_id'])
+                    ->map(fn ($record) => $record->school_class_id.':'.$record->subject_id)->unique();
+                foreach ($assignments as $assignment) {
+                    $pair = $assignment->school_class_id.':'.$assignment->subject_id;
+                    if (! $subjectAttendancePairs->contains($pair)) {
+                        $pendingAttendance->push(['type' => 'subject', 'label' => $assignment->subject.' · '.$assignment->class, 'url' => route('attendance.subject')]);
+                    }
+                }
+                $pendingAttendance = $pendingAttendance->unique(fn ($item) => $item['type'].':'.$item['label'])->values();
+            }
             $classIds = $assignments->pluck('school_class_id')
                 ->concat($classTeacherClasses->pluck('id'))
                 ->filter()->unique()->values();
@@ -209,6 +234,7 @@ class StaffWorkbench extends Component
             $teacher = [
                 'assignments' => $assignments, 'subjects' => $assignments->pluck('subject_id')->unique()->count(), 'classes' => $classIds->count(),
                 'classTeacherClasses' => $classTeacherClasses,
+                'pendingAttendance' => $pendingAttendance,
                 'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $school->id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
                 'lessonsToday' => $todayLessons->count(), 'todayLessons' => $todayLessons, 'attendanceToday' => $attendance->filter(fn ($row) => $row->attendance_date?->isToday())->count(),
                 'nextLesson' => $nextLesson,

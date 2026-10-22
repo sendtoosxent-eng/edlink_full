@@ -39,15 +39,40 @@ class MobileTeacherWorkspace
             'class_teacher_classes' => $classIds->map(fn ($id) => ['id' => (int) $id, 'name' => $classes[$id] ?? 'Class'])->values(),
             'subject_assignments' => $assignments->map(fn ($a) => ['school_class_id' => (int) $a->school_class_id, 'class_name' => $classes[$a->school_class_id] ?? 'Class', 'subject_id' => (int) $a->subject_id, 'subject_name' => $subjects[$a->subject_id] ?? 'Subject'])->values(),
             'tools' => collect($tools)->unique('id')->values(),
+            'pending_attendance' => self::pendingAttendance($user, $term?->id, $classIds, $assignments, $classes, $subjects),
         ];
+    }
+
+    private static function pendingAttendance(User $user, ?int $termId, $classIds, $assignments, $classes, $subjects): array
+    {
+        if (! $termId) return [];
+        $records = DB::table('attendance_records')->where('school_id', $user->school_id)
+            ->where('term_id', $termId)->whereDate('attendance_date', today())
+            ->get(['school_class_id', 'subject_id', 'session_key']);
+        $pending = [];
+        if ($user->hasPermission('attendance.daily')) {
+            foreach ($classIds as $classId) {
+                if (! $records->contains(fn ($row) => (int) $row->school_class_id === (int) $classId && $row->session_key === 'daily' && $row->subject_id === null)) {
+                    $pending[] = ['school_class_id' => (int) $classId, 'subject_id' => null, 'attendance_type' => 'daily', 'label' => $classes[$classId] ?? 'Class'];
+                }
+            }
+        }
+        if ($user->hasPermission('attendance.subject')) {
+            foreach ($assignments as $assignment) {
+                if (! $records->contains(fn ($row) => (int) $row->school_class_id === (int) $assignment->school_class_id && (int) $row->subject_id === (int) $assignment->subject_id)) {
+                    $pending[] = ['school_class_id' => (int) $assignment->school_class_id, 'subject_id' => (int) $assignment->subject_id, 'attendance_type' => 'subject', 'label' => ($subjects[$assignment->subject_id] ?? 'Subject').' · '.($classes[$assignment->school_class_id] ?? 'Class')];
+                }
+            }
+        }
+        return $pending;
     }
 
     private static function catalog(): array
     {
         return [
-            ['Daily class register', 'attendance.index', 'attendance.daily', 'My classes', 'attendance'],
-            ['Subject attendance', 'attendance.subject', 'attendance.subject', 'Teaching', 'attendance'],
-            ['Attendance reports', 'attendance.reports', 'attendance.reports', 'Reports', null],
+            ['Daily class register', 'attendance.index', 'attendance.daily', 'My classes', 'daily_attendance'],
+            ['Subject attendance', 'attendance.subject', 'attendance.subject', 'Teaching', 'subject_attendance'],
+            ['Attendance reports', 'attendance.reports', 'attendance.reports', 'Reports', 'attendance_reports'],
             ['Enter & review marks', 'exams.marks', 'exams.marks', 'Teaching', 'add_marks'],
             ['Report cards & results', 'exams.results', 'exams.results', 'Reports', null],
             ['Create exams', 'exams.setup', 'exams.setup', 'Exams', null],

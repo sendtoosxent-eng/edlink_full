@@ -36,7 +36,7 @@
             ] as $key => $tabData)
                 <button type="button" @click="tab='{{$key}}'" 
                     :class="tab==='{{$key}}' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/50'" 
-                    class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition">
+                    class="review-control flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition">
                     <i class="fa {{$tabData['icon']}} text-[11px]"></i>
                     <span>{{$tabData['label']}}</span>
                 </button>
@@ -299,10 +299,19 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Arrears reminder template</label>
                     <textarea wire:model="settings.arrears_email_template" rows="3" class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="Template body..."></textarea>
+                    <p class="mt-1 text-[11px] text-slate-400">Use {parent_name}, {student_name}, {amount}, {school_name}, and {term}.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Notification schedule</label>
                     <input wire:model="settings.notification_schedule" class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 transition font-medium text-slate-900 placeholder:text-slate-400" placeholder="e.g. Daily at 8:00 AM">
+                </div>
+                <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                    <label class="block text-xs font-bold text-slate-700">Email fee reminders to parents</label>
+                    <select wire:model="settings.arrears_email_reminders_enabled" class="mt-2 w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-xs font-medium"><option value="disabled">Disabled</option><option value="enabled">Enabled</option></select>
+                    <p class="mt-1.5 text-[11px] text-slate-500">Uses the registered parent or guardian email addresses and the template above.</p>
+                </div>
+                <div class="flex items-end">
+                    <button type="button" wire:click="sendFeeReminders" wire:confirm="Send fee balance reminders to all parents with outstanding balances?" class="w-full rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-300">Send fee reminders now</button>
                 </div>
                 <div class="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
                     <h3 class="text-sm font-bold text-slate-900">Parent & learner in-app notifications</h3>
@@ -328,7 +337,7 @@
         </section>
 
         <!-- 6. SECURITY SECTION -->
-        <section x-show="tab==='security'" class="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1.5 before:bg-yellow-400" style="display: none;">
+        <section x-show="tab==='security'" class="review-settings relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1.5 before:bg-yellow-400" style="display: none;">
             <div class="mb-5 pb-4 border-b border-slate-100">
                 <h2 class="text-sm font-bold text-slate-900">Security & system</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Controls access, retention, backups, and regional formatting.</p>
@@ -362,12 +371,35 @@
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Language</label>
                     <select wire:model="settings.language" class="w-full rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium"><option value="English">English</option><option value="Luganda">Luganda</option><option value="Swahili">Swahili</option><option value="French">French</option></select>
                 </div>
+                <div class="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Closed-term data review</h3>
+                            <p class="mt-1 text-xs leading-5 text-slate-500">Make one closed term available as read-only data to authorized administrators, bursars, teachers, and auditors.</p>
+                        </div>
+                        @if (Auth::user()->school->reviewTermFor(Auth::user()))
+                            <button type="button" wire:click="disableTermReview" class="review-control rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:border-rose-300 hover:text-rose-700">Turn off review</button>
+                        @endif
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <label class="flex-1 text-xs font-semibold text-slate-700">Closed term
+                            <select wire:model="reviewTermId" class="review-control mt-1.5 w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-xs font-medium">
+                                <option value="">Select a closed term</option>
+                                @foreach($closedTerms as $term)
+                                    <option value="{{ $term->id }}">{{ $term->name }} {{ $term->year }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <button type="button" wire:click="enableTermReview(reviewTermId)" wire:confirm="Make this closed term available in read-only review mode?" class="review-control rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Open for review</button>
+                    </div>
+                    <p class="mt-2 text-[11px] text-slate-500">The term stays closed, so attendance, marks, payments, and other records cannot be edited.</p>
+                </div>
             </div>
         </section>
 
         <!-- BOTTOM SAVE BAR -->
         <div class="flex items-center justify-end bg-slate-800 border border-slate-200 p-4 rounded-2xl shadow-sm">
-            <button type="submit" class="inline-flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs px-6 py-2.5 rounded-xl transition shadow-sm">
+            <button type="submit" class="review-control inline-flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs px-6 py-2.5 rounded-xl transition shadow-sm">
                 <i class="fa fa-save text-[11px]"></i>
                 <span>Save all settings</span>
             </button>

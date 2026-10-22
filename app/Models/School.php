@@ -128,7 +128,71 @@ class School extends Model
 
     public function currentTerm(): ?Term
     {
+        $reviewTerm = $this->reviewTermFor(auth()->user());
+        if ($reviewTerm) {
+            return $reviewTerm;
+        }
+
         return Term::currentFor($this);
+    }
+
+    public function reviewTermFor(?User $user = null): ?Term
+    {
+        $user ??= auth()->user();
+        if (! $user || $user->school_id !== $this->id || ! $this->canReviewClosedTerms($user)) {
+            return null;
+        }
+
+        $termId = SchoolSetting::getValue($this->id, 'term_review_id');
+        if (! $termId) {
+            return null;
+        }
+
+        return $this->terms()->whereKey((int) $termId)->where('status', 'closed')->first();
+    }
+
+    public function canReviewClosedTerms(?User $user = null): bool
+    {
+        $user ??= auth()->user();
+        if (! $user || $user->school_id !== $this->id) {
+            return false;
+        }
+
+        return ! in_array($user->role, ['student', 'parent'], true);
+    }
+
+    public function isReviewModeFor(?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return (bool) $this->reviewTermFor($user);
+    }
+
+    public function applyDefaultGraduatingClasses(): void
+    {
+        if ($this->classes()->where('is_graduating_class', true)->exists()) {
+            return;
+        }
+
+        $types = match ($this->school_type) {
+            'primary' => ['primary'],
+            'secondary' => ['secondary'],
+            'combined' => ['primary', 'secondary'],
+            default => [],
+        };
+        if ($types === []) {
+            return;
+        }
+
+        $this->classes()->get()->each(function (SchoolClass $class) use ($types): void {
+            $name = strtolower(preg_replace('/[^a-z0-9]+/', ' ', $class->name));
+            $isPrimarySeven = in_array('primary', $types, true) && (str_contains($name, 'primary seven') || preg_match('/\bp7\b|\bseven\b/', $name));
+            $isS4 = in_array('secondary', $types, true) && (preg_match('/\bs ?4\b|\bsenior four\b/', $name));
+            $isS6 = in_array('secondary', $types, true) && (preg_match('/\bs ?6\b|\bsenior six\b/', $name));
+            if ($isPrimarySeven || $isS4 || $isS6) {
+                $class->update(['is_graduating_class' => true]);
+            }
+        });
     }
 
     public function activeStudentCount(): int

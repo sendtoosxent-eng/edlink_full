@@ -1,6 +1,6 @@
 import { Text } from './Typography';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Pressable, StyleSheet, Animated, LayoutChangeEvent } from 'react-native';
+import { View, Pressable, StyleSheet, Animated, LayoutChangeEvent, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadows } from '../theme/index';
@@ -15,6 +15,10 @@ interface TabBarProps {
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_CONFIG: Record<AppTab, { label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName }> = {
+  teacher_communications: { label: 'Communications', activeIcon: 'chatbubbles', inactiveIcon: 'chatbubbles-outline' },
+  daily_attendance: { label: 'Daily register', activeIcon: 'checkbox', inactiveIcon: 'checkbox-outline' },
+  subject_attendance: { label: 'Subject register', activeIcon: 'book', inactiveIcon: 'book-outline' },
+  attendance_reports: { label: 'Attendance reports', activeIcon: 'bar-chart', inactiveIcon: 'bar-chart-outline' },
   student_schedule: { label: 'Timetable', activeIcon: 'calendar', inactiveIcon: 'calendar-outline' },
   student_calendar: { label: 'Calendar', activeIcon: 'today', inactiveIcon: 'today-outline' },
   class_access: { label: 'My Classes', activeIcon: 'people', inactiveIcon: 'people-outline' },
@@ -39,6 +43,8 @@ const TAB_CONFIG: Record<AppTab, { label: string; activeIcon: IoniconsName; inac
 
 export function BottomTabBar({ tabs, activeTab, onSelect }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compact = width < 380;
   const [containerWidth, setContainerWidth] = useState(0);
   
   const activeIndex = tabs.indexOf(activeTab);
@@ -98,6 +104,7 @@ export function BottomTabBar({ tabs, activeTab, onSelect }: TabBarProps) {
               label={config.label}
               iconName={iconName}
               isActive={isActive}
+              compact={compact}
               onPress={() => onSelect(tab)}
             />
           );
@@ -112,11 +119,13 @@ function TabButton({
   label,
   iconName,
   isActive,
+  compact,
   onPress,
 }: {
   label: string;
   iconName: IoniconsName;
   isActive: boolean;
+  compact: boolean;
   onPress: () => void;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -142,16 +151,17 @@ function TabButton({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityState={{ selected: isActive }}
       style={styles.tabItem}
       hitSlop={6}
     >
       <Animated.View style={[styles.tabContent, { transform: [{ scale: scaleAnim }] }]}>
         <Ionicons
           name={iconName}
-          size={21}
-          color={isActive ? 'navy' : '#efb000'}
+          size={compact ? 19 : 21}
+          color={isActive ? colors.primary : colors.accent}
         />
-        <Text style={[styles.labelText, isActive ? styles.labelActive : styles.labelInactive]}>
+        <Text numberOfLines={1} style={[styles.labelText, compact && styles.labelCompact, isActive ? styles.labelActive : styles.labelInactive]}>
           {label}
         </Text>
       </Animated.View>
@@ -198,8 +208,12 @@ const styles = StyleSheet.create({
     marginTop: 3,
     letterSpacing: 0.2,
   },
+  labelCompact: {
+    fontSize: 9,
+    letterSpacing: 0,
+  },
   labelActive: {
-    color: 'navy',
+    color: colors.primary,
     fontWeight: '800',
   },
   labelInactive: {

@@ -225,8 +225,8 @@
                             <!-- Learner Column -->
                             <td class="py-3.5 px-4 sm:px-6">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-amber-100 border border-amber-200/80 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0">
-                                        {{ strtoupper(substr($link->student_name, 0, 1)) }}
+                                    <div class="w-10 h-10 overflow-hidden rounded-full bg-amber-100 border border-amber-200/80 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0">
+                                        @if($link->photo_url)<img src="{{ $link->photo_url }}" alt="{{ $link->student_name }}" class="h-full w-full object-cover">@else{{ strtoupper(substr($link->student_name, 0, 1)) }}@endif
                                     </div>
                                     <div class="min-w-0">
                                         <div class="font-bold text-slate-900 truncate">{{ $link->student_name }}</div>

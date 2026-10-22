@@ -9,7 +9,7 @@
                     Promotion Preview &amp; Confirmation
                 </h1>
                 <p class="text-sm text-slate-400 mt-2 leading-relaxed">
-                    Promotion decisions use the final term average and stage pass mark configured in Report Settings. Preview outcomes before creating next-term placements.
+                    Promotion decisions use the final term average and stage pass mark configured in Report Settings. Terms 1 and 2 continue automatically; promotions are completed only after Term 3.
                 </p>
             </div>
         </div>
@@ -41,7 +41,7 @@
                     <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-400/20 text-xs font-black text-amber-900">1</span>
                     Evaluation Parameters
                 </h2>
-                <p class="text-xs text-slate-500 mt-0.5">Select a closed source term and an open or pending target term to begin calculation.</p>
+                <p class="text-xs text-slate-500 mt-0.5">Select the closed final term and the next academic year target term to begin calculation.</p>
             </div>
         </div>
 
@@ -51,7 +51,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Closed Source Term</label>
                 <select wire:model.live="sourceTermId" class="w-full rounded-xl border-slate-200 bg-slate-50 text-sm focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:outline-none transition font-medium">
                     <option value="">Select term</option>
-                    @foreach($terms->where('status','closed') as $term)
+                    @foreach($terms->where('status','closed')->where('term_number', 3) as $term)
                         <option value="{{ $term->id }}">{{ $term->name }}, {{ $term->year }}</option>
                     @endforeach
                 </select>

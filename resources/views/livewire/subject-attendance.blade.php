@@ -70,6 +70,11 @@
     @else
         <!-- LESSON SELECTOR CARD -->
         <section class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all hover:border-slate-300">
+            <label class="mb-4 inline-flex cursor-pointer items-center gap-3 text-xs font-bold text-slate-700">
+                <input type="checkbox" wire:model.live="showStudentImages" class="peer sr-only">
+                <span class="relative h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-yellow-400"><span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span></span>
+                Show student images
+            </label>
             <label for="lesson" class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
                 Select Today's Lesson
             </label>
@@ -196,6 +201,7 @@
                             <th class="px-5 py-3.5">Learner Name</th>
                             <th class="px-5 py-3.5">Admission No.</th>
                             <th class="px-5 py-3.5 text-right sm:text-left">Attendance Status</th>
+                            <th class="px-5 py-3.5">Reason / late minutes</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -204,9 +210,9 @@
                             <tr class="transition hover:bg-slate-50/70">
                                 <td class="px-5 py-3.5">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
-                                            {{ strtoupper(substr($student->name, 0, 1)) }}
-                                        </div>
+                                        @if($showStudentImages)
+                                            @if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-12 w-12 rounded-full object-cover ring-2 ring-inset ring-amber-500/20">@else<span class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-sm font-bold text-amber-700 ring-2 ring-inset ring-amber-500/20">{{ strtoupper(substr($student->name, 0, 1)) }}</span>@endif
+                                        @endif
                                         @if(\App\Support\TeacherAcademicScope::isTeacher(auth()->user()) || auth()->user()->hasPermission('students.view') || auth()->user()->hasPermission('students.manage'))
                                             <a href="{{ route('students.profile', $student) }}" wire:navigate class="font-bold text-slate-900 hover:text-amber-700">{{ $student->name }}</a>
                                         @else<span class="font-bold text-slate-900">{{ $student->name }}</span>@endif
@@ -253,10 +259,14 @@
                                         <p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </td>
+                                <td class="px-5 py-3.5 min-w-52">
+                                    @if(($statuses[$student->id] ?? 'present') === 'late')<input type="number" min="1" max="1440" wire:model.live="notes.{{ $student->id }}" placeholder="Minutes late" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400">@elseif(($statuses[$student->id] ?? 'present') !== 'present')<input type="text" wire:model.live="notes.{{ $student->id }}" placeholder="Reason required" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400">@else<span class="text-xs text-slate-400">—</span>@endif
+                                    @error('notes.'.$student->id)<p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p>@enderror
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="px-5 py-12 text-center">
+                                <td colspan="4" class="px-5 py-12 text-center">
                                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />

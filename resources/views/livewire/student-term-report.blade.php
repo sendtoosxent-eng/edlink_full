@@ -90,7 +90,7 @@
                         <!-- Student Passport Photo Box -->
                         <div class="w-20 h-24 border-2 border-slate-900 flex items-center justify-center flex-shrink-0 bg-slate-50 text-slate-300">
                             @if($report->student->photo_url ?? $student->photo_url ?? false)
-                                <img src="{{ asset($report->student->photo_url ?? $student->photo_url) }}" class="w-full h-full object-cover">
+                                <img src="{{ $report->student->photo_url ?? $student->photo_url }}" alt="{{ $student->name ?? ($report->student->name ?? 'Student') }}" class="w-full h-full object-cover">
                             @else
                                 <span class="text-[10px] font-bold text-center text-slate-400 uppercase leading-tight px-1">Affix Photo</span>
                             @endif

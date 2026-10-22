@@ -25,7 +25,7 @@
         <div class="grid gap-4 md:grid-cols-2">
             @forelse($students as $student)
                 <section class="rounded-2xl border bg-white p-5 shadow-sm">
-                    <h2 class="font-bold text-slate-900">{{ $student->name }}</h2>
+                    <div class="flex items-center gap-3"><div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-50 text-sm font-black text-amber-700 ring-1 ring-inset ring-amber-200">@if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-full w-full object-cover">@else{{ strtoupper(substr($student->name, 0, 1)) }}@endif</div><h2 class="font-bold text-slate-900">{{ $student->name }}</h2></div>
                     <p class="mt-1 text-sm text-slate-500">{{ $student->schoolClass?->name }} · {{ $student->admission_no }}</p>
                     <div class="mt-4 space-y-2">
                         @forelse($examsByStudent->get($student->id, collect()) as $exam)

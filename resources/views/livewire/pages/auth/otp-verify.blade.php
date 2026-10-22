@@ -45,6 +45,11 @@ new #[Layout('layouts.guest-split')] class extends Component
 
             return;
         }
+        if (! $user || ! $user->canLogin()) {
+            session()->forget(['otp_pending_user_id', 'otp_remember']);
+            $this->addError('code', 'This account is inactive or linked only to inactive learners. Please contact your school administrator.');
+            return;
+        }
         if (! $user || ! $user->otpIsValid($this->code)) {
             RateLimiter::hit($key, 60);
             $this->addError('code', 'That code is invalid or has expired.');
@@ -79,7 +84,7 @@ new #[Layout('layouts.guest-split')] class extends Component
             return;
         }
 
-        if ($user && $user->employment_status !== 'inactive' && $user->school?->isLicenceUsable() && ! $user->school->isExpiredDemo()) {
+        if ($user && $user->canLogin() && $user->school?->isLicenceUsable() && ! $user->school->isExpiredDemo()) {
             RateLimiter::hit($key, 60);
             $code = $user->generateOtp();
             $user->notify(new \App\Notifications\OtpCodeNotification($code));

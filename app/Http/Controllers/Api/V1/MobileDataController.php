@@ -35,6 +35,10 @@ class MobileDataController extends ApiController
         $term = $user->school->currentTerm();
         $today = now()->format('l');
         $slots = $this->slotQuery($request, $student)->where('day_of_week', $today)->orderBy('starts_at')->get();
+        $slots->each(function ($slot) {
+            $slot->starts_at_iso = now()->setTimeFromTimeString($slot->starts_at)->toIso8601String();
+            $slot->ends_at_iso = now()->setTimeFromTimeString($slot->ends_at)->toIso8601String();
+        });
         $homework = $this->homeworkQuery($request, $student)->orderBy('due_at')->limit(4)->get();
         $attendance = $student ? DB::table('attendance_records')->where('school_id', $user->school_id)
             ->where('student_id', $student->id)->selectRaw('status, count(*) total')->groupBy('status')->pluck('total', 'status') : collect();
@@ -111,10 +115,10 @@ class MobileDataController extends ApiController
                     $query->orWhere(fn ($pair) => $pair->where('exams.school_class_id', $assignment->school_class_id)->where('exam_papers.subject_id', $assignment->subject_id));
                 }
             })
-            ->whereNotNull('exams.published_at')
             ->whereNotNull('exam_marks.score')
+            ->where('exam_papers.maximum_score', '>', 0)
             ->selectRaw('subjects.name, ROUND(AVG(exam_marks.score / exam_papers.maximum_score * 100), 1) as average')
-            ->groupBy('subjects.id', 'subjects.name')->orderByDesc('average')->limit(6)->get() : collect();
+            ->groupBy('subjects.id', 'subjects.name')->orderBy('subjects.name')->get() : collect();
 
         $pendingPapers = ExamPaper::with('exam')
             ->whereHas('exam', fn ($query) => $query->where('school_id', $user->school_id)->where('term_id', $term?->id))
@@ -132,6 +136,7 @@ class MobileDataController extends ApiController
                 'classes' => $classIds->count(),
                 'subjects' => $assignments->pluck('subject_id')->unique()->count(),
                 'attendance_today' => $attendance->where('attendance_date', today()->toDateString())->count(),
+                'attendance_records' => $attendance->count(),
                 'pending_marks' => $pendingPapers,
                 'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $user->school_id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
                 'lessons_today' => $this->slotQuery($request, null)->where('day_of_week', now()->format('l'))->count(),
@@ -347,7 +352,7 @@ class MobileDataController extends ApiController
             'attendance_type' => 'subject',
         ]);
 
-        return $this->ok($daily->concat($assigned)->values());
+        return $this->ok($daily->concat($assigned)->filter(fn ($assignment) => $user->hasPermission($assignment->attendance_type === 'daily' ? 'attendance.daily' : 'attendance.subject'))->values());
     }
 
     private function slotQuery(Request $request, $student)
@@ -357,6 +362,7 @@ class MobileDataController extends ApiController
             ->leftJoin('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
             ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
             ->where('timetable_slots.school_id', $user->school_id)
+            ->when($user->school->currentTerm(), fn ($q, $term) => $q->where('timetable_slots.term_id', $term->id))
             ->select(['timetable_slots.id', 'timetable_slots.school_class_id', 'timetable_slots.subject_id', 'day_of_week', 'starts_at', 'ends_at', 'label', 'subjects.name as subject', 'school_classes.name as class_name', 'streams.name as stream_name']);
         if ($student) {
             $query->where('timetable_slots.school_class_id', $student->school_class_id)

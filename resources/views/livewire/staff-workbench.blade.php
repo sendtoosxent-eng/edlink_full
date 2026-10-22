@@ -144,6 +144,23 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">You have no remaining lessons today.</section>
         @endif
 
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-sm font-bold text-slate-900">@if($teacher['classTeacherClasses']->isNotEmpty())You are the class teacher of {{ $teacher['classTeacherClasses']->pluck('name')->join(', ') }}.@endif @if($teacher['assignments']->isNotEmpty())You are a subject teacher of {{ $teacher['assignments']->pluck('subject')->filter()->unique()->join(', ') }}.@endif</p>
+                    @if($teacher['pendingAttendance']->isNotEmpty())
+                        <p class="mt-2 text-xs leading-relaxed text-slate-500"><span class="font-bold text-amber-700">Reminder:</span> Attendance is pending for {{ $teacher['pendingAttendance']->pluck('label')->join(', ') }}.</p>
+                    @endif
+                </div>
+                @if($teacher['pendingAttendance']->isNotEmpty())
+                    <div class="flex shrink-0 flex-wrap gap-2">
+                        @if($teacher['pendingAttendance']->where('type','class')->isNotEmpty())<a wire:navigate href="{{ route('attendance.index') }}" class="rounded-lg bg-yellow-400 px-3 py-2 text-xs font-bold text-slate-950">Take attendance now</a>@endif
+                        @if($teacher['pendingAttendance']->where('type','subject')->isNotEmpty())<a wire:navigate href="{{ route('attendance.subject') }}" class="rounded-lg border border-yellow-400 px-3 py-2 text-xs font-bold text-yellow-700">Take subject attendance</a>@endif
+                    </div>
+                @endif
+            </div>
+        </section>
+
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             @foreach([
                 ['Assigned subjects',$teacher['subjects'],'Subjects allocated this term'],
@@ -203,14 +220,6 @@
                     @endif
                 </div>
             </section>
-        </div>
-
-        <div class="flex flex-wrap gap-3">
-            <a wire:navigate href="{{ route('homework.index') }}" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white">Send or review homework</a>
-            @if(auth()->user()->hasPermission('attendance.subject'))<a wire:navigate href="{{ route('attendance.subject') }}" class="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-950">Mark subject attendance</a>@endif
-            @if(auth()->user()->hasPermission('attendance.daily'))<a wire:navigate href="{{ route('attendance.index') }}" class="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-950">Mark class attendance</a>@endif
-            @if(auth()->user()->hasPermission('exams.marks'))<a wire:navigate href="{{ route('exams.marks') }}" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold">Enter marks</a>@endif
-            @if(auth()->user()->hasPermission('reports.view'))<a wire:navigate href="{{ route('reports.index') }}" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold">Teaching reports</a>@endif
         </div>
 
         <script>

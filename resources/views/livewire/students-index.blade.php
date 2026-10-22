@@ -130,7 +130,7 @@
                                 <!-- Class / Stream -->
                                 <td class="py-3.5 px-5">
                                     <div class="flex items-center gap-1.5">
-                                        <span class="font-bold text-slate-800">{{ $student->schoolClass->name ?? '—' }}</span>
+                                        <span class="font-bold text-slate-800">{{ $student->displaySchoolClass($term)?->name ?? '—' }}</span>
                                         @if($student->stream)
                                             <span class="text-[11px] font-bold text-slate-500 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200/60">
                                                 {{ $student->stream->name }}

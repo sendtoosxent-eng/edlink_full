@@ -87,10 +87,12 @@ new #[Layout('layouts.guest-split')] class extends Component
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->employment_status === 'inactive') {
+        if (! $user->canLogin()) {
             Auth::logout();
             throw ValidationException::withMessages([
-                'email' => 'This account is inactive. Please contact your school administrator.',
+                'email' => in_array($user->role, ['student', 'parent'], true)
+                    ? 'This account cannot sign in because the linked learner is inactive. Please contact your school administrator.'
+                    : 'This account is inactive. Please contact your school administrator.',
             ]);
         }
 

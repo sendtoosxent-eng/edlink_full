@@ -90,6 +90,11 @@
                 </select>
             </div>
         </div>
+        <label class="mt-4 inline-flex cursor-pointer items-center gap-3 text-xs font-bold text-slate-700">
+            <input type="checkbox" wire:model.live="showStudentImages" class="peer sr-only">
+            <span class="relative h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-yellow-400"><span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span></span>
+            Show student images
+        </label>
     </section>
 
     <!-- TAB 1: MARK REGISTER -->
@@ -124,19 +129,25 @@
                             <th class="p-4">Learner</th>
                             <th class="p-4">Class / stream</th>
                             <th class="p-4">Attendance</th>
+                            <th class="p-4">Reason / late minutes</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($students as $student)
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="p-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                    @if($showStudentImages)
+                                        @if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-12 w-12 rounded-full object-cover ring-2 ring-slate-100">@else<span class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">{{ strtoupper(substr($student->name, 0, 1)) }}</span>@endif
+                                    @endif
                                     @if(\App\Support\TeacherAcademicScope::isTeacher(auth()->user()) || auth()->user()->hasPermission('students.view') || auth()->user()->hasPermission('students.manage'))
                                         <a href="{{ route('students.profile', $student) }}" wire:navigate class="font-bold text-slate-800 hover:text-amber-700">{{ $student->name }}</a>
                                     @else<span class="font-bold text-slate-800">{{ $student->name }}</span>@endif
                                     <span class="ml-2 text-[11px] font-normal text-slate-400">{{ $student->admission_no }}</span>
+                                    </div>
                                 </td>
                                 <td class="p-4 whitespace-nowrap text-slate-500 font-medium">
-                                    {{ $student->schoolClass?->name }} {{ $student->stream ? '· '.$student->stream->name : '' }}
+                                    {{ $student->displaySchoolClass($term)?->name }} {{ $student->displayStream($term) ? '· '.$student->displayStream($term)->name : '' }}
                                 </td>
                                 <td class="p-4 whitespace-nowrap">
                                     <select wire:model="statuses.{{ $student->id }}" 
@@ -147,10 +158,14 @@
                                         <option value="excused">Excused</option>
                                     </select>
                                 </td>
+                                <td class="p-4 min-w-52">
+                                    @if(($statuses[$student->id] ?? 'present') === 'late')<input type="number" min="1" max="1440" wire:model.live="notes.{{ $student->id }}" placeholder="Minutes late" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400">@elseif(($statuses[$student->id] ?? 'present') !== 'present')<input type="text" wire:model.live="notes.{{ $student->id }}" placeholder="Reason required" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400">@else<span class="text-xs text-slate-400">—</span>@endif
+                                    @error('notes.'.$student->id)<p class="mt-1 text-[10px] font-semibold text-rose-600">{{ $message }}</p>@enderror
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="p-10 text-center text-slate-400 font-medium">No active learners found.</td>
+                                <td colspan="4" class="p-10 text-center text-slate-400 font-medium">No active learners found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -219,6 +234,7 @@
                         @forelse($performance as $row)
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="p-4 whitespace-nowrap">
+                                    @if($showStudentImages && $row['photo_url'])<img src="{{ $row['photo_url'] }}" alt="{{ $row['name'] }}" class="mb-2 h-9 w-9 rounded-full object-cover ring-2 ring-slate-100">@endif
                                     <span class="font-bold text-slate-800">{{ $row['name'] }}</span>
                                     <span class="block text-[11px] text-slate-400 mt-0.5">{{ $row['admission_no'] }} · {{ $row['class'] }}</span>
                                 </td>

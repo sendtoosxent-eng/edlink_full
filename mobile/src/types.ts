@@ -11,8 +11,8 @@ export type AttendanceRow = { student: Pick<Student, 'id' | 'name' | 'admission_
 export type AttendanceRecord = { id: number; attendance_date: string; status: AttendanceStatus; session_key: string };
 export type Dashboard = {
   date: string; student: Student | null; teacher_workspace?: TeacherWorkspace | null;
-  today_timetable: Array<{ id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; class_name?: string | null }>;
-  next_lesson?: { id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; class_name?: string | null } | null;
+  today_timetable: Array<Lesson>;
+  next_lesson?: Lesson | null;
   homework: Array<{ id: number; title: string; due_at?: string; subject?: { name: string } }>;
   attendance: Record<string, number>;
   events: Array<{ id: number; title?: string; name?: string; event_date: string }>;
@@ -32,4 +32,7 @@ export type TeacherWorkspace = {
   class_teacher_classes: Array<{ id: number; name: string }>;
   subject_assignments: Array<{ school_class_id: number; class_name: string; subject_id: number; subject_name: string }>;
   tools: Array<{ id: string; label: string; group: string; native: string | null; path: string }>;
+  pending_attendance?: Array<{ school_class_id: number; subject_id: number | null; attendance_type: 'daily' | 'subject'; label: string }>;
 };
+
+export type Lesson = { id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; starts_at_iso?: string; ends_at_iso?: string; class_name?: string | null; stream_name?: string | null };

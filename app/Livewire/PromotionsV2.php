@@ -54,18 +54,25 @@ class PromotionsV2 extends Component
             session()->flash('error', 'Choose a closed source term and a pending or open target term.');
             return;
         }
+        if (! $source->isFinalTerm()) {
+            session()->flash('error', 'Promotions are only completed after the final term of the academic year. Earlier terms continue into the next term without promotion.');
+            return;
+        }
         if (! $source->canProgressTo($target)) {
             session()->flash('error', 'Select the next academic term in sequence: 1 to 2, 2 to 3, or Term 3 to next year\'s Term 1.');
             return;
         }
 
         $classes = SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('id')->get()->values();
-        $graduatingClassId = $classes->firstWhere('is_graduating_class', true)?->id ?? $classes->last()?->id;
+        $graduatingClassIds = $classes->where('is_graduating_class', true)->pluck('id')->map(fn ($id) => (int) $id);
+        if ($graduatingClassIds->isEmpty() && $classes->last()) {
+            $graduatingClassIds = collect([(int) $classes->last()->id]);
+        }
         $enrolments = StudentEnrolment::with(['student', 'schoolClass'])->where([
             'school_id' => $school->id, 'term_id' => $source->id, 'status' => 'active',
         ])->get();
 
-        $this->preview = $enrolments->map(function (StudentEnrolment $enrolment) use ($source, $classes, $graduatingClassId): array {
+        $this->preview = $enrolments->map(function (StudentEnrolment $enrolment) use ($source, $classes, $graduatingClassIds): array {
             $report = StageTermReportCalculator::student($enrolment->student, $source);
             $passed = $report['passed'];
             $index = $classes->search(fn (SchoolClass $class) => $class->id === $enrolment->school_class_id);
@@ -74,7 +81,7 @@ class PromotionsV2 extends Component
                 $outcome = 'continued';
                 $targetClass = $enrolment->schoolClass;
             } else {
-                $outcome = $passed ? ($enrolment->school_class_id === $graduatingClassId ? 'graduated' : ($nextClass ? 'promoted' : 'graduated')) : 'repeated';
+                $outcome = $passed ? ($graduatingClassIds->contains((int) $enrolment->school_class_id) ? 'graduated' : ($nextClass ? 'promoted' : 'graduated')) : 'repeated';
                 $targetClass = $outcome === 'promoted' ? $nextClass : ($outcome === 'repeated' ? $enrolment->schoolClass : null);
             }
 
@@ -111,6 +118,11 @@ class PromotionsV2 extends Component
         $target = Term::where('school_id', $school->id)->findOrFail($this->targetTermId);
         if ($source->status !== 'closed' || ! in_array($target->status, ['pending', 'open'], true)) {
             session()->flash('error', 'The term status changed. Generate a new preview.');
+            $this->clearPreview();
+            return;
+        }
+        if (! $source->isFinalTerm()) {
+            session()->flash('error', 'Only the final term of the academic year can be promoted.');
             $this->clearPreview();
             return;
         }

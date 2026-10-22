@@ -245,6 +245,10 @@
             </div>
 
             <div class="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
+                <div x-data="{ currentTime: new Date() }" x-init="setInterval(() => currentTime = new Date(), 1000)" class="hidden shrink-0 overflow-hidden rounded-xl shadow-sm sm:flex">
+                    <span class="bg-[#252641] px-3 py-2 text-xs font-bold text-white" x-text="currentTime.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })"></span>
+                    <span class="bg-yellow-400 px-3 py-2 text-[11px] font-black text-slate-950" x-text="currentTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })"></span>
+                </div>
                 @include('partials.branch-switcher')
                 @if(isset($school))
                     @php

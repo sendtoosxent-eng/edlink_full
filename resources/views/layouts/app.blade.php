@@ -52,6 +52,17 @@
             background-color: #facc15;
             border-radius: 50%;
         }
+
+        [data-review-mode="true"] :is(input, select, textarea, button) { pointer-events: none; }
+        [data-review-mode="true"] form button[type="submit"],
+        [data-review-mode="true"] button[wire\:click],
+        [data-review-mode="true"] input,
+        [data-review-mode="true"] select,
+        [data-review-mode="true"] textarea { opacity: .58; cursor: not-allowed; }
+        [data-review-mode="true"] .review-control { pointer-events: auto; opacity: 1; cursor: pointer; }
+        [data-review-mode="true"] .review-settings :is(input, select, textarea, button) { pointer-events: auto; opacity: 1; cursor: pointer; }
+        [data-review-mode="true"] input[type="search"] { pointer-events: auto; opacity: 1; cursor: text; }
+        [data-review-mode="true"] :is(a[href*="export"], a[href*="Export"], button[onclick*="print"], button[wire\:click*="export"], button[wire\:click="queueExport"]) { pointer-events: auto; opacity: 1; cursor: pointer; }
     </style>
     <script>
         document.addEventListener('alpine:init', () => {
@@ -221,11 +232,12 @@
                     <div x-cloak x-show="open === '{{ $key }}' && !$store.ui.collapsed" class="nav-submenu space-y-1">
                         @foreach($group['items'] as $item)
                             @continue($item['route'] === 'subject-selections.index' && auth()->user()->school?->school_type !== 'secondary')
+                            @continue($item['route'] === 'fee-payments.index' && ! auth()->user()->hasPermission('finance.payments') && ! auth()->user()->hasPermission('finance.adjustments'))
                             @php($requiredPermission = match($item['route']) {
-                                'students.index', 'graduates.index' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities',
-                                'fee-payments.index' => 'finance.payments', 'expenses.index' => 'finance.expenses', 'accounting.index' => 'accounting.dashboard.view', 'accounting.reconciliations' => 'accounting.reconciliations.manage', 'accounting.assets' => 'accounting.assets.view',
+                                'students.index', 'graduates.index', 'students.id-cards' => 'students.view', 'students.register', 'student-categories.index', 'students.portal-access' => 'students.manage', 'students.activities' => 'students.activities', 'promotions.index' => 'academics.promotions',
+                                'terms.index', 'fee-structures.index' => 'finance.ledger', 'expenses.index' => 'finance.expenses', 'accounting.index' => 'accounting.dashboard.view', 'accounting.reconciliations' => 'accounting.reconciliations.manage', 'accounting.assets' => 'accounting.assets.view',
                                 'attendance.index' => 'attendance.daily', 'attendance.subject' => 'attendance.subject', 'attendance.reports' => 'attendance.reports',
-                                'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
+                                'classes.index' => 'academics.classes', 'subjects.index', 'subject-selections.index' => 'academics.subjects', 'grading-scales.index' => 'exams.setup', 'timetable.index' => 'academics.timetable', 'events.index' => 'academics.events',
                                 'exams.setup' => 'exams.setup', 'exams.marks' => 'exams.marks', 'exams.results' => 'exams.results',
                                 'staff.index' => 'staff.directory', 'staff.register' => 'staff.manage', 'staff.attendance' => 'staff.attendance', 'payroll.index' => 'staff.payroll', 'leaves.index' => 'staff.leaves', 'designations.index' => 'staff.designations',
                                 'parents.index', 'parents.register' => 'parents.manage', 'communications.index' => 'parents.communications',
@@ -303,9 +315,10 @@
             </div>
 
             <!-- Profile & Search Bar Panel Layout -->
-            @if(auth()->user()->hasPermission('attendance.daily') || auth()->user()->hasPermission('exams.marks'))
-                <a href="{{ url('/offline/') }}" class="text-sm font-semibold text-darken border border-gray-200 rounded-lg px-3 py-2">Offline workspace</a>
-            @endif
+            <div x-data="{ currentTime: new Date() }" x-init="setInterval(() => currentTime = new Date(), 1000)" class="hidden shrink-0 overflow-hidden rounded-xl shadow-sm sm:flex">
+                <span class="bg-[#252641] px-3 py-2 text-xs font-bold text-white" x-text="currentTime.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })"></span>
+                <span class="bg-yellow-400 px-3 py-2 text-[11px] font-black text-slate-950" x-text="currentTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })"></span>
+            </div>
             @include('partials.branch-switcher')
             <div class="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
                  @if(isset($school) && $school?->is_demo)
@@ -397,7 +410,13 @@
         </header>
 
         <!-- Main Slot Blade View Grid Area Layout -->
-        <main class="p-6 lg:p-10">
+        <main class="p-6 lg:p-10" data-review-mode="{{ auth()->user()?->school?->isReviewModeFor(auth()->user()) ? 'true' : 'false' }}">
+            @if (auth()->user()?->school?->reviewTermFor(auth()->user()))
+                <div class="mb-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                    <span class="rounded-lg bg-amber-400 px-2 py-1 font-bold uppercase tracking-wide">Review mode</span>
+                    <span>Viewing {{ auth()->user()->school->reviewTermFor(auth()->user())->name }} {{ auth()->user()->school->reviewTermFor(auth()->user())->year }}. Records are read-only.</span>
+                </div>
+            @endif
             @isset($slot)
                 {{ $slot }}
             @else

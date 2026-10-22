@@ -13,13 +13,15 @@ class EnsureActiveUser
     {
         $user = $request->user();
 
-        if ($user && $user->employment_status === 'inactive') {
+        if ($user && ! $user->canLogin()) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return redirect()->route('login')->withErrors([
-                'email' => 'This account is inactive. Please contact your school administrator.',
+                'email' => in_array($user->role, ['student', 'parent'], true)
+                    ? 'This account cannot sign in because the linked learner is inactive. Please contact your school administrator.'
+                    : 'This account is inactive. Please contact your school administrator.',
             ]);
         }
 

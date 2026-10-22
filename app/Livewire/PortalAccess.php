@@ -81,10 +81,14 @@ class PortalAccess extends Component
     public function render()
     {
         $schoolId = Auth::user()->school_id;
+        $links = DB::table('portal_user_students as link')->join('students', 'students.id', '=', 'link.student_id')->join('users', 'users.id', '=', 'link.user_id')->where('link.school_id', $schoolId)->orderByDesc('link.id')->get(['link.id', 'link.student_id', 'link.relationship', 'students.name as student_name', 'students.admission_no', 'users.name as user_name', 'users.email', 'users.role']);
+        $linkStudents = Student::whereIn('id', $links->pluck('student_id'))->get()->keyBy('id');
+        $links->each(fn ($link) => $link->photo_url = $linkStudents->get($link->student_id)?->photoUrl());
+
         return view('livewire.portal-access', [
             'students' => Student::where('school_id', $schoolId)->orderBy('name')->get(),
             'accounts' => User::where('school_id', $schoolId)->whereIn('role', ['parent', 'student'])->orderBy('name')->get(),
-            'links' => DB::table('portal_user_students as link')->join('students', 'students.id', '=', 'link.student_id')->join('users', 'users.id', '=', 'link.user_id')->where('link.school_id', $schoolId)->orderByDesc('link.id')->get(['link.id', 'link.relationship', 'students.name as student_name', 'students.admission_no', 'users.name as user_name', 'users.email', 'users.role']),
+            'links' => $links,
             'pageTitle' => 'Portal Access',
         ]);
     }

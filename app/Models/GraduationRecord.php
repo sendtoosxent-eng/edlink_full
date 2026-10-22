@@ -11,6 +11,7 @@ class GraduationRecord extends Model
         'school_id', 'student_id', 'term_id', 'school_class_id', 'graduation_year',
         'graduated_at', 'final_average', 'outstanding_balance', 'certificate_number',
         'portal_access', 'graduated_by', 'reversed_at', 'reversed_by', 'reversal_reason',
+        'external_result_type', 'external_result', 'external_result_entered_at', 'external_result_entered_by',
     ];
 
     protected $casts = [
@@ -18,6 +19,7 @@ class GraduationRecord extends Model
         'final_average' => 'decimal:2',
         'outstanding_balance' => 'decimal:2',
         'reversed_at' => 'datetime',
+        'external_result_entered_at' => 'datetime',
     ];
 
     public function school(): BelongsTo { return $this->belongsTo(School::class); }

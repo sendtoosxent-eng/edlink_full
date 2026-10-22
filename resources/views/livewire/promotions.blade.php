@@ -150,8 +150,8 @@
                             <!-- Learner Info -->
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                                        {{ strtoupper(substr($e->student?->name ?? 'S', 0, 1)) }}
+                                    <div class="w-10 h-10 overflow-hidden rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                        @if($e->student?->photoUrl())<img src="{{ $e->student->photoUrl() }}" alt="{{ $e->student->name }}" class="h-full w-full object-cover">@else{{ strtoupper(substr($e->student?->name ?? 'S', 0, 1)) }}@endif
                                     </div>
                                     <div class="min-w-0">
                                         <div class="font-bold text-slate-900 truncate text-xs sm:text-sm">{{ $e->student?->name ?? '—' }}</div>

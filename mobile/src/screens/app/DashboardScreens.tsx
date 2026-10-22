@@ -7,11 +7,11 @@ import { colors, radius, shadows } from '../../theme/index';
 import { ACCESS_SECTIONS, toolSection } from './TeacherAccessScreen';
 import type { Dashboard, User } from '../../types';
 
-export type AppTab = 'student_schedule' | 'student_calendar' | 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
+export type AppTab = 'teacher_communications' | 'daily_attendance' | 'subject_attendance' | 'attendance_reports' | 'student_schedule' | 'student_calendar' | 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
 
 type Lesson = Dashboard['next_lesson'];
 type DashboardUser = User & { onSignOut?: () => Promise<void>; navigate?: (tab: AppTab) => void; nextLesson?: Lesson; unreadNotifications?: number };
-type Props = { data: Dashboard; user: DashboardUser; attendanceRate: number | null; navigate: (tab: AppTab) => void; refreshing?: boolean; onRefresh?: () => void };
+type Props = { data: Dashboard; user: DashboardUser; attendanceRate: number | null; navigate: (tab: AppTab) => void; refreshing?: boolean; onRefresh?: () => void; openRegister?: (item: NonNullable<NonNullable<Dashboard['teacher_workspace']>['pending_attendance']>[number]) => void };
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 type Tone = 'gold' | 'green' | 'blue';
 
@@ -84,7 +84,7 @@ function Avatar({ name, uri, size = 54 }: { name: string; uri?: string | null; s
 function GreetingCard({ user, title, subtitle, imageName, imageUri }: { user: User; title: string; subtitle: string; imageName?: string; imageUri?: string | null }) {
   const dashboardUser = user as DashboardUser;
   const now = useNow();
-  const lesson = dashboardUser.role === 'parent' ? null : nextLessonCopy(dashboardUser.nextLesson, now);
+  const lesson = dashboardUser.role !== 'student' ? null : nextLessonCopy(dashboardUser.nextLesson, now);
   return (
     <View style={[styles.greetingCard, shadows.card]}>
       <View style={styles.greetingGlow} />
@@ -200,6 +200,8 @@ function QuickActions({ role, navigate }: { role: User['role']; navigate: (tab: 
         { label: 'Attendance', icon: 'calendar-outline', tab: 'attendance' },
         { label: 'Results', icon: 'trophy-outline', tab: 'results' },
         { label: 'Homework', icon: 'book-outline', tab: 'homework' },
+        { label: 'Payments', icon: 'wallet-outline', tab: 'payments' },
+        { label: 'Notices', icon: 'notifications-outline', tab: 'notifications' },
       ];
   return (
     <View style={styles.quickRow}>
@@ -263,7 +265,7 @@ function AttendanceChart({ data, rate, onPress }: { data: Dashboard; rate: numbe
         </View>
       </View>
       <View style={styles.legend}>
-        <Legend color={colors.status.present.text} label="Present" value={totalPresent} />
+        <Legend color={colors.status.present.text} label="Present / late" value={totalPresent} />
         <Legend color={colors.status.absent.text} label="Absent" value={totalAbsent} />
       </View>
       <View style={styles.barChart}>
@@ -297,7 +299,7 @@ function PerformanceChart({ data }: { data: Dashboard }) {
       <View style={styles.cardHeading}>
         <View style={styles.grow}>
           <Text style={styles.cardTitle}>Academic performance</Text>
-          <Text style={styles.cardCaption}>Published subject averages</Text>
+          <Text style={styles.cardCaption}>{data.teacher_workspace ? 'Current-term marks for your assignments' : 'Published subject averages'}</Text>
         </View>
         <View style={styles.cardIcon}>
           <Ionicons name="analytics-outline" size={20} color={colors.secondaryDark} />
@@ -340,7 +342,7 @@ function Schedule({ data }: { data: Dashboard }) {
   const now = useNow();
   const current = new Date(now);
   const nowMinutes = current.getHours() * 60 + current.getMinutes();
-  const slots = data.today_timetable.slice(0, 4);
+  const slots = data.today_timetable;
 
   return (
     <View style={[styles.listCard, shadows.card]}>
@@ -359,7 +361,7 @@ function Schedule({ data }: { data: Dashboard }) {
               <View style={[styles.timelineBar, live && styles.timelineBarLive]} />
               <View style={styles.grow}>
                 <Text numberOfLines={1} style={styles.rowTitle}>{slot.subject ?? slot.label ?? 'Lesson'}</Text>
-                <Text numberOfLines={1} style={styles.rowMeta}>{slot.class_name ?? 'Scheduled class'}</Text>
+                <Text numberOfLines={2} style={styles.rowMeta}>{slot.class_name ?? 'Scheduled class'}{slot.stream_name ? ` · ${slot.stream_name}` : ''}</Text>
               </View>
               {live ? (
                 <View style={styles.livePill}>
@@ -445,7 +447,7 @@ function Events({ data }: { data: Dashboard }) {
 /* Screens                                                             */
 /* ------------------------------------------------------------------ */
 
-export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
+export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh, openRegister }: Props) {
   const stats = data.analytics?.stats ?? {};
   const workspace = data.teacher_workspace;
 
@@ -453,6 +455,7 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
     <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
       <TopBar user={user} />
       <GreetingCard user={user} title={`Hi, ${firstName(user.name)}!`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
+      <TeacherLessonCard data={data} navigate={navigate} />
 
       {workspace && (
         <View style={[styles.card, shadows.card, styles.assignmentCard]}>
@@ -478,6 +481,17 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
           )}
         </View>
       )}
+
+      {!!workspace?.pending_attendance?.length && <View style={[styles.card, shadows.card]}>
+        <View style={styles.cardHeading}><Text style={styles.cardTitle}>Attendance pending today</Text><Ionicons name="alert-circle-outline" size={22} color={colors.secondary} /></View>
+        <Text style={styles.bodyCopy}>These registers still need your attention.</Text>
+        {workspace.pending_attendance.map(item => <Pressable key={`${item.school_class_id}-${item.subject_id}`} accessibilityRole="button" accessibilityLabel={`Take ${item.label} attendance`} onPress={() => openRegister ? openRegister(item) : navigate(item.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance')} style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}>
+          <View style={styles.grow}><Text style={styles.rowTitle}>{item.label}</Text><Text style={styles.rowMeta}>{item.attendance_type === 'daily' ? 'Daily class register' : 'Subject register'}</Text></View><Ionicons name="arrow-forward-circle" size={26} color={colors.primary} />
+        </Pressable>)}
+      </View>}
+
+      <SectionHeader title="Quick actions" subtitle="Your everyday teaching tasks" />
+      <ActionGrid items={(workspace?.tools ?? []).filter(tool => ['attendance.index', 'attendance.subject', 'exams.marks', 'exams.results', 'students.index', 'communications.index', 'attendance.reports', 'leaves.index'].includes(tool.id)).map(tool => ({ key: tool.id, title: tool.label, description: 'Open your assigned tools', icon: (tool.id.startsWith('attendance') ? 'checkbox-outline' : tool.id === 'students.index' ? 'people-outline' : tool.id === 'leaves.index' ? 'calendar-outline' : tool.id === 'communications.index' ? 'chatbubbles-outline' : 'document-text-outline') as IconName, onPress: () => navigate(tool.id === 'exams.results' ? 'teacher_results' : tool.id === 'communications.index' ? 'teacher_communications' : tool.native ? tool.native as AppTab : 'school_access') }))} />
 
       <StatGrid items={[
         { icon: 'people-outline', label: 'Learners', value: stats.learners ?? 0, tone: 'blue' },
@@ -623,6 +637,23 @@ function DashboardScroll({ children, refreshing, onRefresh }: { children: React.
   );
 }
 
+function TeacherLessonCard({ data, navigate }: { data: Dashboard; navigate: (tab: AppTab) => void }) {
+  const now = useNow(1000);
+  const lesson = data.today_timetable.find(slot => (slot.ends_at_iso ? new Date(slot.ends_at_iso).getTime() : new Date(`${data.date}T${slot.ends_at}`).getTime()) > now);
+  if (!lesson) return <View style={[styles.card, shadows.card]}><Text style={styles.bodyCopy}>You have no remaining lessons today.</Text></View>;
+  const start = new Date(lesson.starts_at_iso ?? `${data.date}T${lesson.starts_at}`).getTime();
+  const end = new Date(lesson.ends_at_iso ?? `${data.date}T${lesson.ends_at}`).getTime();
+  const live = now >= start && now < end;
+  const seconds = Math.max(0, Math.floor(((live ? end : start) - now) / 1000));
+  const countdown = `${Math.floor(seconds / 3600) ? `${Math.floor(seconds / 3600)}h ` : ''}${Math.floor(seconds / 60) % 60}m ${String(seconds % 60).padStart(2, '0')}s`;
+  return <Pressable accessibilityRole="button" accessibilityLabel="Open timetable" onPress={() => navigate('teacher_schedule')} style={({ pressed }) => [styles.card, styles.lessonFocus, pressed && styles.pressed]}>
+    <Text style={styles.greetingEyebrow}>{live ? 'LESSON IN PROGRESS' : 'YOUR NEXT LESSON'}</Text>
+    <Text style={styles.cardTitle}>{lesson.subject ?? lesson.label ?? 'Lesson'}</Text>
+    <Text style={styles.bodyCopy}>{lesson.class_name ?? 'Class'}{lesson.stream_name ? ` · ${lesson.stream_name}` : ''} · {shortTime(lesson.starts_at)}–{shortTime(lesson.ends_at)}</Text>
+    <View style={styles.countdownBox}><Text style={styles.countdownLabel}>{live ? 'Time remaining' : 'Starts in'}</Text><Text style={styles.countdownValue}>{countdown}</Text></View>
+  </Pressable>;
+}
+
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -674,6 +705,11 @@ function nextLessonCopy(lesson: Lesson | undefined, now: number) {
 /* ------------------------------------------------------------------ */
 
 const styles = StyleSheet.create({
+  pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#E2E7F0' },
+  lessonFocus: { borderColor: colors.secondary, borderWidth: 1, gap: 8 },
+  countdownBox: { backgroundColor: colors.primary, borderRadius: radius.md, padding: 16, marginTop: 6 },
+  countdownLabel: { color: '#D8E2F2', fontSize: 11, fontWeight: '600' },
+  countdownValue: { color: colors.secondary, fontSize: 26, fontWeight: '800' },
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: GUTTER, paddingBottom: 56, alignItems: 'center' },
   inner: { width: '100%', maxWidth: MAX_WIDTH },

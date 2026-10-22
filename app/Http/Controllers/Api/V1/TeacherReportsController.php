@@ -10,6 +10,46 @@ use Illuminate\Http\Request;
 
 class TeacherReportsController extends ApiController
 {
+    public function attendanceSummary(Request $request)
+    {
+        $component = $this->attendanceComponent($request);
+        $user = $request->user();
+        $termId = $user->school->currentTerm()?->id;
+        $classIds = TeacherAcademicScope::academicClassIds($user, $termId);
+        $subjectIds = TeacherAcademicScope::subjectAssignments($user, $termId)->pluck('subject_id')->unique();
+        return $this->ok($component->summaryData() + ['options' => [
+            'classes' => \App\Models\SchoolClass::where('school_id', $user->school_id)->whereIn('id', $classIds)->orderBy('name')->get(['id', 'name']),
+            'streams' => \App\Models\Stream::where('school_id', $user->school_id)->whereIn('school_class_id', $classIds)->orderBy('name')->get(['id', 'name', 'school_class_id']),
+            'subjects' => \App\Models\Subject::where('school_id', $user->school_id)->whereIn('id', $subjectIds)->orderBy('name')->get(['id', 'name']),
+        ]]);
+    }
+
+    public function attendanceExcel(Request $request)
+    {
+        return $this->attendanceComponent($request)->exportExcel();
+    }
+
+    private function attendanceComponent(Request $request): \App\Livewire\AttendanceReport
+    {
+        $user = $request->user();
+        abort_unless(TeacherAcademicScope::isTeacher($user) && $user->hasPermission('attendance.reports'), 403);
+        $filters = $request->validate([
+            'from' => ['required', 'date'], 'to' => ['required', 'date', 'after_or_equal:from'],
+            'school_class_id' => ['nullable', 'integer', 'min:1'], 'stream_id' => ['nullable', 'integer', 'min:1'],
+            'subject' => ['nullable', 'regex:/^(all|daily|[1-9][0-9]*)$/'],
+            'status' => ['nullable', 'in:all,present,absent,late,excused'], 'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $component = \Livewire\Livewire::new(\App\Livewire\AttendanceReport::class);
+        $component->fromDate = $filters['from'];
+        $component->toDate = $filters['to'];
+        $component->schoolClassId = (string) ($filters['school_class_id'] ?? '');
+        $component->streamId = (string) ($filters['stream_id'] ?? '');
+        $component->subjectId = (string) ($filters['subject'] ?? 'daily');
+        $component->status = $filters['status'] ?? 'all';
+        $component->search = $filters['search'] ?? '';
+        return $component;
+    }
+
     public function exams(Request $request)
     {
         $user = $request->user();

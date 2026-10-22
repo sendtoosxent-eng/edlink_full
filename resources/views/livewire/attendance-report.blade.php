@@ -170,15 +170,153 @@
         </div>
     </div>
 
-    <!-- TABLE BLOCK (SHOWING 20 RESULTS PER PAGE) -->
+    <!-- CLASS / GENDER SUMMARY -->
+    <style>
+        .attendance-sheet { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+        .attendance-sheet th, .attendance-sheet td { border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 10px 12px; }
+        .attendance-sheet thead th { background: #e2e8f0; color: #334155; text-align: center; }
+        .attendance-sheet thead { position: sticky; top: 0; z-index: 3; }
+        .attendance-sheet tr > :first-child { position: sticky; left: 0; }
+        .attendance-sheet tbody tr > :first-child { background: #f8fafc; z-index: 1; }
+        .attendance-sheet tbody tr:nth-child(even) { background: #f8fafc; }
+        .attendance-sheet tbody tr:hover td { background: #eff6ff; }
+        .attendance-sheet tfoot th, .attendance-sheet tfoot td { background: #e2e8f0; border-top: 2px solid #64748b; }
+    </style>
+    <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+        <header class="border-b border-slate-100 px-5 py-4">
+            <h2 class="font-bold text-slate-900 text-sm">Attendance summary by class and gender</h2>
+            <button type="button" wire:click="exportExcel" wire:loading.attr="disabled" wire:target="exportExcel" class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+                <span wire:loading.remove wire:target="exportExcel">Download Excel (.xlsx)</span>
+                <span wire:loading wire:target="exportExcel">Preparing Excel…</span>
+            </button>
+            <p class="text-xs text-slate-500 mt-0.5">Attendance records matching the filters, not unique learners. Select one date and Daily register for a daily headcount. All sessions can count a learner more than once per day. Present and late are separate counts.</p>
+            <p class="text-xs text-slate-500 mt-1">Unspecified gender includes records with missing or unrecognised gender. Unmarked learners are not counted as absent.</p>
+        </header>
+
+        <div class="overflow-auto max-h-[600px]" tabindex="0" role="region" aria-label="Attendance summary spreadsheet">
+            <table class="attendance-sheet w-full min-w-[1100px] text-left text-xs">
+                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-100">
+                    <tr>
+                        <th rowspan="2" class="px-5 py-3.5 align-bottom">Class</th>
+                        <th colspan="5" class="px-5 py-2 text-center border-l border-slate-100">Boys</th>
+                        <th colspan="5" class="px-5 py-2 text-center border-l border-slate-100">Girls</th>
+                        <th rowspan="2" class="px-3 py-3.5 align-bottom">Unspecified gender</th>
+                        <th rowspan="2" class="px-5 py-3.5 align-bottom border-l border-slate-100">Class total</th>
+                    </tr>
+                    <tr class="border-t border-slate-100">
+                        @foreach (['Boys', 'Girls'] as $gender)
+                            @foreach (['Present', 'Late', 'Absent', 'Excused', 'Total'] as $statusLabel)
+                                <th class="px-3 py-2 {{ $statusLabel === 'Total' ? 'font-extrabold' : '' }}">{{ $statusLabel }}</th>
+                            @endforeach
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($attendanceSummary as $summary)
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="px-5 py-3.5 whitespace-nowrap font-bold text-slate-800">{{ $summary['class'] }}</td>
+                            @foreach (['male', 'female'] as $gender)
+                                @php
+                                    $group = $summary['groups'][$gender];
+                                @endphp
+                                <td class="px-3 py-3.5 text-center text-emerald-700">{{ number_format($group['present']) }}</td>
+                                <td class="px-3 py-3.5 text-center text-amber-700">{{ number_format($group['late']) }}</td>
+                                <td class="px-3 py-3.5 text-center text-rose-700">{{ number_format($group['absent']) }}</td>
+                                <td class="px-3 py-3.5 text-center text-blue-700">{{ number_format($group['excused']) }}</td>
+                                <td class="px-3 py-3.5 text-center font-extrabold text-slate-800">{{ number_format($group['total']) }}</td>
+                            @endforeach
+                            <td class="px-3 py-3.5 text-center">{{ number_format($summary['unspecified']) }}</td>
+                            <td class="px-5 py-3.5 border-l border-slate-100 text-center font-extrabold text-slate-900">{{ number_format($summary['total']) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="13" class="px-5 py-10 text-center text-xs text-slate-400">No attendance summary is available for the selected filters.</td></tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="bg-slate-100 font-bold text-slate-900">
+                    <tr>
+                        <th scope="row" class="px-5 py-3">Grand total</th>
+                        @foreach (['male', 'female'] as $gender)
+                            @foreach (['present', 'late', 'absent', 'excused', 'total'] as $summaryStatus)
+                                <td class="px-3 py-3 text-center">{{ number_format($attendanceSummary->sum(fn ($row) => $row['groups'][$gender][$summaryStatus])) }}</td>
+                            @endforeach
+                        @endforeach
+                        <td class="px-3 py-3 text-center">{{ number_format($attendanceSummary->sum('unspecified')) }}</td>
+                        <td class="px-5 py-3 text-center">{{ number_format($attendanceSummary->sum('total')) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <header class="border-b border-slate-100 px-5 py-4">
+            <h2 class="font-bold text-slate-900 text-sm">Attendance by student category</h2>
+            <p class="mt-1 text-xs text-slate-500">Uses the categories configured by your school and each learner’s current category. The same report filters apply. Categories with no matching records show zero.</p>
+            <button type="button" wire:click="exportExcel" wire:loading.attr="disabled" wire:target="exportExcel" class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+                <span wire:loading.remove wire:target="exportExcel">Download Excel (.xlsx)</span>
+                <span wire:loading wire:target="exportExcel">Preparing Excel…</span>
+            </button>
+            <p class="mt-1 text-xs text-slate-500">Includes class and category summaries for the selected filters.</p>
+        </header>
+        <div class="overflow-auto max-h-[600px]" tabindex="0" role="region" aria-label="Attendance by category spreadsheet">
+            <table class="attendance-sheet w-full min-w-[1100px] text-xs">
+                <thead>
+                    <tr>
+                        <th rowspan="2" scope="col">Category</th>
+                        <th colspan="5" scope="colgroup">Boys</th>
+                        <th colspan="5" scope="colgroup">Girls</th>
+                        <th rowspan="2" scope="col">Unspecified gender</th>
+                        <th rowspan="2" scope="col">Category total</th>
+                    </tr>
+                    <tr>
+                        @foreach (['male', 'female'] as $gender)
+                            @foreach (['Present', 'Late', 'Absent', 'Excused', 'Total'] as $label)
+                                <th scope="col">{{ $label }}</th>
+                            @endforeach
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($categorySummary as $category)
+                        <tr>
+                            <th scope="row" class="text-left whitespace-nowrap text-slate-800">{{ $category['class'] }}</th>
+                            @foreach (['male', 'female'] as $gender)
+                                @foreach (['present', 'late', 'absent', 'excused', 'total'] as $statusKey)
+                                    <td class="text-center {{ $statusKey === 'total' ? 'font-bold' : '' }}">{{ number_format($category['groups'][$gender][$statusKey]) }}</td>
+                                @endforeach
+                            @endforeach
+                            <td class="text-center">{{ number_format($category['unspecified']) }}</td>
+                            <td class="text-center font-bold">{{ number_format($category['total']) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="13" class="text-center text-slate-500">No student categories or matching attendance records.</td></tr>
+                    @endforelse
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th scope="row" class="text-left">Grand total</th>
+                        @foreach (['male', 'female'] as $gender)
+                            @foreach (['present', 'late', 'absent', 'excused', 'total'] as $statusKey)
+                                <td class="text-center font-bold">{{ number_format($categorySummary->sum(fn ($row) => $row['groups'][$gender][$statusKey])) }}</td>
+                            @endforeach
+                        @endforeach
+                        <td class="text-center font-bold">{{ number_format($categorySummary->sum('unspecified')) }}</td>
+                        <td class="text-center font-bold">{{ number_format($categorySummary->sum('total')) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <!-- ATTENDANCE RECORDS -->
     <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
         <header class="border-b border-slate-100 px-5 py-4 flex items-center justify-between">
             <div>
                 <h2 class="font-bold text-slate-900 text-sm">Attendance Records</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Showing 20 results per page. Present and late count toward rate.</p>
+                <p class="text-xs text-slate-400 mt-0.5">Showing 40 results per page. Present and late count toward rate.</p>
             </div>
             <span class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg">
-                20 / page
+                40 / page
             </span>
         </header>
 

@@ -22,6 +22,10 @@ class SubjectAttendance extends Component
 
     public array $statuses = [];
 
+    public array $notes = [];
+
+    public bool $showStudentImages = false;
+
     public function mount(): void
     {
         abort_unless(Auth::user()->hasPermission('attendance.subject'), 403);
@@ -31,16 +35,20 @@ class SubjectAttendance extends Component
     {
         $this->resetValidation();
         $this->statuses = [];
+        $this->notes = [];
         $slot = $this->selectedSlot();
 
         if ($slot) {
             $saved = AttendanceRecord::where('school_id', Auth::user()->school_id)
                 ->whereDate('attendance_date', today())
                 ->where('session_key', $this->sessionKey($slot))
-                ->pluck('status', 'student_id')
-                ->all();
+                ->get(['student_id', 'status', 'note'])->keyBy('student_id');
             foreach ($this->studentsFor($slot) as $student) {
-                $this->statuses[$student->id] = $saved[$student->id] ?? 'present';
+                $savedRecord = $saved[$student->id] ?? null;
+                $this->statuses[$student->id] = $savedRecord?->status ?? 'present';
+                $this->notes[$student->id] = $savedRecord?->status === 'late'
+                    ? preg_replace('/^Late by\s+/i', '', (string) $savedRecord->note, 1)
+                    : ($savedRecord?->note ?? '');
             }
         }
     }
@@ -71,9 +79,13 @@ class SubjectAttendance extends Component
         $rules = [];
         foreach ($students as $student) {
             $rules['statuses.'.$student->id] = ['required', 'in:'.implode(',', AttendanceRecord::STATUSES)];
+            $status = $this->statuses[$student->id] ?? 'present';
+            $rules['notes.'.$student->id] = $status === 'present'
+                ? ['nullable', 'string', 'max:500']
+                : ($status === 'late' ? ['required', 'integer', 'min:1', 'max:1440'] : ['required', 'string', 'max:500']);
         }
         if ($rules) {
-            $this->validate($rules, ['statuses.*.required' => 'Choose an attendance status for every learner.']);
+            $this->validate($rules, ['statuses.*.required' => 'Choose an attendance status for every learner.', 'notes.*.required' => 'Add a reason or the number of minutes late before saving.']);
         }
 
         DB::transaction(function () use ($school, $term, $slot, $students): void {
@@ -88,6 +100,7 @@ class SubjectAttendance extends Component
                         'stream_id' => $slot->stream_id,
                         'lesson_time' => $slot->starts_at ?: null,
                         'status' => $this->statuses[$student->id],
+                        'note' => $this->statuses[$student->id] === 'late' ? 'Late by '.($this->notes[$student->id] ?? '').' minutes' : ($this->notes[$student->id] ?? null),
                         'recorded_by' => Auth::id(),
                     ],
                 );

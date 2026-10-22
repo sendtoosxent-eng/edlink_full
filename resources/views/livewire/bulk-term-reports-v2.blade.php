@@ -49,6 +49,9 @@
                     <p class="text-[10px] font-semibold uppercase text-slate-500">{{str($settings['calculation_method'])->replace('_',' ')->title()}} calculation</p>
                     <p class="text-xs text-slate-500">{{str($data['stage'])->replace('_',' ')->title()}} grading profile</p>
                 </div>
+                <div class="h-20 w-16 shrink-0 overflow-hidden border-2 border-slate-900 bg-slate-50">
+                    @if($student->photoUrl())<img src="{{ $student->photoUrl() }}" alt="{{ $student->name }}" class="h-full w-full object-cover">@else<span class="flex h-full items-center justify-center text-xs font-bold text-slate-400">{{ strtoupper(substr($student->name, 0, 1)) }}</span>@endif
+                </div>
             </header>
 
             <div class="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 border-y py-3 text-sm">

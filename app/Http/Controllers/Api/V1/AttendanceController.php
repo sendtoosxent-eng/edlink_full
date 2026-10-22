@@ -22,11 +22,12 @@ class AttendanceController extends ApiController
         }
         $classId = $request->integer('school_class_id');
         abort_unless($classId, 422);
+        abort_unless($user->hasPermission($request->integer('subject_id') ? 'attendance.subject' : 'attendance.daily'), 403);
         $students = MobileAccess::teacherStudentQuery($user, $classId, $request->integer('subject_id') ?: null)->orderBy('name')->get(['id', 'name', 'admission_no']);
         $records = AttendanceRecord::where('school_id', $user->school_id)->whereIn('student_id', $students->pluck('id'))
             ->whereDate('attendance_date', $request->date('attendance_date') ?? today())->where('session_key', $request->string('session_key', 'daily'))->get()->keyBy('student_id');
 
-        return $this->ok($students->map(fn ($student) => ['student' => $student, 'status' => $records->get($student->id)?->status ?? 'present']),
+        return $this->ok($students->map(fn ($student) => ['student' => $student, 'status' => $records->get($student->id)?->status ?? 'present', 'note' => $records->get($student->id)?->status === 'late' ? preg_replace('/[^0-9]/', '', (string) $records->get($student->id)?->note) : $records->get($student->id)?->note]),
             ['version' => $records->max('updated_at')?->toISOString()]);
     }
 
@@ -34,8 +35,10 @@ class AttendanceController extends ApiController
     {
         $user = $request->user();
         $data = $request->validated();
+        abort_unless($user->hasPermission(! empty($data['subject_id']) ? 'attendance.subject' : 'attendance.daily'), 403);
+        abort_unless(! empty($data['subject_id']) ? $data['session_key'] !== 'daily' : $data['session_key'] === 'daily', 422, 'Choose the correct register session.');
         $term = $user->school->currentTerm();
-        abort_unless($term, 422, 'Open a term before recording attendance.');
+        abort_unless($term && $term->status === 'open', 422, 'Open a term before recording attendance.');
         $allowed = MobileAccess::teacherStudentQuery($user, $data['school_class_id'], $data['subject_id'] ?? null)->pluck('id');
         abort_unless(collect($data['records'])->pluck('student_id')->diff($allowed)->isEmpty(), 403);
         $existing = AttendanceRecord::where('school_id', $user->school_id)->whereIn('student_id', $allowed)
@@ -47,7 +50,7 @@ class AttendanceController extends ApiController
             foreach ($data['records'] as $record) {
                 $saved = AttendanceRecord::updateOrCreate(
                     ['student_id' => $record['student_id'], 'attendance_date' => $data['attendance_date'], 'session_key' => $data['session_key']],
-                    ['school_id' => $user->school_id, 'term_id' => $term->id, 'school_class_id' => $data['school_class_id'], 'subject_id' => $data['subject_id'] ?? null, 'status' => $record['status'], 'recorded_by' => $user->id]
+                    ['school_id' => $user->school_id, 'term_id' => $term->id, 'school_class_id' => $data['school_class_id'], 'subject_id' => $data['subject_id'] ?? null, 'status' => $record['status'], 'note' => $record['status'] === 'present' ? null : ($record['status'] === 'late' ? 'Late by '.$record['note'].' minutes' : $record['note']), 'recorded_by' => $user->id]
                 );
                 app(StudentActivityNotifier::class)->attendance($saved);
             }

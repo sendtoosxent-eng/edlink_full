@@ -62,6 +62,28 @@ class Student extends Model
         return $this->hasMany(StudentEnrolment::class);
     }
 
+    public function placementFor(?Term $term): ?StudentEnrolment
+    {
+        if (! $term) {
+            return null;
+        }
+
+        return $this->enrolments()
+            ->with(['schoolClass', 'stream', 'category'])
+            ->where('term_id', $term->id)
+            ->first();
+    }
+
+    public function displaySchoolClass(?Term $term = null): ?SchoolClass
+    {
+        return $this->placementFor($term)?->schoolClass ?? $this->schoolClass;
+    }
+
+    public function displayStream(?Term $term = null): ?Stream
+    {
+        return $this->placementFor($term)?->stream ?? $this->stream;
+    }
+
     public function subjectSelections(): HasMany
     {
         return $this->hasMany(StudentSubjectSelection::class);

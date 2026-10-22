@@ -5,6 +5,9 @@ import { ErrorScreen as ErrorState } from './src/components/ErrorScreen';
 import { NativeReportsScreen } from './src/screens/app/NativeReportsScreen';
 import { TeacherScheduleScreen } from './src/screens/app/TeacherScheduleScreen';
 import { TeacherDirectoryScreen } from './src/screens/app/TeacherDirectoryScreen';
+import { TeacherRegisterScreen, type RegisterTarget } from './src/screens/app/TeacherRegisterScreen';
+import { TeacherAttendanceReportScreen } from './src/screens/app/TeacherAttendanceReportScreen';
+import { NativeModuleScreen } from './src/screens/app/NativeModuleScreen';
 import { TeacherAccessScreen, ACCESS_SECTIONS, type AccessTab } from './src/screens/app/TeacherAccessScreen';
 import { TabTransition } from './src/components/TabTransition';
 import { BrandLoader } from './src/components/BrandLoader';
@@ -94,6 +97,9 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : user.role === 'student' ? ['home', 'homework', 'results', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
   const [tab, setTab] = useState<Tab>('home'); const [activeRoot, setActiveRoot] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [registerTarget, setRegisterTarget] = useState<RegisterTarget>();
+  const navigate = (next: Tab) => { setRegisterTarget(undefined); setTab(next); };
+  const openRegister = (target: RegisterTarget) => { setRegisterTarget(target); setTab(target.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance'); };
   const clearUnreadNotifications = useCallback(() => setUnreadNotifications(0), []);
   useEffect(() => { if (tabs.includes(tab)) setActiveRoot(tab); }, [tab]);
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
@@ -102,11 +108,14 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
     {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
     <TabTransition screen={tab} order={tabs}>
-      {user.role === 'teacher' && ACCESS_SECTIONS.some(section => section.tab === tab) && <TeacherAccessScreen key={tab} token={token} section={tab as AccessTab} navigate={setTab} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && ACCESS_SECTIONS.some(section => section.tab === tab) && <TeacherAccessScreen key={tab} token={token} section={tab as AccessTab} navigate={navigate} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && ['attendance', 'daily_attendance', 'subject_attendance'].includes(tab) && <TeacherRegisterScreen key={tab} token={token} mode={tab === 'daily_attendance' ? 'daily' : tab === 'subject_attendance' ? 'subject' : undefined} target={registerTarget} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'attendance_reports' && <TeacherAttendanceReportScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'teacher_communications' && <NativeModuleScreen token={token} tool="communications.index" onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'class_students' && <TeacherDirectoryScreen token={token} onBack={() => setTab('class_access')} />}
       {user.role === 'teacher' && tab === 'teacher_schedule' && <TeacherScheduleScreen token={token} onBack={() => setTab('teaching_access')} />}
-      {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={setTab} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
-      {tab === 'attendance' && <Attendance token={token} user={user} studentId={studentId} />}
+      {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={navigate} openRegister={openRegister} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
+      {tab === 'attendance' && user.role !== 'teacher' && <Attendance token={token} user={user} studentId={studentId} />}
       {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
       {user.role === 'student' && tab === 'student_schedule' && <TeacherScheduleScreen token={token} backLabel="Dashboard" onBack={() => setTab('home')} />}
       {user.role === 'student' && tab === 'student_calendar' && <SchoolCalendarScreen token={token} onBack={() => setTab('home')} />}
@@ -123,17 +132,21 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
       {user.role === 'teacher' && tab === 'add_homework' && <AddHomeworkScreen token={token} onBack={() => setTab('homework')} />}
       {user.role === 'teacher' && tab === 'homework' && <Pressable accessibilityRole="button" accessibilityLabel="Add homework" onPress={() => setTab('add_homework')} style={styles.floatingAdd}><Ionicons name="add" size={30} color={colors.gold} /></Pressable>}
     </TabTransition>
-    <BottomTabBar tabs={tabs} activeTab={activeRoot} onSelect={setTab} />
+    <BottomTabBar tabs={tabs} activeTab={activeRoot} onSelect={navigate} />
   </SafeAreaView>;
 }
 
-function Home({ token, user, studentId, navigate, onSignOut, unreadNotifications }: { token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
+function Home({ token, user, studentId, navigate, openRegister, onSignOut, unreadNotifications }: { token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; openRegister: (target: RegisterTarget) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
   const [data, setData] = useState<Dashboard>(); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (user.role === 'parent' && !studentId) { setLoading(false); return; } setLoading(true); try { setData((await api.get<Dashboard>(`/dashboard${studentId ? `?student_id=${studentId}` : ''}`, token)).data); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [studentId, token, user.role]);
   useEffect(() => { void load(); }, [load]);
   if (loading && !data) return <InlineLoading />; if (error && !data) return <ErrorState message={error} retry={load} />; if (!data) return <Empty message="Choose a learner to view their dashboard." />;
-  const total = Object.values(data.attendance).reduce((sum, value) => sum + Number(value), 0); const rate = total ? Math.round(Number(data.attendance.present ?? 0) / total * 100) : null;
-  const props = { data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson, unreadNotifications }, attendanceRate: rate, navigate, refreshing: loading, onRefresh: load };
+  const total = Object.values(data.attendance).reduce((sum, value) => sum + Number(value), 0);
+  const present = user.role === 'teacher' ? (data.analytics?.present_series ?? []).reduce((sum, value) => sum + value, 0) : Number(data.attendance.present ?? 0) + Number(data.attendance.late ?? 0);
+  const teacherTotal = data.analytics?.stats.attendance_records ?? (present + (data.analytics?.absent_series ?? []).reduce((sum, value) => sum + value, 0));
+  const denominator = user.role === 'teacher' ? teacherTotal : total;
+  const rate = denominator ? Math.round(present / denominator * 100) : null;
+  const props = { data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson, unreadNotifications }, attendanceRate: rate, navigate, openRegister, refreshing: loading, onRefresh: load };
   if (user.role === 'teacher') return <TeacherDashboardScreen {...props} />;
   if (user.role === 'parent') return <ParentDashboardScreen {...props} />;
   return <StudentDashboardScreen {...props} />;

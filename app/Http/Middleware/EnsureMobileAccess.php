@@ -13,7 +13,7 @@ class EnsureMobileAccess
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
-        abort_if($user->employment_status === 'inactive', 403, 'This account is inactive.');
+        abort_unless($user->canLogin(), 403, 'This account is inactive or linked only to inactive learners.');
         abort_unless($user->hasVerifiedEmail(), 403, 'Verify your email address before using the mobile application.');
         abort_unless(in_array($user->role, ['teacher', 'student', 'parent'], true), 403, 'This account is not enabled for the mobile application.');
         abort_unless($user->school?->isLicenceUsable() && ! $user->school->isExpiredDemo(), 403, 'This school is not currently active.');

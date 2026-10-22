@@ -170,6 +170,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return ($this->designation_id || in_array($this->role, ['teacher', 'bursar'], true)) ? 'workbench.home' : 'dashboard';
     }
 
+    public function canLogin(): bool
+    {
+        if ($this->employment_status === 'inactive') {
+            return false;
+        }
+
+        if (in_array($this->role, ['student', 'parent'], true)) {
+            return $this->portalStudents()
+                ->where('students.status', 'active')
+                ->exists();
+        }
+
+        return true;
+    }
+
     public function portalStudents(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'portal_user_students')

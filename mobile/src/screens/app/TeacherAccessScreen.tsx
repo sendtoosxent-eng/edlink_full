@@ -37,6 +37,9 @@ export function TeacherAccessScreen({ token, section, navigate, onBack }: { toke
   const definition = ACCESS_SECTIONS.find(item => item.tab === section)!;
   const tools = workspace?.tools.filter(tool => toolSection(tool.group) === section) ?? [];
   const open = (tool: TeacherWorkspace['tools'][number]) => {
+    if (tool.id === 'attendance.index') { navigate('daily_attendance'); return; }
+    if (tool.id === 'attendance.subject') { navigate('subject_attendance'); return; }
+    if (tool.id === 'attendance.reports') { navigate('attendance_reports'); return; }
     if (tool.id === 'students.index') { navigate('class_students'); return; }
     if (['exams.results'].includes(tool.id)) { navigate('teacher_results'); return; }
     if (tool.native) { navigate(tool.native as AppTab); return; }

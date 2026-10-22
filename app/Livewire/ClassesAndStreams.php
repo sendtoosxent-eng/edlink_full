@@ -37,9 +37,8 @@ class ClassesAndStreams extends Component
     {
         $schoolId = Auth::user()->school_id;
         $class = SchoolClass::where('school_id', $schoolId)->findOrFail($classId);
-        SchoolClass::where('school_id', $schoolId)->update(['is_graduating_class' => false]);
-        $class->update(['is_graduating_class' => true]);
-        session()->flash('status', $class->name.' is now the final graduating class.');
+        $class->update(['is_graduating_class' => ! $class->is_graduating_class]);
+        session()->flash('status', $class->name.($class->is_graduating_class ? ' is now a final graduating class.' : ' is no longer a final graduating class.'));
     }
 
     public function addClass(): void
@@ -89,5 +88,5 @@ class ClassesAndStreams extends Component
         if ($stream->students()->exists() || $stream->enrolments()->exists()) { session()->flash('error', 'This stream has learner records and cannot be deleted.'); return; }
         $stream->delete(); $this->deletingStreamId = null; session()->flash('status', 'Stream deleted.');
     }
-    public function render() { $school = Auth::user()->school; return view('livewire.create-class', ['classes' => SchoolClass::with(['streams','classTeacher:id,name'])->where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'teachers'=>User::where('school_id',$school->id)->where('role','teacher')->where('employment_status','active')->orderBy('name')->get(['id','name']), 'educationStages' => \App\Services\SchoolAcademicSetup::stagesFor($school), 'pageTitle' => 'Classes & Streams']); }
+    public function render() { $school = Auth::user()->school; $school->applyDefaultGraduatingClasses(); return view('livewire.create-class', ['classes' => SchoolClass::with(['streams','classTeacher:id,name'])->where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'teachers'=>User::where('school_id',$school->id)->where('role','teacher')->where('employment_status','active')->orderBy('name')->get(['id','name']), 'educationStages' => \App\Services\SchoolAcademicSetup::stagesFor($school), 'pageTitle' => 'Classes & Streams']); }
 }
