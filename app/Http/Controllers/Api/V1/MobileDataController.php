@@ -350,9 +350,10 @@ class MobileDataController extends ApiController
             'subject_id' => (int) $assignment->subject_id,
             'subject_name' => $subjects[$assignment->subject_id] ?? null,
             'attendance_type' => 'subject',
+            'streams' => DB::table('streams')->where('school_id', $user->school_id)->where('school_class_id', $assignment->school_class_id)->orderBy('name')->get(['id', 'name']),
         ]);
 
-        return $this->ok($daily->concat($assigned)->filter(fn ($assignment) => $user->hasPermission($assignment->attendance_type === 'daily' ? 'attendance.daily' : 'attendance.subject'))->values());
+        return $this->ok($daily->concat($assigned)->filter(fn ($assignment) => $assignment->attendance_type === 'subject' || $user->hasPermission('attendance.daily'))->values());
     }
 
     private function slotQuery(Request $request, $student)

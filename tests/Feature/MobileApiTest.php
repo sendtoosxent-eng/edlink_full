@@ -523,3 +523,57 @@ it('seeds published demo homework that students can open without duplicating ass
     expect(HomeworkAssignment::where('school_id', $data['foreign']->school_id)->count())->toBe(0);
     expect(HomeworkAssignment::where('school_id', $data['school']->id)->where('due_at', '>', now())->count())->toBe(3);
 });
+
+it('shares mobile lesson registers with web and keeps repeated lessons separate', function () {
+    $data = mobileFixture();
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $slots = collect([8, 11])->map(fn ($hour) => DB::table('timetable_slots')->insertGetId([
+        'school_id' => $data['school']->id, 'term_id' => $data['term']->id,
+        'school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id,
+        'user_id' => $data['teacher']->id, 'day_of_week' => today()->format('l'),
+        'starts_at' => sprintf('%02d:00:00', $hour), 'ends_at' => sprintf('%02d:00:00', $hour + 1),
+        'created_at' => now(), 'updated_at' => now(),
+    ]));
+    $registers = $this->getJson('/api/v1/attendance/registers?attendance_date='.today()->toDateString())
+        ->assertOk()->assertJsonCount(2, 'data.registers')->json('data.registers');
+    $webKeys = \App\Support\SubjectAttendanceRegisters::forUser($data['teacher'])
+        ->map(fn ($slot) => \App\Support\SubjectAttendanceRegisters::sessionKey($slot))->all();
+    expect(array_column($registers, 'session_key'))->toBe($webKeys);
+    $base = ['school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'attendance_date' => today()->toDateString()];
+    foreach ($registers as $index => $register) {
+        $this->postJson('/api/v1/attendance', $base + ['session_key' => $register['session_key'], 'records' => [['student_id' => $data['student']->id, 'status' => $index ? 'absent' : 'present', 'note' => $index ? 'Sick' : null]]])->assertOk();
+    }
+    $this->assertDatabaseHas('attendance_records', ['session_key' => $webKeys[0], 'status' => 'present', 'lesson_time' => '08:00:00']);
+    $this->assertDatabaseHas('attendance_records', ['session_key' => $webKeys[1], 'status' => 'absent']);
+    $this->getJson('/api/v1/attendance?'.http_build_query($base + ['session_key' => $webKeys[0]]))->assertOk()->assertJsonPath('data.0.status', 'present');
+    $this->postJson('/api/v1/attendance', $base + ['session_key' => 'subject:'.$data['subject']->id.':slot:999999', 'records' => [['student_id' => $data['student']->id, 'status' => 'present']]])->assertForbidden();
+    Sanctum::actingAs($data['parent'], ['mobile']);
+    $this->getJson('/api/v1/attendance/registers?attendance_date='.today()->toDateString())->assertForbidden();
+});
+
+it('returns assigned homework subjects and their class streams', function () {
+    $data = mobileFixture();
+    $stream = \App\Models\Stream::create(['school_id' => $data['school']->id, 'school_class_id' => $data['class']->id, 'name' => 'East']);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $this->getJson('/api/v1/teaching-assignments')->assertOk()->assertJsonFragment(['subject_id' => $data['subject']->id, 'attendance_type' => 'subject']);
+    $this->getJson('/api/v1/teaching-assignments')->assertOk()->assertJsonFragment(['id' => $stream->id, 'name' => 'East']);
+});
+
+it('filters mobile daily registers by stream and persists stream metadata', function () {
+    $data = mobileFixture();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    $stream = \App\Models\Stream::create(['school_id' => $data['school']->id, 'school_class_id' => $data['class']->id, 'name' => 'East']);
+    $data['student']->update(['stream_id' => $stream->id, 'term_id' => $data['term']->id]);
+    $category = \App\Models\StudentCategory::create(['school_id' => $data['school']->id, 'name' => 'Day']);
+    $data['student']->enrolments()->create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'school_class_id' => $data['class']->id, 'stream_id' => $stream->id, 'student_category_id' => $category->id, 'enrolled_at' => today(), 'status' => 'active']);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+    $base = ['school_class_id' => $data['class']->id, 'stream_id' => $stream->id, 'attendance_date' => today()->toDateString(), 'session_key' => 'daily'];
+    $this->getJson('/api/v1/attendance?'.http_build_query($base))->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.student.id', $data['student']->id);
+    $this->postJson('/api/v1/attendance', $base + ['records' => [['student_id' => $data['unlinked']->id, 'status' => 'present']]])->assertForbidden();
+    $this->postJson('/api/v1/attendance', $base + ['records' => [['student_id' => $data['student']->id, 'status' => 'late', 'note' => '15']]])->assertOk();
+    $this->assertDatabaseHas('attendance_records', ['student_id' => $data['student']->id, 'stream_id' => $stream->id, 'note' => 'Late by 15 minutes']);
+    $query = http_build_query(['school_class_id' => $data['class']->id, 'stream_id' => $stream->id, 'from' => today()->toDateString(), 'to' => today()->toDateString()]);
+    $this->getJson('/api/v1/attendance/performance?'.$query)->assertOk()->assertJsonPath('data.0.total', 1)->assertJsonPath('data.0.present', 1)->assertJsonPath('data.0.rate', 100);
+    $this->get('/api/v1/attendance/performance/csv?'.$query)->assertOk()->assertDownload();
+    $this->getJson('/api/v1/attendance/performance?'.http_build_query(['school_class_id' => $data['foreign']->school_class_id, 'from' => today()->toDateString(), 'to' => today()->toDateString()]))->assertForbidden();
+});

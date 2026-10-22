@@ -13,6 +13,7 @@ class AttendanceStoreRequest extends FormRequest
     {
         return [
             'school_class_id' => ['required', 'integer'],
+            'stream_id' => ['nullable', 'integer'],
             'subject_id' => ['nullable', 'integer'],
             'attendance_date' => ['required', 'date'],
             'session_key' => ['required', 'string', 'max:80'],

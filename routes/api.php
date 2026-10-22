@@ -44,6 +44,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('teacher/students/{student}', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'update']);
         Route::get('teacher/students', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'index']);
         Route::get('teaching-assignments', [MobileDataController::class, 'teachingAssignments']);
+        Route::get('attendance/performance', [AttendanceController::class, 'performance']);
+        Route::get('attendance/performance/csv', [AttendanceController::class, 'performance'])->name('api.mobile.attendance.performance.csv');
+        Route::get('attendance/registers', [AttendanceController::class, 'registers']);
         Route::get('attendance', [AttendanceController::class, 'index']);
         Route::post('attendance', [AttendanceController::class, 'store']);
         Route::get('homework', [HomeworkController::class, 'index']);

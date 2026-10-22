@@ -58,9 +58,15 @@ class MobileTeacherWorkspace
             }
         }
         if ($user->hasPermission('attendance.subject')) {
-            foreach ($assignments as $assignment) {
-                if (! $records->contains(fn ($row) => (int) $row->school_class_id === (int) $assignment->school_class_id && (int) $row->subject_id === (int) $assignment->subject_id)) {
-                    $pending[] = ['school_class_id' => (int) $assignment->school_class_id, 'subject_id' => (int) $assignment->subject_id, 'attendance_type' => 'subject', 'label' => ($subjects[$assignment->subject_id] ?? 'Subject').' · '.($classes[$assignment->school_class_id] ?? 'Class')];
+            foreach (SubjectAttendanceRegisters::forUser($user) as $slot) {
+                $session = SubjectAttendanceRegisters::sessionKey($slot);
+                $saved = $records->contains(fn ($row) => (int) $row->school_class_id === (int) $slot->school_class_id && $row->session_key === $session);
+                // Older app versions used a single subject register.
+                if ($slot->is_assignment_only) {
+                    $saved = $saved || $records->contains(fn ($row) => (int) $row->school_class_id === (int) $slot->school_class_id && $row->session_key === 'subject:'.$slot->subject_id);
+                }
+                if (! $saved) {
+                    $pending[] = ['school_class_id' => (int) $slot->school_class_id, 'subject_id' => (int) $slot->subject_id, 'attendance_type' => 'subject', 'session_key' => $session, 'label' => $slot->subject_name.' · '.$slot->class_name.($slot->starts_at ? ' · '.substr($slot->starts_at, 0, 5) : '')];
                 }
             }
         }

@@ -155,7 +155,7 @@ class Attendance extends Component
             ->orderBy('name');
     }
 
-    private function performanceRows()
+    public function performanceRows()
     {
         $school = Auth::user()->school;
         $term = $school->currentTerm();
