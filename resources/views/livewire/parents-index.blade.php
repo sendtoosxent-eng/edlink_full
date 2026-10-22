@@ -69,7 +69,7 @@
                                         @if($parent->avatarUrl())<img src="{{ $parent->avatarUrl() }}" alt="{{ $parent->name }}" class="h-full w-full object-cover">@else{{ substr($parent->name, 0, 2) }}@endif
                                     </div>
                                     <div>
-                                        <p class="font-bold text-slate-900">{{ $parent->name }}</p>
+                                        <a href="{{ route('parents.profile', $parent) }}" wire:navigate class="font-bold text-slate-900 hover:text-amber-700">{{ $parent->name }}</a>
                                         <p class="text-[11px] font-semibold text-slate-400 mt-0.5">ID: #{{ $parent->id }}</p>
                                     </div>
                                 </div>
@@ -114,7 +114,7 @@
                                     <span>Active</span>
                                 </span>
                             </td>
-                            <td class="py-4 px-6 text-right"><a href="{{ route('parents.profile', $parent) }}" wire:navigate class="text-xs font-bold text-amber-700 hover:text-amber-900">Edit</a></td>
+                            <td class="py-4 px-6 text-right"><a href="{{ route('parents.profile', $parent) }}" wire:navigate class="text-xs font-bold text-amber-700 hover:text-amber-900">View profile</a></td>
                         </tr>
                     @empty
                         <!-- Empty State -->
