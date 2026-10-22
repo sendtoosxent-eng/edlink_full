@@ -35,13 +35,20 @@ class GraduationCertificateController extends Controller
     {
         $record->load(['school', 'student', 'schoolClass', 'term']);
         $settings = SchoolSetting::where('school_id', $record->school_id)->pluck('value', 'key')->all();
-        $badgeDataUri = null;
-        if ($record->school->badge_path && Storage::disk('public')->exists($record->school->badge_path)) {
-            $path = Storage::disk('public')->path($record->school->badge_path);
-            $mime = mime_content_type($path) ?: 'image/png';
-            $badgeDataUri = 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
-        }
+        $badgeDataUri = $this->imageDataUri($record->school->badge_path);
+        $studentPhotoDataUri = $this->imageDataUri($record->student->photo_path);
 
-        return compact('record', 'settings', 'badgeDataUri');
+        return compact('record', 'settings', 'badgeDataUri', 'studentPhotoDataUri');
+    }
+
+    private function imageDataUri(?string $path): ?string
+    {
+        $disk = Storage::disk('public');
+        if (! $path || ! $disk->exists($path)) return null;
+        $contents = $disk->get($path);
+        $image = @getimagesizefromstring($contents);
+        if (! $image || ! in_array($image['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) return null;
+
+        return 'data:'.$image['mime'].';base64,'.base64_encode($contents);
     }
 }
