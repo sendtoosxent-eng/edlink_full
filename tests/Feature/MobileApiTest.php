@@ -232,22 +232,43 @@ it('shows portal users only their own homework submission and protects teacher r
     $this->postJson("/api/v1/homework/{$assignment->id}/submissions/{$own->id}/review", ['score' => 18, 'feedback' => 'Well done'])->assertOk();
 });
 
-it('keeps account discovery non revealing while validating the active school', function () {
+it('previews only active verified profiles matching the school and role without signing in', function () {
     $data = mobileFixture();
     $payload = ['school_number' => strtolower($data['school']->school_number), 'email' => strtoupper($data['teacher']->email), 'expected_role' => 'teacher'];
     $this->postJson('/api/v1/auth/account', $payload)->assertOk()
-        ->assertExactJson(['data' => ['accepted' => true], 'meta' => []]);
+        ->assertExactJson(['data' => ['name' => $data['teacher']->name, 'role' => 'teacher', 'phone' => $data['teacher']->phone, 'staff_number' => $data['teacher']->staff_number, 'avatar_url' => null], 'meta' => []]);
     expect($data['teacher']->tokens()->count())->toBe(0);
-    $this->postJson('/api/v1/auth/account', [...$payload, 'expected_role' => 'parent'])->assertOk();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'expected_role' => 'parent'])->assertUnprocessable();
     $this->postJson('/api/v1/auth/account', [...$payload, 'school_number' => 'EDL-MISSING'])->assertUnprocessable();
-    $this->postJson('/api/v1/auth/account', [...$payload, 'email' => 'missing@example.test'])->assertOk();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'email' => 'missing@example.test'])->assertUnprocessable();
+    $this->postJson('/api/v1/auth/account', [...$payload, 'school_number' => 'EDL-OTHER'])->assertUnprocessable();
     $data['teacher']->update(['employment_status' => 'inactive']);
-    $this->postJson('/api/v1/auth/account', $payload)->assertOk();
+    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
     $data['teacher']->forceFill(['employment_status' => 'active', 'email_verified_at' => null])->save();
-    $this->postJson('/api/v1/auth/account', $payload)->assertOk();
+    $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
     $data['teacher']->forceFill(['email_verified_at' => now()])->save();
     $data['school']->update(['license_status' => 'expired', 'license_expires_at' => now()->subDay()]);
     $this->postJson('/api/v1/auth/account', $payload)->assertUnprocessable();
+});
+
+it('returns the matched profile photo phone and staff number without authenticating', function () {
+    $data = mobileFixture();
+    Storage::fake('public');
+    $path = UploadedFile::fake()->image('profile.jpg')->store('avatars', 'public');
+    $data['teacher']->update(['avatar_path' => $path, 'phone' => '+256700123456', 'staff_number' => 'T-042']);
+
+    $response = $this->postJson('/api/v1/auth/account', [
+        'school_number' => 'EDL-TEACH', 'email' => 'teacher@mobile.test', 'expected_role' => 'teacher',
+    ]);
+    // The lookup stays scoped to the account's actual school.
+    $response->assertUnprocessable();
+    $response = $this->postJson('/api/v1/auth/account', [
+        'school_number' => $data['school']->school_number, 'email' => 'teacher@mobile.test', 'expected_role' => 'teacher',
+    ])->assertOk()->assertJsonPath('data.name', $data['teacher']->name)
+        ->assertJsonPath('data.phone', '+256700123456')->assertJsonPath('data.staff_number', 'T-042');
+    expect($response->json('data.avatar_url'))->toBe($data['teacher']->avatarUrl());
+    expect($data['teacher']->tokens()->count())->toBe(0);
+    $this->assertGuest();
 });
 
 it('varies the mobile workspace by actual class responsibility', function () {

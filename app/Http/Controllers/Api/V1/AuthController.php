@@ -55,9 +55,21 @@ class AuthController extends ApiController
             throw ValidationException::withMessages(['school_number' => ['We could not find an active school with that number.']]);
         }
 
-        // Keep this compatibility endpoint non-revealing. Password verification is
-        // the first point at which the API confirms whether an account exists.
-        return $this->ok(['accepted' => true]);
+        $user = $school->users()
+            ->whereRaw('LOWER(email) = ?', [strtolower(trim($data['email']))])
+            ->where('role', $data['expected_role'])
+            ->first();
+        if (! $user || $user->employment_status === 'inactive' || ! $user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages(['email' => ['We could not find an active, verified account for this school email and selected role. Please check with your school administrator.']]);
+        }
+
+        return $this->ok([
+            'name' => $user->name,
+            'role' => $user->role,
+            'phone' => $user->phone,
+            'staff_number' => $user->staff_number,
+            'avatar_url' => $user->avatarUrl(),
+        ]);
     }
 
     public function login(LoginRequest $request)
