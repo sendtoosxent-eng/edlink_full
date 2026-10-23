@@ -87,6 +87,8 @@
                             @error('phone') <span class="mt-1 block text-xs font-medium text-rose-600">{{ $message }}</span> @enderror
                         </label>
                         
+                        <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-700">Home address / location</span><input wire:model="location" maxlength="500" placeholder="District, town and residential address" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm">@error('location')<span class="mt-1 block text-xs text-rose-600">{{ $message }}</span>@enderror</label>
+                        <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-700">Profile photograph</span><input wire:model="photo" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-sm"><span class="mt-1 block text-xs text-slate-500">JPG, PNG or WebP, up to 4 MB. This photo will appear on the staff profile and ID card.</span><span wire:loading wire:target="photo" class="mt-1 block text-xs text-amber-700">Uploading photograph...</span>@error('photo')<span class="mt-1 block text-xs text-rose-600">{{ $message }}</span>@enderror</label>
                         <label>
                             <span class="mb-1.5 block text-xs font-semibold text-slate-700">Temporary Password <b class="text-rose-500">*</b></span>
                             <input wire:model="password" type="password" autocomplete="new-password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
@@ -306,6 +308,7 @@
                             </div>
                         @endif
 
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><label class="block text-xs font-bold text-slate-700">Academic qualifications and supporting documents<input wire:model="qualification_documents" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" class="mt-2 block w-full rounded-xl border border-dashed border-slate-300 bg-white p-3 text-sm"></label><p class="mt-2 text-xs text-slate-500">Upload up to 5 certificates, transcripts or other qualifications, 10 MB each. Documents remain private to authorized staff managers.</p><span wire:loading wire:target="qualification_documents" class="text-xs text-amber-700">Uploading documents...</span>@foreach($qualification_documents as $document)<p class="mt-2 text-xs text-slate-700">{{ $document->getClientOriginalName() }}</p>@endforeach</div>
                         <!-- HR & Emergency Info Section -->
                         <div class="rounded-2xl border border-slate-200/80 bg-slate-50/30 p-4 space-y-4">
                             <div>
@@ -336,13 +339,13 @@
                     <div></div>
                 @endif
                 
-                <button type="submit" wire:loading.attr="disabled" wire:target="next,register" class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-2.5 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60">
-                    <span wire:loading.remove wire:target="next,register">{{ $step === 3 ? 'Create Staff Account' : 'Continue' }}</span>
-                    <span wire:loading wire:target="next,register" class="inline-flex items-center gap-1.5">
+                <button type="submit" wire:loading.attr="disabled" wire:target="next,register,photo,qualification_documents" class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-2.5 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-300 active:scale-95 disabled:cursor-wait disabled:opacity-60">
+                    <span wire:loading.remove wire:target="next,register,photo,qualification_documents">{{ $step === 3 ? 'Create Staff Account' : 'Continue' }}</span>
+                    <span wire:loading wire:target="next,register,photo,qualification_documents" class="inline-flex items-center gap-1.5">
                         <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         Saving...
                     </span>
-                    <svg wire:loading.remove wire:target="next,register" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <svg wire:loading.remove wire:target="next,register,photo,qualification_documents" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </button>
             </footer>
         </form>

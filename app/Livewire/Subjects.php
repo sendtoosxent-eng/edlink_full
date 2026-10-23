@@ -68,6 +68,7 @@ class Subjects extends Component
                 ->where('school_id', $schoolId)->where('employment_status', 'active')->where('role', 'teacher'))],
         ]);
 
+        if (User::findOrFail($this->teacherId)->isOnLeave()) throw \Illuminate\Validation\ValidationException::withMessages(['teacherId' => 'This teacher is on leave. Choose an available teacher.']);
         DB::transaction(function () use ($school, $term): void {
             DB::table('class_subjects')->updateOrInsert(
                 ['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $this->classId, 'subject_id' => $this->subjectId],
@@ -99,7 +100,7 @@ class Subjects extends Component
                 ->when(! $canManage, fn ($query) => $query->whereIn('id', $assignments->pluck('school_class_id')))
                 ->orderBy('name')->get(),
             'teachers' => $canManage
-                ? User::where('school_id', $school->id)->where('employment_status', 'active')->where('role', 'teacher')->orderBy('name')->get()
+                ? User::with('activeLeaves')->where('school_id', $school->id)->where('employment_status', 'active')->where('role', 'teacher')->orderBy('name')->get()
                 : collect(),
             'canManage' => $canManage,
             'pageTitle' => 'Subjects',

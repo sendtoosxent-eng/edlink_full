@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Exam extends Model
 {
-    protected $fillable = ['school_id', 'term_id', 'exam_category_id', 'school_class_id', 'stream_id', 'name', 'status', 'published_at', 'published_by'];
+    protected $fillable = ['school_id', 'term_id', 'exam_category_id', 'school_class_id', 'stream_id', 'name', 'status', 'completed_at', 'published_at', 'published_by'];
 
-    protected $casts = ['published_at' => 'datetime'];
+    protected $casts = ['published_at' => 'datetime', 'completed_at' => 'datetime'];
 
     public function term(): BelongsTo
     {

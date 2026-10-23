@@ -1,3 +1,6 @@
+import { ThemeProvider, useAppTheme, useThemedStyles } from './src/theme/ThemeProvider';
+import type { ReactNode } from 'react';
+import { StudentPhoto } from './src/components/StudentPhoto';
 import { EdlinkAlert as Alert, EdlinkAlertHost } from './src/components/EdlinkAlert';
 import { StudentHomeworkScreen } from './src/screens/app/StudentHomeworkScreen';
 import { SchoolCalendarScreen } from './src/screens/app/SchoolCalendarScreen';
@@ -18,7 +21,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { api, ApiError } from './src/api';
@@ -38,7 +41,11 @@ const BIOMETRIC_KEY = 'edlink.mobile.biometric-enabled';
 const STATUSES: AttendanceStatus[] = ['present', 'absent', 'late', 'excused'];
 type Tab = AppTab;
 
-export default function App() {
+export default function App() { return <ThemeProvider><AppContent /></ThemeProvider>; }
+
+function AppContent() {
+  const { isDark } = useAppTheme();
+  const styles = useThemedStyles(baseStyles);
   const [fontsLoaded, fontError] = useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold });
   const [session, setSession] = useState<{ token: string; user: User }>();
   const [lockedToken, setLockedToken] = useState<string>();
@@ -68,11 +75,26 @@ export default function App() {
   useEffect(() => { void restoreSession(); }, [restoreSession]);
   const acceptSession = async (data: AuthSuccess) => {
     await SecureStore.setItemAsync(TOKEN_KEY, data.token); setLockedToken(data.token); setSession(data);
-    if (!biometricAvailable || await SecureStore.getItemAsync(BIOMETRIC_KEY) === 'true') return;
-    Alert.alert('Enable quick login?', 'Use fingerprint, Face ID, or your device passcode to unlock Edlink next time.', [
-      { text: 'Later', style: 'cancel' },
-      { text: 'Enable', onPress: () => { void LocalAuthentication.authenticateAsync({ promptMessage: 'Enable biometric login', disableDeviceFallback: false }).then(async result => { if (result.success) await SecureStore.setItemAsync(BIOMETRIC_KEY, 'true'); }); } },
-    ]);
+    // Recheck after sign-in in case device biometrics changed since app launch.
+    try {
+      const hardware = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = hardware && await LocalAuthentication.isEnrolledAsync();
+      setBiometricAvailable(enrolled);
+      if (!enrolled || await SecureStore.getItemAsync(BIOMETRIC_KEY) === 'true') return;
+      Alert.alert('Enable biometric login?', 'Use your fingerprint or Face ID to unlock Edlink next time. You can also use your device passcode when available.', [
+        { text: 'Later', style: 'cancel' },
+        { text: 'Enable', onPress: async () => {
+          try {
+            const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Enable biometric login', cancelLabel: 'Later', disableDeviceFallback: false });
+            if (result.success) await SecureStore.setItemAsync(BIOMETRIC_KEY, 'true');
+          } catch {
+            Alert.alert('Biometric login unavailable', 'Your sign-in is complete. You can continue using your school password.');
+          }
+        } },
+      ]);
+    } catch {
+      // Optional device setup must not interrupt a successful school login.
+    }
   };
   const signIn = async (school_number: string, email: string, password: string, expectedRole: Role): Promise<LoginResult> => {
     const { data } = await api.login({ school_number, email, password, expected_role: expectedRole, device_name: `${Platform.OS} Edlink app` });
@@ -86,16 +108,26 @@ export default function App() {
     if (!result.success) throw new ApiError('Device verification was cancelled.', 401);
     setSession({ token: lockedToken, user: (await api.me(lockedToken)).data });
   };
+  const returnToSignIn = async () => {
+    try {
+      await Promise.all([SecureStore.deleteItemAsync(TOKEN_KEY), SecureStore.deleteItemAsync(BIOMETRIC_KEY)]);
+      setLockedToken(undefined); setSession(undefined); setBootError(undefined); setBooting(false);
+    } catch {
+      Alert.alert('Could not reset sign-in', 'Please close and reopen Edlink, then try again.');
+    }
+  };
   const signOut = async () => { if (session) await api.logout(session.token).catch(() => undefined); await SecureStore.deleteItemAsync(TOKEN_KEY); await SecureStore.deleteItemAsync(BIOMETRIC_KEY); setLockedToken(undefined); setSession(undefined); };
   return (
-    <SafeAreaProvider><KeyboardProvider statusBarTranslucent navigationBarTranslucent>
-      {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : bootError ? <SafeAreaView style={styles.safe}><ErrorState message={bootError.message} status={bootError.status} retry={restoreSession} /></SafeAreaView> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} onUserUpdated={user => setSession(current => current ? { ...current, user } : current)} />}
+    <SafeAreaProvider><KeyboardProvider statusBarTranslucent navigationBarTranslucent><StatusBar style={isDark ? "light" : "dark"} />
+      {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : bootError ? <SafeAreaView style={styles.safe}><ErrorState message={bootError.message} status={bootError.status} retry={restoreSession} backLabel="Back to sign in" onBack={bootError.status === 403 ? () => { void returnToSignIn(); } : undefined} /></SafeAreaView> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} onUserUpdated={user => setSession(current => current ? { ...current, user } : current)} />}
     <EdlinkAlertHost /></KeyboardProvider></SafeAreaProvider>
   );
 }
 
 function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: string; user: User; onSignOut: () => Promise<void>; onUserUpdated: (user: User) => void }) {
-  const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : user.role === 'student' ? ['home', 'homework', 'results', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
+  const { isDark } = useAppTheme();
+  const styles = useThemedStyles(baseStyles);
+  const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : user.role === 'student' ? ['home', 'homework', 'results', 'more'] : ['home', 'attendance', 'payments', 'more'];
   const [tab, setTab] = useState<Tab>('home'); const [activeRoot, setActiveRoot] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [marksPaperId, setMarksPaperId] = useState<number>();
@@ -108,8 +140,8 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   useEffect(() => { if (user.role === 'parent') void api.get<Student[]>('/children', token).then(({ data }) => { setChildren(data); setStudentId(data[0]?.id); }).catch(error => Alert.alert('Children unavailable', messageFor(error))); }, [token, user.role]);
   const refreshUnread = useCallback(async () => { try { const suffix = studentId ? `?student_id=${studentId}` : ''; const response = await api.get<{ data: unknown[] }>(`/notifications${suffix}`, token); setUnreadNotifications(Number(response.meta?.unread_count ?? 0)); } catch { /* Keep the app usable while notification refresh retries. */ } }, [studentId, token]);
   useEffect(() => { void refreshUnread(); const timer = setInterval(() => { if (AppState.currentState === 'active') void refreshUnread(); }, 15_000); const subscription = AppState.addEventListener('change', state => { if (state === 'active') void refreshUnread(); }); return () => { clearInterval(timer); subscription.remove(); }; }, [refreshUnread]);
-  return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
-    {user.role === 'parent' && children.length > 0 && <ChildPicker children={children} selected={studentId} onSelect={setStudentId} />}
+  const childSwitcher = user.role === 'parent' && children.length > 0 ? <ChildPicker children={children} selected={studentId} onSelect={setStudentId} /> : undefined;
+  return <SafeAreaView style={styles.safe}><StatusBar style={isDark ? "light" : "dark"} />
     <TabTransition screen={tab} order={tabs}>
       {user.role === 'teacher' && ACCESS_SECTIONS.some(section => section.tab === tab) && <TeacherAccessScreen key={tab} token={token} section={tab as AccessTab} navigate={navigate} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && ['attendance', 'daily_attendance', 'subject_attendance'].includes(tab) && <TeacherRegisterScreen key={tab} token={token} mode={tab === 'daily_attendance' ? 'daily' : tab === 'subject_attendance' ? 'subject' : undefined} target={registerTarget} onBack={() => setTab('home')} />}
@@ -117,18 +149,18 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
       {user.role === 'teacher' && tab === 'teacher_communications' && <NativeModuleScreen token={token} tool="communications.index" onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'class_students' && <TeacherDirectoryScreen token={token} onBack={() => setTab('class_access')} />}
       {user.role === 'teacher' && tab === 'teacher_schedule' && <TeacherScheduleScreen token={token} onBack={() => setTab('teaching_access')} />}
-      {tab === 'home' && <Home openMarks={openMarks} token={token} user={user} studentId={studentId} navigate={navigate} openRegister={openRegister} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
-      {tab === 'attendance' && user.role !== 'teacher' && <Attendance token={token} user={user} studentId={studentId} />}
+      {tab === 'home' && <Home childSwitcher={childSwitcher} openMarks={openMarks} token={token} user={user} studentId={studentId} navigate={navigate} openRegister={openRegister} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
+      {tab === 'attendance' && user.role !== 'teacher' && <Attendance token={token} user={user} studentId={studentId} childSwitcher={childSwitcher} />}
       {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
       {user.role === 'student' && tab === 'student_schedule' && <TeacherScheduleScreen token={token} backLabel="Dashboard" onBack={() => setTab('home')} />}
       {user.role === 'student' && tab === 'student_calendar' && <SchoolCalendarScreen token={token} onBack={() => setTab('home')} />}
       {tab === 'homework' && user.role === 'student' && <StudentHomeworkScreen token={token} />}
-      {tab === 'homework' && user.role === 'parent' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
-      {tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
-      {tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}
-      {tab === 'settings' && <SettingsScreen user={user} navigate={navigate} onBack={() => setTab('home')} onSignOut={onSignOut} />}
-      {tab === 'more' && <ProfileScreen onUserUpdated={onUserUpdated} token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
-      {tab === 'notifications' && <NotificationsScreen token={token} studentId={studentId} onRead={clearUnreadNotifications} onBack={() => setTab('home')} />}
+      {tab === 'homework' && user.role === 'parent' && <Homework childSwitcher={childSwitcher} token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'results' && <Results childSwitcher={childSwitcher} token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'payments' && <PaymentsScreen childSwitcher={childSwitcher} token={token} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'settings' && <SettingsScreen childSwitcher={childSwitcher} user={user} navigate={navigate} onBack={() => setTab('home')} onSignOut={onSignOut} />}
+      {tab === 'more' && <ProfileScreen childSwitcher={childSwitcher} onUserUpdated={onUserUpdated} token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
+      {tab === 'notifications' && <NotificationsScreen childSwitcher={childSwitcher} token={token} studentId={studentId} onRead={clearUnreadNotifications} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen initialPaperId={marksPaperId} token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'view_marks' && <TeacherMarksScreen token={token} readOnly onBack={() => setTab('home')} />}
@@ -140,7 +172,7 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   </SafeAreaView>;
 }
 
-function Home({ openMarks, token, user, studentId, navigate, openRegister, onSignOut, unreadNotifications }: { openMarks: (paperId: number) => void; token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; openRegister: (target: RegisterTarget) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
+function Home({ childSwitcher, openMarks, token, user, studentId, navigate, openRegister, onSignOut, unreadNotifications }: { childSwitcher?: ReactNode; openMarks: (paperId: number) => void; token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; openRegister: (target: RegisterTarget) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
   const [data, setData] = useState<Dashboard>(); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (user.role === 'parent' && !studentId) { setLoading(false); return; } setLoading(true); try { setData((await api.get<Dashboard>(`/dashboard${studentId ? `?student_id=${studentId}` : ''}`, token)).data); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [studentId, token, user.role]);
   useEffect(() => { void load(); }, [load]);
@@ -156,21 +188,23 @@ function Home({ openMarks, token, user, studentId, navigate, openRegister, onSig
   };
   const props = { openMarks, onReportAbsence: reportAbsence, data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson, unreadNotifications }, attendanceRate: rate, navigate, openRegister, refreshing: loading, onRefresh: load };
   if (user.role === 'teacher') return <TeacherDashboardScreen {...props} />;
-  if (user.role === 'parent') return <ParentDashboardScreen {...props} />;
+  if (user.role === 'parent') return <ParentDashboardScreen {...props} childSwitcher={childSwitcher} />;
   return <StudentDashboardScreen {...props} />;
 }
 
-function Attendance({ token, user, studentId }: { token: string; user: User; studentId?: number }) { return user.role === 'teacher' ? <TeacherAttendance token={token} user={user} /> : <AttendanceHistory token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />; }
+function Attendance({ token, user, studentId, childSwitcher }: { token: string; user: User; studentId?: number; childSwitcher?: ReactNode }) { return user.role === 'teacher' ? <TeacherAttendance token={token} user={user} /> : <AttendanceHistory token={token} user={user} studentId={studentId} childSwitcher={childSwitcher} isParent={user.role === 'parent'} />; }
 
-function AttendanceHistory({ token, user, studentId, isParent }: { token: string; user: User; studentId?: number; isParent: boolean }) {
+function AttendanceHistory({ token, user, studentId, isParent, childSwitcher }: { token: string; user: User; studentId?: number; isParent: boolean; childSwitcher?: ReactNode }) {
+  const styles = useThemedStyles(baseStyles);
   const [records, setRecords] = useState<AttendanceRecord[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (isParent && !studentId) { setLoading(false); return; } setLoading(true); try { const response = await api.get<{ data: AttendanceRecord[] }>(`/attendance${studentId ? `?student_id=${studentId}` : ''}`, token); setRecords(response.data.data ?? []); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [isParent, studentId, token]);
   useEffect(() => { void load(); }, [load]); const counts = useMemo(() => Object.fromEntries(STATUSES.map(status => [status, records.filter(item => item.status === status).length])), [records]);
   if (loading && !records.length) return <InlineLoading />; if (error && !records.length) return <ErrorState message={error} retry={load} />;
-  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}><ScreenHeader title="Attendance" subtitle="Recent school attendance records" user={user} /><View style={styles.statsRow}>{STATUSES.slice(0, 3).map(status => <Stat key={status} label={capitalize(status)} value={`${counts[status]}`} />)}</View>{records.map(record => <View key={record.id} style={styles.rowCard}><View><Text style={styles.cardTitle}>{formatDate(record.attendance_date)}</Text><Text style={styles.cardMeta}>{record.session_key || 'Daily attendance'}</Text></View><Pill status={record.status} /></View>)}{!records.length && <Empty message="No attendance records yet." />}</ScrollView>;
+  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}><ScreenHeader title="Attendance" subtitle="Recent school attendance records" user={user} />{childSwitcher}<View style={styles.statsRow}>{STATUSES.slice(0, 3).map(status => <Stat key={status} label={capitalize(status)} value={`${counts[status]}`} />)}</View>{records.map(record => <View key={record.id} style={styles.rowCard}><View><Text style={styles.cardTitle}>{formatDate(record.attendance_date)}</Text><Text style={styles.cardMeta}>{record.session_key || 'Daily attendance'}</Text></View><Pill status={record.status} /></View>)}{!records.length && <Empty message="No attendance records yet." />}</ScrollView>;
 }
 
 function TeacherAttendance({ token, user }: { token: string; user: User }) {
+  const styles = useThemedStyles(baseStyles);
   const [assignments, setAssignments] = useState<Assignment[]>([]); const [selected, setSelected] = useState<Assignment>(); const [rows, setRows] = useState<AttendanceRow[]>([]); const [version, setVersion] = useState<string>(); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const date = new Date().toISOString().slice(0, 10);
   useEffect(() => { void api.get<Assignment[]>('/teaching-assignments', token).then(({ data }) => { setAssignments(data); setSelected(data[0]); }).catch(error => Alert.alert('Assignments unavailable', messageFor(error))).finally(() => setLoading(false)); }, [token]);
   useEffect(() => { if (!selected) return; setLoading(true); const subjectQuery = selected.subject_id ? `&subject_id=${selected.subject_id}` : ''; const query = `?school_class_id=${selected.school_class_id}${subjectQuery}&attendance_date=${date}&session_key=${attendanceSession(selected)}`; void api.get<AttendanceRow[]>(`/attendance${query}`, token).then(response => { setRows(response.data); setVersion(response.meta?.version as string | undefined); }).catch(error => Alert.alert('Register unavailable', messageFor(error))).finally(() => setLoading(false)); }, [date, selected, token]);
@@ -180,32 +214,62 @@ function TeacherAttendance({ token, user }: { token: string; user: User }) {
   return <ScrollView contentContainerStyle={styles.content}><ScreenHeader title="Take attendance" subtitle={`${formatDate(date)} · Tap a status to change it`} user={user} /><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>{assignments.map(item => { const active = item.school_class_id === selected?.school_class_id && item.subject_id === selected?.subject_id; return <Pressable key={`${item.school_class_id}-${item.subject_id}`} onPress={() => setSelected(item)} style={[styles.chip, active && styles.chipActive]}><Text style={[styles.chipText, active && styles.chipTextActive]}>{item.class_name} • {item.subject_name}</Text></Pressable>; })}</ScrollView>{!assignments.length && <Empty message="No teaching assignments are available for the current term." />}{rows.map(row => <View key={row.student.id} style={styles.rowCard}><View style={styles.grow}><Text style={styles.cardTitle}>{row.student.name}</Text><Text style={styles.cardMeta}>{row.student.admission_no}</Text></View><Pressable onPress={() => cycle(row.student.id)}><Pill status={row.status} /></Pressable></View>)}{!!rows.length && <PrimaryButton label={saving ? 'Saving…' : `Save ${rows.length} records`} onPress={save} disabled={saving} />}</ScrollView>;
 }
 
-function Results({ token, studentId, isParent }: { token: string; user?: User; studentId?: number; isParent: boolean }) {
+function Results({ token, studentId, isParent, childSwitcher }: { token: string; user?: User; studentId?: number; isParent: boolean; childSwitcher?: ReactNode }) {
+  const styles = useThemedStyles(baseStyles);
   const [results, setResults] = useState<ExamResult[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (isParent && !studentId) { setLoading(false); return; } setLoading(true); try { setResults((await api.get<ExamResult[]>(`/results${studentId ? `?student_id=${studentId}` : ''}`, token)).data); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [isParent, studentId, token]); useEffect(() => { void load(); }, [load]);
   if (loading && !results.length) return <InlineLoading />; if (error && !results.length) return <ErrorState message={error} retry={load} />;
-  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}><ScreenHeader title="Academic results" subtitle="Track published marks, subject scores, and overall academic performance." icon="trophy-outline" /><View style={styles.termRow}><View style={styles.termChip}><Text style={styles.termChipText}>{results[0]?.term ?? 'Current Term'}  ⌄</Text></View></View>{results.map(exam => <View key={exam.id} style={styles.resultCard}><View style={styles.resultHeader}><Text style={styles.examTitle}>{exam.name}</Text><View style={styles.averageChip}><Text style={styles.averageChipText}>Overall Average</Text></View></View><Text style={styles.resultAverage}>{average(exam)}<Text style={styles.percentSign}>%</Text></Text>{exam.papers.map(paper => <View key={paper.id} style={styles.markRow}><View style={styles.resultSubjectIcon}><Text style={styles.resultSubjectIconText}>▣</Text></View><Text style={styles.markSubject}>{paper.subject ?? 'Subject'}</Text><Text style={styles.markScore}>{paper.score ?? '—'}/{paper.maximum_score}</Text></View>)}</View>)}{!results.length && <Empty message="No published results are available yet." />}</ScrollView>;
+  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}><ScreenHeader title="Academic results" subtitle="Track published marks, subject scores, and overall academic performance." icon="trophy-outline" />{childSwitcher}<View style={styles.termRow}><View style={styles.termChip}><Text style={styles.termChipText}>{results[0]?.term ?? 'Current Term'}  ⌄</Text></View></View>{results.map(exam => <View key={exam.id} style={styles.resultCard}><View style={styles.resultHeader}><Text style={styles.examTitle}>{exam.name}</Text><View style={styles.averageChip}><Text style={styles.averageChipText}>Overall Average</Text></View></View><Text style={styles.resultAverage}>{average(exam)}<Text style={styles.percentSign}>%</Text></Text>{exam.papers.map(paper => <View key={paper.id} style={styles.markRow}><View style={styles.resultSubjectIcon}><Text style={styles.resultSubjectIconText}>▣</Text></View><Text style={styles.markSubject}>{paper.subject ?? 'Subject'}</Text><Text style={styles.markScore}>{paper.score ?? '—'}/{paper.maximum_score}</Text></View>)}</View>)}{!results.length && <Empty message="No published results are available yet." />}</ScrollView>;
 }
 
 type HomeworkItem = { id: number; title: string; description?: string | null; due_at?: string | null; subject?: { name: string } | null };
-function Homework({ token, studentId, isParent }: { token: string; user?: User; studentId?: number; isParent: boolean }) {
+function Homework({ token, studentId, isParent, childSwitcher }: { token: string; user?: User; studentId?: number; isParent: boolean; childSwitcher?: ReactNode }) {
+  const styles = useThemedStyles(baseStyles);
   const [items, setItems] = useState<HomeworkItem[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (isParent && !studentId) { setLoading(false); return; } setLoading(true); try { const response = await api.get<{ data: HomeworkItem[] }>(`/homework${studentId ? `?student_id=${studentId}` : ''}`, token); setItems(response.data.data ?? []); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [isParent, studentId, token]);
   useEffect(() => { void load(); }, [load]); if (loading && !items.length) return <InlineLoading />; if (error && !items.length) return <ErrorState message={error} retry={load} />;
-  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor="#231E34" />}><ScreenHeader title="Homework" subtitle="See assigned work, due dates, submissions, and teacher reviews in one place." icon="book-outline" /><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>{['Upcoming', 'Submitted', 'Reviewed'].map((label, index) => <View key={label} style={[styles.filterChip, index === 0 && styles.filterChipActive]}><Text style={[styles.filterText, index === 0 && styles.filterTextActive]}>{label}</Text></View>)}</ScrollView>{items.map(item => <View key={item.id} style={styles.homeworkCard}><View style={styles.homeworkAccent} /><View style={styles.homeworkTop}><View style={styles.subjectTag}><Text style={styles.subjectTagText}>{item.subject?.name ?? 'General'}</Text></View>{item.due_at && <View style={styles.dueChip}><Text style={styles.dueChipText}>◷  Due {formatDate(item.due_at)}</Text></View>}</View><Text style={styles.homeworkCardTitle}>{item.title}</Text>{!!item.description && <Text numberOfLines={2} style={styles.homeworkDescription}>{item.description}</Text>}</View>)}{!items.length && <Empty message="No homework has been posted yet." />}</ScrollView>;
+  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor="#231E34" />}><ScreenHeader title="Homework" subtitle="See assigned work, due dates, submissions, and teacher reviews in one place." icon="book-outline" />{childSwitcher}<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>{['Upcoming', 'Submitted', 'Reviewed'].map((label, index) => <View key={label} style={[styles.filterChip, index === 0 && styles.filterChipActive]}><Text style={[styles.filterText, index === 0 && styles.filterTextActive]}>{label}</Text></View>)}</ScrollView>{items.map(item => <View key={item.id} style={styles.homeworkCard}><View style={styles.homeworkAccent} /><View style={styles.homeworkTop}><View style={styles.subjectTag}><Text style={styles.subjectTagText}>{item.subject?.name ?? 'General'}</Text></View>{item.due_at && <View style={styles.dueChip}><Text style={styles.dueChipText}>◷  Due {formatDate(item.due_at)}</Text></View>}</View><Text style={styles.homeworkCardTitle}>{item.title}</Text>{!!item.description && <Text numberOfLines={2} style={styles.homeworkDescription}>{item.description}</Text>}</View>)}{!items.length && <Empty message="No homework has been posted yet." />}</ScrollView>;
 }
 
-function FigmaPageHeader({ title, subtitle }: { title: string; subtitle: string }) { return <View style={styles.figmaPageHeader}><View style={styles.smallBrand}><Text style={styles.smallBrandText}>✎</Text></View><View><Text style={styles.pageTitle}>{title}</Text><Text style={styles.pageLead}>{subtitle}</Text></View></View>; }
+function FigmaPageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  const styles = useThemedStyles(baseStyles); return <View style={styles.figmaPageHeader}><View style={styles.smallBrand}><Text style={styles.smallBrandText}>✎</Text></View><View><Text style={styles.pageTitle}>{title}</Text><Text style={styles.pageLead}>{subtitle}</Text></View></View>; }
 
 function attendanceSession(assignment: Assignment) { return assignment.attendance_type === 'daily' ? 'daily' : `subject:${assignment.subject_id}`; }
 
-function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, (pressed || disabled) && styles.buttonMuted]}><Text style={styles.primaryButtonText}>{label}</Text></Pressable>; }
-function ChildPicker({ children, selected, onSelect }: { children: Student[]; selected?: number; onSelect: (id: number) => void }) { return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childPicker} contentContainerStyle={styles.chipRow}>{children.map(child => <Pressable key={child.id} onPress={() => onSelect(child.id)} style={[styles.chip, child.id === selected && styles.chipActive]}><Text style={[styles.chipText, child.id === selected && styles.chipTextActive]}>{child.name}</Text></Pressable>)}</ScrollView>; }
-function Stat({ label, value }: { label: string; value: string }) { return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>; } function Pill({ status }: { status: AttendanceStatus }) { return <View style={[styles.pill, styles[`status_${status}`]]}><Text style={styles.pillText}>{capitalize(status)}</Text></View>; } function Section({ title }: { title: string }) { return <Text style={styles.sectionTitle}>{title}</Text>; }
-function InlineLoading() { return <BrandLoader />; } function Empty({ message, compact }: { message: string; compact?: boolean }) { return <View style={[styles.empty, compact && styles.emptyCompact]}><Text style={styles.emptyText}>{message}</Text></View>; }
+function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  const styles = useThemedStyles(baseStyles); return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, (pressed || disabled) && styles.buttonMuted]}><Text style={styles.primaryButtonText}>{label}</Text></Pressable>; }
+function ChildPicker({ children, selected, onSelect }: { children: Student[]; selected?: number; onSelect: (id: number) => void }) {
+  const styles = useThemedStyles(baseStyles);
+  const scroll = useRef<ScrollView>(null);
+  useEffect(() => { scroll.current?.scrollTo({ x: 0, animated: true }); }, [selected]);
+  return <View style={styles.childSection}><Text style={styles.childHeading}>Choose your child</Text><ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.childOptions}>{[...children.filter(child => child.id === selected), ...children.filter(child => child.id !== selected)].map(child => {
+    const active = child.id === selected;
+    return <Pressable key={child.id} accessibilityRole="button" accessibilityState={{ selected: active }} accessibilityLabel={`View ${child.name}’s records`} onPress={() => onSelect(child.id)} style={[styles.childOption, active && styles.childOptionActive]}>
+      <StudentPhoto uri={child.photo_url} name={child.name} size={48} />
+      <View style={{ flex: 1 }}><Text numberOfLines={1} style={[styles.childName, active && styles.childNameActive]}>{child.name}</Text><Text numberOfLines={1} style={[styles.childClass, active && styles.childClassActive]}>{child.class ?? 'Learner'}{child.stream ? ` · ${child.stream}` : ''}</Text></View>
+      {active && <Ionicons name="checkmark-circle" size={20} color={colors.gold} />}
+    </Pressable>;
+  })}</ScrollView></View>;
+}
+function Stat({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(baseStyles); return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>; } function Pill({ status }: { status: AttendanceStatus }) {
+  const styles = useThemedStyles(baseStyles); return <View style={[styles.pill, styles[`status_${status}`]]}><Text style={styles.pillText}>{capitalize(status)}</Text></View>; } function Section({ title }: { title: string }) {
+  const styles = useThemedStyles(baseStyles); return <Text style={styles.sectionTitle}>{title}</Text>; }
+function InlineLoading() { return <BrandLoader />; } function Empty({ message, compact }: { message: string; compact?: boolean }) {
+  const styles = useThemedStyles(baseStyles); return <View style={[styles.empty, compact && styles.emptyCompact]}><Text style={styles.emptyText}>{message}</Text></View>; }
 function messageFor(error: unknown) { return error instanceof ApiError ? error.message : 'Cannot reach the Edlink server. Check your connection.'; } function firstName(name: string) { return name.trim().split(/\s+/)[0] || 'there'; } function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase(); } function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); } function shortTime(value: string) { return value?.slice(0, 5) ?? ''; } function formatDate(value: string) { const date = new Date(value.length === 10 ? `${value}T12:00:00` : value); return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); } function average(exam: ExamResult) { if (exam.average != null) return Math.round(Number(exam.average)); const papers = exam.papers.filter(paper => paper.score != null && paper.maximum_score > 0); return papers.length ? Math.round(papers.reduce((sum, paper) => sum + Number(paper.score) / paper.maximum_score * 100, 0) / papers.length) : 0; }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
+  childSection: { marginTop: 16, gap: 10 },
+  childHeading: { color: colors.navy, fontSize: 14, fontWeight: '700' },
+  childOptions: { gap: 10, paddingBottom: 2 },
+  childOption: { width: 242, minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18, backgroundColor: 'white', borderWidth: 1, borderColor: '#E3E7EF' },
+  childOptionActive: { backgroundColor: colors.navy, borderColor: colors.gold },
+  childName: { color: colors.navy, fontSize: 12, fontWeight: '700' },
+  childNameActive: { color: colors.gold },
+  childClass: { color: '#707785', fontSize: 10, marginTop: 4 },
+  childClassActive: { color: '#D8E2F2' },
+
   floatingAdd: { position: 'absolute', right: 22, bottom: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center', elevation: 8 },
   termRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14, marginBottom: 4 },
   flex: { flex: 1 }, safe: { flex: 1, backgroundColor: colors.background }, screen: { flex: 1, backgroundColor: colors.background }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 28 }, muted: { color: colors.muted, textAlign: 'center', lineHeight: 21 },
@@ -219,3 +283,5 @@ const styles = StyleSheet.create({
   homeworkTitle: { color: '#151C27', fontSize: 34, fontWeight: '900', marginBottom: 16 }, filterRow: { gap: 10, paddingBottom: 18 }, filterChip: { minHeight: 46, paddingHorizontal: 20, borderRadius: 99, borderWidth: 1, borderColor: '#C9C5CD', backgroundColor: '#F0F3FF', justifyContent: 'center' }, filterChipActive: { backgroundColor: '#765A00', borderColor: '#765A00' }, filterText: { color: '#48464D', fontSize: 14, fontWeight: '700' }, filterTextActive: { color: 'white' }, homeworkCard: { minHeight: 150, backgroundColor: 'white', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#D9E1F1', overflow: 'hidden', shadowColor: '#211D35', shadowOpacity: 0.06, shadowRadius: 12, elevation: 2 }, homeworkAccent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, backgroundColor: '#FFCE4B' }, homeworkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }, subjectTag: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: '#E2E8F8' }, subjectTagText: { color: '#48464D', fontWeight: '600' }, dueChip: { paddingVertical: 7, paddingHorizontal: 11, borderRadius: 99, backgroundColor: '#FFCE4B', maxWidth: '55%' }, dueChipText: { color: '#765A00', fontSize: 11, fontWeight: '800' }, homeworkCardTitle: { color: '#151C27', fontSize: 22, lineHeight: 29, fontWeight: '800', marginTop: 16 }, homeworkDescription: { color: '#48464D', fontSize: 14, lineHeight: 20, marginTop: 8 },
   empty: { minHeight: 150, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F3FF', borderRadius: 18, padding: 20 }, emptyCompact: { minHeight: 86 }, emptyText: { color: '#777381', textAlign: 'center' }, errorTitle: { color: '#231E34', fontSize: 20, fontWeight: '800' }, figmaListCard: { backgroundColor: 'white', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F8', flexDirection: 'row', gap: 13 }, subjectBadge: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F0F3FF', alignItems: 'center', justifyContent: 'center' }, subjectBadgeText: { color: '#765A00', fontWeight: '900', fontSize: 23 }, descriptionText: { color: '#777381', fontSize: 12, lineHeight: 18, marginTop: 7 }, figmaPageHeader: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 8 }, smallBrand: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#211D35', alignItems: 'center', justifyContent: 'center' }, smallBrandText: { color: 'white', fontSize: 25, fontWeight: '900' }, profileCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#211D35', padding: 18, borderRadius: 16 }, profileAvatar: { width: 62, height: 62, borderRadius: 31, backgroundColor: '#FFCE4B', alignItems: 'center', justifyContent: 'center' }, profileName: { color: 'white', fontSize: 17, fontWeight: '900' }, profileMeta: { color: '#D5D1DB', fontSize: 12, marginTop: 4 }, noticeCard: { backgroundColor: '#FFF9E8', padding: 16, borderRadius: 14 }, miniClass: { color: '#765A00', fontSize: 11, fontWeight: '800' }, outlineButton: { minHeight: 50, borderWidth: 2, borderColor: '#765A00', borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 10 }, outlineButtonText: { color: '#765A00', fontWeight: '900' }, tabBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9F9FF', borderTopWidth: 1, borderColor: '#E2E8F8', paddingHorizontal: 10, paddingBottom: Platform.OS === 'android' ? 8 : 0, paddingTop: 8 }, tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 4, borderRadius: 999 }, tabSelected: { backgroundColor: '#FFCE4B' }, tabIcon: { fontSize: 19, color: '#48464D', fontWeight: '800' }, tabLabel: { fontSize: 9, color: '#48464D', fontWeight: '700' }, tabActive: { color: '#765A00' },
 });
+
+const styles = baseStyles;

@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { useEffect, useRef, useState } from 'react';
 import { FlatList, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +15,7 @@ const ROLES: Array<{ key: Role; label: string; eyebrow: string; description: str
 ];
 
 export function RoleSelectorScreen({ onSelect }: { onSelect: (role: Role) => void }) {
+  const styles = useThemedStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [active, setActive] = useState(0);
@@ -45,7 +47,7 @@ export function RoleSelectorScreen({ onSelect }: { onSelect: (role: Role) => voi
       renderItem={({ item, index }) => <ScrollView style={{ width }} contentContainerStyle={{ minHeight: height, flexGrow: 1 }} bounces={false} showsVerticalScrollIndicator={false}>
         <View style={[styles.hero, { paddingTop: insets.top + 14 }]}>
           <Image source={require('../../../assets/img/logo.png')} accessibilityLabel="Edlink" resizeMode="contain" style={styles.logo} />
-          <Text style={styles.kicker}>CHOOSE YOUR WORKSPACE</Text>
+          <Text style={styles.kicker}>Choose your Role to continue</Text>
           <View style={[styles.portrait, { marginTop: compact ? 14 : 22 }]}>
             <RoleIllustration role={item.key} size={portraitSize} />
           </View>
@@ -79,7 +81,7 @@ function Chevron({ backwards = false }: { backwards?: boolean }) {
   return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none"><Path d={backwards ? 'm14 6-6 6 6 6' : 'm10 6 6 6-6 6'} stroke={colors.navy} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.navy },
   hero: { alignItems: 'center', paddingHorizontal: 24, paddingBottom: 60 },
   logo: { width: 150, height: 48 },
@@ -105,3 +107,5 @@ const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 10, lineHeight: 16, textAlign: 'center', marginTop: 12 },
   pressed: { opacity: 0.85 },
 });
+
+const styles = baseStyles;

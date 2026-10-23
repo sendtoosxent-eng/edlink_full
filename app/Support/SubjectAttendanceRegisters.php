@@ -27,7 +27,7 @@ final class SubjectAttendanceRegisters
             ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
             ->where('timetable_slots.school_id', $user->school_id)
             ->where('timetable_slots.term_id', $term->id)
-            ->where('timetable_slots.user_id', $user->id)
+            ->whereIn('timetable_slots.user_id', \App\Support\TeacherAcademicScope::teachingOwnerIds($user))
             ->where('timetable_slots.day_of_week', Carbon::parse($date ?? today()->toDateString())->format('l'))
             ->whereNotNull('timetable_slots.subject_id')
             ->orderBy('timetable_slots.starts_at')

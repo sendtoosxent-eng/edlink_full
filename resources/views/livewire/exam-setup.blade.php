@@ -197,6 +197,11 @@
                         </span>
                     </div>
                     <p class="mt-1 text-xs text-slate-500">{{ $exam->term->name }}, {{ $exam->term->year }}</p>
+                    @if($exam->completed_at)
+                        <p class="mt-2 text-xs font-semibold text-emerald-700">Exam completed {{ $exam->completed_at->format('d M Y') }}</p>
+                    @elseif($exam->term->isOpen() && ! $exam->isPublished())
+                        <button type="button" wire:click="markCompleted({{ $exam->id }})" wire:confirm="Have learners finished this exam? This will remind assigned teachers to submit their marks." wire:loading.attr="disabled" class="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-xs font-bold text-amber-900">Mark exam completed</button>
+                    @endif
                     @if($exam->category)<p class="mt-1 text-xs font-semibold text-amber-700">{{ $exam->category->name }} · {{ number_format($exam->category->weight, 2) }}% of final mark</p>@endif
                     @php($examCategories = $categoryOptions->get($exam->id, collect()))
                     @if($examCategories->isNotEmpty())

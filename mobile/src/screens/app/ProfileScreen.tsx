@@ -1,3 +1,5 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
+import type { ReactNode } from 'react';
 import { EditProfileScreen } from './EditProfileScreen';
 import { ErrorScreen } from '../../components/ErrorScreen';
 import { Text } from '../../components/Typography';
@@ -13,6 +15,7 @@ type TimetableItem = { id: number; day_of_week: string; starts_at: string; ends_
 type AnnouncementItem = { id: number; title?: string; subject?: string; message?: string; body?: string };
 
 type Props = {
+  childSwitcher?: ReactNode;
   token: string;
   user: User;
   studentId?: number;
@@ -21,7 +24,8 @@ type Props = {
   onUserUpdated: (user: User) => void;
 };
 
-export function ProfileScreen({ token, user, studentId, navigate, onUserUpdated }: Props) {
+export function ProfileScreen({ token, user, studentId, navigate, onUserUpdated, childSwitcher }: Props) {
+  const styles = useThemedStyles(baseStyles);
   const [editing, setEditing] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [timetable, setTimetable] = useState<TimetableItem[]>([]);
@@ -68,6 +72,7 @@ export function ProfileScreen({ token, user, studentId, navigate, onUserUpdated 
         <Text style={styles.school}>{user.school.name}</Text>
       </View>
 
+      {childSwitcher}
       {user.role === 'teacher' && <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={styles.editButton}><Ionicons name="create-outline" size={20} color={colors.secondary} /><Text style={styles.editText}>Edit profile</Text></Pressable>}
       <Text style={styles.sectionTitle}>Account information</Text>
       <View style={[styles.card, shadows.card]}>
@@ -137,10 +142,12 @@ export function ProfileScreen({ token, user, studentId, navigate, onUserUpdated 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 function InfoRow({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.infoRow}><View style={styles.infoIcon}><Ionicons name={icon} size={19} color={colors.primary} /></View><View style={styles.grow}><Text style={styles.rowLabel}>{label}</Text><Text style={styles.rowValue}>{value}</Text></View></View>;
 }
 
 function EmptyRow({ icon, text }: { icon: IconName; text: string }) {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.emptyRow}><Ionicons name={icon} size={22} color={colors.textMuted} /><Text style={styles.emptyText}>{text}</Text></View>;
 }
 
@@ -149,7 +156,7 @@ function capitalize(value: string) { return value.charAt(0).toUpperCase() + valu
 function shortTime(value: string) { return value?.slice(0, 5) ?? ''; }
 function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase(); }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   editButton: { minHeight: 54, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 16 }, editText: { color: 'white', fontWeight: '700' },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   hero: { minHeight: 258, borderRadius: radius.lg, backgroundColor: colors.primaryCard, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', padding: 24, overflow: 'hidden' },
@@ -188,3 +195,5 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.62 },
   version: { color: colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 16 },
 });
+
+const styles = baseStyles;

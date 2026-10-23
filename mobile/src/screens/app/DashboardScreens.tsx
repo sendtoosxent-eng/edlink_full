@@ -1,3 +1,5 @@
+import { useAppTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import { StatArtwork, type StatArtworkName } from '../../components/StatArtwork';
 import { EdlinkAlert } from '../../components/EdlinkAlert';
 import { AlarmClockArtwork } from '../../components/AlarmClockArtwork';
 import { LessonArtwork } from '../../components/LessonArtwork';
@@ -49,12 +51,14 @@ function useContentWidth() {
 /* ------------------------------------------------------------------ */
 
 function TopBar({ user }: { user: DashboardUser }) {
+  const { isDark } = useAppTheme();
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.topBar}>
-      <Image accessibilityLabel="Edlink" source={require('../../../assets/img/edlink-logo.png')} style={styles.topLogo} resizeMode="contain" />
+      <Image accessibilityLabel="Edlink" source={isDark ? require('../../../assets/img/logo.png') : require('../../../assets/img/edlink-logo.png')} style={styles.topLogo} resizeMode="contain" />
       <View style={styles.topActions}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open notifications" onPress={() => user.navigate?.('notifications')} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-          <AppSvg name="bell" size={26} color="#0B132B" solid />
+          <AppSvg name="bell" size={26} solid />
           {!!user.unreadNotifications && (
             <View style={styles.notificationBadge}>
               <Text style={styles.notificationBadgeText}>{user.unreadNotifications > 9 ? '9+' : user.unreadNotifications}</Text>
@@ -62,7 +66,7 @@ function TopBar({ user }: { user: DashboardUser }) {
           )}
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Open settings" onPress={() => user.navigate?.('settings')} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-          <AppSvg name="settings" size={26} color="#0B132B" solid />
+          <AppSvg name="settings" size={26} solid />
         </Pressable>
       </View>
     </View>
@@ -70,6 +74,7 @@ function TopBar({ user }: { user: DashboardUser }) {
 }
 
 function Avatar({ name, uri, size = 54 }: { name: string; uri?: string | null; size?: number }) {
+  const styles = useThemedStyles(baseStyles);
   const frame = { width: size, height: size, borderRadius: size / 2 };
   return (
     <View style={[styles.avatar, frame]}>
@@ -80,6 +85,7 @@ function Avatar({ name, uri, size = 54 }: { name: string; uri?: string | null; s
 
 /* Shared welcome banner for each school role. */
 function GreetingCard({ user, title, subtitle, imageName, imageUri, term }: { user: User; title: string; subtitle: string; term?: string | null; imageName?: string; imageUri?: string | null }) {
+  const styles = useThemedStyles(baseStyles);
   const dashboardUser = user as DashboardUser;
   const now = useNow();
   const lesson = dashboardUser.role !== 'student' ? null : nextLessonCopy(dashboardUser.nextLesson, now);
@@ -114,6 +120,7 @@ function GreetingCard({ user, title, subtitle, imageName, imageUri, term }: { us
 /* ------------------------------------------------------------------ */
 
 function SectionHeader({ title, subtitle, actionLabel, onAction }: { title: string; subtitle?: string; actionLabel?: string; onAction?: () => void }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionHeaderText}>
@@ -141,18 +148,27 @@ function toneTint(tone?: Tone) {
   return tone === 'green' ? colors.status.present.bg : tone === 'blue' ? '#F0F2F7' : '#FFF4D9';
 }
 
-function StatGrid({ items }: { items: Array<{ icon: IconName; label: string; value: number | string; tone?: Tone }> }) {
+function StatGrid({ items, illustrated = false }: { illustrated?: boolean; items: Array<{ artwork?: StatArtworkName; icon: IconName; label: string; value: number | string; tone?: Tone }> }) {
+  const styles = useThemedStyles(baseStyles);
   const { width } = useWindowDimensions();
   const compact = width < 375;
+  const contentWidth = useContentWidth();
+  const columns = contentWidth >= 500 ? 3 : 2;
+  const tileWidth = (contentWidth - GAP * (columns - 1)) / columns;
   return (
-    <View style={styles.statGrid}>
+    <View style={[styles.statGrid, illustrated && styles.illustratedStatGrid]}>
       {items.map(item => (
-        <View key={item.label} style={[styles.statCard, shadows.card, compact && styles.statCardCompact]}>
+        <View key={item.label} style={[styles.statCard, shadows.card, compact && styles.statCardCompact, illustrated && styles.illustratedStatCard, illustrated && { width: tileWidth }]}>
+          {illustrated ? <>
+            <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.statArtwork}><StatArtwork name={item.artwork ?? 'marks'} /></View>
+            <View style={styles.statCopy}><Text numberOfLines={1} style={[styles.statValue, styles.illustratedStatValue, (item.artwork === 'attendance' || item.artwork === 'lessons') && styles.primaryStatValue]}>{item.value}</Text><Text numberOfLines={2} style={styles.statLabel}>{item.label}</Text></View>
+          </> : <>
           <View style={[styles.statIcon, { backgroundColor: toneTint(item.tone) }]}>
             <Ionicons name={item.icon} size={18} color={toneColor(item.tone)} />
           </View>
           <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={styles.statValue}>{item.value}</Text>
           <Text numberOfLines={2} style={styles.statLabel}>{item.label}</Text>
+          </>}
         </View>
       ))}
     </View>
@@ -160,20 +176,24 @@ function StatGrid({ items }: { items: Array<{ icon: IconName; label: string; val
 }
 
 /** Responsive grid of tappable tiles: 2 columns on phones, 3 on wide screens. */
-function ActionGrid({ items }: { items: Array<{ key: string; title: string; description: string; icon: IconName; onPress: () => void; badge?: string }> }) {
+function ActionGrid({ items, illustrated = false }: { illustrated?: boolean; items: Array<{ artwork?: StatArtworkName; key: string; title: string; description: string; icon: IconName; onPress: () => void; badge?: string }> }) {
+  const styles = useThemedStyles(baseStyles);
   const contentWidth = useContentWidth();
   const columns = contentWidth >= 560 ? 3 : 2;
   const tileWidth = Math.floor((contentWidth - GAP * (columns - 1)) / columns);
   return (
     <View style={styles.actionGrid}>
       {items.map(item => (
-        <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.title} onPress={item.onPress} style={({ pressed }) => [styles.actionTile, shadows.card, { width: tileWidth }, pressed && styles.pressed]}>
+        <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.title} onPress={item.onPress} style={({ pressed }) => [styles.actionTile, shadows.card, illustrated && styles.workspaceTile, { width: tileWidth }, pressed && styles.pressed]}>
+          {illustrated ? <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.workspaceArtwork}><StatArtwork name={item.artwork ?? 'classroom'} /></View> : <>
           <View style={styles.actionTileTop}>
             <View style={styles.actionIcon}>
               <Ionicons name={item.icon} size={21} color={colors.primary} />
             </View>
             <Ionicons name="arrow-forward" size={16} color={colors.textMuted} />
           </View>
+          </>}
+          <View style={illustrated ? styles.workspaceCopy : undefined}>
           <Text numberOfLines={1} style={styles.actionTitle}>{item.title}</Text>
           <Text numberOfLines={2} style={styles.actionSubtitle}>{item.description}</Text>
           {item.badge ? (
@@ -181,6 +201,7 @@ function ActionGrid({ items }: { items: Array<{ key: string; title: string; desc
               <Text style={styles.actionBadgeText}>{item.badge}</Text>
             </View>
           ) : null}
+          </View>
         </Pressable>
       ))}
     </View>
@@ -188,6 +209,7 @@ function ActionGrid({ items }: { items: Array<{ key: string; title: string; desc
 }
 
 function QuickActions({ role, navigate }: { role: User['role']; navigate: (tab: AppTab) => void }) {
+  const styles = useThemedStyles(baseStyles);
   const actions: Array<{ label: string; icon: IconName; tab: AppTab }> = role === 'teacher'
     ? [
         { label: 'Take attendance', icon: 'checkbox-outline', tab: 'attendance' },
@@ -219,6 +241,7 @@ function QuickActions({ role, navigate }: { role: User['role']; navigate: (tab: 
 }
 
 function Legend({ color, label, value }: { color: string; label: string; value?: number }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -229,6 +252,7 @@ function Legend({ color, label, value }: { color: string; label: string; value?:
 }
 
 function EmptyInline({ icon, text }: { icon: IconName; text: string }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.emptyInline}>
       <View style={styles.emptyIcon}>
@@ -246,6 +270,7 @@ function EmptyInline({ icon, text }: { icon: IconName; text: string }) {
 const CHART_HEIGHT = 84;
 
 function AttendanceChart({ data, rate, onPress }: { data: Dashboard; rate: number | null; onPress: () => void }) {
+  const styles = useThemedStyles(baseStyles);
   const analytics = data.analytics ?? EMPTY_ANALYTICS;
   const labels = analytics.attendance_labels.length ? analytics.attendance_labels : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const present = analytics.present_series.length ? analytics.present_series : labels.map(() => 0);
@@ -294,6 +319,7 @@ function performanceColor(value: number) {
 }
 
 function PerformanceChart({ data }: { data: Dashboard }) {
+  const styles = useThemedStyles(baseStyles);
   const analytics = data.analytics ?? EMPTY_ANALYTICS;
   return (
     <View style={[styles.card, shadows.card]}>
@@ -340,6 +366,7 @@ function minutesOf(value?: string | null) {
 }
 
 function Schedule({ data }: { data: Dashboard }) {
+  const styles = useThemedStyles(baseStyles);
   const now = useNow();
   const current = new Date(now);
   const nowMinutes = current.getHours() * 60 + current.getMinutes();
@@ -385,6 +412,7 @@ function Schedule({ data }: { data: Dashboard }) {
 }
 
 function HomeworkList({ data, navigate }: { data: Dashboard; navigate: (tab: AppTab) => void }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={[styles.listCard, shadows.card]}>
       {data.homework.length ? (
@@ -417,6 +445,7 @@ function HomeworkList({ data, navigate }: { data: Dashboard; navigate: (tab: App
 }
 
 function Events({ data }: { data: Dashboard }) {
+  const styles = useThemedStyles(baseStyles);
   const contentWidth = useContentWidth();
   const cardWidth = Math.min(240, Math.round(contentWidth * 0.62));
   const events = data.events.slice(0, 5);
@@ -449,6 +478,7 @@ function Events({ data }: { data: Dashboard }) {
 /* ------------------------------------------------------------------ */
 
 export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh, openRegister, openMarks, onReportAbsence }: Props) {
+  const styles = useThemedStyles(baseStyles);
   const stats = data.analytics?.stats ?? {};
   const workspace = data.teacher_workspace;
 
@@ -491,22 +521,18 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
         {!workspace.pending_attendance?.length && !workspace.pending_results?.length && <Text style={styles.bodyCopy}>You’re all caught up. No pending attendance or marks submissions.</Text>}
       </View>}
 
-      <SectionHeader title="Quick actions" subtitle="Your everyday teaching tasks" />
-      <ActionGrid items={(workspace?.tools ?? []).filter(tool => ['attendance.index', 'attendance.subject', 'exams.marks', 'exams.results', 'students.index', 'communications.index', 'attendance.reports', 'leaves.index'].includes(tool.id)).map(tool => ({ key: tool.id, title: tool.label, description: 'Open your assigned tools', icon: (tool.id.startsWith('attendance') ? 'checkbox-outline' : tool.id === 'students.index' ? 'people-outline' : tool.id === 'leaves.index' ? 'calendar-outline' : tool.id === 'communications.index' ? 'chatbubbles-outline' : 'document-text-outline') as IconName, onPress: () => navigate(tool.id === 'exams.results' ? 'teacher_results' : tool.id === 'communications.index' ? 'teacher_communications' : tool.native ? tool.native as AppTab : 'school_access') }))} />
-
-      <StatGrid items={[
-        { icon: 'people-outline', label: 'Learners', value: stats.learners ?? 0, tone: 'blue' },
-        { icon: 'easel-outline', label: 'Classes', value: stats.classes ?? 0 },
-        { icon: 'book-outline', label: 'Subjects', value: stats.subjects ?? 0, tone: 'green' },
-      ]} />
-      <StatGrid items={[
-        { icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? 0 },
-        { icon: 'checkbox-outline', label: 'Recorded today', value: stats.attendance_today ?? 0, tone: 'green' },
-        { icon: 'document-text-outline', label: 'Pending marks', value: stats.pending_marks ?? 0, tone: 'blue' },
+      <StatGrid illustrated items={[
+        { artwork: 'learners', icon: 'people-outline', label: 'Learners', value: stats.learners ?? 0, tone: 'blue' },
+        { artwork: 'classroom', icon: 'easel-outline', label: 'Classes', value: stats.classes ?? 0 },
+        { artwork: 'subjects', icon: 'book-outline', label: 'Subjects', value: stats.subjects ?? 0, tone: 'green' },
+        { artwork: 'lessons', icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? 0 },
+        { artwork: 'attendance', icon: 'checkbox-outline', label: 'Recorded today', value: stats.attendance_today ?? 0, tone: 'green' },
+        { artwork: 'marks', icon: 'document-text-outline', label: 'Pending marks', value: stats.pending_marks ?? 0, tone: 'blue' },
       ]} />
 
       <SectionHeader title="Teacher workspace" subtitle="Tools available for your assignments and school permissions" />
-      <ActionGrid items={ACCESS_SECTIONS.map(section => ({
+      <ActionGrid illustrated items={ACCESS_SECTIONS.map(section => ({
+        artwork: (section.tab === 'class_access' ? 'learners' : section.tab === 'teaching_access' ? 'classroom' : section.tab === 'reports_access' ? 'reports' : 'school') as StatArtworkName,
         key: section.tab,
         title: section.title,
         description: section.description,
@@ -534,15 +560,16 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
 }
 
 export function StudentDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
+  const styles = useThemedStyles(baseStyles);
   const stats = data.analytics?.stats ?? {};
   const student = data.student;
-  const actions: Array<{ title: string; description: string; icon: IconName; tab: AppTab }> = [
-    { title: 'My homework', description: 'Assignments, answers and feedback', icon: 'book-outline', tab: 'homework' },
-    { title: 'My timetable', description: 'Plan your school week', icon: 'calendar-outline', tab: 'student_schedule' },
-    { title: 'My results', description: 'Published scores and performance', icon: 'ribbon-outline', tab: 'results' },
-    { title: 'Attendance', description: 'Your school attendance record', icon: 'checkbox-outline', tab: 'attendance' },
-    { title: 'School fees', description: 'Payments and your balance', icon: 'wallet-outline', tab: 'payments' },
-    { title: 'School calendar', description: 'Upcoming events and dates', icon: 'today-outline', tab: 'student_calendar' },
+  const actions: Array<{ title: string; description: string; icon: IconName; artwork: StatArtworkName; tab: AppTab }> = [
+    { title: 'My homework', description: 'Assignments, answers and feedback', icon: 'book-outline', artwork: 'subjects', tab: 'homework' },
+    { title: 'My timetable', description: 'Plan your school week', icon: 'calendar-outline', artwork: 'lessons', tab: 'student_schedule' },
+    { title: 'My results', description: 'Published scores and performance', icon: 'ribbon-outline', artwork: 'marks', tab: 'results' },
+    { title: 'Attendance', description: 'Your school attendance record', icon: 'checkbox-outline', artwork: 'attendance', tab: 'attendance' },
+    { title: 'School fees', description: 'Payments and your balance', icon: 'wallet-outline', artwork: 'reports', tab: 'payments' },
+    { title: 'School calendar', description: 'Upcoming events and dates', icon: 'today-outline', artwork: 'school', tab: 'student_calendar' },
   ];
 
   return (
@@ -551,14 +578,17 @@ export function StudentDashboardScreen({ data, user, attendanceRate, navigate, r
       <DashboardSearch user={user} data={data} navigate={navigate} />
       <GreetingCard user={user} term={data.current_term ? (data.current_term.is_open ? data.current_term.name : null) : data.teacher_workspace?.term} title={`Hi, ${firstName(student?.name ?? user.name)}!`} subtitle={`${student?.class ?? 'Student'}${student?.stream ? ` · ${student.stream}` : ''} · ${user.school.name}`} imageName={student?.name} imageUri={student?.photo_url} />
 
-      <StatGrid items={[
-        { icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${attendanceRate}%`, tone: 'green' },
-        { icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? 0 },
-        { icon: 'trophy-outline', label: 'Results', value: stats.published_results ?? 0, tone: 'blue' },
+      <View style={styles.lessonReminder}><TeacherLessonCard data={data} navigate={navigate} timetableTab="student_schedule" /></View>
+
+      <StatGrid illustrated items={[
+        { artwork: 'attendance', icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${Math.round(attendanceRate)}%`, tone: 'green' },
+        { artwork: 'lessons', icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? data.today_timetable.length },
+        { artwork: 'subjects', icon: 'book-outline', label: 'Homework', value: stats.homework ?? data.homework.length },
+        { artwork: 'marks', icon: 'trophy-outline', label: 'Results', value: stats.published_results ?? 0, tone: 'blue' },
       ]} />
 
-      <SectionHeader title="My learning" subtitle="Everything you need for your school day" />
-      <ActionGrid items={actions.map(action => ({ key: action.tab, title: action.title, description: action.description, icon: action.icon, onPress: () => navigate(action.tab) }))} />
+      <SectionHeader title="Student workspace" subtitle="Everything you need for your school day" />
+      <ActionGrid illustrated items={actions.map(action => ({ artwork: action.artwork, key: action.tab, title: action.title, description: action.description, icon: action.icon, onPress: () => navigate(action.tab) }))} />
 
       <SectionHeader title="Today’s lessons" actionLabel="Timetable" onAction={() => navigate('student_schedule')} />
       <Schedule data={data} />
@@ -578,7 +608,7 @@ export function StudentDashboardScreen({ data, user, attendanceRate, navigate, r
   );
 }
 
-export function ParentDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh }: Props) {
+export function ParentDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh, childSwitcher }: Props & { childSwitcher?: React.ReactNode }) {
   const stats = data.analytics?.stats ?? {};
   const child = data.student;
 
@@ -586,28 +616,26 @@ export function ParentDashboardScreen({ data, user, attendanceRate, navigate, re
     <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
       <TopBar user={user} />
       <DashboardSearch user={user} data={data} navigate={navigate} />
-      <GreetingCard user={user} term={data.current_term ? (data.current_term.is_open ? data.current_term.name : null) : data.teacher_workspace?.term} title={`Hello, ${firstName(user.name)}`} subtitle={`A live overview of ${child?.name ?? 'your learner'}’s school progress.`} imageName={child?.name} imageUri={child?.photo_url} />
+      <GreetingCard user={user} term={data.current_term ? (data.current_term.is_open ? data.current_term.name : null) : data.teacher_workspace?.term} title={`Hello, ${firstName(user.name)}`} subtitle={`A live overview of ${child?.name ?? 'your learner'}’s school progress.`} />
 
-      <View style={[styles.learnerStrip, shadows.card]}>
-        <Avatar name={child?.name ?? 'Student'} uri={child?.photo_url} size={52} />
-        <View style={styles.grow}>
-          <Text numberOfLines={1} style={styles.learnerName}>{child?.name ?? 'Your learner'}</Text>
-          <Text numberOfLines={1} style={styles.rowMeta}>{child?.class ?? 'Class not assigned'}{child?.stream ? ` · ${child.stream}` : ''}</Text>
-        </View>
-        <View style={styles.livePill}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>Live</Text>
-        </View>
-      </View>
+      {childSwitcher}
 
-      <StatGrid items={[
-        { icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${attendanceRate}%`, tone: 'green' },
-        { icon: 'document-text-outline', label: 'Homework', value: stats.homework ?? data.homework.length },
-        { icon: 'school-outline', label: 'Results', value: stats.published_results ?? 0, tone: 'blue' },
+      <StatGrid illustrated items={[
+        { artwork: 'attendance', icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${Math.round(attendanceRate)}%`, tone: 'green' },
+        { artwork: 'subjects', icon: 'document-text-outline', label: 'Homework', value: stats.homework ?? data.homework.length },
+        { artwork: 'lessons', icon: 'time-outline', label: 'Lessons today', value: stats.lessons_today ?? data.today_timetable.length },
+        { artwork: 'marks', icon: 'school-outline', label: 'Results', value: stats.published_results ?? 0, tone: 'blue' },
       ]} />
 
-      <SectionHeader title="Quick access" />
-      <QuickActions role="parent" navigate={navigate} />
+      <SectionHeader title="Parent workspace" subtitle="Stay connected to your child’s school day" />
+      <ActionGrid illustrated items={[
+        { key: 'attendance', title: 'Attendance', description: 'Daily presence and attendance records', artwork: 'attendance', icon: 'checkbox-outline', onPress: () => navigate('attendance') },
+        { key: 'homework', title: 'Homework', description: 'Assignments and upcoming due dates', artwork: 'subjects', icon: 'book-outline', onPress: () => navigate('homework') },
+        { key: 'results', title: 'Results', description: 'Published marks and academic progress', artwork: 'marks', icon: 'ribbon-outline', onPress: () => navigate('results') },
+        { key: 'payments', title: 'School fees', description: 'Payments and your child’s balance', artwork: 'reports', icon: 'wallet-outline', onPress: () => navigate('payments') },
+        { key: 'notifications', title: 'School updates', description: 'Announcements and notifications', artwork: 'school', icon: 'notifications-outline', onPress: () => navigate('notifications') },
+        { key: 'more', title: 'More services', description: 'Explore your school services', artwork: 'classroom', icon: 'grid-outline', onPress: () => navigate('more') },
+      ]} />
 
       <SectionHeader title="Attendance overview" subtitle="Updated from school registers" />
       <AttendanceChart data={data} rate={attendanceRate} onPress={() => navigate('attendance')} />
@@ -628,6 +656,7 @@ export function ParentDashboardScreen({ data, user, attendanceRate, navigate, re
 }
 
 function DashboardScroll({ children, refreshing, onRefresh }: { children: React.ReactNode; refreshing: boolean; onRefresh?: () => void }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <ScrollView
       style={styles.screen}
@@ -642,7 +671,8 @@ function DashboardScroll({ children, refreshing, onRefresh }: { children: React.
   );
 }
 
-function TeacherLessonCard({ data, navigate, onReportAbsence }: { data: Dashboard; navigate: (tab: AppTab) => void; onReportAbsence?: (lessonId: number) => Promise<void> }) {
+function TeacherLessonCard({ data, navigate, onReportAbsence, timetableTab = 'teacher_schedule' }: { data: Dashboard; navigate: (tab: AppTab) => void; onReportAbsence?: (lessonId: number) => Promise<void>; timetableTab?: AppTab }) {
+  const styles = useThemedStyles(baseStyles);
   const now = useNow(1000);
   const [reporting, setReporting] = useState(false);
   const [reportError, setReportError] = useState('');
@@ -668,7 +698,7 @@ function TeacherLessonCard({ data, navigate, onReportAbsence }: { data: Dashboar
   };
   return <View style={[styles.card, styles.lessonFocus]}>
     <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.lessonArtwork}><AlarmClockArtwork /></View>
-    <Pressable accessibilityRole="button" accessibilityLabel="Open timetable" onPress={() => navigate('teacher_schedule')} style={({ pressed }) => [styles.lessonCopy, pressed && styles.pressed]}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Open timetable" onPress={() => navigate(timetableTab)} style={({ pressed }) => [styles.lessonCopy, pressed && styles.pressed]}>
     <Text style={styles.lessonHeading}>{live ? 'Lesson in progress' : 'Your next lesson'}</Text>
     <Text style={styles.cardTitle}>{lesson.subject ?? lesson.label ?? 'Lesson'}</Text>
     <Text style={styles.bodyCopy}>{lesson.class_name ?? 'Class'}{lesson.stream_name ? ` · ${lesson.stream_name}` : ''} · {shortTime(lesson.starts_at)}–{shortTime(lesson.ends_at)}</Text>
@@ -734,7 +764,7 @@ function nextLessonCopy(lesson: Lesson | undefined, now: number) {
 /* Styles                                                              */
 /* ------------------------------------------------------------------ */
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   pendingTasksCard: { marginTop: 16 },
   taskCount: { minWidth: 28, height: 28, paddingHorizontal: 8, borderRadius: 14, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   taskCountText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
@@ -802,6 +832,12 @@ const styles = StyleSheet.create({
   sectionActionText: { color: colors.primary, fontSize: 12, fontWeight: '800' },
 
   // Stats
+  illustratedStatGrid: { flexWrap: 'wrap' },
+  illustratedStatCard: { flex: 0, minHeight: 128, justifyContent: 'center', overflow: 'hidden' },
+  statArtwork: { position: 'absolute', right: 3, top: 14, width: 74, height: 80, opacity: 0.12 },
+  statCopy: { alignSelf: 'stretch', flexShrink: 0 },
+  primaryStatValue: { fontSize: 40, lineHeight: 48 },
+  illustratedStatValue: { marginTop: 0, fontSize: 40, lineHeight: 48 },
   statGrid: { flexDirection: 'row', gap: GAP, marginTop: 13 },
   statCard: { flex: 1, minWidth: 0, backgroundColor: colors.surface, borderRadius: 16, padding: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   statCardCompact: { padding: 10 },
@@ -810,6 +846,9 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.textMuted, fontSize: 10, lineHeight: 14, fontWeight: '600', marginTop: 2 },
 
   // Action tiles
+  workspaceTile: { overflow: 'hidden', justifyContent: 'center', minHeight: 140 },
+  workspaceArtwork: { position: 'absolute', right: 4, bottom: 14, width: 86, height: 90, opacity: 0.12 },
+  workspaceCopy: { paddingRight: 28 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
   actionTile: { minHeight: 136, backgroundColor: colors.surface, borderRadius: 16, padding: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   actionTileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
@@ -900,9 +939,13 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.textMuted, fontSize: 11, textAlign: 'center' },
 
   // Parent learner strip + live pill
+  learnerBadge: { backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+  learnerBadgeText: { color: colors.secondary, fontSize: 10, fontWeight: '600' },
   learnerStrip: { marginTop: 13, minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, backgroundColor: colors.surface, padding: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   learnerName: { color: colors.textDark, fontSize: 15, fontWeight: '800' },
   livePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.status.present.bg, borderRadius: radius.full, paddingHorizontal: 9, paddingVertical: 6 },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.status.present.text },
   liveText: { color: colors.status.present.text, fontSize: 9, fontWeight: '800' },
 });
+
+const styles = baseStyles;

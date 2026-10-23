@@ -289,11 +289,11 @@ it('shows pending daily and subject registers and clears each reminder after sav
     $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
     Sanctum::actingAs($data['teacher'], ['mobile']);
     $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(2, 'data.teacher_workspace.pending_attendance');
-    $base = ['school_class_id' => $data['class']->id, 'attendance_date' => today()->toDateString(), 'records' => [['student_id' => $data['student']->id, 'status' => 'present']]];
+    $base = ['school_class_id' => $data['class']->id, 'attendance_date' => today()->toDateString(), 'records' => [['student_id' => $data['student']->id, 'status' => 'present'], ['student_id' => $data['unlinked']->id, 'status' => 'present']]];
     $this->postJson('/api/v1/attendance', $base + ['session_key' => 'daily'])->assertOk();
     $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(1, 'data.teacher_workspace.pending_attendance')->assertJsonPath('data.teacher_workspace.pending_attendance.0.attendance_type', 'subject');
     $this->postJson('/api/v1/attendance', $base + ['session_key' => 'subject:'.$data['subject']->id, 'subject_id' => $data['subject']->id])->assertOk();
-    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(0, 'data.teacher_workspace.pending_attendance')->assertJsonPath('data.analytics.stats.attendance_records', 2);
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonCount(0, 'data.teacher_workspace.pending_attendance')->assertJsonPath('data.analytics.stats.attendance_records', 4);
 });
 
 it('includes unpublished assigned marks and all current term lessons on the teacher dashboard', function () {
@@ -597,4 +597,20 @@ it('filters mobile daily registers by stream and persists stream metadata', func
     $this->getJson('/api/v1/attendance/performance?'.$query)->assertOk()->assertJsonPath('data.0.total', 1)->assertJsonPath('data.0.present', 1)->assertJsonPath('data.0.rate', 100);
     $this->get('/api/v1/attendance/performance/csv?'.$query)->assertOk()->assertDownload();
     $this->getJson('/api/v1/attendance/performance?'.http_build_query(['school_class_id' => $data['foreign']->school_class_id, 'from' => today()->toDateString(), 'to' => today()->toDateString()]))->assertForbidden();
+});
+
+
+it('includes the current term and open status on every role dashboard', function () {
+    $data = mobileFixture();
+    foreach (['teacher', 'studentUser', 'parent'] as $role) {
+        Sanctum::actingAs($data[$role], ['mobile']);
+        $this->getJson('/api/v1/dashboard')->assertOk()
+            ->assertJsonPath('data.current_term.name', 'Term 1')
+            ->assertJsonPath('data.current_term.year', 2026)
+            ->assertJsonPath('data.current_term.is_open', true);
+    }
+    $data['term']->update(['status' => 'closed']);
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonPath('data.current_term.is_open', false);
+    $data['term']->update(['is_current' => false]);
+    $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonPath('data.current_term', null);
 });

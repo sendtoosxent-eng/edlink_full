@@ -291,3 +291,47 @@ it('does not allow an unauthorized staff member to open registration', function 
 
     $this->actingAs($teacher)->get(route('staff.register'))->assertForbidden();
 });
+
+it('saves registration photos qualifications NIN location and bank details into the staff profile', function () {
+    Notification::fake();
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $data = staffRegistrationFixture();
+    completeStaffRegistration($data)
+        ->set('photo', \Illuminate\Http\UploadedFile::fake()->image('teacher.jpg'))
+        ->set('qualification_documents', [\Illuminate\Http\UploadedFile::fake()->create('degree.pdf', 50, 'application/pdf'), \Illuminate\Http\UploadedFile::fake()->create('transcript.pdf', 25, 'application/pdf')])
+        ->set('national_id', 'NIN-STAFF-001')->set('location', 'Ntinda, Kampala')
+        ->set('bank_name', 'Staff Bank')->set('bank_account_name', 'New Staff Member')->set('bank_account_number', '00123456789')
+        ->call('register')->assertHasNoErrors();
+    $staff = User::where('email', 'new.staff@example.test')->firstOrFail();
+    expect($staff->location)->toBe('Ntinda, Kampala')->and($staff->national_id)->toBe('NIN-STAFF-001')->and($staff->bank_account_number)->toBe('00123456789');
+    \Illuminate\Support\Facades\Storage::disk('public')->assertExists($staff->avatar_path);
+    expect($staff->staffDocuments)->toHaveCount(2);
+    foreach ($staff->staffDocuments as $document) {
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($document->path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($document->path);
+    }
+    $this->actingAs($data['admin'])->get(route('staff.profile', $staff))->assertOk()->assertSee('Ntinda, Kampala')->assertSee('NIN-STAFF-001')->assertSee('00123456789')->assertSee('degree.pdf')->assertSee($staff->avatarUrl());
+    $this->get(route('staff.documents.download', [$staff, $staff->staffDocuments->first()]))->assertOk()->assertDownload('degree.pdf');
+});
+
+it('rejects unsupported qualification files before creating a staff account', function () {
+    Notification::fake();
+    $data = staffRegistrationFixture();
+    completeStaffRegistration($data)->set('qualification_documents', [\Illuminate\Http\UploadedFile::fake()->create('program.exe', 10, 'application/octet-stream')])->call('register')->assertHasErrors(['qualification_documents.0']);
+    expect(User::where('email', 'new.staff@example.test')->exists())->toBeFalse();
+});
+
+it('cleans up staged staff files when registration cannot commit', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $data = staffRegistrationFixture();
+    $this->actingAs($data['admin']);
+    expect(fn () => app(\App\Services\StaffRegistrationService::class)->register(
+        $data['school'], ['name' => 'Duplicate', 'email' => $data['admin']->email, 'password' => 'Password123!', 'role' => 'teacher'],
+        $data['term'], null, [], \Illuminate\Http\UploadedFile::fake()->image('portrait.jpg'),
+        [\Illuminate\Http\UploadedFile::fake()->create('qualification.pdf', 10, 'application/pdf')],
+    ))->toThrow(\Illuminate\Database\QueryException::class);
+    expect(\Illuminate\Support\Facades\Storage::disk('public')->allFiles('avatars'))->toBe([])
+        ->and(\Illuminate\Support\Facades\Storage::disk('local')->allFiles('staff-documents'))->toBe([]);
+});

@@ -1,4 +1,7 @@
-import { NativeSelect } from '../../components/NativeSelect';
+import { useThemedStyles } from '../../theme/ThemeProvider';
+import type { ReactNode } from 'react';
+import { InlineSelect } from '../../components/InlineSelect';
+import { TeacherHero, useTeacherBack } from '../../components/TeacherScreenUI';
 import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 
 import { NativeAttachment } from '../../components/NativeAttachment';
@@ -24,7 +27,8 @@ type Notice = { id: number; title: string; message: string; type: string; catego
 
 
 
-export function NotificationsScreen({ token, studentId, onRead, onBack }: { token: string; studentId?: number; onRead?: () => void; onBack: () => void }) {
+export function NotificationsScreen({ token, studentId, onRead, onBack, childSwitcher }: { childSwitcher?: ReactNode; token: string; studentId?: number; onRead?: () => void; onBack: () => void }) {
+  const styles = useThemedStyles(baseStyles);
 
   const [items, setItems] = useState<Notice[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
 
@@ -65,6 +69,7 @@ export function NotificationsScreen({ token, studentId, onRead, onBack }: { toke
   return <ScrollView style={styles.screen} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={colors.primary} />}>
     <Back onPress={onBack} />
     <ScreenHero icon="notifications-outline" eyebrow="STAY CONNECTED" title="Notifications" subtitle="The latest updates from your school community." />
+    {childSwitcher}
     <View style={styles.summaryRow}>
       <View style={styles.summaryText}><Text style={styles.summaryNumber}>{items.length}</Text><Text style={styles.summaryLabel}>Total updates</Text></View>
       <View style={styles.summaryDivider} />
@@ -96,6 +101,7 @@ function notificationLabel(category: string) { return ({ daily_attendance: 'Dail
 
 
 export function LeaveRequestScreen({ token, onBack }: { token: string; onBack: () => void }) {
+  const styles = useThemedStyles(baseStyles);
 
   const [history, setHistory] = useState<Array<{ id: number; type: string; starts_on: string; ends_on: string; status: string }>>([]);
 
@@ -144,6 +150,7 @@ type MarkSheet = { paper: Paper; status: string; students: Array<{ student: { id
 
 
 export function TeacherMarksScreen({ token, onBack, readOnly = false, initialPaperId }: { initialPaperId?: number; token: string; onBack: () => void; readOnly?: boolean }) {
+  const styles = useThemedStyles(baseStyles);
 
   const openedPaper = useRef<number | undefined>(undefined);
   const [papers, setPapers] = useState<Paper[]>([]);
@@ -258,6 +265,7 @@ export function TeacherMarksScreen({ token, onBack, readOnly = false, initialPap
 
 
 export function AddHomeworkScreen({ token, onBack }: { token: string; onBack: () => void }) {
+  const styles = useThemedStyles(baseStyles);
 
   const [attachment, setAttachment] = useState<DocumentPicker.DocumentPickerAsset>();
 
@@ -316,7 +324,7 @@ export function AddHomeworkScreen({ token, onBack }: { token: string; onBack: ()
       <Ionicons name={selected===index?'checkmark-circle':'school-outline'} size={18} color={selected===index?'#FFFFFF':colors.primary} /><Text style={[styles.classChipText,selected===index && styles.classChipTextSelected]}>{item.class_name} · {item.subject_name}</Text>
     </Pressable>)}</View>
     {!busy && !assignments.length && <Empty text="Your school needs to assign a class and subject first." icon="school-outline" />}
-    {selected !== undefined && <NativeSelect label="Stream" value={streamId} options={[{ value: '', label: 'All streams in this class' }, ...(assignments[selected]?.streams ?? []).map(stream => ({ value: String(stream.id), label: stream.name }))]} onChange={value => setStreamId(String(value))} />}
+    {selected !== undefined && <InlineSelect label="Stream" value={streamId} options={[{ value: '', label: 'All streams in this class' }, ...(assignments[selected]?.streams ?? []).map(stream => ({ value: String(stream.id), label: stream.name }))]} onChange={value => setStreamId(String(value))} />}
     <SectionTitle title="Assignment details" caption="Tell learners what they need to complete" />
     <View style={styles.formCard}>
       <Field label="Homework title" value={title} onChangeText={setTitle} placeholder="e.g. Mathematics revision" icon="book-outline" />
@@ -342,6 +350,7 @@ export function AddHomeworkScreen({ token, onBack }: { token: string; onBack: ()
 type TeacherHomework = { attachment_name?: string; id: number; title: string; instructions: string; due_at: string; maximum_score: number; subject?: { name: string }; school_class?: { name: string }; submissions?: Array<{ attachment_name?: string; id: number; student: { name: string }; answer?: string; score: number | null; feedback?: string; status: string }> };
 
 export function TeacherHomeworkScreen({ token }: { token: string }) {
+  const styles = useThemedStyles(baseStyles);
 
   const [items, setItems] = useState<TeacherHomework[]>([]); const [selected, setSelected] = useState<TeacherHomework>();
 
@@ -385,6 +394,7 @@ export function TeacherHomeworkScreen({ token }: { token: string }) {
 }
 
 function HomeworkReview({ token, assignment, submission }: { token: string; assignment: TeacherHomework; submission: NonNullable<TeacherHomework['submissions']>[number] }) {
+  const styles = useThemedStyles(baseStyles);
 
   const [score, setScore] = useState(submission.score == null ? '' : String(submission.score)); const [feedback, setFeedback] = useState(submission.feedback ?? ''); const [status, setStatus] = useState(submission.status); const [busy, setBusy] = useState(false);
 
@@ -406,33 +416,43 @@ function HomeworkReview({ token, assignment, submission }: { token: string; assi
 type UIIcon = React.ComponentProps<typeof Ionicons>['name'];
 
 function initials(name: string) { return name.trim().split(/\s+/).slice(0,2).map(part=>part.charAt(0).toUpperCase()).join('') || '?'; }
-function Back({onPress}:{onPress:()=>void}) { return <Pressable accessibilityRole="button" onPress={onPress} style={styles.back}><Ionicons name="arrow-back" size={19} color={colors.primary} /><Text style={styles.backText}>Back to home</Text></Pressable>; }
-function ScreenHero({eyebrow,title,subtitle,icon}:{eyebrow:string;title:string;subtitle:string;icon:UIIcon}) { return <View style={styles.hero}><View style={styles.heroGlow}/><View style={styles.heroTop}><Text style={styles.heroEyebrow}>{eyebrow}</Text><View style={styles.heroIcon}><Ionicons name={icon} size={25} color={colors.secondary}/></View></View><Text style={styles.heroTitle}>{title}</Text><Text style={styles.heroSubtitle}>{subtitle}</Text></View>; }
-function SectionTitle({title,caption,right}:{title:string;caption?:string;right?:React.ReactNode}) { return <View style={styles.sectionHeader}><View style={styles.grow}><Text style={styles.sectionTitle}>{title}</Text>{caption && <Text style={styles.sectionCaption}>{caption}</Text>}</View>{right}</View>; }
-function PrimaryAction({title,icon,disabled,onPress,secondary=false}:{title:string;icon:UIIcon;disabled?:boolean;onPress:()=>void;secondary?:boolean}) { return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({pressed})=>[styles.primaryButton,secondary&&styles.secondaryButton,(pressed||disabled)&&styles.pressed]}><Ionicons name={icon} size={19} color={secondary?colors.primary:'#FFFFFF'}/><Text style={[styles.primaryText,secondary&&styles.secondaryText]}>{title}</Text></Pressable>; }
-function StatusChip({value}:{value:string}) { const success=['approved','reviewed','published'].includes(value.toLowerCase()); const pending=['pending','draft','submitted'].includes(value.toLowerCase()); return <View style={[styles.statusChip,{backgroundColor:success?'#E8F6EE':pending?'#FFF3D7':'#F2F4F8'}]}><View style={[styles.statusDot,{backgroundColor:success?'#168451':pending?'#CA901D':colors.textMuted}]}/><Text style={[styles.statusText,{color:success?'#168451':pending?'#986600':colors.textDark}]}>{value.replace(/_/g,' ')}</Text></View>; }
-function Field(props:{label:string;value:string;onChangeText:(value:string)=>void;placeholder:string;multiline?:boolean;icon?:UIIcon}) { return <View style={styles.field}><Text style={styles.label}>{props.label}</Text><View style={styles.fieldControl}>{props.icon&&<Ionicons name={props.icon} size={19} color={colors.textMuted} style={styles.fieldIcon}/>}<TextInput accessibilityLabel={props.label} value={props.value} onChangeText={props.onChangeText} placeholder={props.placeholder} multiline={props.multiline} style={[styles.input,props.multiline&&styles.multiline]} placeholderTextColor={colors.textMuted}/></View></View>; }
-function Empty({text,icon='file-tray-outline'}:{text:string;icon?:UIIcon}) { return <View style={styles.placeholder}><View style={styles.placeholderIcon}><Ionicons name={icon} size={27} color={colors.primary}/></View><Text style={styles.placeholderTitle}>Nothing here yet</Text><Text style={styles.placeholderText}>{text}</Text></View>; }
+function Back({onPress}:{onPress:()=>void}) { useTeacherBack(onPress); return null; }
+function ScreenHero({title,subtitle}:{eyebrow:string;title:string;subtitle:string;icon:UIIcon}) {
+  const artwork = /marks|exam/i.test(title) ? 'marks' : /homework|work/i.test(title) ? 'subjects' : /leave|timetable/i.test(title) ? 'lessons' : /class/i.test(title) ? 'learners' : 'school';
+  return <TeacherHero title={title} subtitle={subtitle} artwork={artwork} />;
+}
+function SectionTitle({title,caption,right}:{title:string;caption?:string;right?:React.ReactNode}) {
+  const styles = useThemedStyles(baseStyles); return <View style={styles.sectionHeader}><View style={styles.grow}><Text style={styles.sectionTitle}>{title}</Text>{caption && <Text style={styles.sectionCaption}>{caption}</Text>}</View>{right}</View>; }
+function PrimaryAction({title,icon,disabled,onPress,secondary=false}:{title:string;icon:UIIcon;disabled?:boolean;onPress:()=>void;secondary?:boolean}) {
+  const styles = useThemedStyles(baseStyles); return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({pressed})=>[styles.primaryButton,secondary&&styles.secondaryButton,(pressed||disabled)&&styles.pressed]}><Ionicons name={icon} size={19} color={secondary?colors.primary:colors.secondary}/><Text style={[styles.primaryText,secondary&&styles.secondaryText]}>{title}</Text></Pressable>; }
+function StatusChip({value}:{value:string}) {
+  const styles = useThemedStyles(baseStyles); const success=['approved','reviewed','published'].includes(value.toLowerCase()); const pending=['pending','draft','submitted'].includes(value.toLowerCase()); return <View style={[styles.statusChip,{backgroundColor:success?'#E8F6EE':pending?'#FFF3D7':'#F2F4F8'}]}><View style={[styles.statusDot,{backgroundColor:success?'#168451':pending?'#CA901D':colors.textMuted}]}/><Text style={[styles.statusText,{color:success?'#168451':pending?'#986600':colors.textDark}]}>{value.replace(/_/g,' ')}</Text></View>; }
+function Field(props:{label:string;value:string;onChangeText:(value:string)=>void;placeholder:string;multiline?:boolean;icon?:UIIcon}) {
+  const styles = useThemedStyles(baseStyles); return <View style={styles.field}><Text style={styles.label}>{props.label}</Text><View style={styles.fieldControl}>{props.icon&&<Ionicons name={props.icon} size={19} color={colors.textMuted} style={styles.fieldIcon}/>}<TextInput accessibilityLabel={props.label} value={props.value} onChangeText={props.onChangeText} placeholder={props.placeholder} multiline={props.multiline} style={[styles.input,props.multiline&&styles.multiline]} placeholderTextColor={colors.textMuted}/></View></View>; }
+function Empty({text,icon='file-tray-outline'}:{text:string;icon?:UIIcon}) {
+  const styles = useThemedStyles(baseStyles); return <View style={styles.placeholder}><View style={styles.placeholderIcon}><Ionicons name={icon} size={27} color={colors.primary}/></View><Text style={styles.placeholderTitle}>Nothing here yet</Text><Text style={styles.placeholderText}>{text}</Text></View>; }
 function message(error:unknown) { return error instanceof ApiError ? error.message : 'Check your connection and try again.'; }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
  screen:{flex:1,backgroundColor:colors.background},content:{paddingHorizontal:18,paddingTop:12,paddingBottom:60,gap:13},
  grow:{flex:1,minWidth:0},
  back:{alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:8,paddingVertical:9,paddingHorizontal:12,borderRadius:18,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,marginBottom:2},backText:{fontSize:12,fontWeight:'700',color:colors.primary},
  hero:{minHeight:171,backgroundColor:colors.primaryCard,borderRadius:24,padding:21,overflow:'hidden',justifyContent:'center'},heroGlow:{position:'absolute',width:170,height:170,borderRadius:85,right:-48,top:-95,backgroundColor:colors.primary,opacity:0.65},heroTop:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},heroEyebrow:{fontSize:10,fontWeight:'800',letterSpacing:1.5,color:colors.secondary},heroIcon:{width:45,height:45,borderRadius:15,backgroundColor:colors.primary,alignItems:'center',justifyContent:'center'},heroTitle:{fontSize:28,lineHeight:34,fontWeight:'800',letterSpacing:-0.6,color:colors.textLight,marginTop:5},heroSubtitle:{fontSize:12,lineHeight:19,color:'#D9E3F3',marginTop:7,maxWidth:'90%'},
  sectionHeader:{flexDirection:'row',alignItems:'center',gap:9,marginTop:14,marginBottom:1},sectionTitle:{color:colors.textDark,fontSize:18,fontWeight:'800',letterSpacing:-0.3},sectionCaption:{color:colors.textMuted,fontSize:11,lineHeight:17,marginTop:4},
- smallAction:{flexDirection:'row',alignItems:'center',gap:5,padding:8,borderRadius:10,backgroundColor:colors.surface},smallActionText:{fontSize:11,color:colors.primary,fontWeight:'700'},
+ smallAction:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,minHeight:44,paddingHorizontal:14,paddingVertical:9,borderRadius:999,backgroundColor:colors.secondary},smallActionText:{fontSize:11,color:colors.primary,fontWeight:'700'},
  summaryRow:{backgroundColor:colors.surface,borderRadius:20,padding:17,borderWidth:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',gap:19},summaryText:{minWidth:62},summaryNumber:{color:colors.textDark,fontSize:27,fontWeight:'800'},summaryLabel:{color:colors.textMuted,fontSize:10,marginTop:2},summaryDivider:{height:33,width:1,backgroundColor:colors.border},summaryIcon:{marginLeft:'auto',width:44,height:44,borderRadius:15,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'},
  noticeCard:{backgroundColor:colors.surface,borderRadius:18,padding:16,borderWidth:1,borderColor:colors.border},noticeUnread:{borderLeftWidth:4,borderLeftColor:colors.secondary},noticeTop:{flexDirection:'row',alignItems:'center',gap:12},noticeIcon:{height:44,width:44,borderRadius:15,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'},noticeCategory:{fontSize:9,color:colors.primary,fontWeight:'800',letterSpacing:0.8,marginBottom:5},cardTitle:{fontSize:14,fontWeight:'800',lineHeight:20,color:colors.textDark},noticeBody:{fontSize:12,lineHeight:20,color:colors.textMuted,marginTop:12},noticeFooter:{flexDirection:'row',alignItems:'center',gap:5,marginTop:13,paddingTop:10,borderTopWidth:1,borderTopColor:colors.border},noticeMeta:{fontSize:10,color:colors.textMuted},unreadDot:{height:9,width:9,borderRadius:5,backgroundColor:colors.secondary},attachmentArea:{marginTop:10},
  formCard:{backgroundColor:colors.surface,borderRadius:20,padding:18,borderWidth:1,borderColor:colors.border,gap:14},formDivider:{height:1,backgroundColor:colors.border},field:{gap:7},label:{color:colors.textDark,fontSize:12,fontWeight:'700'},fieldControl:{flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:colors.border,borderRadius:13,backgroundColor:colors.background,overflow:'hidden'},fieldIcon:{marginLeft:13},input:{flex:1,minHeight:48,color:colors.textDark,paddingVertical:11,paddingHorizontal:12,fontSize:13},multiline:{minHeight:90,textAlignVertical:'top'},
- primaryButton:{minHeight:53,flexDirection:'row',justifyContent:'center',alignItems:'center',gap:9,padding:12,borderRadius:15,backgroundColor:colors.primary,marginTop:4},primaryText:{fontSize:13,fontWeight:'800',color:'#FFFFFF'},secondaryButton:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.primary},secondaryText:{color:colors.primary},pressed:{opacity:0.55},
+ primaryButton:{minHeight:53,flexDirection:'row',justifyContent:'center',alignItems:'center',gap:9,padding:12,borderRadius:999,backgroundColor:colors.primary,marginTop:4},primaryText:{fontSize:13,fontWeight:'600',color:colors.secondary},secondaryButton:{backgroundColor:colors.secondary,borderWidth:1,borderColor:colors.secondary},secondaryText:{color:colors.primary},pressed:{opacity:0.55},
  historyRow:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:17,padding:14,flexDirection:'row',alignItems:'center',gap:11},historyIcon:{width:42,height:42,borderRadius:13,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'},body:{fontSize:11,lineHeight:17,color:colors.textMuted,marginTop:4},
  statusChip:{flexDirection:'row',alignItems:'center',gap:5,borderRadius:50,paddingVertical:6,paddingHorizontal:9},statusDot:{height:6,width:6,borderRadius:3},statusText:{fontWeight:'800',fontSize:10,textTransform:'capitalize'},
  linkRow:{backgroundColor:colors.surface,flexDirection:'row',alignItems:'center',gap:12,borderRadius:18,borderWidth:1,borderColor:colors.border,padding:15,minHeight:85},linkIcon:{height:46,width:46,borderRadius:15,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'},
  inlineBack:{flexDirection:'row',alignItems:'center',gap:6,alignSelf:'flex-start',paddingVertical:7},inlineBackText:{fontSize:12,fontWeight:'800',color:colors.primary},paperOverview:{backgroundColor:colors.primaryCard,borderRadius:20,padding:20},paperEyebrow:{color:colors.secondary,fontSize:10,fontWeight:'800',letterSpacing:1},paperTitle:{color:colors.textLight,fontSize:21,fontWeight:'800',marginTop:9},paperMeta:{color:'#D9E3F3',fontSize:12,marginTop:6},
  scoreRow:{flexDirection:'row',alignItems:'center',gap:10,backgroundColor:colors.surface,borderRadius:15,padding:12,borderWidth:1,borderColor:colors.border},studentAvatar:{height:42,width:42,borderRadius:15,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'},studentAvatarText:{color:colors.primary,fontSize:12,fontWeight:'800'},scoreField:{flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:colors.border,borderRadius:12,backgroundColor:colors.background,paddingHorizontal:9},scoreInput:{width:39,height:43,textAlign:'center',color:colors.textDark,fontSize:15,fontWeight:'800'},scoreMax:{fontSize:9,color:colors.textMuted},
- classChip:{borderWidth:1,borderColor:colors.border,borderRadius:13,padding:13,backgroundColor:colors.surface,flexDirection:'row',alignItems:'center',gap:8},classChipSelected:{backgroundColor:colors.primary,borderColor:colors.primary},classChipText:{fontSize:12,fontWeight:'700',color:colors.textDark,flexShrink:1},classChipTextSelected:{color:'#FFFFFF'},chipList:{gap:8},
+ classChip:{borderWidth:1,borderColor:colors.border,borderRadius:999,padding:13,backgroundColor:colors.surface,flexDirection:'row',alignItems:'center',gap:8},classChipSelected:{backgroundColor:colors.primary,borderColor:colors.primary},classChipText:{fontSize:12,fontWeight:'700',color:colors.textDark,flexShrink:1},classChipTextSelected:{color:colors.secondary},chipList:{gap:8},
  uploadArea:{minHeight:86,padding:15,borderWidth:1.5,borderStyle:'dashed',borderColor:colors.primary,borderRadius:18,backgroundColor:colors.surface,flexDirection:'row',alignItems:'center',gap:13},descriptionCard:{backgroundColor:colors.surface,padding:16,borderWidth:1,borderColor:colors.border,borderRadius:18,gap:8},descriptionText:{color:colors.textMuted,fontSize:13,lineHeight:20},dueCaption:{fontSize:10,color:colors.primary,marginTop:7,fontWeight:'700'},
  reviewCard:{backgroundColor:colors.surface,borderRadius:20,borderWidth:1,borderColor:colors.border,padding:16,gap:14},reviewHeader:{flexDirection:'row',alignItems:'center',gap:10},reviewFields:{gap:13},
  placeholder:{minHeight:190,alignItems:'center',justifyContent:'center',padding:24,borderRadius:20,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},placeholderIcon:{height:58,width:58,borderRadius:18,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'},placeholderTitle:{color:colors.textDark,fontWeight:'800',fontSize:16,marginTop:12},placeholderText:{color:colors.textMuted,fontSize:12,lineHeight:19,textAlign:'center',marginTop:6},helperText:{color:colors.textMuted,fontSize:12,paddingVertical:8},
 });
+
+const styles = baseStyles;

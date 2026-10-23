@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Image, Keyboard, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
@@ -9,6 +10,7 @@ import { colors } from './authTheme';
 import type { SchoolIdentity } from '../../types';
 
 export function AuthLayout({ children, navigation, school, eyebrow, heroTitle, heroSubtitle, showFooter = true, fitContentHeight, fitContent = true, showSchoolBrand = false, headerContent }: { children: ReactNode; headerContent?: ReactNode; showSchoolBrand?: boolean; fitContent?: boolean; fitContentHeight?: number; showFooter?: boolean; navigation?: ReactNode; school?: SchoolIdentity; eyebrow: string; heroTitle?: string; heroSubtitle?: string }) {
+  const styles = useThemedStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const { width, height, fontScale } = useWindowDimensions();
   const [measuredContentHeight, setMeasuredContentHeight] = useState(340);
@@ -47,6 +49,7 @@ export function AuthLayout({ children, navigation, school, eyebrow, heroTitle, h
 }
 
 function SchoolHeader({ school, greeting, showBrand = false }: { school: SchoolIdentity; greeting: string; showBrand?: boolean }) {
+  const styles = useThemedStyles(baseStyles);
   const name = school.name;
   const photo = school.logo_url;
   const subtitle = school.number;
@@ -78,10 +81,11 @@ function SchoolHeader({ school, greeting, showBrand = false }: { school: SchoolI
 }
 
 export function AuthFooter() {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.footer}><View style={styles.footerLine} /><Text style={styles.footerBrand}>Edlink <Text style={styles.footerVersion}>• v1.0.0</Text></Text><Text style={styles.footerCompany}>Powered by Sponet Technologies</Text></View>;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   schoolBrand: { position: 'absolute', top: 0, width: '100%', alignItems: 'center' },
   schoolBrandImage: { width: 156, height: 44 },
   page: { flex: 1, width: '100%', backgroundColor: colors.navy },
@@ -110,3 +114,5 @@ const styles = StyleSheet.create({
   sheet: { flex: 1, minHeight: 0, backgroundColor: colors.surface }, sheetScroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 27 }, avatarImage: { width: '100%', height: '100%' }, sheetContent: { flexGrow: 1 },
   footer: { alignItems: 'center', marginTop: 28, paddingTop: 17 }, footerLine: { width: 36, height: 3, borderRadius: 2, backgroundColor: colors.gold, marginBottom: 10 }, footerBrand: { color: colors.navy, fontSize: 12, fontWeight: '800', letterSpacing: 0.4 }, footerVersion: { color: colors.muted, fontWeight: '500' }, footerCompany: { color: colors.muted, fontSize: 10, fontWeight: '500', marginTop: 3 },
 });
+
+const styles = baseStyles;

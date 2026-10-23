@@ -75,3 +75,30 @@ it('prevents non-admin staff managers from modifying administrators', function (
     $this->actingAs($viewer)->get(route('staff.profile', $this->admin))->assertOk()->assertDontSee('Save profile');
     $this->patch(route('staff.profile.update', $this->admin), ['name' => 'Changed'])->assertForbidden();
 });
+
+it('edits staff location and adds private qualifications without losing existing documents', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $this->actingAs($this->admin)->patch(route('staff.profile.update', $this->teacher), [
+        'name' => $this->teacher->name, 'email' => $this->teacher->email, 'job_title' => 'Teacher',
+        'location' => 'Wakiso', 'national_id' => 'NIN-UPDATED', 'bank_name' => 'New Bank', 'bank_account_name' => 'Teacher Account', 'bank_account_number' => '0000012345',
+        'photo' => \Illuminate\Http\UploadedFile::fake()->image('staff-photo.png'),
+        'qualification_documents' => [\Illuminate\Http\UploadedFile::fake()->create('certificate.pdf', 20, 'application/pdf')],
+    ])->assertSessionHasNoErrors();
+    $staff = $this->teacher->fresh();
+    expect($staff->location)->toBe('Wakiso')->and($staff->national_id)->toBe('NIN-UPDATED')->and($staff->bank_account_number)->toBe('0000012345');
+    \Illuminate\Support\Facades\Storage::disk('public')->assertExists($staff->avatar_path);
+    $document = $staff->staffDocuments()->firstOrFail();
+    $this->get(route('staff.profile', $staff))->assertOk()->assertSee('Wakiso')->assertSee('certificate.pdf')->assertSee($staff->avatarUrl());
+    $this->patch(route('staff.profile.update', $staff), ['name' => $staff->name, 'email' => $staff->email, 'job_title' => 'Teacher'])->assertSessionHasNoErrors();
+    expect($staff->staffDocuments()->count())->toBe(1);
+    $this->get(route('staff.documents.download', [$staff, $document]))->assertOk()->assertDownload('certificate.pdf');
+    $this->get(route('staff.documents.download', [$this->admin, $document]))->assertNotFound();
+    $designation = Designation::create(['school_id' => $this->school->id, 'name' => 'Document viewer without HR access', 'permissions' => ['staff.directory']]);
+    $viewer = User::factory()->create(['school_id' => $this->school->id, 'role' => 'teacher', 'designation_id' => $designation->id]);
+    $this->actingAs($viewer)->get(route('staff.profile', $staff))->assertOk()->assertDontSee('certificate.pdf')->assertDontSee('Wakiso');
+    $this->get(route('staff.documents.download', [$staff, $document]))->assertForbidden();
+    $other = School::create(['name' => 'Foreign HR School', 'slug' => 'foreign-hr-school']);
+    $otherAdmin = User::factory()->create(['school_id' => $other->id, 'role' => 'admin']);
+    $this->actingAs($otherAdmin)->get(route('staff.documents.download', [$staff, $document]))->assertNotFound();
+});

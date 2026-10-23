@@ -54,7 +54,8 @@ class Timetable extends Component
         if (! $class) throw ValidationException::withMessages(['classId'=>'Select a class belonging to this school.']);
         if ($data['streamId'] && ! Stream::where('school_id',$school->id)->where('school_class_id',$class->id)->whereKey($data['streamId'])->exists()) throw ValidationException::withMessages(['streamId'=>'Select a stream belonging to this class.']);
         if ($data['subjectId'] && ! Subject::where('school_id',$school->id)->whereKey($data['subjectId'])->exists()) throw ValidationException::withMessages(['subjectId'=>'Select a subject belonging to this school.']);
-        if ($data['teacherId'] && ! User::where('school_id',$school->id)->where('employment_status','active')->whereKey($data['teacherId'])->exists()) throw ValidationException::withMessages(['teacherId'=>'Select an active staff member from this school.']);
+        if ($data['teacherId'] && ! User::with('activeLeaves')->where('school_id',$school->id)->where('employment_status','active')->whereKey($data['teacherId'])->exists()) throw ValidationException::withMessages(['teacherId'=>'Select an active staff member from this school.']);
+        if ($data['teacherId'] && User::findOrFail($data['teacherId'])->isOnLeave()) throw ValidationException::withMessages(['teacherId' => 'This teacher is on leave. Choose an available teacher.']);
         if (! $data['subjectId'] && blank($data['label'])) throw ValidationException::withMessages(['label'=>'Choose a subject or enter a label such as Break or Assembly.']);
 
         $overlap = fn ($query) => $query->where('timetable_slots.starts_at','<',$data['endsAt'])->where('timetable_slots.ends_at','>',$data['startsAt'])->when($this->editingId,fn($q)=>$q->where('timetable_slots.id','!=',$this->editingId));
@@ -70,7 +71,7 @@ class Timetable extends Component
                 ->leftJoin('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
                 ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
                 ->leftJoin('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
-                ->where('timetable_slots.user_id', $data['teacherId'])
+                ->whereIn('timetable_slots.user_id', \App\Support\TeacherAcademicScope::teachingOwnerIds(User::findOrFail($data['teacherId'])))
                 ->first([
                     'timetable_slots.starts_at', 'timetable_slots.ends_at', 'timetable_slots.label',
                     'school_classes.name as class_name', 'streams.name as stream_name', 'subjects.name as subject_name',
@@ -131,6 +132,6 @@ class Timetable extends Component
         $school=Auth::user()->school; $term=$school->currentTerm();
         $classes=SchoolClass::where('school_id',$school->id)->with('streams')->orderBy('sort_order')->orderBy('name')->get();
         $slots=DB::table('timetable_slots')->leftJoin('subjects','subjects.id','=','timetable_slots.subject_id')->leftJoin('users','users.id','=','timetable_slots.user_id')->leftJoin('streams','streams.id','=','timetable_slots.stream_id')->where('timetable_slots.school_id',$school->id)->when($term,fn($q)=>$q->where('timetable_slots.term_id',$term->id))->when($this->classId,fn($q)=>$q->where('timetable_slots.school_class_id',$this->classId))->orderByRaw("CASE day_of_week WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END")->orderBy('starts_at')->get(['timetable_slots.*','subjects.name as subject','users.name as teacher','streams.name as stream']);
-        return view('livewire.timetable',['term'=>$term,'classes'=>$classes,'streams'=>$this->classId?Stream::where('school_id',$school->id)->where('school_class_id',$this->classId)->orderBy('name')->get():collect(),'subjects'=>Subject::where('school_id',$school->id)->orderBy('name')->get(),'teachers'=>User::where('school_id',$school->id)->where('employment_status','active')->whereNotIn('role',['student','parent'])->orderBy('name')->get(),'timetableSlots'=>$slots,'slotsByDay'=>$slots->groupBy('day_of_week'),'pageTitle'=>'Timetable']);
+        return view('livewire.timetable',['term'=>$term,'classes'=>$classes,'streams'=>$this->classId?Stream::where('school_id',$school->id)->where('school_class_id',$this->classId)->orderBy('name')->get():collect(),'subjects'=>Subject::where('school_id',$school->id)->orderBy('name')->get(),'teachers'=>User::with('activeLeaves')->where('school_id',$school->id)->where('employment_status','active')->whereNotIn('role',['student','parent'])->orderBy('name')->get(),'timetableSlots'=>$slots,'slotsByDay'=>$slots->groupBy('day_of_week'),'pageTitle'=>'Timetable']);
     }
 }

@@ -7,6 +7,8 @@ use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Services\DefaultDesignationService;
 use App\Services\StaffRegistrationService;
+use App\Services\StaffUploadService;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -19,6 +21,14 @@ use Throwable;
 #[Layout('layouts.app')]
 class StaffRegister extends Component
 {
+    use WithFileUploads;
+
+    public $photo;
+
+    public array $qualification_documents = [];
+
+    public string $location = '';
+
     public int $step = 1;
 
     public string $name = '';
@@ -197,6 +207,7 @@ class StaffRegister extends Component
         $this->validate([
             ...$this->identityRules(),
             ...$this->employmentRules(),
+            ...StaffUploadService::rules(),
             'has_teaching_duties' => ['boolean'],
             'is_class_teacher' => ['boolean'],
             'class_teacher_class_id' => ['nullable', 'integer'],
@@ -248,6 +259,7 @@ class StaffRegister extends Component
                     'emergency_contact_name' => $this->emergency_contact_name ?: null,
                     'emergency_contact_phone' => $this->emergency_contact_phone ?: null,
                     'national_id' => $this->national_id ?: null,
+                    'location' => $this->location ?: null,
                     'bank_name' => $this->bank_name ?: null,
                     'bank_account_name' => $this->bank_account_name ?: null,
                     'bank_account_number' => $this->bank_account_number ?: null,
@@ -255,6 +267,8 @@ class StaffRegister extends Component
                 $term,
                 $classTeacherClassId,
                 $subjectAssignments,
+                $this->photo,
+                $this->qualification_documents,
             );
         } catch (ValidationException $exception) {
             throw $exception;
@@ -291,6 +305,8 @@ class StaffRegister extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email:filter', 'max:255', $this->schoolEmailRule()],
             'phone' => ['nullable', 'string', 'max:30'],
+            'location' => ['nullable', 'string', 'max:500'],
+            'photo' => StaffUploadService::rules()['photo'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }

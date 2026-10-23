@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { StyleSheet, View } from 'react-native';
 import type { Role } from '../types';
 
@@ -8,6 +9,7 @@ export function RoleIcon({ role }: { role: Role }) {
 }
 
 function StudentIcon() {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.stage}>
       <View style={styles.capTop} />
@@ -20,6 +22,7 @@ function StudentIcon() {
 }
 
 function TeacherIcon() {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.stage}>
       <View style={styles.board}>
@@ -34,6 +37,7 @@ function TeacherIcon() {
 }
 
 function ParentIcon() {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={[styles.stage, styles.family]}>
       <View style={styles.adult}>
@@ -50,7 +54,7 @@ function ParentIcon() {
 
 const yellow = '#FFFFFF';
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   stage: { width: 42, height: 42, alignItems: 'center', justifyContent: 'flex-end' },
   capTop: { position: 'absolute', top: 0, width: 22, height: 6, borderRadius: 2, backgroundColor: yellow },
   capBoard: { position: 'absolute', top: 4, width: 32, height: 5, borderRadius: 1, backgroundColor: yellow, transform: [{ rotate: '-8deg' }] },
@@ -70,3 +74,5 @@ const styles = StyleSheet.create({
   childHead: { width: 9, height: 9, borderRadius: 5, backgroundColor: yellow, marginBottom: 2 },
   childBody: { width: 13, height: 12, borderTopLeftRadius: 7, borderTopRightRadius: 7, backgroundColor: yellow },
 });
+
+const styles = baseStyles;

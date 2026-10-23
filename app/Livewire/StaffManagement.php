@@ -157,6 +157,10 @@ class StaffManagement extends Component
 
             return;
         }
+        if ($user->employment_status === 'active' && $user->hasLeaveCoverCommitments()) {
+            session()->flash('error', "Change this staff member's leave cover assignments before deactivating their account.");
+            return;
+        }
         $user->update(['employment_status' => $user->employment_status === 'active' ? 'inactive' : 'active']);
         if ($user->employment_status === 'inactive') {
             $user->tokens()->delete();
@@ -269,6 +273,7 @@ class StaffManagement extends Component
             return;
         }
 
+        if ($this->editEmploymentStatus === 'inactive' && $staff->hasLeaveCoverCommitments()) throw \Illuminate\Validation\ValidationException::withMessages(['editEmploymentStatus' => "Change this staff member's leave cover assignments before deactivating their account."]);
         $data = [
             'name' => trim($this->editName), 'email' => strtolower(trim($this->editEmail)),
             'phone' => trim($this->editPhone) ?: null, 'job_title' => trim($this->editJobTitle),
@@ -299,11 +304,12 @@ class StaffManagement extends Component
     {
         $school = Auth::user()->school;
 
-        return view('livewire.staff-management', ['staff' => User::with('designation')->where('school_id', $school->id)->when(! $this->showInactive, fn ($query) => $query->where('employment_status', 'active'))->orderBy('name')->get(), 'designations' => Designation::where('school_id', $school->id)->orderBy('name')->get(), 'classes' => SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(), 'currentTerm' => $school->currentTerm(), 'pageTitle' => 'Staff']);
+        return view('livewire.staff-management', ['staff' => User::with(['designation', 'activeLeaves'])->where('school_id', $school->id)->when(! $this->showInactive, fn ($query) => $query->where('employment_status', 'active'))->orderBy('name')->get(), 'designations' => Designation::where('school_id', $school->id)->orderBy('name')->get(), 'classes' => SchoolClass::where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(), 'currentTerm' => $school->currentTerm(), 'pageTitle' => 'Staff']);
     }
 
     private function syncTeachingAssignments(User $staff, $school, string $classTeacherId, array $assignments): void
     {
+        if ($staff->isOnLeave()) return; // Preserve permanent roles while temporary leave cover is active.
         SchoolClass::where('school_id', $school->id)->where('class_teacher_user_id', $staff->id)->update(['class_teacher_user_id' => null]);
         if ($classTeacherId) {
             SchoolClass::where('school_id', $school->id)->whereKey($classTeacherId)->update(['class_teacher_user_id' => $staff->id]);

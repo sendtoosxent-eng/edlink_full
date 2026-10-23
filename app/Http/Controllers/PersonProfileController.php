@@ -9,6 +9,9 @@ use App\Services\PublicImageStorage;
 use App\Services\StudentProfileData;
 use App\Services\StaffProfileData;
 use App\Services\ParentProfileData;
+use App\Services\StaffUploadService;
+use App\Models\StaffDocument;
+use Illuminate\Support\Facades\Storage;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +90,16 @@ class PersonProfileController extends Controller
         return view('profiles.staff', app(StaffProfileData::class)->build($user, request()->user(), request()->integer('term') ?: null, request('period') ?: now()->format('Y-m')));
     }
 
+    public function staffDocument(User $user, StaffDocument $document)
+    {
+        $this->authorizeUser($user, ['admin', 'superadmin', 'teacher', 'bursar', 'registrar', 'academic_admin'], 'staff.manage');
+        abort_if(in_array($user->role, ['admin', 'superadmin'], true) && ! in_array(request()->user()->role, ['admin', 'superadmin'], true), 403);
+        abort_unless($document->school_id === $user->school_id && $document->user_id === $user->id, 404);
+        abort_unless(Storage::disk('local')->exists($document->path), 404);
+
+        return Storage::disk('local')->download($document->path, $document->name, ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+    }
+
     public function parent(User $user): View
     {
         $this->authorizeUser($user, ['parent'], 'parents.manage');
@@ -151,6 +164,8 @@ class PersonProfileController extends Controller
             'job_title' => [$staff ? 'required' : 'nullable', 'nullable', 'string', 'max:100'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             ...($staff ? [
+                ...StaffUploadService::rules(),
+                'location' => ['nullable', 'string', 'max:500'],
                 'joined_at' => ['nullable', 'date'],
                 'contract_type' => ['nullable', Rule::in(['permanent', 'contract', 'part_time', 'volunteer'])],
                 'probation_ends_at' => ['nullable', 'date', 'after_or_equal:'.($request->input('joined_at') ?: $user->joined_at?->toDateString() ?: '1900-01-01')],
@@ -161,7 +176,19 @@ class PersonProfileController extends Controller
             ] : []),
         ]);
         $photo = $data['photo'] ?? null;
-        unset($data['photo']);
+        $documents = $data['qualification_documents'] ?? [];
+        unset($data['photo'], $data['qualification_documents']);
+        if ($staff) {
+            $oldPath = $user->avatar_path;
+            app(StaffUploadService::class)->persist($user->school_id, $photo, $documents, function ($photoPath, $rows) use ($user, $data): void {
+                $user->update($data + ($photoPath ? ['avatar_path' => $photoPath] : []));
+                $user->staffDocuments()->createMany($rows);
+                AuditLog::record($user->school_id, 'staff.profile.updated', $user, ['documents_added' => count($rows)]);
+            });
+            if ($photo) $images->deleteReplacement($oldPath, $user->avatar_path);
+
+            return back()->with('status', 'Staff profile, photo and qualifications saved.');
+        }
         if (! $staff) {
             unset($data['job_title']);
         }

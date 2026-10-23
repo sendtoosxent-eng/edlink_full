@@ -1,10 +1,12 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from './Typography';
 import { colors } from '../theme/index';
 
-export function ErrorScreen({ message, retry, onBack, status }: { message: string; retry: () => void | Promise<void>; onBack?: () => void; status?: number }) {
+export function ErrorScreen({ message, retry, onBack, backLabel = 'Go back', status }: { message: string; retry: () => void | Promise<void>; onBack?: () => void; backLabel?: string; status?: number }) {
+  const styles = useThemedStyles(baseStyles);
   const [retrying, setRetrying] = useState(false);
   const offline = status === 0 || /cannot connect|internet|network/i.test(message);
   const timeout = status === 408 || /too long|timed out/i.test(message);
@@ -17,11 +19,11 @@ export function ErrorScreen({ message, retry, onBack, status }: { message: strin
     <Text accessibilityRole="header" style={styles.title}>{title}</Text>
     <Text accessibilityLiveRegion="polite" style={styles.description}>{description}</Text>
     <Pressable accessibilityRole="button" disabled={retrying} onPress={() => void tryAgain()} style={[styles.button, retrying && { opacity: 0.6 }]}><Ionicons name="refresh-outline" size={20} color={colors.secondary} /><Text style={styles.buttonText}>{retrying ? 'Trying again…' : 'Try again'}</Text></Pressable>
-    {onBack && <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}><Text style={styles.backText}>Go back</Text></Pressable>}
+    {onBack && <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}><Text style={styles.backText}>{backLabel}</Text></Pressable>}
     {offline && <Text style={styles.hint}>Your school account is still here.</Text>}
   </ScrollView>;
 }
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   page: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 28, backgroundColor: colors.background },
   art: { width: 190, height: 182, alignItems: 'center', justifyContent: 'center', marginBottom: 25 },
   halo: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: '#E8ECF4' },
@@ -30,6 +32,8 @@ const styles = StyleSheet.create({
   kicker: { color: colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 12 },
   title: { color: colors.primary, fontSize: 26, fontWeight: '800', textAlign: 'center', maxWidth: 340 },
   description: { color: colors.textMuted, fontSize: 14, lineHeight: 24, textAlign: 'center', marginTop: 14, maxWidth: 330 },
-  button: { flexDirection: 'row', gap: 10, minHeight: 56, borderRadius: 18, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', maxWidth: 330, width: '100%', marginTop: 30 },
-  buttonText: { color: 'white', fontWeight: '700', fontSize: 15 }, back: { padding: 16 }, backText: { color: colors.primary, fontWeight: '600' }, hint: { color: colors.textMuted, fontSize: 11, marginTop: 22 },
+  button: { flexDirection: 'row', gap: 10, minHeight: 56, borderRadius: 999, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', maxWidth: 330, width: '100%', marginTop: 30 },
+  buttonText: { color: colors.secondary, fontWeight: '700', fontSize: 15 }, back: { minHeight: 52, width: '100%', maxWidth: 330, marginTop: 12, borderRadius: 999, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 }, backText: { color: colors.primary, fontWeight: '600' }, hint: { color: colors.textMuted, fontSize: 11, marginTop: 22 },
 });
+
+const styles = baseStyles;

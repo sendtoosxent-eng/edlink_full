@@ -37,6 +37,10 @@ class TeacherDirectoryController extends ApiController
         $query = TeacherAcademicScope::scopeStudents(Student::where('school_id', $user->school_id), $user, $user->school->currentTerm()?->id);
         $query->when($data['class_id'] ?? null, fn ($q, $id) => $q->where('school_class_id', $id));
         $query->when($data['search'] ?? null, fn ($q, $search) => $q->where(fn ($match) => $match->where('name', 'like', '%'.$search.'%')->orWhere('admission_no', 'like', '%'.$search.'%')));
-        return $this->ok($query->with(['schoolClass:id,name', 'stream:id,name'])->orderBy('name')->paginate(30, ['id', 'name', 'admission_no', 'school_class_id', 'stream_id', 'status']));
+        $students = $query->with(['schoolClass:id,name', 'stream:id,name'])->orderBy('name')
+            ->paginate(30, ['id', 'name', 'admission_no', 'school_class_id', 'stream_id', 'status', 'photo_path'])
+            ->through(fn (Student $student) => collect($student->toArray())->except('photo_path')->put('photo_url', $student->photoUrl())->all());
+
+        return $this->ok($students);
     }
 }

@@ -130,7 +130,7 @@
                     <select wire:model="teacherId" class="mt-1.5 w-full rounded-xl border-slate-200 bg-slate-50/50 text-sm font-medium text-slate-800 focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-400/20 transition">
                         <option value="">Not assigned</option>
                         @foreach($teachers as $teacher)
-                            <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                            <option value="{{ $teacher->id }}" @disabled($teacher->isOnLeave())>{{ $teacher->name }}{{ $teacher->isOnLeave() ? ' - On leave' : '' }}</option>
                         @endforeach
                     </select>
                     @error('teacherId')<span class="mt-1 block text-[11px] font-bold text-rose-600">{{ $message }}</span>@enderror

@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
 import { BrandLogo } from './BrandLogo';
@@ -5,6 +6,7 @@ import { colors } from '../theme';
 
 /** Shared loading indicator; uses the logo asset so it can appear before fonts load. */
 export function BrandLoader() {
+  const styles = useThemedStyles(baseStyles);
   const phase = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     let disposed = false;
@@ -33,9 +35,11 @@ export function BrandLoader() {
     </View>
   </View>;
 }
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, minHeight: 220, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 24 },
   mark: { width: 230, height: 150, alignItems: 'center', justifyContent: 'center' },
   dots: { flexDirection: 'row', gap: 8, marginTop: 16 },
   dot: { width: 7, height: 7, borderRadius: 4 },
 });
+
+const styles = baseStyles;

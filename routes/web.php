@@ -393,6 +393,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('academics/classes', ClassesAndStreams::class)->name('classes.index');
     Route::get('staff', StaffManagement::class)->name('staff.index');
     Route::get('staff/{user}/profile', [PersonProfileController::class, 'staff'])->name('staff.profile');
+    Route::get('staff/{user}/documents/{document}', [PersonProfileController::class, 'staffDocument'])->name('staff.documents.download');
     Route::patch('staff/{user}/profile', [PersonProfileController::class, 'updateStaff'])->name('staff.profile.update');
     Route::get('staff/register', StaffRegister::class)->name('staff.register');
     Route::get('staff/attendance', StaffAttendance::class)->name('staff.attendance');

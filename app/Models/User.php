@@ -44,7 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'staff_number', 'phone', 'job_title', 'base_salary', 'employment_status', 'joined_at',
         'emergency_contact_name', 'emergency_contact_phone', 'national_id', 'contract_type',
         'probation_ends_at', 'bank_name', 'bank_account_name', 'bank_account_number',
-        'staff_document_path', 'staff_document_type',
+        'staff_document_path', 'staff_document_type', 'location',
     ];
 
     protected $hidden = [
@@ -183,6 +183,32 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return true;
+    }
+
+    public function hasLeaveCoverCommitments(): bool
+    {
+        return StaffLeaveHandover::where('school_id', $this->school_id)->where('to_user_id', $this->id)->where('temporary', true)
+            ->whereHas('leave', fn ($q) => $q->where('status', 'approved')->whereNull('returned_at')->whereDate('ends_on', '>=', today()))->exists();
+    }
+
+    public function activeLeaves(): HasMany
+    {
+        return $this->hasMany(StaffLeave::class)->overlapping(today()->toDateString(), today()->toDateString());
+    }
+
+    public function isOnLeave(): bool
+    {
+        return $this->relationLoaded('activeLeaves') ? $this->activeLeaves->isNotEmpty() : $this->activeLeaves()->exists();
+    }
+
+    public function availableBetween($from, $to): bool
+    {
+        return $this->employment_status === 'active' && ! StaffLeave::where('school_id', $this->school_id)->where('user_id', $this->id)->overlapping($from, $to)->exists();
+    }
+
+    public function staffDocuments(): HasMany
+    {
+        return $this->hasMany(StaffDocument::class);
     }
 
     public function portalStudents(): BelongsToMany

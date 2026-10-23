@@ -140,8 +140,14 @@ class NativeTeacherToolsController extends ApiController
             foreach (['house', 'club'] as $kind) {
                 $groups = DB::table('student_'.$kind.'s')->where('school_id', $school)->when(! $user->hasPermission('students.activities'), fn ($q) => $q->where('patron_user_id', $user->id))->get();
                 foreach ($groups as $group) {
-                    $members = DB::table('student_'.$kind.'_memberships as m')->join('students as s', 's.id', '=', 'm.student_id')->where('m.school_id', $school)->where('m.student_'.$kind.'_id', $group->id)->pluck('s.name');
-                    $rows->push(['id' => $kind.':'.$group->id, 'title' => $group->name, 'details' => ['Type' => ucfirst($kind), 'Description' => $group->description, 'Members' => $members->implode(', ') ?: 'No members']]);
+                    $members = DB::table('student_'.$kind.'_memberships as m')
+                        ->join('students as s', 's.id', '=', 'm.student_id')
+                        ->leftJoin('school_classes as c', 'c.id', '=', 's.school_class_id')
+                        ->leftJoin('streams as st', 'st.id', '=', 's.stream_id')
+                        ->where('m.school_id', $school)->where('s.school_id', $school)
+                        ->where('m.student_'.$kind.'_id', $group->id)->orderBy('s.name')
+                        ->get(['s.id', 's.name', 's.admission_no', 'c.name as class_name', 'st.name as stream_name']);
+                    $rows->push(['id' => $kind.':'.$group->id, 'title' => $group->name, 'details' => ['Type' => ucfirst($kind), 'Description' => $group->description, 'Members' => $members->pluck('name')->implode(', ') ?: 'No members'], 'members' => $members]);
                 }
             }
             $clubs = DB::table('student_clubs')->where('school_id', $school)->when(! $user->hasPermission('students.activities'), fn ($q) => $q->where('patron_user_id', $user->id))->get(['id', 'name']);

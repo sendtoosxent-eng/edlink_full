@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import React from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +45,7 @@ function useBreathingMotion() {
 }
 
 function OnboardingScreen({ index, source, imageLabel, title, description, onNext, onBack, onSkip }: OnboardingProps) {
+  const styles = useThemedStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const { height, width, fontScale } = useWindowDimensions();
   const compact = height < 720;
@@ -100,7 +102,7 @@ export function ProgressOnboardingScreen(props: Controls) {
   return <OnboardingScreen {...props} index={2} source={require('../../../assets/img/book.png')} imageLabel="Student holding a laptop and school books" title={'Every step forward,\nworth celebrating'} description="Follow homework, results and report cards as learning turns into progress." />;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BRAND.navy },
   hero: { flexShrink: 0, alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
   topBar: { position: 'absolute', left: 24, right: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 3 },
@@ -131,3 +133,5 @@ const styles = StyleSheet.create({
   nextText: { color: BRAND.gold, fontSize: 14, fontWeight: '600' },
   pressed: { opacity: 0.85 },
 });
+
+const styles = baseStyles;

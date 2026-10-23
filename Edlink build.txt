@@ -14,13 +14,7 @@
 
 ///new updates
 ssh -p 65002 u902949876@157.173.208.5
-cd /home/u902949876/domains/edlink.space/public_html
 
-php artisan down
-php artisan migrate --force
-php artisan optimize:clear
-php artisan optimize
-php artisan up
 
 
 server error

@@ -79,7 +79,7 @@
                                     class="w-full appearance-none rounded-xl border @error('staffId') border-rose-300 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500/10 @else border-slate-200 bg-slate-50/50 text-slate-800 hover:bg-white focus:border-amber-500 focus:ring-amber-500/10 @enderror py-2.5 pl-3.5 pr-10 text-sm font-medium transition-all duration-200 focus:bg-white focus:outline-none focus:ring-4">
                                 <option value="">Select staff member</option>
                                 @foreach ($staff as $member)
-                                    <option value="{{ $member->id }}">{{ $member->name }}{{ $member->job_title ? ' — ' . $member->job_title : '' }}</option>
+                                    <option value="{{ $member->id }}" @disabled(isset($member->cover_available) && !$member->cover_available)>{{ $member->name }}{{ $member->job_title ? ' — ' . $member->job_title : '' }}{{ isset($member->cover_available) && !$member->cover_available ? ' - On leave during these dates' : '' }}</option>
                                 @endforeach
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
@@ -207,14 +207,16 @@
                                             {{ $leave->status === 'approved' ? 'bg-emerald-500' : '' }}
                                             {{ $leave->status === 'rejected' ? 'bg-rose-500' : '' }}
                                             {{ $leave->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
-                                        {{ ucfirst($leave->status) }}
+                                        {{ $leave->returned_at ? 'Returned' : ($leave->status === 'approved' && $leave->ends_on->lt(today()) ? 'Completed' : ($leave->status === 'approved' && $leave->starts_on->lte(today()) ? 'On leave' : ucfirst($leave->status))) }}
                                     </span>
+                                    @if($leave->handover?->temporary)<span class="mt-1 block text-xs text-blue-700">Cover: {{ $leave->handover->toUser?->name }}</span>@endif
                                     @if ($leave->approver)
                                         <span class="block text-[11px] text-slate-400 mt-1 font-normal">By {{ $leave->approver->name }}</span>
                                     @endif
                                 </td>
                                 @if ($canApprove)
                                     <td class="px-6 py-4 text-right whitespace-nowrap">
+                                        @if($leave->status === 'approved' && !$leave->returned_at && $leave->ends_on->gte(today()) && $leave->handover?->temporary)<button wire:click="changeCover({{ $leave->id }})" class="mr-2 rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700">Change cover</button>@endif
                                         @if ($leave->status === 'pending')
                                             <div class="inline-flex items-center gap-2">
                                                 <button wire:click="approve({{ $leave->id }})" class="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition">
@@ -224,8 +226,10 @@
                                                     Reject
                                                 </button>
                                             </div>
+                                        @elseif($leave->status === 'approved' && !$leave->returned_at && $leave->starts_on->lte(today()) && $leave->ends_on->gte(today()))
+                                            <button wire:click="markReturned({{ $leave->id }})" wire:confirm="Record an early return and end temporary cover now?" class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">Record return</button>
                                         @else
-                                            <span class="text-xs text-slate-400 font-normal">Completed</span>
+                                            <span class="text-xs text-slate-400 font-normal">{{ $leave->returned_at || $leave->ends_on->lt(today()) ? 'Completed' : 'Scheduled' }}</span>
                                         @endif
                                     </td>
                                 @endif
@@ -269,6 +273,7 @@
                     </div>
                 </div>
 
+                <p class="mt-3 text-sm font-bold text-slate-700">{{ $handoverClassCount }} class-teacher responsibilities also require cover.</p>
                 <div class="mt-5">
                     <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Replacement Staff</label>
                     <div class="relative">
@@ -276,7 +281,7 @@
                                 class="w-full appearance-none rounded-xl border @error('replacementStaffId') border-rose-300 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500/10 @else border-slate-200 bg-slate-50/50 text-slate-800 hover:bg-white focus:border-amber-500 focus:ring-amber-500/10 @enderror py-2.5 pl-3.5 pr-10 text-sm font-medium transition-all duration-200 focus:bg-white focus:outline-none focus:ring-4">
                             <option value="">Choose replacement staff</option>
                             @foreach ($replacementStaff as $member)
-                                <option value="{{ $member->id }}">{{ $member->name }}{{ $member->job_title ? ' — ' . $member->job_title : '' }}</option>
+                                <option value="{{ $member->id }}" @disabled(isset($member->cover_available) && !$member->cover_available)>{{ $member->name }}{{ $member->job_title ? ' — ' . $member->job_title : '' }}{{ isset($member->cover_available) && !$member->cover_available ? ' - On leave during these dates' : '' }}</option>
                             @endforeach
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
@@ -292,7 +297,7 @@
                 </div>
 
                 <div class="mt-5 rounded-2xl border border-amber-200/80 bg-amber-50/60 p-3.5 text-xs text-amber-900 leading-relaxed">
-                    <strong>Handover Notice:</strong> Approving will reassign active classes and timetable slots to the selected staff member for auditing.
+                    <strong>Handover Notice:</strong> The replacement covers class-teacher roles, subjects and lessons from the leave start date through its end date. Permanent assignments stay with the original teacher. Cover access ends automatically afterward.
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">

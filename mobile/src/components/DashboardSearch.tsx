@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './Typography';
@@ -9,6 +10,7 @@ import { toolSection } from '../screens/app/TeacherAccessScreen';
 
 type Entry = { label: string; keywords: string; tab: AppTab };
 export function DashboardSearch({ user, data, navigate }: { user: User; data: Dashboard; navigate: (tab: AppTab) => void }) {
+  const styles = useThemedStyles(baseStyles);
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const entries: Entry[] = [
@@ -32,6 +34,8 @@ export function DashboardSearch({ user, data, navigate }: { user: User; data: Da
     {!!term && <View style={styles.results}>{results.slice(0, 6).map(entry => <Pressable key={entry.label} accessibilityRole="button" onPress={() => open(entry.tab)} style={styles.result}><Text style={styles.resultText}>{entry.label}</Text><AppSvg name="chevron" size={15} /></Pressable>)}{!results.length && <Text accessibilityLiveRegion="polite" style={styles.empty}>No tools found. Try “homework” or “results”.</Text>}</View>}
   </View>;
 }
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { marginBottom: 16 }, field: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F0F2F7', borderRadius: 16, minHeight: 50, paddingHorizontal: 15, borderWidth: 1, borderColor: 'transparent' }, focused: { borderColor: colors.secondary, backgroundColor: colors.surface }, input: { flex: 1, minWidth: 0, color: colors.primary, fontSize: 13, paddingVertical: 12 }, clear: { color: colors.primary, fontSize: 24 }, results: { marginTop: 8, borderRadius: 16, backgroundColor: colors.surface, paddingHorizontal: 14 }, result: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, resultText: { flex: 1, color: colors.primary, fontSize: 13 }, empty: { color: colors.textMuted, fontSize: 12, lineHeight: 18, paddingVertical: 16 },
 });
+
+const styles = baseStyles;

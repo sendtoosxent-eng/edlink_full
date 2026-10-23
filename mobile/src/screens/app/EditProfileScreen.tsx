@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
@@ -11,6 +12,7 @@ import { colors } from '../../theme/index';
 import type { User } from '../../types';
 
 export function EditProfileScreen({ token, user, onSaved, onBack }: { token: string; user: User; onSaved: (user: User) => void; onBack: () => void }) {
+  const styles = useThemedStyles(baseStyles);
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone ?? '');
@@ -59,4 +61,6 @@ export function EditProfileScreen({ token, user, onSaved, onBack }: { token: str
     </View>
   </KeyboardAwareScrollView>;
 }
-const styles = StyleSheet.create({ content: { padding: 22, paddingBottom: 40, gap: 10 }, back: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 44 }, backText: { color: colors.primary, fontWeight: '600' }, title: { fontSize: 28, fontWeight: '800', color: colors.primary }, lead: { color: colors.textMuted, fontSize: 13 }, photoPanel: { backgroundColor: colors.primary, borderRadius: 24, alignItems: 'center', padding: 24, marginVertical: 12 }, avatar: { width: 104, height: 104, borderRadius: 52, borderWidth: 3, borderColor: colors.secondary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, image: { width: '100%', height: '100%' }, photoButton: { flexDirection: 'row', gap: 8, padding: 14, alignItems: 'center' }, photoText: { color: 'white', fontWeight: '600' }, photoHint: { color: '#CBD3E4', fontSize: 10 }, form: { gap: 10 }, label: { color: colors.primary, fontWeight: '600', fontSize: 13, marginTop: 8 }, input: { minHeight: 54, backgroundColor: 'white', borderRadius: 14, borderWidth: 1, borderColor: '#DDE3ED', padding: 14, color: colors.primary }, note: { color: colors.textMuted, fontSize: 11, lineHeight: 18, marginVertical: 8 }, error: { color: '#B42318', fontSize: 13 }, save: { backgroundColor: colors.primary, borderRadius: 16, minHeight: 56, justifyContent: 'center', alignItems: 'center' }, saveText: { color: 'white', fontWeight: '700', fontSize: 15 } });
+const baseStyles = StyleSheet.create({ content: { padding: 22, paddingBottom: 40, gap: 10 }, back: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 44 }, backText: { color: colors.primary, fontWeight: '600' }, title: { fontSize: 28, fontWeight: '800', color: colors.primary }, lead: { color: colors.textMuted, fontSize: 13 }, photoPanel: { backgroundColor: colors.primary, borderRadius: 24, alignItems: 'center', padding: 24, marginVertical: 12 }, avatar: { width: 104, height: 104, borderRadius: 52, borderWidth: 3, borderColor: colors.secondary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, image: { width: '100%', height: '100%' }, photoButton: { flexDirection: 'row', gap: 8, padding: 14, alignItems: 'center' }, photoText: { color: 'white', fontWeight: '600' }, photoHint: { color: '#CBD3E4', fontSize: 10 }, form: { gap: 10 }, label: { color: colors.primary, fontWeight: '600', fontSize: 13, marginTop: 8 }, input: { minHeight: 54, backgroundColor: 'white', borderRadius: 14, borderWidth: 1, borderColor: '#DDE3ED', padding: 14, color: colors.primary }, note: { color: colors.textMuted, fontSize: 11, lineHeight: 18, marginVertical: 8 }, error: { color: '#B42318', fontSize: 13 }, save: { backgroundColor: colors.primary, borderRadius: 16, minHeight: 56, justifyContent: 'center', alignItems: 'center' }, saveText: { color: 'white', fontWeight: '700', fontSize: 15 } });
+
+const styles = baseStyles;

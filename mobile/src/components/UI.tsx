@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { Text } from './Typography';
 import React from 'react';
 import { BrandLoader } from './BrandLoader';
@@ -6,6 +7,7 @@ import { colors, radius, shadows, typography } from '../theme/index';
 import type { AttendanceStatus } from '../types';
 
 export function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -18,6 +20,7 @@ export function PrimaryButton({ label, onPress, disabled }: { label: string; onP
 }
 
 export function StatusPill({ status }: { status: AttendanceStatus }) {
+  const styles = useThemedStyles(baseStyles);
   const config = colors.status[status] || colors.status.excused;
   return (
     <View style={[styles.pill, { backgroundColor: config.bg }]}>
@@ -29,6 +32,7 @@ export function StatusPill({ status }: { status: AttendanceStatus }) {
 }
 
 export function StatCard({ label, value }: { label: string; value: string | number }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={[styles.statCard, shadows.card]}>
       <Text style={styles.statValue}>{value}</Text>
@@ -41,7 +45,7 @@ export function InlineLoading() { return <BrandLoader />; }
 
 export { ErrorScreen as ErrorState } from './ErrorScreen';
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   button: {
     minHeight: 52,
     borderRadius: radius.full,
@@ -98,3 +102,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+const styles = baseStyles;

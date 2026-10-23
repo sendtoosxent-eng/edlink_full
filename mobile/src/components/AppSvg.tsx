@@ -1,6 +1,9 @@
+import { useAppTheme } from '../theme/ThemeProvider';
 import Svg, { Circle, Path } from 'react-native-svg';
 export type AppSvgName = 'attendance' | 'exam' | 'bell' | 'settings' | 'search' | 'logout' | 'profile' | 'back' | 'chevron';
-export function AppSvg({ name, size = 24, color = '#0B132B', solid = false }: { name: AppSvgName; size?: number; color?: string; solid?: boolean }) {
+export function AppSvg({ name, size = 24, color: providedColor, solid = false }: { name: AppSvgName; size?: number; color?: string; solid?: boolean }) {
+  const { isDark } = useAppTheme();
+  const color = providedColor ?? (isDark ? '#EFB000' : '#0B132B');
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     {name === 'attendance' && <><Path d="M8 4H5v17h14V4h-3M9 2h6v5H9zM8 11l1.5 1.5L12 10m2 2h2m-8 5 1.5 1.5L12 16m2 2h2" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" /></>}
     {name === 'exam' && <><Path d="M14 2H5v20h14V7l-5-5Zm0 0v5h5M8 11h8m-8 4h3m-3 3h3m3-2 1.5 1.5L18 15" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" /></>}

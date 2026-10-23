@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\SchoolSetting;
 use App\Models\StaffLeave;
 use App\Models\User;
+use App\Services\LeaveCoverService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,7 @@ class Leaves extends Component
     public string $statusFilter = 'all';
     public ?int $approvingLeaveId = null;
     public string $replacementStaffId = '';
+    public int $handoverClassCount = 0;
     public int $handoverSubjectCount = 0;
     public int $handoverTimetableCount = 0;
 
@@ -74,50 +76,56 @@ class Leaves extends Component
     {
         abort_unless($this->canApprove(), 403);
         $leave = StaffLeave::with('staff')->where('school_id', Auth::user()->school_id)->where('status', 'pending')->findOrFail($id);
-        $termId = Auth::user()->school->currentTerm()?->id;
-        $this->handoverSubjectCount = DB::table('staff_subjects')->where('school_id', $leave->school_id)->where('user_id', $leave->user_id)->when($termId, fn ($query) => $query->where(fn ($scope) => $scope->where('term_id', $termId)->orWhereNull('term_id')))->count();
-        $this->handoverTimetableCount = DB::table('timetable_slots')->where('school_id', $leave->school_id)->where('user_id', $leave->user_id)->when($termId, fn ($query) => $query->where('term_id', $termId))->count();
-        if ($leave->staff?->role === 'teacher' && ($this->handoverSubjectCount + $this->handoverTimetableCount) > 0) {
+        $duties = app(LeaveCoverService::class)->duties($leave);
+        $this->handoverClassCount = $duties['classes']->count();
+        $this->handoverSubjectCount = $duties['subjects']->count();
+        $this->handoverTimetableCount = $duties['slots']->count();
+        if ($this->handoverClassCount + $this->handoverSubjectCount + $this->handoverTimetableCount > 0) {
             $this->approvingLeaveId = $leave->id;
             $this->replacementStaffId = '';
             return;
         }
-        $this->finalizeDecision($leave, 'approved');
+        app(LeaveCoverService::class)->approve($leave, null, Auth::user());
+        $this->notifyDecision($leave->fresh('staff'), 'approved');
+        session()->flash('status', 'Leave approved. Availability will follow the approved dates.');
+    }
+
+    public function changeCover(int $id): void
+    {
+        abort_unless($this->canApprove(), 403);
+        $leave = StaffLeave::where('school_id', Auth::user()->school_id)->where('status', 'approved')->whereNull('returned_at')->whereDate('ends_on', '>=', today())->whereHas('handover', fn ($q) => $q->where('temporary', true))->findOrFail($id);
+        $duties = app(LeaveCoverService::class)->duties($leave);
+        $this->approvingLeaveId = $leave->id;
+        $this->replacementStaffId = '';
+        $this->handoverClassCount = $duties['classes']->count();
+        $this->handoverSubjectCount = $duties['subjects']->count();
+        $this->handoverTimetableCount = $duties['slots']->count();
     }
 
     public function confirmApproval(): void
     {
         abort_unless($this->canApprove(), 403);
-        $this->validate(['replacementStaffId' => ['required', 'integer', 'exists:users,id']]);
-        $leave = StaffLeave::with('staff')->where('school_id', Auth::user()->school_id)->where('status', 'pending')->findOrFail($this->approvingLeaveId);
-        $replacement = User::where('school_id', $leave->school_id)->where('employment_status', 'active')->whereIn('role', ['teacher', 'admin', 'academic_admin'])->find($this->replacementStaffId);
-        if (! $replacement || $replacement->id === $leave->user_id) { $this->addError('replacementStaffId', 'Choose another active teacher or academic administrator from this school.'); return; }
-        $termId = Auth::user()->school->currentTerm()?->id;
-        $assignments = DB::table('staff_subjects')->where('school_id', $leave->school_id)->where('user_id', $leave->user_id)->when($termId, fn ($query) => $query->where(fn ($scope) => $scope->where('term_id', $termId)->orWhereNull('term_id')))->get();
-        $slots = DB::table('timetable_slots')->where('school_id', $leave->school_id)->where('user_id', $leave->user_id)->when($termId, fn ($query) => $query->where('term_id', $termId))->get();
-        foreach ($slots as $slot) {
-            $conflict = DB::table('timetable_slots')->where('school_id', $leave->school_id)->where('user_id', $replacement->id)->where('term_id', $slot->term_id)->where('day_of_week', $slot->day_of_week)->where('starts_at', $slot->starts_at)->exists();
-            if ($conflict) { $this->addError('replacementStaffId', $replacement->name.' already has a timetable lesson on '. $slot->day_of_week.' at '.substr($slot->starts_at, 0, 5).'.'); return; }
-        }
-
-        DB::transaction(function () use ($leave, $replacement, $assignments, $slots): void {
-            foreach ($assignments as $assignment) {
-                DB::table('staff_subjects')->updateOrInsert(['school_id' => $assignment->school_id, 'term_id' => $assignment->term_id, 'user_id' => $replacement->id, 'subject_id' => $assignment->subject_id, 'school_class_id' => $assignment->school_class_id], ['updated_at' => now(), 'created_at' => now()]);
-            }
-            DB::table('staff_subjects')->whereIn('id', $assignments->pluck('id'))->delete();
-            DB::table('timetable_slots')->whereIn('id', $slots->pluck('id'))->update(['user_id' => $replacement->id, 'updated_at' => now()]);
-            DB::table('staff_leave_handovers')->insert(['school_id' => $leave->school_id, 'staff_leave_id' => $leave->id, 'from_user_id' => $leave->user_id, 'to_user_id' => $replacement->id, 'subject_assignments' => json_encode($assignments), 'timetable_slots' => json_encode($slots), 'assigned_by' => Auth::id(), 'created_at' => now(), 'updated_at' => now()]);
-            $leave->update(['status' => 'approved', 'approved_by' => Auth::id()]);
-        });
-        AuditLog::record($leave->school_id, 'leave.approved', $leave, ['staff' => $leave->staff?->name, 'replacement' => $replacement->name, 'subjects' => $assignments->count(), 'timetable_slots' => $slots->count()]);
+        $this->validate(['replacementStaffId' => ['required', 'integer']]);
+        $leave = StaffLeave::with('staff')->where('school_id', Auth::user()->school_id)->whereIn('status', ['pending', 'approved'])->findOrFail($this->approvingLeaveId);
+        app(LeaveCoverService::class)->approve($leave, (int) $this->replacementStaffId, Auth::user(), $leave->status === 'approved');
+        $replacement = User::findOrFail($this->replacementStaffId);
         $this->notifyDecision($leave->fresh('staff'), 'approved', $replacement->name);
         $this->cancelApproval();
-        session()->flash('status', 'Leave approved and all current teaching work assigned to '. $replacement->name.'.');
+        session()->flash('status', 'Leave approved. '.$replacement->name.' will cover class and subject duties only during the approved leave dates.');
+    }
+
+    public function markReturned(int $id): void
+    {
+        abort_unless($this->canApprove(), 403);
+        $leave = StaffLeave::where('school_id', Auth::user()->school_id)->where('status', 'approved')->whereNull('returned_at')->whereDate('starts_on', '<=', today())->whereDate('ends_on', '>=', today())->findOrFail($id);
+        $leave->update(['returned_at' => now(), 'returned_by' => Auth::id()]);
+        AuditLog::record($leave->school_id, 'leave.returned', $leave);
+        session()->flash('status', 'Return recorded. The original teacher is available and temporary cover has ended.');
     }
 
     public function cancelApproval(): void
     {
-        $this->reset(['approvingLeaveId', 'replacementStaffId', 'handoverSubjectCount', 'handoverTimetableCount']);
+        $this->reset(['approvingLeaveId', 'replacementStaffId', 'handoverClassCount', 'handoverSubjectCount', 'handoverTimetableCount']);
         $this->resetValidation();
     }
 
@@ -169,8 +177,10 @@ class Leaves extends Component
             default => collect(explode(',', $storedTypes))->map(fn ($type) => trim($type))->filter(),
         };
         $staff = $this->canApprove() ? User::where('school_id', $schoolId)->where('employment_status', 'active')->orderBy('name')->get(['id', 'name', 'job_title']) : User::whereKey(Auth::id())->get(['id', 'name', 'job_title']);
-        $leaves = StaffLeave::with(['staff:id,name,job_title,role', 'approver:id,name'])->where('school_id', $schoolId)->when(! $this->canApprove(), fn ($query) => $query->where('user_id', Auth::id()))->when($this->statusFilter !== 'all', fn ($query) => $query->where('status', $this->statusFilter))->latest()->get();
-        $replacementStaff = User::where('school_id', $schoolId)->where('employment_status', 'active')->whereIn('role', ['teacher', 'admin', 'academic_admin'])->when($this->approvingLeaveId, fn ($query) => $query->where('id', '!=', StaffLeave::whereKey($this->approvingLeaveId)->value('user_id')))->orderBy('name')->get(['id', 'name', 'job_title']);
+        $leaves = StaffLeave::with(['staff:id,name,job_title,role', 'approver:id,name', 'handover.toUser'])->where('school_id', $schoolId)->when(! $this->canApprove(), fn ($query) => $query->where('user_id', Auth::id()))->when($this->statusFilter !== 'all', fn ($query) => $query->where('status', $this->statusFilter))->latest()->get();
+        $replacementStaff = User::where('school_id', $schoolId)->where('employment_status', 'active')->whereIn('role', ['teacher', 'admin', 'academic_admin'])->when($this->approvingLeaveId, fn ($query) => $query->where('id', '!=', StaffLeave::whereKey($this->approvingLeaveId)->value('user_id')))->orderBy('name')->get();
+        $approvalLeave = $this->approvingLeaveId ? StaffLeave::where('school_id', $schoolId)->find($this->approvingLeaveId) : null;
+        $replacementStaff->each(fn ($member) => $member->setAttribute('cover_available', $approvalLeave ? $member->availableBetween($approvalLeave->starts_on, $approvalLeave->ends_on) : ! $member->isOnLeave()));
         return view('livewire.leaves', compact('types', 'staff', 'leaves', 'replacementStaff'), ['canApprove' => $this->canApprove(), 'pageTitle' => $this->canApprove() ? 'Leave Requests' : 'My Leave']);
     }
 }

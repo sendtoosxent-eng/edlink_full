@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { Text } from '../../components/Typography';
 import { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, View } from 'react-native';
@@ -5,6 +6,7 @@ import { Animated, Image, StyleSheet, View } from 'react-native';
 const LOGO_IMAGE = require('../../../assets/img/edlink-logo.png');
 
 export function SplashScreen() {
+  const styles = useThemedStyles(baseStyles);
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.94)).current;
   useEffect(() => {
@@ -24,9 +26,11 @@ export function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   screen: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#efb000' },
   lockup: { alignItems: 'center' },
   logo: { width: 340, height: 250 },
   tagline: { marginTop: -54, color: '#0B132B', fontSize: 17, fontWeight: '800' },
 });
+
+const styles = baseStyles;

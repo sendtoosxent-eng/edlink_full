@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { api } from '../../api';
@@ -7,6 +8,7 @@ import { colors } from '../../theme/index';
 
 type Row = { name: string; admission_no: string; class: string; total: number; present: number; absent: number; late: number; excused: number; rate: number };
 export function TeacherAttendancePerformance({ token, classId, streamId, onBack }: { token: string; classId: number; streamId: string; onBack: () => void }) {
+  const styles = useThemedStyles(baseStyles);
   const date = (value: Date) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
   const [from, setFrom] = useState(() => date(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
   const [to, setTo] = useState(() => date(new Date()));
@@ -44,4 +46,6 @@ export function TeacherAttendancePerformance({ token, classId, streamId, onBack 
     </>}
   </ScrollView>;
 }
-const styles = StyleSheet.create({ content: { padding: 20, gap: 16, paddingBottom: 40 }, title: { fontSize: 24, fontWeight: '800', color: colors.primary }, name: { color: colors.primary, fontWeight: '700', fontSize: 15 }, action: { color: colors.primary, fontWeight: '700', paddingVertical: 14 }, meta: { color: colors.textMuted, lineHeight: 20, fontSize: 12 }, input: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 14, padding: 14, color: colors.primary }, card: { backgroundColor: colors.surface, padding: 18, borderRadius: 18, gap: 8 }, error: { color: colors.status.absent.text } });
+const baseStyles = StyleSheet.create({ content: { padding: 20, gap: 16, paddingBottom: 40 }, title: { fontSize: 24, fontWeight: '800', color: colors.primary }, name: { color: colors.primary, fontWeight: '700', fontSize: 15 }, action: { color: colors.primary, fontWeight: '700', paddingVertical: 14 }, meta: { color: colors.textMuted, lineHeight: 20, fontSize: 12 }, input: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 14, padding: 14, color: colors.primary }, card: { backgroundColor: colors.surface, padding: 18, borderRadius: 18, gap: 8 }, error: { color: colors.status.absent.text } });
+
+const styles = baseStyles;

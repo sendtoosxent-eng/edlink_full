@@ -7,6 +7,7 @@ use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +28,8 @@ final class StaffRegistrationService
         ?Term $term,
         ?int $classTeacherClassId,
         array $subjectAssignments,
+        ?UploadedFile $photo = null,
+        array $qualificationDocuments = [],
     ): User {
         if ($subjectAssignments !== [] && ! $term) {
             throw ValidationException::withMessages([
@@ -34,7 +37,7 @@ final class StaffRegistrationService
             ]);
         }
 
-        return DB::transaction(function () use ($school, $attributes, $term, $classTeacherClassId, $subjectAssignments): User {
+        return app(StaffUploadService::class)->persist($school->id, $photo, $qualificationDocuments, function ($photoPath, $documents) use ($school, $attributes, $term, $classTeacherClassId, $subjectAssignments): User {
             $classTeacherClass = null;
 
             if ($classTeacherClassId) {
@@ -58,8 +61,11 @@ final class StaffRegistrationService
             $staff = User::create([
                 ...$attributes,
                 'school_id' => $school->id,
+                ...($photoPath ? ['avatar_path' => $photoPath] : []),
                 'password' => Hash::make($attributes['password']),
             ]);
+
+            $staff->staffDocuments()->createMany($documents);
 
             $staff->update([
                 'staff_number' => $this->staffNumbers->generate($school, $staff),

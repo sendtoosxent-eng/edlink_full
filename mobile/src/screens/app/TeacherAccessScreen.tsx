@@ -1,8 +1,10 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { ErrorScreen } from '../../components/ErrorScreen';
 import { NativeModuleScreen } from './NativeModuleScreen';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { TeacherHero, TeacherToolCard, TeacherButton, useTeacherBack, teacherScreenStyles } from '../../components/TeacherScreenUI';
+import type { StatArtworkName } from '../../components/StatArtwork';
 import { Text } from '../../components/Typography';
 import { api } from '../../api';
 import { colors } from '../../theme/index';
@@ -24,6 +26,7 @@ export function toolSection(group: string): AccessTab {
 }
 
 export function TeacherAccessScreen({ token, section, navigate, onBack }: { token: string; section: AccessTab; navigate: (tab: AppTab) => void; onBack: () => void }) {
+  const styles = useThemedStyles(baseStyles);
   const [selectedTool, setSelectedTool] = useState<string>();
   const [workspace, setWorkspace] = useState<TeacherWorkspace | null>();
   const [loading, setLoading] = useState(false); const [error, setError] = useState('');
@@ -45,22 +48,42 @@ export function TeacherAccessScreen({ token, section, navigate, onBack }: { toke
     if (tool.native) { navigate(tool.native as AppTab); return; }
     setSelectedTool(tool.id);
   };
+  useTeacherBack(() => { if (selectedTool) setSelectedTool(undefined); else onBack(); });
+  const artwork: StatArtworkName = section === 'class_access' ? 'learners' : section === 'teaching_access' ? 'classroom' : section === 'reports_access' ? 'reports' : 'school';
   if (error && !workspace) return <ErrorScreen message={error} retry={load} onBack={onBack} />;
   if (selectedTool) return <NativeModuleScreen key={selectedTool} token={token} tool={selectedTool} onBack={() => setSelectedTool(undefined)} />;
-  return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}>
-    <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}><Ionicons name="arrow-back" color={colors.primary} size={20} /><Text style={styles.backText}>Dashboard</Text></Pressable>
-    <View style={styles.hero}><Ionicons name={definition.icon} color="white" size={32} /><Text style={styles.title}>{definition.title}</Text><Text style={styles.description}>{definition.description}</Text>{workspace && <Text style={styles.description}>{workspace.role_label} · {tools.length} available tools</Text>}</View>
-    {section === 'teaching_access' && <Pressable accessibilityRole="button" onPress={() => navigate('teacher_schedule')} style={styles.card}><View style={styles.icon}><Ionicons name="calendar-outline" size={23} color="white" /></View><View style={{ flex: 1 }}><Text style={styles.label}>My weekly timetable</Text><Text style={styles.meta}>Your assigned lessons</Text></View><Ionicons name="chevron-forward" size={20} color={colors.primary} /></Pressable>}
-    {!!error && <Text style={styles.error}>{error}</Text>}
-    {tools.map(tool => <Pressable accessibilityRole="button" key={tool.id} onPress={() => void open(tool)} style={({ pressed }) => [styles.card, pressed && { opacity: 0.75 }]}>
-      <View style={styles.icon}><Ionicons name={definition.icon} size={23} color="white" /></View><View style={{ flex: 1 }}><Text style={styles.label}>{tool.label}</Text><Text style={styles.meta}>{'Open tool'}</Text></View><Ionicons name="chevron-forward" size={20} color={colors.primary} />
-    </Pressable>)}
-    {!loading && !error && !tools.length && <Text style={styles.error}>No tools are assigned here yet. Your school controls access through your teaching assignments and permissions.</Text>}
-    <Pressable onPress={() => void load()} style={styles.back}><Text style={styles.backText}>Refresh tools</Text></Pressable>
+  return <ScrollView contentContainerStyle={teacherScreenStyles.content} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}>
+    <TeacherHero title={definition.title} subtitle={definition.description} artwork={artwork} detail={workspace ? `${workspace.role_label} · ${tools.length} available tools` : undefined} />
+    {section === 'class_access' && !!workspace?.class_teacher_classes.length && <View style={styles.responsibilities}><Text style={styles.sectionTitle}>Assigned classes</Text><View style={styles.chips}>{workspace.class_teacher_classes.map(item => <View key={item.id} style={styles.chip}><Text style={styles.chipText}>{item.name}</Text></View>)}</View></View>}
+    {section === 'teaching_access' && <TeacherToolCard title="My weekly timetable" description="Your assigned lessons, organized by day" artwork="lessons" onPress={() => navigate('teacher_schedule')} />}
+    {!!error && <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>}
+    {tools.map(tool => <TeacherToolCard key={tool.id} title={tool.label} description={toolDescription(tool.id)} artwork={toolArtwork(tool.id, artwork)} onPress={() => open(tool)} />)}
+    {!loading && !error && !tools.length && <View style={teacherScreenStyles.panel}><Text style={styles.error}>No tools are assigned here yet. Your school administrator can update your access.</Text></View>}
+    <TeacherButton label={loading ? 'Refreshing…' : 'Refresh tools'} secondary disabled={loading} onPress={() => void load()} />
   </ScrollView>;
 }
-const styles = StyleSheet.create({
-  content: { padding: 20, gap: 14, paddingBottom: 36 }, back: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, alignSelf: 'flex-start' }, backText: { color: colors.primary, fontWeight: '700' },
-  hero: { backgroundColor: colors.primary, borderRadius: 24, padding: 24, gap: 9 }, title: { color: 'white', fontSize: 28, fontWeight: '800' }, description: { color: '#D8E2F2', fontSize: 13, lineHeight: 20 },
-  card: { backgroundColor: 'white', borderRadius: 18, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center', borderWidth: 1, borderColor: '#DDE3EE', minHeight: 88 }, icon: { width: 48, height: 48, backgroundColor: colors.primary, borderRadius: 15, justifyContent: 'center', alignItems: 'center' }, label: { color: colors.primary, fontSize: 14, fontWeight: '700' }, meta: { color: colors.textMuted, fontSize: 11, lineHeight: 18, marginTop: 3 }, error: { color: colors.textMuted, lineHeight: 22, paddingVertical: 16 },
+function toolArtwork(id: string, fallback: StatArtworkName): StatArtworkName {
+  if (id.startsWith('attendance')) return 'attendance';
+  if (id.startsWith('exams') || id.startsWith('grading')) return 'marks';
+  if (id.includes('student') || id.includes('class')) return 'learners';
+  if (id.includes('timetable') || id.includes('event') || id.includes('leave')) return 'lessons';
+  if (id.includes('report')) return 'reports';
+  if (id.includes('subject') || id.includes('homework')) return 'subjects';
+  return fallback;
+}
+function toolDescription(id: string): string {
+  if (id === 'students.index') return 'Find learners and view their school profiles';
+  if (id === 'attendance.index') return 'Complete your daily class registers';
+  if (id === 'attendance.subject') return 'Record attendance for your subject lessons';
+  if (id === 'attendance.reports') return 'Review attendance and export your reports';
+  if (id === 'exams.marks') return 'Enter, review and submit learner scores';
+  if (id === 'exams.results') return 'Published results and learner report cards';
+  if (id === 'homework.index') return 'Set learning tasks and review submissions';
+  if (id === 'leaves.index') return 'View and manage your leave requests';
+  return 'Manage records within your assigned school access';
+}
+const baseStyles = StyleSheet.create({
+  responsibilities: { padding: 16, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 12 }, sectionTitle: { color: colors.primary, fontSize: 13, fontWeight: '600' }, chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: colors.primary }, chipText: { color: colors.secondary, fontSize: 11, fontWeight: '600' }, error: { color: colors.textMuted, fontSize: 12, lineHeight: 20 },
 });
+
+const styles = baseStyles;

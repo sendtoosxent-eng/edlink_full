@@ -1,9 +1,10 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { api } from '../../api';
-import type { LoginResult, Role, SchoolIdentity } from '../../types';
+import type { AccountPreview, LoginResult, Role, SchoolIdentity } from '../../types';
 import { LoginScreen } from './LoginScreen';
 import { OtpScreen } from './OtpScreen';
 import { PasswordRecoveryScreen } from './PasswordRecoveryScreen';
@@ -16,7 +17,9 @@ type Step = 'splash' | 'connect' | 'inform' | 'progress' | 'role' | 'school' | '
 type Props = { onSignIn: (school: string, email: string, password: string, role: Role) => Promise<LoginResult>; onVerifyOtp: (challenge: string, code: string) => Promise<void>; onBiometricSignIn: () => Promise<void>; biometricAvailable: boolean; messageFor: (error: unknown) => string };
 
 export function AuthFlow({ onSignIn, onVerifyOtp, onBiometricSignIn, biometricAvailable, messageFor }: Props) {
+  const styles = useThemedStyles(baseStyles);
   const [step, setStep] = useState<Step>('splash'); const [role, setRole] = useState<Role>('student'); const [school, setSchool] = useState(''); const [schoolIdentity, setSchoolIdentity] = useState<SchoolIdentity>(); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [code, setCode] = useState(''); const [challenge, setChallenge] = useState(''); const [maskedEmail, setMaskedEmail] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [loginProfile, setLoginProfile] = useState<AccountPreview | null>(null);
   const opacity = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const transitioning = useRef(false);
@@ -51,19 +54,19 @@ export function AuthFlow({ onSignIn, onVerifyOtp, onBiometricSignIn, biometricAv
   const verify = async () => { if (!challenge) return setError('This is a screen preview. Sign in to receive a verification code.'); if (code.length !== 6) return setError('Enter the complete 6-digit code.'); setBusy(true); clear(); try { await onVerifyOtp(challenge, code); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } };
   const resend = async () => { if (!challenge) { setError('This is a screen preview. Sign in to receive a verification code.'); throw new Error('No verification challenge'); } setBusy(true); clear(); try { const response = await api.resendOtp(challenge); setMaskedEmail(response.data.masked_email); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } };
   const biometric = async () => { setBusy(true); clear(); try { await onBiometricSignIn(); } catch (caught) { setError(messageFor(caught)); } finally { setBusy(false); } };
-  const requestReset = async (resetEmail: string) => { if (!resetEmail.trim()) { setError('Enter your email address.'); return false; } setBusy(true); clear(); try { await api.forgotPassword(school, resetEmail.trim()); return true; } catch (caught) { setError(messageFor(caught)); return false; } finally { setBusy(false); } };
-  const resetPassword = async (values: { email: string; token: string; password: string; password_confirmation: string }) => { if (!values.email || !values.token || !values.password) { setError('Complete every password reset field.'); return false; } if (values.password !== values.password_confirmation) { setError('The passwords do not match.'); return false; } setBusy(true); clear(); try { await api.resetPassword({ ...values, school_number: school }); setEmail(values.email); setPassword(''); goTo('login', -1); return true; } catch (caught) { setError(messageFor(caught)); return false; } finally { setBusy(false); } };
+  const requestReset = async (resetEmail: string) => { if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim())) { setError('Enter a valid school email address.'); return false; } setBusy(true); clear(); try { await api.forgotPassword(school, resetEmail.trim()); return true; } catch (caught) { setError(messageFor(caught)); return false; } finally { setBusy(false); } };
+  const resetPassword = async (values: { email: string; token: string; password: string; password_confirmation: string }) => { if (!values.email.trim() || !values.token.trim() || !values.password || !values.password_confirmation) { setError('Complete every password reset field.'); return false; } if (values.password.length < 8) { setError('Use at least 8 characters for your new password.'); return false; } if (values.password !== values.password_confirmation) { setError('The passwords do not match.'); return false; } setBusy(true); clear(); try { await api.resetPassword({ ...values, school_number: school }); setEmail(values.email); setPassword(''); goTo('login', -1); return true; } catch (caught) { setError(messageFor(caught)); return false; } finally { setBusy(false); } };
 
   let content;
   if (step === 'splash') content = <View style={styles.bleed}><SplashScreen /></View>;
   else if (step === 'connect') content = <View style={styles.bleed}><ConnectOnboardingScreen onNext={() => goTo('inform')} onSkip={() => goTo('role')} /></View>;
   else if (step === 'inform') content = <View style={styles.bleed}><InformOnboardingScreen onBack={() => goTo('connect', -1)} onNext={() => goTo('progress')} /></View>;
   else if (step === 'progress') content = <View style={styles.bleed}><ProgressOnboardingScreen onBack={() => goTo('inform', -1)} onNext={() => goTo('role')} /></View>;
-  else if (step === 'role') content = <RoleSelectorScreen onSelect={value => { setRole(value); goTo('school'); }} />;
+  else if (step === 'role') content = <RoleSelectorScreen onSelect={value => { if (value !== role) { setEmail(''); setPassword(''); setLoginProfile(null); setCode(''); setChallenge(''); setMaskedEmail(''); } setRole(value); clear(); goTo('school'); }} />;
   else if (step === 'school') content = <SchoolScreen school={school} error={error} busy={busy} onChange={value => { setSchool(value); setSchoolIdentity(undefined); clear(); }} onBack={() => { clear(); goTo('role', -1); }} onContinue={() => void continueToLogin()} />;
-  else if (step === 'login' && schoolIdentity) content = <LoginScreen role={role} school={schoolIdentity} email={email} password={password} error={error} busy={busy} biometricAvailable={biometricAvailable} onEmailChange={value => { setEmail(value); clear(); }} onPasswordChange={value => { setPassword(value); clear(); }} onChangeSchool={() => { clear(); goTo('school', -1); }} onChangeRole={() => { clear(); goTo('role', -1); }} onForgotPassword={() => { clear(); goTo('recovery'); }} onBiometricSignIn={() => void biometric()} onSubmit={() => void submit()} />;
-  else if (step === 'otp' && schoolIdentity) content = <OtpScreen school={schoolIdentity} maskedEmail={maskedEmail} code={code} error={error} busy={busy} onCodeChange={value => { setCode(value); clear(); }} onBack={() => { clear(); goTo('login', -1); }} onVerify={() => void verify()} onResend={resend} />;
-  else if (schoolIdentity) content = <PasswordRecoveryScreen school={schoolIdentity} initialEmail={email} error={error} busy={busy} onBack={() => { clear(); goTo('login', -1); }} onRequest={requestReset} onReset={resetPassword} />;
+  else if (step === 'login' && schoolIdentity) content = <LoginScreen onAccountValidated={setLoginProfile} role={role} school={schoolIdentity} email={email} password={password} error={error} busy={busy} biometricAvailable={biometricAvailable} onEmailChange={value => { setEmail(value); clear(); }} onPasswordChange={value => { setPassword(value); clear(); }} onChangeSchool={() => { clear(); setLoginProfile(null); goTo('school', -1); }} onChangeRole={() => { clear(); setLoginProfile(null); goTo('role', -1); }} onForgotPassword={() => { clear(); setPassword(''); goTo('recovery'); }} onBiometricSignIn={() => void biometric()} onSubmit={() => void submit()} />;
+  else if (step === 'otp' && schoolIdentity) content = <OtpScreen account={loginProfile} email={email || maskedEmail} maskedEmail={maskedEmail} code={code} error={error} busy={busy} onCodeChange={value => { setCode(value); clear(); }} onBack={() => { clear(); goTo('login', -1); }} onVerify={() => void verify()} onResend={resend} />;
+  else if (schoolIdentity) content = <PasswordRecoveryScreen onClearError={clear} school={schoolIdentity} initialEmail={email} error={error} busy={busy} onBack={() => { clear(); goTo('login', -1); }} onRequest={requestReset} onReset={resetPassword} />;
   else content = <SchoolScreen school={school} error={error} busy={busy} onChange={setSchool} onBack={() => goTo('role', -1)} onContinue={() => void continueToLogin()} />;
 
   return <SafeAreaView edges={[]} style={styles.safe}><StatusBar style={step !== 'splash' ? "light" : "dark"} />
@@ -72,4 +75,6 @@ export function AuthFlow({ onSignIn, onVerifyOtp, onBiometricSignIn, biometricAv
     </Animated.View>
   </SafeAreaView>;
 }
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: '#efb000', overflow: 'hidden' }, bleed: { flex: 1, backgroundColor: '#F9F9FF' }, flex: { flex: 1 }, form: { flexGrow: 1, backgroundColor: '#efb000' } });
+const baseStyles = StyleSheet.create({ safe: { flex: 1, backgroundColor: '#efb000', overflow: 'hidden' }, bleed: { flex: 1, backgroundColor: '#F9F9FF' }, flex: { flex: 1 }, form: { flexGrow: 1, backgroundColor: '#efb000' } });
+
+const styles = baseStyles;

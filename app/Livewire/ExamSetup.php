@@ -145,6 +145,21 @@ class ExamSetup extends Component
         session()->flash('status', 'Exam category updated.');
     }
 
+    public function markCompleted(int $examId): void
+    {
+        $this->authorizeManagement();
+        $exam = Exam::with('term')->where('school_id', Auth::user()->school_id)->findOrFail($examId);
+        if (! $exam->term->isOpen() || $exam->isPublished()) {
+            $this->addError('examId', 'Only an unpublished exam in an open term can be marked completed.');
+            return;
+        }
+        if (! $exam->completed_at) {
+            $exam->update(['completed_at' => now()]);
+            \App\Models\AuditLog::record($exam->school_id, 'exam.completed', $exam);
+        }
+        session()->flash('status', 'Exam marked completed. Teachers will see any outstanding marks submissions.');
+    }
+
     private function authorizeManagement(): void
     {
         abort_unless(Auth::user()->hasPermission('exams.setup'), 403);

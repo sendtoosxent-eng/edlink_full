@@ -121,6 +121,7 @@
             })();
         </script>
     @elseif($isTeacherWorkspace)
+        @foreach($teacher['covers'] as $cover)<div class="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><strong>Temporary teaching cover:</strong> {{ $cover->fromUser?->name }} · {{ $cover->leave->starts_on->format('d M Y') }} through {{ $cover->leave->ends_on->format('d M Y') }}. Covered learners, results and attendance reminders are available until this cover ends.</div>@endforeach
         @if($teacher['nextLesson'])
             @php($nextLesson=$teacher['nextLesson'])
             <section

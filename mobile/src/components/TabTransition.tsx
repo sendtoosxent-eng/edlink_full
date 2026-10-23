@@ -1,8 +1,10 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, FadeOut, ReduceMotion, withTiming } from 'react-native-reanimated';
 
 export function TabTransition({ screen, order, children }: { screen: string; order: readonly string[]; children: ReactNode }) {
+  const styles = useThemedStyles(baseStyles);
   const previous = useRef(screen);
   const from = order.indexOf(previous.current);
   const to = order.indexOf(screen);
@@ -22,4 +24,6 @@ export function TabTransition({ screen, order, children }: { screen: string; ord
     </Animated.View>
   </View>;
 }
-const styles = StyleSheet.create({ viewport: { flex: 1, overflow: 'hidden' }, screen: { flex: 1 } });
+const baseStyles = StyleSheet.create({ viewport: { flex: 1, overflow: 'hidden' }, screen: { flex: 1 } });
+
+const styles = baseStyles;

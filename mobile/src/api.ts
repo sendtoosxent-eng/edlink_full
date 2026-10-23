@@ -41,6 +41,9 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
   } finally {
     clearTimeout(timeout);
   }
+  if (response.status === 403 && !response.headers.get('content-type')?.toLowerCase().includes('json')) {
+    throw new ApiError('Edlink’s hosting server is blocking access (403). Please contact the Edlink administrator to restore server access.', 403);
+  }
   const payload: ErrorPayload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const errors = payload.errors && typeof payload.errors === 'object' && !Array.isArray(payload.errors)

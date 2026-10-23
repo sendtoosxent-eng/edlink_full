@@ -28,7 +28,9 @@ class ClassesAndStreams extends Component
     public function assignClassTeacher(int $classId, string $teacherId): void
     {
         $class = SchoolClass::where('school_id', Auth::user()->school_id)->findOrFail($classId);
+        if ($teacherId === '' && $class->classTeacher?->isOnLeave()) throw \Illuminate\Validation\ValidationException::withMessages(['classTeachers' => 'Assign an available teacher instead of leaving this class without cover.']);
         $teacher = $teacherId === '' ? null : User::where('school_id', Auth::user()->school_id)->where('role', 'teacher')->where('employment_status', 'active')->findOrFail($teacherId);
+        if ($teacher?->isOnLeave()) throw \Illuminate\Validation\ValidationException::withMessages(['classTeachers' => 'This teacher is on leave. Choose an available teacher.']);
         $class->update(['class_teacher_user_id' => $teacher?->id]);
         session()->flash('status', $teacher ? $teacher->name.' assigned as class teacher for '.$class->name.'.' : 'Class teacher assignment removed.');
     }
@@ -88,5 +90,5 @@ class ClassesAndStreams extends Component
         if ($stream->students()->exists() || $stream->enrolments()->exists()) { session()->flash('error', 'This stream has learner records and cannot be deleted.'); return; }
         $stream->delete(); $this->deletingStreamId = null; session()->flash('status', 'Stream deleted.');
     }
-    public function render() { $school = Auth::user()->school; $school->applyDefaultGraduatingClasses(); return view('livewire.create-class', ['classes' => SchoolClass::with(['streams','classTeacher:id,name'])->where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'teachers'=>User::where('school_id',$school->id)->where('role','teacher')->where('employment_status','active')->orderBy('name')->get(['id','name']), 'educationStages' => \App\Services\SchoolAcademicSetup::stagesFor($school), 'pageTitle' => 'Classes & Streams']); }
+    public function render() { $school = Auth::user()->school; $school->applyDefaultGraduatingClasses(); return view('livewire.create-class', ['classes' => SchoolClass::with(['streams','classTeacher:id,name'])->where('school_id', $school->id)->orderBy('sort_order')->orderBy('name')->get(), 'teachers'=>User::with('activeLeaves')->where('school_id',$school->id)->where('role','teacher')->where('employment_status','active')->orderBy('name')->get(['id','name']), 'educationStages' => \App\Services\SchoolAcademicSetup::stagesFor($school), 'pageTitle' => 'Classes & Streams']); }
 }

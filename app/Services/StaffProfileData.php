@@ -21,24 +21,25 @@ class StaffProfileData
         abort_if($termId && ! $term, 404);
         $canEdit = $viewer->hasPermission('staff.manage')
             && (! in_array($staff->role, ['admin', 'superadmin'], true) || in_array($viewer->role, ['admin', 'superadmin'], true));
+        $documents = $canEdit ? $staff->staffDocuments()->where('school_id', $staff->school_id)->latest()->get() : collect();
         $canViewPayroll = $viewer->hasPermission('staff.payroll');
         $canViewAttendance = $canEdit || $viewer->hasPermission('staff.attendance');
         $canViewLeave = $canEdit || $viewer->hasPermission('staff.leaves');
         $currency = (string) SchoolSetting::getValue($staff->school_id, 'currency', 'UGX');
         $from = Carbon::createFromFormat('!Y-m', $period)->startOfMonth();
         $to = $from->copy()->endOfMonth();
-        $classRoles = SchoolClass::where('school_id', $staff->school_id)->where('class_teacher_user_id', $staff->id)
+        $classRoles = SchoolClass::where('school_id', $staff->school_id)->whereIn('id', \App\Support\TeacherAcademicScope::classIds($staff))
             ->withCount(['students' => fn ($query) => $query->where('status', 'active')])->orderBy('name')->get();
         $assignments = DB::table('staff_subjects')->join('subjects', 'subjects.id', '=', 'staff_subjects.subject_id')
             ->leftJoin('school_classes', 'school_classes.id', '=', 'staff_subjects.school_class_id')
-            ->where('staff_subjects.school_id', $staff->school_id)->where('staff_subjects.user_id', $staff->id)
+            ->where('staff_subjects.school_id', $staff->school_id)->whereIn('staff_subjects.user_id', \App\Support\TeacherAcademicScope::teachingOwnerIds($staff, $term?->id))
             ->where(fn ($query) => $query->where('staff_subjects.term_id', $term?->id ?? 0)->orWhereNull('staff_subjects.term_id'))
             ->orderBy('school_classes.name')->orderBy('subjects.name')
             ->get(['subjects.id as subject_id', 'subjects.name as subject_name', 'subjects.code', 'school_classes.name as class_name', 'staff_subjects.term_id']);
         $timetable = DB::table('timetable_slots')->leftJoin('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
             ->leftJoin('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
             ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
-            ->where('timetable_slots.school_id', $staff->school_id)->where('timetable_slots.user_id', $staff->id)
+            ->where('timetable_slots.school_id', $staff->school_id)->whereIn('timetable_slots.user_id', \App\Support\TeacherAcademicScope::teachingOwnerIds($staff, $term?->id))
             ->where('timetable_slots.term_id', $term?->id ?? 0)->orderBy('starts_at')
             ->get(['day_of_week', 'starts_at', 'ends_at', 'label', 'subjects.name as subject_name', 'school_classes.name as class_name', 'streams.name as stream_name'])
             ->sortBy(fn ($slot) => array_search($slot->day_of_week, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']))->values();
@@ -59,7 +60,7 @@ class StaffProfileData
         $remaining = max(0, $salaryBasis - $salaryPaid - $advances);
         $pending = (float) $payrollRuns->filter(fn ($run) => $run->ledgerEntry?->status === 'pending')->sum('amount');
 
-        return compact('staff', 'terms', 'term', 'period', 'canEdit', 'canViewPayroll', 'canViewAttendance', 'canViewLeave', 'currency',
+        return compact('staff', 'documents', 'terms', 'term', 'period', 'canEdit', 'canViewPayroll', 'canViewAttendance', 'canViewLeave', 'currency',
             'classRoles', 'assignments', 'timetable', 'attendance', 'counts', 'attendanceRate', 'leaves', 'payrollRuns', 'salaryPaid', 'advances', 'snapshot', 'salaryBasis', 'remaining', 'pending');
     }
 }

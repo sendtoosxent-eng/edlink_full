@@ -165,7 +165,7 @@
                                             </p>
                                             <select wire:change="assignClassTeacher({{ $class->id }}, $event.target.value)" class="mt-2 max-w-xs rounded-lg border-slate-200 bg-slate-50 py-1 text-[11px] font-semibold text-slate-700">
                                                 <option value="">No class teacher</option>
-                                                @foreach($teachers as $teacher)<option value="{{ $teacher->id }}" @selected($class->class_teacher_user_id===$teacher->id)>{{ $teacher->name }}</option>@endforeach
+                                                @foreach($teachers as $teacher)<option value="{{ $teacher->id }}" @disabled($teacher->isOnLeave()) @selected($class->class_teacher_user_id===$teacher->id)>{{ $teacher->name }}{{ $teacher->isOnLeave() ? ' - On leave' : '' }}</option>@endforeach
                                             </select>
                                         @endif
                                     </div>

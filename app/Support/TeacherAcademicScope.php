@@ -3,12 +3,25 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Models\StaffLeaveHandover;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class TeacherAcademicScope
 {
+    public static function covers(User $user)
+    {
+        return StaffLeaveHandover::where('school_id', $user->school_id)->where('to_user_id', $user->id)->where('temporary', true)
+            ->whereHas('leave', fn ($q) => $q->where('school_id', $user->school_id)->overlapping(today()->toDateString(), today()->toDateString()));
+    }
+
+    public static function teachingOwnerIds(User $user, ?int $termId = null): Collection
+    {
+        if ($termId && $termId !== $user->school->currentTerm()?->id) return collect([$user->id]);
+        return self::covers($user)->pluck('from_user_id')->push($user->id)->unique()->values();
+    }
+
     public static function isTeacher(User $user): bool
     {
         return $user->role === 'teacher'
@@ -20,12 +33,12 @@ final class TeacherAcademicScope
     public static function classIds(User $user): Collection
     {
         return DB::table('school_classes')->where('school_id', $user->school_id)
-            ->where('class_teacher_user_id', $user->id)->pluck('id');
+            ->whereIn('class_teacher_user_id', self::teachingOwnerIds($user))->pluck('id');
     }
 
     public static function subjectAssignments(User $user, ?int $termId = null): Collection
     {
-        $assigned = DB::table('staff_subjects')->where('school_id', $user->school_id)->where('user_id', $user->id)
+        $assigned = DB::table('staff_subjects')->where('school_id', $user->school_id)->whereIn('user_id', self::teachingOwnerIds($user, $termId))
             ->when($termId, fn ($query) => $query->where(fn ($scope) => $scope->where('term_id', $termId)->orWhereNull('term_id')))
             ->get(['school_class_id', 'subject_id']);
 
@@ -37,7 +50,7 @@ final class TeacherAcademicScope
             ->join('school_classes', 'school_classes.id', '=', 'class_subjects.school_class_id')
             ->where('class_subjects.school_id', $user->school_id)
             ->where('class_subjects.term_id', $termId)
-            ->where('school_classes.class_teacher_user_id', $user->id)
+            ->whereIn('school_classes.id', self::classIds($user))
             ->get(['class_subjects.school_class_id', 'class_subjects.subject_id']);
 
         return $assigned->concat($classTeacherOfferings)
@@ -115,7 +128,8 @@ final class TeacherAcademicScope
             return $user->hasPermission('students.view');
         }
 
-        return $user->hasPermission('students.manage') || self::classIds($user)->isNotEmpty();
+        return $user->hasPermission('students.manage') || self::classIds($user)->isNotEmpty()
+            || (self::covers($user)->exists() && self::subjectAssignments($user, $user->school?->currentTerm()?->id)->isNotEmpty());
     }
 
     public static function canViewAllStudents(User $user): bool

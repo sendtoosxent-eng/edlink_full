@@ -57,7 +57,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($staff as $member)
-                            <tr class="transition hover:bg-slate-50">
+                            <tr class="transition {{ $member->isOnLeave() ? 'bg-slate-100 text-slate-400 opacity-60' : 'hover:bg-slate-50' }}">
                                 <td class="px-5 py-3">
                                     <a href="{{ route('staff.profile', $member) }}" wire:navigate class="font-bold text-slate-800 hover:text-amber-700">{{ $member->name }}</a>
                                     <p class="text-xs text-slate-400">{{ $member->staff_number }} · {{ $member->email }}</p>
@@ -70,7 +70,7 @@
                                     </select>
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-3 font-mono text-slate-700">UGX {{ number_format($member->base_salary) }}</td>
-                                <td class="px-5 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $member->employment_status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ ucfirst($member->employment_status) }}</span></td>
+                                <td class="px-5 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $member->employment_status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $member->isOnLeave() ? 'On leave' : ($member->employment_status === 'active' ? 'Available' : 'Inactive') }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">
                                     <a href="{{ route('staff.profile', $member) }}" wire:navigate class="mr-3 text-xs font-bold text-amber-700">View profile</a>
                                     @if(! $member->hasVerifiedEmail())

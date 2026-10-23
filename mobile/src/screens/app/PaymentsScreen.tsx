@@ -1,3 +1,5 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
+import type { ReactNode } from 'react';
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,7 +15,8 @@ type PaymentData = {
   payments: Array<{ id: number; amount: string | number; method: string; transaction_id?: string | null; bank_slip_number?: string | null; paid_at: string }>;
 };
 
-export function PaymentsScreen({ token, studentId, isParent }: { token: string; studentId?: number; isParent: boolean }) {
+export function PaymentsScreen({ token, studentId, isParent, childSwitcher }: { token: string; studentId?: number; isParent: boolean; childSwitcher?: ReactNode }) {
+  const styles = useThemedStyles(baseStyles);
   const [data, setData] = useState<PaymentData>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,6 +31,7 @@ export function PaymentsScreen({ token, studentId, isParent }: { token: string; 
 
   return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}>
     <PageIntro title="Payments" description="View the learner’s current fee position and confirmed payment history." />
+    {childSwitcher}
     {error ? <View style={styles.message}><Text style={styles.error}>{error}</Text></View> : data ? <>
       <View style={styles.context}><Text style={styles.student}>{data.student.name}</Text><Text style={styles.meta}>{data.student.class ?? 'Class not assigned'} · {data.term ?? 'No current term'}</Text></View>
       <View style={styles.summaryRow}>
@@ -42,11 +46,14 @@ export function PaymentsScreen({ token, studentId, isParent }: { token: string; 
   </ScrollView>;
 }
 
-function Summary({ label: title, value }: { label: string; value: string }) { return <View style={[styles.summary, shadows.card]}><Text style={styles.summaryLabel}>{title}</Text><Text numberOfLines={1} adjustsFontSizeToFit style={styles.summaryValue}>{value}</Text></View>; }
+function Summary({ label: title, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(baseStyles); return <View style={[styles.summary, shadows.card]}><Text style={styles.summaryLabel}>{title}</Text><Text numberOfLines={1} adjustsFontSizeToFit style={styles.summaryValue}>{value}</Text></View>; }
 function money(value: number) { return `UGX ${Math.round(value || 0).toLocaleString()}`; }
 function label(value: string) { return value.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase()); }
 function date(value: string) { const parsed = new Date(value); return Number.isNaN(parsed.valueOf()) ? value : parsed.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 34, gap: 12 }, context: { paddingVertical: 5 }, student: { color: colors.textDark, fontSize: 18, fontWeight: '900' }, meta: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 3 }, summaryRow: { flexDirection: 'row', gap: 10 }, summary: { flex: 1, minHeight: 92, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 14, justifyContent: 'space-between' }, summaryLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '700' }, summaryValue: { color: colors.textDark, fontSize: 17, fontWeight: '900' }, balanceCard: { minHeight: 112, borderRadius: radius.md, backgroundColor: colors.secondary, padding: 18, justifyContent: 'center' }, balanceLabel: { color: colors.primary, fontSize: 11, fontWeight: '800' }, balance: { color: colors.primary, fontSize: 27, fontWeight: '900', marginTop: 6 }, heading: { color: colors.textDark, fontSize: 19, fontWeight: '900', marginTop: 10 }, payment: { minHeight: 86, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 14 }, paymentIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: '#FFF2CF', alignItems: 'center', justifyContent: 'center' }, grow: { flex: 1 }, amount: { color: colors.textDark, fontSize: 15, fontWeight: '900' }, reference: { color: colors.primary, fontSize: 10, fontWeight: '700', marginTop: 3 }, message: { minHeight: 110, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 18, borderRadius: radius.md, backgroundColor: colors.surface }, error: { color: colors.status.absent.text, textAlign: 'center' },
 });
+
+const styles = baseStyles;

@@ -1,17 +1,19 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { api } from '../../api';
 import { Text, TextInput } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import Animated, { useAnimatedStyle, withTiming, Easing, ReduceMotion } from 'react-native-reanimated';
-import { ActivityIndicator, Image, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from './authTheme';
 import type { AccountPreview, Role, SchoolIdentity } from '../../types';
+import { AuthUserHeader } from './AuthUserHeader';
 import { AuthLayout } from './AuthLayout';
 
-export function LoginScreen({ role, school, email, password, error, busy, onEmailChange, onPasswordChange, onChangeSchool, onChangeRole, onForgotPassword, onSubmit }: { role: Role; school: SchoolIdentity; email: string; password: string; error: string; busy: boolean; biometricAvailable: boolean; onEmailChange: (value: string) => void; onPasswordChange: (value: string) => void; onChangeSchool: () => void; onChangeRole: () => void; onForgotPassword: () => void; onBiometricSignIn: () => void; onSubmit: () => void }) {
+export function LoginScreen({ role, school, email, password, error, busy, onEmailChange, onPasswordChange, onChangeSchool, onChangeRole, onForgotPassword, onSubmit, onAccountValidated }: { role: Role; school: SchoolIdentity; email: string; password: string; error: string; busy: boolean; biometricAvailable: boolean; onEmailChange: (value: string) => void; onPasswordChange: (value: string) => void; onChangeSchool: () => void; onChangeRole: () => void; onForgotPassword: () => void; onBiometricSignIn: () => void; onSubmit: () => void; onAccountValidated?: (account: AccountPreview | null) => void }) {
+  const styles = useThemedStyles(baseStyles);
   const [account, setAccount] = useState<AccountPreview | null>(null);
-  const [avatarFailed, setAvatarFailed] = useState(false);
   const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [stage, setStage] = useState<'email' | 'password'>('email');
@@ -28,7 +30,7 @@ export function LoginScreen({ role, school, email, password, error, busy, onEmai
     if (checking || busy) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setEmailError('Enter a valid email address to continue.'); return; }
     const version = ++lookupVersion.current;
-    setEmailError(''); setChecking(true); setAccount(null); setAvatarFailed(false);
+    setEmailError(''); setChecking(true); setAccount(null); onAccountValidated?.(null);
     try {
       const { data } = await api.account(school.number, email.trim(), role);
       if (version !== lookupVersion.current) return;
@@ -36,7 +38,7 @@ export function LoginScreen({ role, school, email, password, error, busy, onEmai
       if ('accepted' in data && data.accepted === true) {
         throw new Error('Profile not found. Please check your email address and try again.');
       } else if ('name' in data && data.name && data.role === role) {
-        setAccount(data);
+        setAccount(data); onAccountValidated?.(data);
       } else {
         throw new Error('The Edlink could not load your profile. Please try again.');
       }
@@ -47,24 +49,15 @@ export function LoginScreen({ role, school, email, password, error, busy, onEmai
       if (version === lookupVersion.current) setChecking(false);
     }
   };
-  const passwordHeader = <View style={styles.passwordHeader}>
-    <Image source={require('../../../assets/img/logo.png')} accessibilityLabel="Edlink" resizeMode="contain" style={styles.headerLogo} />
-          {account && <View style={styles.profile}>
-            <View style={styles.avatar}>{account.avatar_url && !avatarFailed ? <Image source={{ uri: account.avatar_url }} onError={() => setAvatarFailed(true)} accessibilityLabel={`${account.name} profile photo`} style={styles.avatarImage} /> : <Svg width={110} height={110} viewBox="0 0 80 80" fill="none" accessibilityLabel="Default user portrait"><Circle cx={40} cy={28} r={14} fill={colors.gold} /><Path d="M14 70c0-16 10-26 26-26s26 10 26 26" fill={colors.navy} /><Path d="m31 47 9 10 9-10" stroke="#FFF5D5" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></Svg>}</View>
-            <Text style={styles.profileName}>{account.name}</Text>
-            <Text style={styles.profileEmail}>{email.trim()}</Text>
-            {!!account.staff_number && <Text style={styles.profileEmail}>Staff number: {account.staff_number}</Text>}
-          </View>}
-          <Pressable accessibilityRole="button" disabled={busy || checking} onPress={() => { onPasswordChange(''); changeStage('email'); }} style={styles.changeEmail}><Text style={styles.changeEmailText}>Not you? Change email</Text></Pressable>
-  </View>;
+  const passwordHeader = <AuthUserHeader account={account} email={email} disabled={busy || checking} onChangeEmail={() => { onPasswordChange(''); changeStage('email'); }} />;
   return <AuthLayout headerContent={stage === 'password' ? passwordHeader : undefined} showSchoolBrand={stage === 'email'} fitContentHeight={stage === 'email' ? emailHeight : passwordHeight || undefined} showFooter={false} eyebrow="" school={stage === 'email' ? school : undefined}>
     <View style={styles.slider} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
       <Animated.View style={[styles.track, { width: width ? width * 2 : '200%', height: stage === 'email' ? emailHeight : passwordHeight || undefined }, slide]}>
         <View onLayout={event => setEmailHeight(event.nativeEvent.layout.height)} style={[styles.panel, { width: width || '50%' }]} pointerEvents={stage === 'email' ? 'auto' : 'none'} accessibilityElementsHidden={stage !== 'email'} importantForAccessibility={stage === 'email' ? 'auto' : 'no-hide-descendants'}>
-          <Text style={[styles.title, styles.emailTitle]}>Your school email</Text>
-          <Text style={styles.lead}>Enter the school email address your administrator gave you.</Text>
+          <Text style={[styles.title, styles.emailTitle]}>{role === 'parent' ? 'Your parent email' : 'Your school email'}</Text>
+          <Text style={styles.lead}>{role === 'parent' ? 'Enter the email address registered with your child’s school.' : 'Enter the school email address your administrator gave you.'}</Text>
           <Text style={styles.label}>Email address</Text>
-          <View style={[styles.field, !!emailError && styles.fieldError, focusedField === 'email' && styles.fieldFocused]}><View style={styles.emailIconTile}><Svg width={26} height={26} viewBox="0 0 32 32" fill="none"><Rect x={4} y={7} width={24} height={18} rx={3} stroke={colors.gold} strokeWidth={1.8} /><Path d="m5 9 11 8L27 9" stroke={colors.gold} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg></View><TextInput onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)} accessibilityLabel="Email address" value={email} onChangeText={value => { lookupVersion.current += 1; setChecking(false); setEmailError(''); setAccount(null); onEmailChange(value); }} placeholder="you@school.com" placeholderTextColor="#85838B" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" returnKeyType="next" onSubmitEditing={next} style={styles.input} /></View>
+          <View style={[styles.field, !!emailError && styles.fieldError, focusedField === 'email' && styles.fieldFocused]}><View style={styles.emailIconTile}><Svg width={26} height={26} viewBox="0 0 32 32" fill="none"><Rect x={4} y={7} width={24} height={18} rx={3} stroke={colors.gold} strokeWidth={1.8} /><Path d="m5 9 11 8L27 9" stroke={colors.gold} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg></View><TextInput onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)} accessibilityLabel="Email address" value={email} onChangeText={value => { lookupVersion.current += 1; setChecking(false); setEmailError(''); setAccount(null); onAccountValidated?.(null); onEmailChange(value); }} placeholder="you@school.com" placeholderTextColor="#85838B" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" returnKeyType="next" onSubmitEditing={next} style={styles.input} /></View>
           {!!emailError && <Text accessibilityLiveRegion="polite" style={styles.validation}>{emailError}</Text>}
           {!!error && stage === 'email' && <Text style={styles.validation}>{error}</Text>}
           <Text style={styles.emailHelp}>Forgot your email? Please visit your school administrator, or <Text accessibilityRole="link" accessibilityLabel="Return to role selection" disabled={busy || checking} onPress={onChangeRole} style={styles.helpLink}>click here</Text> to return to role selection.</Text>
@@ -84,7 +77,7 @@ export function LoginScreen({ role, school, email, password, error, busy, onEmai
   </AuthLayout>;
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   passwordHeader: { alignItems: 'center', paddingTop: 8, paddingBottom: 24 },
   headerLogo: { width: 156, height: 46, marginBottom: 12 },
   changeEmail: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
@@ -109,3 +102,5 @@ const styles = StyleSheet.create({
   emailSummary: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: colors.surfaceLow, borderRadius: 12, padding: 12, marginTop: 16 }, emailValue: { flex: 1, fontSize: 12, fontWeight: '600', color: colors.navy },
   headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 20 }, back: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: colors.outline, alignItems: 'center', justifyContent: 'center' }, role: { minHeight: 42, borderRadius: 21, paddingHorizontal: 13, backgroundColor: colors.surfaceLow, borderWidth: 1, borderColor: colors.navy, flexDirection: 'row', alignItems: 'center', gap: 7 }, roleText: { color: colors.navy, fontSize: 12, fontWeight: '900' }, title: { color: colors.navy, fontSize: 31, fontWeight: '900', marginTop: 18 }, lead: { color: colors.muted, fontSize: 14, lineHeight: 20, marginTop: 4 }, label: { color: colors.ink, fontSize: 13, fontWeight: '800', marginTop: 18, marginBottom: 7 }, field: { minHeight: 56, borderRadius: radius.card, borderWidth: 1, borderColor: colors.outline, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }, fieldError: { borderColor: colors.danger }, input: { flex: 1, height: 54, color: colors.ink, fontSize: 15 }, forgot: { alignSelf: 'flex-end', minHeight: 40, justifyContent: 'center' }, forgotText: { color: colors.goldDark, fontSize: 13, fontWeight: '900' }, errorRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 }, error: { flex: 1, color: colors.danger, fontSize: 12, lineHeight: 17 }, button: { minHeight: 58, marginTop: 15, borderRadius: 999, backgroundColor: colors.navy, flexDirection: 'row', gap: 10, justifyContent: 'center', alignItems: 'center' }, buttonText: { color: colors.gold, fontWeight: '900', fontSize: 16 }, buttonMuted: { opacity: 0.65 }, biometric: { minHeight: 52, marginTop: 13, borderRadius: radius.card, borderWidth: 1, borderColor: colors.outline, flexDirection: 'row', gap: 9, alignItems: 'center', justifyContent: 'center' }, biometricText: { color: colors.navy, fontSize: 13, fontWeight: '900' },
 });
+
+const styles = baseStyles;

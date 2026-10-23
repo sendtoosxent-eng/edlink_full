@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../../theme/ThemeProvider';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Text } from '../../components/Typography';
@@ -5,6 +6,7 @@ import { colors } from './authTheme';
 
 const STEPS = ['Role', 'School', 'Email', 'Password'];
 export function AuthProgress({ step }: { step: 1 | 2 | 3 }) {
+  const styles = useThemedStyles(baseStyles);
   return <View style={styles.progress} accessible accessibilityLabel={`Sign in step ${step + 1} of 4: ${STEPS[step]}. ${step} completed, ${4 - step} remaining.`}>
     <View style={styles.summary}><Text style={styles.summaryText}>{step} completed</Text><Text style={styles.remaining}>{4 - step} remaining</Text></View>
     <View style={styles.row}>{STEPS.map((label, index) => <View key={label} style={styles.item}>
@@ -18,7 +20,7 @@ export function AuthProgress({ step }: { step: 1 | 2 | 3 }) {
     </View>)}</View>
   </View>;
 }
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   progress: { flex: 1, minWidth: 0 },
   summary: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, gap: 6 },
   summaryText: { color: colors.navy, fontSize: 10, fontWeight: '600' },
@@ -30,3 +32,5 @@ const styles = StyleSheet.create({
   connector: { flex: 1, height: 2, backgroundColor: colors.surfaceHigh, marginHorizontal: 4 }, connectorComplete: { backgroundColor: colors.gold },
   label: { color: colors.muted, fontSize: 9, marginTop: 5 }, activeLabel: { color: colors.navy, fontWeight: '700' },
 });
+
+const styles = baseStyles;

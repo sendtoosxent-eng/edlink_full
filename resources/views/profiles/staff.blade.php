@@ -6,8 +6,8 @@
     if ($canViewAttendance) $tabs['attendance'] = 'Attendance';
     if ($canViewPayroll) $tabs['payroll'] = 'Salary & advances';
     if ($canViewLeave) $tabs['leave'] = 'Leave history';
-    $employmentFields = ['joined_at', 'probation_ends_at', 'contract_type', 'base_salary', 'emergency_contact_name', 'emergency_contact_phone', 'national_id', 'bank_name', 'bank_account_name', 'bank_account_number'];
-    $initialTab = $canEdit && collect($employmentFields)->contains(fn ($field) => $errors->has($field)) ? 'employment' : 'details';
+    $employmentFields = ['joined_at', 'probation_ends_at', 'contract_type', 'base_salary', 'emergency_contact_name', 'emergency_contact_phone', 'national_id', 'bank_name', 'bank_account_name', 'bank_account_number', 'location', 'qualification_documents'];
+    $initialTab = $canEdit && collect($employmentFields)->contains(fn ($field) => $errors->has($field) || $errors->has($field.'.*')) ? 'employment' : 'details';
 @endphp
 <div class="w-full space-y-6" x-data="{ tab: @js($initialTab), photoPreview: null }">
     <header class="rounded-3xl bg-slate-900 p-6 text-white sm:p-8">
@@ -16,7 +16,7 @@
                 <img x-show="photoPreview" :src="photoPreview" alt="Photo preview" class="h-full w-full object-cover" style="display:none">
                 <span x-show="!photoPreview" class="flex h-full w-full items-center justify-center">@if($staff->avatarUrl())<img src="{{ $staff->avatarUrl() }}" alt="{{ $staff->name }}" class="h-full w-full object-cover">@else{{ str($staff->name)->substr(0, 1)->upper() }}@endif</span>
             </div>
-            <div class="flex-1"><p class="text-xs font-black uppercase tracking-widest text-amber-300">{{ $staff->role === 'teacher' ? 'Teacher Profile' : 'Staff Profile' }}</p><h1 class="mt-2 text-3xl font-black text-slate-100">{{ $staff->name }}</h1><p class="mt-2 text-sm text-slate-300">{{ $staff->staff_number ?: 'Staff number pending' }} · {{ $staff->job_title ?: 'No job title' }} · {{ ucfirst($staff->employment_status ?: 'Not specified') }}</p><p class="mt-1 text-sm text-slate-300">{{ $staff->email }}</p></div>
+            <div class="flex-1"><p class="text-xs font-black uppercase tracking-widest text-amber-300">{{ $staff->role === 'teacher' ? 'Teacher Profile' : 'Staff Profile' }}</p><h1 class="mt-2 text-3xl font-black text-slate-100">{{ $staff->name }}</h1><p class="mt-2 text-sm text-slate-300">{{ $staff->staff_number ?: 'Staff number pending' }} · {{ $staff->job_title ?: 'No job title' }} · {{ $staff->isOnLeave() ? 'On leave' : ucfirst($staff->employment_status ?: 'Not specified') }}</p><p class="mt-1 text-sm text-slate-300">{{ $staff->email }}</p></div>
             <a href="{{ route('staff.index') }}" wire:navigate class="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold">Back to staff</a>
         </div>
     </header>
@@ -54,10 +54,11 @@
                 <h2 class="mb-5 text-lg font-black">Employment and HR details</h2>
                 @if($canEdit)
                     <table class="w-full text-left text-sm"><tbody class="divide-y">
-                        @foreach(['joined_at' => 'Joining date', 'probation_ends_at' => 'Probation end date', 'emergency_contact_name' => 'Emergency contact name', 'emergency_contact_phone' => 'Emergency contact phone', 'national_id' => 'National ID', 'bank_name' => 'Bank name', 'bank_account_name' => 'Bank account name', 'bank_account_number' => 'Bank account number', 'base_salary' => 'Current monthly base salary ('.$currency.')'] as $field => $label)
+                        @foreach(['joined_at' => 'Joining date', 'probation_ends_at' => 'Probation end date', 'emergency_contact_name' => 'Emergency contact name', 'emergency_contact_phone' => 'Emergency contact phone', 'location' => 'Home address / location', 'national_id' => 'National Identification Number (NIN)', 'bank_name' => 'Bank name', 'bank_account_name' => 'Bank account name', 'bank_account_number' => 'Bank account number', 'base_salary' => 'Current monthly base salary ('.$currency.')'] as $field => $label)
                             <tr><th class="w-1/3 py-4 pr-4"><label for="staff-{{ $field }}">{{ $label }}</label></th><td class="py-3"><input id="staff-{{ $field }}" name="{{ $field }}" type="{{ in_array($field, ['joined_at','probation_ends_at']) ? 'date' : ($field === 'base_salary' ? 'number' : 'text') }}" value="{{ old($field, in_array($field, ['joined_at','probation_ends_at']) ? $staff->$field?->toDateString() : $staff->$field) }}" @if($field === 'base_salary') min="0" step="0.01" required @endif class="{{ $input }}" aria-invalid="{{ $errors->has($field) ? 'true' : 'false' }}">@error($field)<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror</td></tr>
                         @endforeach
                         <tr><th class="py-4 pr-4">Contract type</th><td class="py-3"><select name="contract_type" class="{{ $input }}"><option value="">Not specified</option>@foreach(['permanent','contract','part_time','volunteer'] as $type)<option value="{{ $type }}" @selected(old('contract_type', $staff->contract_type) === $type)>{{ ucfirst(str_replace('_',' ', $type)) }}</option>@endforeach</select></td></tr>
+                        <tr><th class="py-4 pr-4">Academic qualifications</th><td class="py-4"><div class="space-y-2">@forelse($documents as $document)<a href="{{ route('staff.documents.download', [$staff, $document]) }}" class="block text-sm font-bold text-amber-700 hover:underline">{{ $document->name }} <span class="text-xs font-normal text-slate-500">({{ number_format($document->size / 1024, 1) }} KB)</span></a>@empty<p class="text-sm text-slate-500">No qualification documents uploaded.</p>@endforelse</div><label class="mt-4 block text-xs font-bold text-slate-600">Upload additional qualifications<input type="file" name="qualification_documents[]" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" class="{{ $fileInput }} mt-2"></label><p class="mt-2 text-xs text-slate-500">Up to 5 documents per upload, 10 MB each. Existing documents are retained.</p></td></tr>
                         <tr><th class="py-4 pr-4">Employment document</th><td class="py-4">{{ $staff->staff_document_path ? 'On file' : 'No document recorded' }}</td></tr>
                     </tbody></table>
                 @else<p class="text-sm text-slate-500">Private employment and banking information is restricted to authorised staff managers.</p>@endif

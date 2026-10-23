@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { Text } from './Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Pressable, StyleSheet, Animated, LayoutChangeEvent, useWindowDimensions } from 'react-native';
@@ -43,6 +44,7 @@ const TAB_CONFIG: Record<AppTab, { label: string; activeIcon: IoniconsName; inac
 };
 
 export function BottomTabBar({ tabs, activeTab, onSelect }: TabBarProps) {
+  const styles = useThemedStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compact = width < 380;
@@ -129,6 +131,7 @@ function TabButton({
   compact: boolean;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(baseStyles);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -161,7 +164,7 @@ function TabButton({
         <Ionicons
           name={iconName}
           size={compact ? 19 : 21}
-          color={isActive ? colors.surface : colors.textMuted}
+          color={isActive ? colors.secondary : colors.textMuted}
         />
         <Text numberOfLines={1} style={[styles.labelText, compact && styles.labelCompact, isActive ? styles.labelActive : styles.labelInactive]}>
           {label}
@@ -171,7 +174,7 @@ function TabButton({
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   outerContainer: {
     backgroundColor: colors.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -217,7 +220,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   labelActive: {
-    color: colors.surface,
+    color: colors.secondary,
     fontWeight: '800',
   },
   labelInactive: {
@@ -225,3 +228,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+const styles = baseStyles;

@@ -1,9 +1,11 @@
+import { useThemedStyles } from '../theme/ThemeProvider';
 import { Dimensions, StyleSheet, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const circle = width;
 
 export function BrandBackdrop() {
+  const styles = useThemedStyles(baseStyles);
   return (
     <>
       <View style={styles.top} />
@@ -12,7 +14,7 @@ export function BrandBackdrop() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   top: {
     position: 'absolute',
     top: -circle / 2,
@@ -34,3 +36,5 @@ const styles = StyleSheet.create({
 });
 
 export const brandCircleSize = circle;
+
+const styles = baseStyles;

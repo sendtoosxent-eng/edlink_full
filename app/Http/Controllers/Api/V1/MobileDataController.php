@@ -35,19 +35,26 @@ class MobileDataController extends ApiController
         $term = $user->school->currentTerm();
         $today = now()->format('l');
         $slots = $this->slotQuery($request, $student)->where('day_of_week', $today)->orderBy('starts_at')->get();
-        $slots->each(function ($slot) {
+        $absences = $user->role === 'teacher'
+            ? DB::table('lesson_absence_reports')->where('school_id', $user->school_id)->where('user_id', $user->id)
+                ->whereDate('lesson_date', today())->whereIn('timetable_slot_id', $slots->pluck('id'))->pluck('created_at', 'timetable_slot_id')
+            : collect();
+        $slots->each(function ($slot) use ($absences) {
+            $slot->absence_reported_at = $absences->get($slot->id);
             $slot->starts_at_iso = now()->setTimeFromTimeString($slot->starts_at)->toIso8601String();
             $slot->ends_at_iso = now()->setTimeFromTimeString($slot->ends_at)->toIso8601String();
         });
         $homework = $this->homeworkQuery($request, $student)->orderBy('due_at')->limit(4)->get();
         $attendance = $student ? DB::table('attendance_records')->where('school_id', $user->school_id)
             ->where('student_id', $student->id)->selectRaw('status, count(*) total')->groupBy('status')->pluck('total', 'status') : collect();
+        $workspace = TeacherAcademicScope::isTeacher($user) ? MobileTeacherWorkspace::forUser($user) : null;
         $analytics = $student
             ? $this->studentAnalytics($request, $user, $student, $term)
-            : $this->teacherAnalytics($request, $user, $term);
+            : $this->teacherAnalytics($request, $user, $term, count($workspace['pending_results'] ?? []));
 
         return $this->ok([
             'date' => today()->toDateString(),
+            'current_term' => $term ? ['name' => $term->name, 'year' => $term->year, 'is_open' => $term->isOpen()] : null,
             'student' => $student ? $this->studentPayload($student) : null,
             'today_timetable' => $slots,
             'next_lesson' => $slots->first(fn ($slot) => $slot->ends_at > now()->format('H:i:s')),
@@ -55,7 +62,7 @@ class MobileDataController extends ApiController
             'attendance' => $attendance,
             'events' => DB::table('school_events')->where('school_id', $user->school_id)->whereDate('event_date', '>=', today())->orderBy('event_date')->limit(4)->get(),
             'analytics' => $analytics,
-            'teacher_workspace' => TeacherAcademicScope::isTeacher($user) ? MobileTeacherWorkspace::forUser($user) : null,
+            'teacher_workspace' => $workspace,
         ], ['generated_at' => now()->toISOString()]);
     }
 
@@ -94,7 +101,7 @@ class MobileDataController extends ApiController
         ];
     }
 
-    private function teacherAnalytics(Request $request, $user, $term): array
+    private function teacherAnalytics(Request $request, $user, $term, int $pendingMarks = 0): array
     {
         $assignments = TeacherAcademicScope::subjectAssignments($user, $term?->id);
         $classIds = TeacherAcademicScope::academicClassIds($user, $term?->id);
@@ -120,11 +127,6 @@ class MobileDataController extends ApiController
             ->selectRaw('subjects.name, ROUND(AVG(exam_marks.score / exam_papers.maximum_score * 100), 1) as average')
             ->groupBy('subjects.id', 'subjects.name')->orderBy('subjects.name')->get() : collect();
 
-        $pendingPapers = ExamPaper::with('exam')
-            ->whereHas('exam', fn ($query) => $query->where('school_id', $user->school_id)->where('term_id', $term?->id))
-            ->whereDoesntHave('exam', fn ($query) => $query->whereNotNull('published_at'))
-            ->whereNotIn('id', DB::table('exam_paper_submissions')->whereIn('status', ['submitted', 'approved'])->select('exam_paper_id'))
-            ->get()->filter(fn ($paper) => TeacherAcademicScope::canEnterPaper($user, $paper->exam->school_class_id, $paper->subject_id, $paper->exam->term_id))->count();
 
         return [
             'attendance_labels' => $days->map(fn ($day) => $day->format('D'))->values(),
@@ -137,7 +139,7 @@ class MobileDataController extends ApiController
                 'subjects' => $assignments->pluck('subject_id')->unique()->count(),
                 'attendance_today' => $attendance->where('attendance_date', today()->toDateString())->count(),
                 'attendance_records' => $attendance->count(),
-                'pending_marks' => $pendingPapers,
+                'pending_marks' => $pendingMarks,
                 'learners' => $classIds->isEmpty() ? 0 : DB::table('students')->where('school_id', $user->school_id)->where('status', 'active')->whereIn('school_class_id', $classIds)->count(),
                 'lessons_today' => $this->slotQuery($request, null)->where('day_of_week', now()->format('l'))->count(),
                 'homework' => $this->homeworkQuery($request, null)->count(),
@@ -369,7 +371,7 @@ class MobileDataController extends ApiController
             $query->where('timetable_slots.school_class_id', $student->school_class_id)
                 ->where(fn ($q) => $q->whereNull('timetable_slots.stream_id')->orWhere('timetable_slots.stream_id', $student->stream_id));
         } else {
-            $query->where('timetable_slots.user_id', $user->id);
+            $query->whereIn('timetable_slots.user_id', \App\Support\TeacherAcademicScope::teachingOwnerIds($user));
         }
 
         return $query;

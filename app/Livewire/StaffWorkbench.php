@@ -142,12 +142,12 @@ class StaffWorkbench extends Component
 
             $classTeacherClasses = DB::table('school_classes')
                 ->where('school_id', $school->id)
-                ->where('class_teacher_user_id', $user->id)
+                ->whereIn('id', TeacherAcademicScope::classIds($user))
                 ->orderBy('name')
                 ->get(['id', 'name']);
 
             $pendingAttendance = collect();
-            if ($term) {
+            if ($term && ! $user->isOnLeave()) {
                 $today = today()->toDateString();
                 $dailyAttendanceClasses = AttendanceRecord::where('school_id', $school->id)
                     ->where('term_id', $term->id)->whereDate('attendance_date', $today)
@@ -188,7 +188,7 @@ class StaffWorkbench extends Component
                     $query->selectRaw('1')->from('staff_subjects')
                         ->whereColumn('staff_subjects.subject_id', 'exam_papers.subject_id')
                         ->whereColumn('staff_subjects.school_class_id', 'exams.school_class_id')
-                        ->where('staff_subjects.user_id', $user->id)
+                        ->whereIn('staff_subjects.user_id', TeacherAcademicScope::teachingOwnerIds($user))
                         ->when($term, fn ($q) => $q->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id')));
                 })
                 ->whereNotNull('exam_marks.score')
@@ -204,7 +204,7 @@ class StaffWorkbench extends Component
                     $query->selectRaw('1')->from('staff_subjects')
                         ->whereColumn('staff_subjects.subject_id', 'exam_papers.subject_id')
                         ->whereColumn('staff_subjects.school_class_id', 'exams.school_class_id')
-                        ->where('staff_subjects.user_id', $user->id)
+                        ->whereIn('staff_subjects.user_id', TeacherAcademicScope::teachingOwnerIds($user))
                         ->when($term, fn ($q) => $q->where(fn ($scope) => $scope->where('staff_subjects.term_id', $term->id)->orWhereNull('staff_subjects.term_id')));
                 })
                 ->where(fn ($query) => $query->whereNull('exam_paper_submissions.id')->orWhereIn('exam_paper_submissions.status', ['draft', 'rejected']))
@@ -214,7 +214,7 @@ class StaffWorkbench extends Component
                 ->leftJoin('subjects', 'subjects.id', '=', 'timetable_slots.subject_id')
                 ->leftJoin('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
                 ->leftJoin('streams', 'streams.id', '=', 'timetable_slots.stream_id')
-                ->where('timetable_slots.school_id', $school->id)->where('timetable_slots.user_id', $user->id)
+                ->where('timetable_slots.school_id', $school->id)->whereIn('timetable_slots.user_id', \App\Support\TeacherAcademicScope::teachingOwnerIds($user))
                 ->when($term, fn ($query) => $query->where('timetable_slots.term_id', $term->id))
                 ->where('timetable_slots.day_of_week', now()->format('l'))->orderBy('timetable_slots.starts_at')
                 ->get(['timetable_slots.starts_at', 'timetable_slots.ends_at', 'timetable_slots.label', 'subjects.name as subject', 'school_classes.name as class', 'streams.name as stream']);
@@ -232,6 +232,7 @@ class StaffWorkbench extends Component
             })->first(fn ($lesson) => $lesson->is_in_progress || $clock->lt($clock->copy()->setTimeFromTimeString($lesson->starts_at)));
 
             $teacher = [
+                'covers' => TeacherAcademicScope::covers($user)->with(['leave', 'fromUser'])->get(),
                 'assignments' => $assignments, 'subjects' => $assignments->pluck('subject_id')->unique()->count(), 'classes' => $classIds->count(),
                 'classTeacherClasses' => $classTeacherClasses,
                 'pendingAttendance' => $pendingAttendance,
