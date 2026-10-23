@@ -1,4 +1,3 @@
-import { EdlinkAlert as Alert } from '../../components/EdlinkAlert';
 import { EditProfileScreen } from './EditProfileScreen';
 import { ErrorScreen } from '../../components/ErrorScreen';
 import { Text } from '../../components/Typography';
@@ -22,13 +21,12 @@ type Props = {
   onUserUpdated: (user: User) => void;
 };
 
-export function ProfileScreen({ token, user, studentId, onSignOut, navigate, onUserUpdated }: Props) {
+export function ProfileScreen({ token, user, studentId, navigate, onUserUpdated }: Props) {
   const [editing, setEditing] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [timetable, setTimetable] = useState<TimetableItem[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setLoadError('');
@@ -48,20 +46,6 @@ export function ProfileScreen({ token, user, studentId, onSignOut, navigate, onU
   }, [studentId, token]);
 
   useEffect(() => { void load(); }, [load]);
-
-  const confirmSignOut = () => {
-    Alert.alert('Log out of Edlink?', 'You will need to sign in again to access your school account.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log out',
-        style: 'destructive',
-        onPress: () => {
-          setSigningOut(true);
-          void onSignOut().finally(() => setSigningOut(false));
-        },
-      },
-    ]);
-  };
 
   if (editing) return <EditProfileScreen token={token} user={user} onBack={() => setEditing(false)} onSaved={updated => { onUserUpdated(updated); setEditing(false); }} />;
   if (loadError) return <ErrorScreen message={loadError} retry={load} onBack={() => setLoadError('')} />;
@@ -138,13 +122,12 @@ export function ProfileScreen({ token, user, studentId, onSignOut, navigate, onU
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Log out of Edlink"
-        disabled={signingOut}
-        onPress={confirmSignOut}
-        style={({ pressed }) => [styles.logoutButton, (pressed || signingOut) && styles.pressed]}
+        accessibilityLabel="Open settings"
+        onPress={() => navigate('settings')}
+        style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
       >
-        <Ionicons name="log-out-outline" size={20} color="#B91C1C" />
-        <Text style={styles.logoutText}>{signingOut ? 'Logging out…' : 'Log out'}</Text>
+        <Ionicons name="settings-outline" size={20} color={colors.primary} />
+        <Text style={styles.logoutText}>Settings</Text>
       </Pressable>
       <Text style={styles.version}>Edlink Mobile · Secure school access</Text>
     </ScrollView>
@@ -199,9 +182,9 @@ const styles = StyleSheet.create({
   noticeBody: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 4 },
   emptyRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   emptyText: { color: colors.textMuted, fontSize: 13 },
-  logoutButton: { minHeight: 54, marginTop: 28, borderRadius: radius.md, borderWidth: 1, borderColor: '#F5B8B8', backgroundColor: '#FFF5F5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  logoutButton: { minHeight: 54, marginTop: 28, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: '#FFF5D5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   leaveButton: { minHeight: 54, marginTop: 28, borderRadius: radius.md, backgroundColor: colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, leaveText: { color: colors.primary, fontSize: 15, fontWeight: '900' },
-  logoutText: { color: '#B91C1C', fontSize: 15, fontWeight: '900' },
+  logoutText: { color: colors.primary, fontSize: 15, fontWeight: '900' },
   pressed: { opacity: 0.62 },
   version: { color: colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 16 },
 });

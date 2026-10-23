@@ -1,7 +1,7 @@
 import { Text, TextInput } from '../../components/Typography';
 import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { colors, radius } from '../../theme';
+import { colors, radius } from './authTheme';
 
 export function AuthHeader({ onBack, accountStep = false }: { onBack: () => void; accountStep?: boolean }) {
   return <View style={styles.topRow}><Pressable onPress={onBack} style={styles.back}><Text style={styles.backText}>‹</Text></Pressable><View style={styles.dots}><View style={[styles.dot, styles.active]} /><View style={[styles.dot, accountStep && styles.active]} /></View></View>;

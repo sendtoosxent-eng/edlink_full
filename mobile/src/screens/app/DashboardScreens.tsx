@@ -1,4 +1,8 @@
 import { EdlinkAlert } from '../../components/EdlinkAlert';
+import { AlarmClockArtwork } from '../../components/AlarmClockArtwork';
+import { LessonArtwork } from '../../components/LessonArtwork';
+import { AppSvg } from '../../components/AppSvg';
+import { DashboardSearch } from '../../components/DashboardSearch';
 import { Text } from '../../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -7,11 +11,11 @@ import { colors, radius, shadows } from '../../theme/index';
 import { ACCESS_SECTIONS, toolSection } from './TeacherAccessScreen';
 import type { Dashboard, User } from '../../types';
 
-export type AppTab = 'teacher_communications' | 'daily_attendance' | 'subject_attendance' | 'attendance_reports' | 'student_schedule' | 'student_calendar' | 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
+export type AppTab = 'settings' | 'teacher_communications' | 'daily_attendance' | 'subject_attendance' | 'attendance_reports' | 'student_schedule' | 'student_calendar' | 'teacher_schedule' | 'class_students' | 'class_access' | 'teaching_access' | 'reports_access' | 'school_access' | 'home' | 'attendance' | 'homework' | 'results' | 'payments' | 'more' | 'notifications' | 'leave' | 'add_marks' | 'view_marks' | 'teacher_results' | 'add_homework';
 
 type Lesson = Dashboard['next_lesson'];
 type DashboardUser = User & { onSignOut?: () => Promise<void>; navigate?: (tab: AppTab) => void; nextLesson?: Lesson; unreadNotifications?: number };
-type Props = { data: Dashboard; user: DashboardUser; attendanceRate: number | null; navigate: (tab: AppTab) => void; refreshing?: boolean; onRefresh?: () => void; openRegister?: (item: NonNullable<NonNullable<Dashboard['teacher_workspace']>['pending_attendance']>[number]) => void };
+type Props = { openMarks?: (paperId: number) => void; onReportAbsence?: (lessonId: number) => Promise<void>; data: Dashboard; user: DashboardUser; attendanceRate: number | null; navigate: (tab: AppTab) => void; refreshing?: boolean; onRefresh?: () => void; openRegister?: (item: NonNullable<NonNullable<Dashboard['teacher_workspace']>['pending_attendance']>[number]) => void };
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 type Tone = 'gold' | 'green' | 'blue';
 
@@ -45,26 +49,20 @@ function useContentWidth() {
 /* ------------------------------------------------------------------ */
 
 function TopBar({ user }: { user: DashboardUser }) {
-  const confirmLogout = () =>
-    EdlinkAlert.alert('Log out of Edlink?', 'You will need to sign in again to access your school account.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => user.onSignOut?.() },
-    ]);
-
   return (
     <View style={styles.topBar}>
       <Image accessibilityLabel="Edlink" source={require('../../../assets/img/edlink-logo.png')} style={styles.topLogo} resizeMode="contain" />
       <View style={styles.topActions}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open notifications" onPress={() => user.navigate?.('notifications')} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-          <Ionicons name="notifications-outline" size={21} color={colors.primary} />
+          <AppSvg name="bell" size={26} color="#0B132B" solid />
           {!!user.unreadNotifications && (
             <View style={styles.notificationBadge}>
               <Text style={styles.notificationBadgeText}>{user.unreadNotifications > 9 ? '9+' : user.unreadNotifications}</Text>
             </View>
           )}
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Log out" onPress={confirmLogout} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-          <Ionicons name="log-out-outline" size={21} color={colors.primary} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Open settings" onPress={() => user.navigate?.('settings')} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
+          <AppSvg name="settings" size={26} color="#0B132B" solid />
         </Pressable>
       </View>
     </View>
@@ -80,30 +78,33 @@ function Avatar({ name, uri, size = 54 }: { name: string; uri?: string | null; s
   );
 }
 
-/* Welcome card intentionally preserved exactly from Edlink Premium V1. */
-function GreetingCard({ user, title, subtitle, imageName, imageUri }: { user: User; title: string; subtitle: string; imageName?: string; imageUri?: string | null }) {
+/* Shared welcome banner for each school role. */
+function GreetingCard({ user, title, subtitle, imageName, imageUri, term }: { user: User; title: string; subtitle: string; term?: string | null; imageName?: string; imageUri?: string | null }) {
   const dashboardUser = user as DashboardUser;
   const now = useNow();
   const lesson = dashboardUser.role !== 'student' ? null : nextLessonCopy(dashboardUser.nextLesson, now);
   return (
     <View style={[styles.greetingCard, shadows.card]}>
       <View style={styles.greetingGlow} />
-      <View style={styles.greetingCopy}>
-        <Text style={styles.greetingEyebrow}>{greeting().toUpperCase()}</Text>
-        <Text style={styles.greetingTitle}>{title}</Text>
-        <Text style={styles.greetingSubtitle}>{subtitle}</Text>
-        {lesson && (
-          <View style={styles.lessonPill}>
-            <Ionicons name="time-outline" size={14} color={colors.secondary} />
-            <Text style={styles.lessonText}>{lesson}</Text>
-          </View>
-        )}
+      <View style={styles.greetingMain}>
+        <View style={styles.greetingCopy}>
+          <Text style={styles.greetingSalutation}>{greeting()}</Text>
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.greetingTitle}>{title}</Text>
+          <Text style={styles.greetingSubtitle}>{subtitle}</Text>
+          {lesson && <View style={styles.lessonPill}><Ionicons name="time-outline" size={14} color={colors.secondary} /><Text style={styles.lessonText}>{lesson}</Text></View>}
+        </View>
+        <Avatar name={imageName ?? user.name} uri={imageUri ?? user.avatar_url} size={100} />
+      </View>
+      <View style={styles.welcomeBadges}>
         <View style={styles.datePill}>
           <Ionicons name="calendar-outline" size={14} color={colors.primary} />
           <Text style={styles.dateText}>{formatDate(new Date().toISOString())}</Text>
         </View>
+        <View style={styles.termPill} accessibilityLabel={term ? `Current term: ${term}` : 'No open term'}>
+          <View style={styles.termDot} />
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.termText}>{term || 'No open term'}</Text>
+        </View>
       </View>
-      <Avatar name={imageName ?? user.name} uri={imageUri ?? user.avatar_url} size={60} />
     </View>
   );
 }
@@ -137,7 +138,7 @@ function toneColor(tone?: Tone) {
 }
 
 function toneTint(tone?: Tone) {
-  return tone === 'green' ? colors.status.present.bg : tone === 'blue' ? '#E8EDF8' : '#FFF4D9';
+  return tone === 'green' ? colors.status.present.bg : tone === 'blue' ? '#F0F2F7' : '#FFF4D9';
 }
 
 function StatGrid({ items }: { items: Array<{ icon: IconName; label: string; value: number | string; tone?: Tone }> }) {
@@ -447,27 +448,22 @@ function Events({ data }: { data: Dashboard }) {
 /* Screens                                                             */
 /* ------------------------------------------------------------------ */
 
-export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh, openRegister }: Props) {
+export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, refreshing = false, onRefresh, openRegister, openMarks, onReportAbsence }: Props) {
   const stats = data.analytics?.stats ?? {};
   const workspace = data.teacher_workspace;
 
   return (
     <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
       <TopBar user={user} />
-      <GreetingCard user={user} title={`Hi, ${firstName(user.name)}!`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
-      <TeacherLessonCard data={data} navigate={navigate} />
+      <DashboardSearch user={user} data={data} navigate={navigate} />
+      <GreetingCard user={user} term={data.current_term ? (data.current_term.is_open ? data.current_term.name : null) : data.teacher_workspace?.term} title={`Hi, ${firstName(user.name)}!`} subtitle={`${workspace?.role_label ?? 'Teacher'}${workspace?.term ? ` · ${workspace.term}` : ''} · ${user.school.name}`} />
+      <View style={styles.lessonReminder}><TeacherLessonCard data={data} navigate={navigate} onReportAbsence={onReportAbsence} /></View>
 
       {workspace && (
         <View style={[styles.card, shadows.card, styles.assignmentCard]}>
-          <View style={styles.cardHeading}>
-            <Text style={styles.cardTitle}>{workspace.class_teacher_classes.length ? 'My class responsibility' : 'My teaching assignments'}</Text>
-            <View style={styles.cardIcon}>
-              <Ionicons name="ribbon-outline" size={19} color={colors.secondaryDark} />
-            </View>
-          </View>
-          {!!workspace.class_teacher_classes.length && (
-            <Text style={styles.bodyCopy}>{workspace.class_teacher_classes.map(item => item.name).join(' · ')} — daily register and class learner tools</Text>
-          )}
+          <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.responsibilityArtwork}><LessonArtwork /></View>
+          <Text style={styles.cardTitle}>Responsibilities</Text>
+          {!!workspace.class_teacher_classes.length && <View style={styles.chipWrap}>{workspace.class_teacher_classes.map(item => <View key={item.id} style={styles.chip}><Text style={styles.chipText}>{item.name}</Text></View>)}</View>}
           {workspace.subject_assignments.length ? (
             <View style={styles.chipWrap}>
               {workspace.subject_assignments.map((item, index) => (
@@ -477,17 +473,22 @@ export function TeacherDashboardScreen({ data, user, attendanceRate, navigate, r
               ))}
             </View>
           ) : (
-            <Text style={styles.bodyCopy}>No subject assignments yet. Your school administrator can assign your teaching subjects.</Text>
+            <Text style={styles.bodyCopy}>No subject assignments.</Text>
           )}
         </View>
       )}
 
-      {!!workspace?.pending_attendance?.length && <View style={[styles.card, shadows.card]}>
-        <View style={styles.cardHeading}><Text style={styles.cardTitle}>Attendance pending today</Text><Ionicons name="alert-circle-outline" size={22} color={colors.secondary} /></View>
-        <Text style={styles.bodyCopy}>These registers still need your attention.</Text>
-        {workspace.pending_attendance.map(item => <Pressable key={`${item.school_class_id}-${item.session_key ?? item.subject_id}`} accessibilityRole="button" accessibilityLabel={`Take ${item.label} attendance`} onPress={() => openRegister ? openRegister(item) : navigate(item.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance')} style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}>
-          <View style={styles.grow}><Text style={styles.rowTitle}>{item.label}</Text><Text style={styles.rowMeta}>{item.attendance_type === 'daily' ? 'Daily class register' : 'Subject register'}</Text></View><Ionicons name="arrow-forward-circle" size={26} color={colors.primary} />
+      {workspace && <View style={[styles.card, shadows.card, styles.pendingTasksCard]}>
+        <View style={styles.cardHeading}><Text style={styles.cardTitle}>Pending tasks</Text><View style={styles.taskCount}><Text style={styles.taskCountText}>{(workspace.pending_attendance?.length ?? 0) + (workspace.pending_results?.length ?? 0)}</Text></View></View>
+        {(workspace.pending_attendance ?? []).map(item => <Pressable key={`${item.school_class_id}-${item.session_key ?? item.subject_id}`} accessibilityRole="button" accessibilityLabel={`Complete ${item.label} attendance`} onPress={() => openRegister ? openRegister(item) : navigate(item.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance')} style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}>
+          <View style={styles.taskIcon}><AppSvg name="attendance" size={21} /></View>
+          <View style={styles.grow}><Text style={styles.rowTitle}>{item.label}</Text><Text style={styles.rowMeta}>{item.attendance_type === 'daily' ? 'Class attendance' : 'Subject attendance'}{item.remaining ? ` · ${item.remaining} learners unmarked` : ' · Not completed'}</Text></View><AppSvg name="chevron" size={17} />
         </Pressable>)}
+        {(workspace.pending_results ?? []).map(item => <Pressable key={`paper-${item.paper_id}`} accessibilityRole="button" accessibilityLabel={`Submit ${item.subject_name} marks for ${item.exam_name}, ${item.class_name}`} onPress={() => openMarks ? openMarks(item.paper_id) : navigate('add_marks')} style={({ pressed }) => [styles.pendingRow, pressed && styles.pressed]}>
+          <View style={styles.taskIcon}><AppSvg name="exam" size={21} /></View>
+          <View style={styles.grow}><Text style={styles.rowTitle}>{item.subject_name} · {item.exam_name}</Text><Text style={styles.rowMeta}>{item.class_name}{item.stream_name ? ` · ${item.stream_name}` : ''} · Marks awaiting submission</Text></View><AppSvg name="chevron" size={17} />
+        </Pressable>)}
+        {!workspace.pending_attendance?.length && !workspace.pending_results?.length && <Text style={styles.bodyCopy}>You’re all caught up. No pending attendance or marks submissions.</Text>}
       </View>}
 
       <SectionHeader title="Quick actions" subtitle="Your everyday teaching tasks" />
@@ -547,7 +548,8 @@ export function StudentDashboardScreen({ data, user, attendanceRate, navigate, r
   return (
     <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
       <TopBar user={user} />
-      <GreetingCard user={user} title={`Hi, ${firstName(student?.name ?? user.name)}!`} subtitle={`${student?.class ?? 'Student'}${student?.stream ? ` · ${student.stream}` : ''} · ${user.school.name}`} imageName={student?.name} imageUri={student?.photo_url} />
+      <DashboardSearch user={user} data={data} navigate={navigate} />
+      <GreetingCard user={user} term={data.current_term ? (data.current_term.is_open ? data.current_term.name : null) : data.teacher_workspace?.term} title={`Hi, ${firstName(student?.name ?? user.name)}!`} subtitle={`${student?.class ?? 'Student'}${student?.stream ? ` · ${student.stream}` : ''} · ${user.school.name}`} imageName={student?.name} imageUri={student?.photo_url} />
 
       <StatGrid items={[
         { icon: 'calendar-outline', label: 'Attendance', value: attendanceRate == null ? '—' : `${attendanceRate}%`, tone: 'green' },
@@ -583,7 +585,8 @@ export function ParentDashboardScreen({ data, user, attendanceRate, navigate, re
   return (
     <DashboardScroll refreshing={refreshing} onRefresh={onRefresh}>
       <TopBar user={user} />
-      <GreetingCard user={user} title={`Hello, ${firstName(user.name)}`} subtitle={`A live overview of ${child?.name ?? 'your learner'}’s school progress.`} imageName={child?.name} imageUri={child?.photo_url} />
+      <DashboardSearch user={user} data={data} navigate={navigate} />
+      <GreetingCard user={user} term={data.current_term ? (data.current_term.is_open ? data.current_term.name : null) : data.teacher_workspace?.term} title={`Hello, ${firstName(user.name)}`} subtitle={`A live overview of ${child?.name ?? 'your learner'}’s school progress.`} imageName={child?.name} imageUri={child?.photo_url} />
 
       <View style={[styles.learnerStrip, shadows.card]}>
         <Avatar name={child?.name ?? 'Student'} uri={child?.photo_url} size={52} />
@@ -628,6 +631,8 @@ function DashboardScroll({ children, refreshing, onRefresh }: { children: React.
   return (
     <ScrollView
       style={styles.screen}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} /> : undefined}
@@ -637,21 +642,46 @@ function DashboardScroll({ children, refreshing, onRefresh }: { children: React.
   );
 }
 
-function TeacherLessonCard({ data, navigate }: { data: Dashboard; navigate: (tab: AppTab) => void }) {
+function TeacherLessonCard({ data, navigate, onReportAbsence }: { data: Dashboard; navigate: (tab: AppTab) => void; onReportAbsence?: (lessonId: number) => Promise<void> }) {
   const now = useNow(1000);
+  const [reporting, setReporting] = useState(false);
+  const [reportError, setReportError] = useState('');
   const lesson = data.today_timetable.find(slot => (slot.ends_at_iso ? new Date(slot.ends_at_iso).getTime() : new Date(`${data.date}T${slot.ends_at}`).getTime()) > now);
+  useEffect(() => { setReportError(''); }, [lesson?.id, data.date]);
   if (!lesson) return <View style={[styles.card, shadows.card]}><Text style={styles.bodyCopy}>You have no remaining lessons today.</Text></View>;
   const start = new Date(lesson.starts_at_iso ?? `${data.date}T${lesson.starts_at}`).getTime();
   const end = new Date(lesson.ends_at_iso ?? `${data.date}T${lesson.ends_at}`).getTime();
   const live = now >= start && now < end;
   const seconds = Math.max(0, Math.floor(((live ? end : start) - now) / 1000));
   const countdown = `${Math.floor(seconds / 3600) ? `${Math.floor(seconds / 3600)}h ` : ''}${Math.floor(seconds / 60) % 60}m ${String(seconds % 60).padStart(2, '0')}s`;
-  return <Pressable accessibilityRole="button" accessibilityLabel="Open timetable" onPress={() => navigate('teacher_schedule')} style={({ pressed }) => [styles.card, styles.lessonFocus, pressed && styles.pressed]}>
-    <Text style={styles.greetingEyebrow}>{live ? 'LESSON IN PROGRESS' : 'YOUR NEXT LESSON'}</Text>
+  const report = () => {
+    if (!onReportAbsence || reporting || lesson.absence_reported_at) return;
+    EdlinkAlert.alert('Report lesson absence?', `Tell your school administrators that you cannot attend ${lesson.subject ?? lesson.label ?? 'this lesson'} for ${lesson.class_name ?? 'this class'} at ${shortTime(lesson.starts_at)}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Report absence', onPress: async () => {
+        setReporting(true); setReportError('');
+        try { await onReportAbsence(lesson.id); }
+        catch (error) { setReportError(error instanceof Error ? error.message : 'Could not send the report. Please try again.'); }
+        finally { setReporting(false); }
+      } },
+    ]);
+  };
+  return <View style={[styles.card, styles.lessonFocus]}>
+    <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.lessonArtwork}><AlarmClockArtwork /></View>
+    <Pressable accessibilityRole="button" accessibilityLabel="Open timetable" onPress={() => navigate('teacher_schedule')} style={({ pressed }) => [styles.lessonCopy, pressed && styles.pressed]}>
+    <Text style={styles.lessonHeading}>{live ? 'Lesson in progress' : 'Your next lesson'}</Text>
     <Text style={styles.cardTitle}>{lesson.subject ?? lesson.label ?? 'Lesson'}</Text>
     <Text style={styles.bodyCopy}>{lesson.class_name ?? 'Class'}{lesson.stream_name ? ` · ${lesson.stream_name}` : ''} · {shortTime(lesson.starts_at)}–{shortTime(lesson.ends_at)}</Text>
-    <View style={styles.countdownBox}><Text style={styles.countdownLabel}>{live ? 'Time remaining' : 'Starts in'}</Text><Text style={styles.countdownValue}>{countdown}</Text></View>
-  </Pressable>;
+    </Pressable>
+    <View style={styles.countdownBox}>
+      <View style={styles.countdownActions}>
+        <View><Text style={styles.countdownLabel}>{live ? 'Time remaining' : 'Starts in'}</Text><Text style={styles.countdownValue}>{countdown}</Text></View>
+        {!!onReportAbsence && <Pressable accessibilityRole="button" disabled={reporting || !!lesson.absence_reported_at} onPress={report} style={({ pressed }) => [styles.reportButton, (pressed || reporting || !!lesson.absence_reported_at) && styles.reportButtonMuted]}><Text style={styles.reportButtonText}>{lesson.absence_reported_at ? 'Absence reported' : reporting ? 'Sending…' : 'Report absence'}</Text></Pressable>}
+      </View>
+      {!!lesson.absence_reported_at && <Text accessibilityLiveRegion="polite" style={styles.reportStatus}>School administrators notified.</Text>}
+      {!!reportError && <Text accessibilityLiveRegion="polite" style={styles.reportError}>{reportError}</Text>}
+    </View>
+  </View>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -705,8 +735,22 @@ function nextLessonCopy(lesson: Lesson | undefined, now: number) {
 /* ------------------------------------------------------------------ */
 
 const styles = StyleSheet.create({
+  pendingTasksCard: { marginTop: 16 },
+  taskCount: { minWidth: 28, height: 28, paddingHorizontal: 8, borderRadius: 14, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
+  taskCountText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
+  taskIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#FFF5D5', alignItems: 'center', justifyContent: 'center' },
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#E2E7F0' },
-  lessonFocus: { borderColor: colors.secondary, borderWidth: 1, gap: 8 },
+  lessonHeading: { color: colors.primary, fontSize: 12, fontWeight: '600' },
+  lessonReminder: { marginTop: 16 },
+  lessonFocus: { borderColor: colors.secondary, borderWidth: 1, gap: 8, overflow: 'hidden' },
+  lessonCopy: { paddingRight: 82, gap: 8 },
+  lessonArtwork: { position: 'absolute', right: 8, top: 12, width: 110, height: 108, opacity: 0.10 },
+  countdownActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' },
+  reportButton: { minHeight: 44, backgroundColor: colors.secondary, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' },
+  reportButtonMuted: { opacity: 0.65 },
+  reportButtonText: { color: colors.primary, fontSize: 11, fontWeight: '600' },
+  reportStatus: { color: '#DDE5F2', fontSize: 11, marginTop: 8 },
+  reportError: { color: '#FFD4D4', fontSize: 11, lineHeight: 17, marginTop: 8 },
   countdownBox: { backgroundColor: colors.primary, borderRadius: radius.md, padding: 16, marginTop: 6 },
   countdownLabel: { color: '#D8E2F2', fontSize: 11, fontWeight: '600' },
   countdownValue: { color: colors.secondary, fontSize: 26, fontWeight: '800' },
@@ -720,7 +764,7 @@ const styles = StyleSheet.create({
   topBar: { minHeight: 75, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   topLogo: { width: 134, height: 58 },
   topActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  iconButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  iconButton: { width: 42, height: 42, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   notificationBadge: { position: 'absolute', right: -3, top: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#DC2626', borderWidth: 2, borderColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   notificationBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
 
@@ -729,14 +773,20 @@ const styles = StyleSheet.create({
   avatarImage: { resizeMode: 'cover' },
   avatarText: { color: colors.primary, fontWeight: '900', fontSize: 15 },
 
-  // Welcome card intentionally preserved exactly from Edlink Premium V1.
-  greetingCard: { minHeight: 198, borderRadius: 23, backgroundColor: colors.primaryCard, padding: 19, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  // Welcome banner
+  greetingCard: { minHeight: 174, borderRadius: 24, backgroundColor: colors.primaryCard, padding: 19, overflow: 'hidden' },
+  greetingMain: { flexDirection: 'row', alignItems: 'center' },
+  welcomeBadges: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 13 },
+  termPill: { flexShrink: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF14', borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 6 },
+  termDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.secondary },
+  termText: { flexShrink: 1, color: colors.secondary, fontSize: 10, fontWeight: '600' },
   greetingGlow: { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: colors.primary, right: -90, top: -100, opacity: 0.55 },
-  greetingCopy: { flex: 1, paddingRight: 8 },
+  greetingCopy: { flex: 1, minWidth: 0, paddingRight: 12 },
+  greetingSalutation: { color: colors.secondary, fontSize: 11, fontWeight: '400', letterSpacing: 0 },
   greetingEyebrow: { color: colors.secondary, fontSize: 10, fontWeight: '700', letterSpacing: 1.5 },
-  greetingTitle: { color: colors.textLight, fontSize: 24, lineHeight: 31, fontWeight: '800', marginTop: 8 },
-  greetingSubtitle: { color: '#DBE5F2', fontSize: 11, lineHeight: 18, marginTop: 6 },
-  datePill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.secondary, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 6, marginTop: 13 },
+  greetingTitle: { color: colors.textLight, fontSize: 20, lineHeight: 26, fontWeight: '800', marginTop: 8 },
+  greetingSubtitle: { color: '#DDE5F2', fontSize: 11, lineHeight: 18, marginTop: 6 },
+  datePill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.secondary, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 6 },
   dateText: { color: colors.primary, fontSize: 10, fontWeight: '800' },
   lessonPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   lessonText: { color: colors.secondary, fontSize: 10, lineHeight: 14, fontWeight: '800', flexShrink: 1 },
@@ -745,9 +795,9 @@ const styles = StyleSheet.create({
   sectionHeader: { marginTop: 28, marginBottom: 12, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 },
   sectionHeaderText: { flex: 1, minWidth: 0 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionMarker: { width: 4, height: 18, borderRadius: 2, backgroundColor: colors.secondary },
+  sectionMarker: { display: 'none' },
   sectionTitle: { flexShrink: 1, fontSize: 18, fontWeight: '800', color: colors.textDark, letterSpacing: -0.3 },
-  sectionSubtitle: { fontSize: 11, lineHeight: 17, color: colors.textMuted, marginTop: 4, marginLeft: 12 },
+  sectionSubtitle: { fontSize: 11, lineHeight: 17, color: colors.textMuted, marginTop: 4, marginLeft: 0 },
   sectionAction: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingBottom: 2 },
   sectionActionText: { color: colors.primary, fontSize: 12, fontWeight: '800' },
 
@@ -761,33 +811,34 @@ const styles = StyleSheet.create({
 
   // Action tiles
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
-  actionTile: { minHeight: 128, backgroundColor: colors.surface, borderRadius: 16, padding: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  actionTile: { minHeight: 136, backgroundColor: colors.surface, borderRadius: 16, padding: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   actionTileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  actionIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFF4D9', alignItems: 'center', justifyContent: 'center' },
+  actionIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFF5D5', alignItems: 'center', justifyContent: 'center' },
   actionTitle: { fontSize: 14, fontWeight: '800', color: colors.textDark },
   actionSubtitle: { marginTop: 4, fontSize: 10, lineHeight: 15, color: colors.textMuted },
-  actionBadge: { alignSelf: 'flex-start', marginTop: 9, backgroundColor: '#E8EDF8', borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 3 },
+  actionBadge: { alignSelf: 'flex-start', marginTop: 9, backgroundColor: '#F0F2F7', borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 3 },
   actionBadgeText: { color: colors.primary, fontSize: 9, fontWeight: '800' },
 
   // Quick actions
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
-  quickAction: { width: '30%', flexGrow: 1, minHeight: 96, borderRadius: 16, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  quickIcon: { width: 40, height: 40, borderRadius: 14, backgroundColor: '#FFF4D9', alignItems: 'center', justifyContent: 'center' },
+  quickAction: { width: '30%', flexGrow: 1, minHeight: 100, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 0, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  quickIcon: { width: 54, height: 54, borderRadius: 18, backgroundColor: '#FFF5D5', alignItems: 'center', justifyContent: 'center' },
   quickLabel: { color: colors.textDark, fontSize: 10, fontWeight: '700', marginTop: 8, textAlign: 'center' },
 
   // Cards
   card: { backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 18, paddingVertical: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  assignmentCard: { marginTop: 14 },
+  assignmentCard: { marginTop: 14, minHeight: 120, overflow: 'hidden' },
+  responsibilityArtwork: { position: 'absolute', right: 12, top: 42, width: 110, height: 108, opacity: 0.08 },
   cardHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   cardTitle: { color: colors.textDark, fontSize: 15, fontWeight: '800' },
   cardCaption: { color: colors.textMuted, fontSize: 10, marginTop: 4 },
-  cardIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#FFF4D9', alignItems: 'center', justifyContent: 'center' },
-  ratePill: { backgroundColor: '#E8EDF8', borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6 },
+  cardIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#FFF5D5', alignItems: 'center', justifyContent: 'center' },
+  ratePill: { backgroundColor: '#F0F2F7', borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6 },
   rateValue: { color: colors.primary, fontSize: 18, fontWeight: '800' },
   bodyCopy: { color: colors.textMuted, fontSize: 12, lineHeight: 20, marginTop: 8 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 12 },
-  chip: { maxWidth: '100%', backgroundColor: '#F0F3FA', borderRadius: radius.full, paddingHorizontal: 11, paddingVertical: 6 },
-  chipText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
+  chip: { maxWidth: '100%', backgroundColor: colors.primary, borderRadius: radius.full, paddingHorizontal: 11, paddingVertical: 6 },
+  chipText: { color: colors.secondary, fontSize: 11, fontWeight: '700' },
 
   // Attendance chart
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 16 },
@@ -828,8 +879,8 @@ const styles = StyleSheet.create({
   timelineBarLive: { backgroundColor: colors.secondary },
 
   homeworkRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  homeworkIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: '#FFF4D9', alignItems: 'center', justifyContent: 'center' },
-  duePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF4D9', borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 4 },
+  homeworkIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: '#FFF5D5', alignItems: 'center', justifyContent: 'center' },
+  duePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF5D5', borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 4 },
   dueText: { color: colors.secondaryDark, fontSize: 10, fontWeight: '800' },
   cardButton: { minHeight: 52, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   cardButtonText: { color: colors.primary, fontSize: 12, fontWeight: '800' },
@@ -845,7 +896,7 @@ const styles = StyleSheet.create({
 
   // Empty states
   emptyInline: { minHeight: 96, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8 },
-  emptyIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F0F3FA', alignItems: 'center', justifyContent: 'center' },
+  emptyIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F0F2F7', alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: colors.textMuted, fontSize: 11, textAlign: 'center' },
 
   // Parent learner strip + live pill

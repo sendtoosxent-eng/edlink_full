@@ -1,462 +1,133 @@
-import { Text } from '../../components/Typography';
 import React from 'react';
-import { Animated, Easing, type ImageSourcePropType, Pressable, StyleSheet, View, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AccessibilityInfo, Animated, AppState, Easing, Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
+import { OnboardingIllustration } from '../../components/OnboardingIllustration';
+import { Text } from '../../components/Typography';
 
 type Controls = { onNext: () => void; onBack?: () => void; onSkip?: () => void };
+const BRAND = { navy: '#0B132B', gold: '#EFB000', white: '#FFFFFF', muted: '#707785' };
 
-// --- Theme Tokens ---
-const THEME = {
-  navy: '#0B132B',
-  navyCard: '#1C2541',
-  yellow: '#fab001',
-  yellowDark: '#efb000',
-  background: '#F4F6FA',
-  surface: '#FFFFFF',
-  textDark: '#0B132B',
-  textMuted: '#6C7A9C',
-  fontRegular: 'Poppins_400Regular',
-  fontMedium: 'Poppins_500Medium',
-  fontSemiBold: 'Poppins_600SemiBold',
-  fontBold: 'Poppins_700Bold',
+// Increase to move the white curve lower; decrease to move it higher.
+const CURVE_OFFSET = 26;
+
+type OnboardingProps = Controls & {
+  index: number;
+  source: ImageSourcePropType;
+  imageLabel: string;
+  title: string;
+  description: string;
 };
 
-// --- Reusable Sub-components ---
-
-function Dots({ active }: { active: number }) {
-  return (
-    <View style={styles.dots}>
-      {[0, 1, 2].map((index) => (
-        <View
-          key={index}
-          style={[styles.dot, index === active && styles.dotActive]}
-        />
-      ))}
-    </View>
-  );
-}
-
-function PrimaryButton({
-  label,
-  onPress,
-  isYellow = false,
-}: {
-  label: string;
-  onPress: () => void;
-  isYellow?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.primaryButton,
-        isYellow ? styles.yellowBtn : styles.navyBtn,
-        pressed && styles.pressed,
-      ]}
-    >
-      <Text style={[styles.primaryButtonText, isYellow ? styles.yellowBtnText : styles.navyBtnText]}>
-        {label}
-      </Text>
-      <Ionicons
-        name={label === 'Get Started' ? 'rocket' : 'play-circle'}
-        size={22}
-        color={THEME.navy}
-      />
-    </Pressable>
-  );
-}
-
-// --- Onboarding Screen 1: Connect ---
-
-export function ConnectOnboardingScreen({ onNext, onSkip }: Controls) {
-  return (
-    <View style={styles.screen}>
-      <Pressable onPress={onSkip} style={styles.skipButton}>
-        <Text style={styles.skipText}>Skip</Text>
-      </Pressable>
-
-      <View style={styles.illustrationArea}>
-        <MotionImage source={require('../../../assets/img/girl.png')} accessibilityLabel="Smiling student holding school books" style={styles.heroPhoto} />
-      </View>
-
-      <View style={styles.sheet}>
-        <Text style={styles.title}>Everything about school,{'\n'}in one place</Text>
-        <Text style={styles.lead}>
-          Edlink connects teachers, students, and parents seamlessly in real time.
-        </Text>
-        <View style={styles.footerRow}>
-          <Dots active={0} />
-          <PrimaryButton label="Next" onPress={onNext} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function MotionImage({ source, accessibilityLabel, style }: { source: ImageSourcePropType; accessibilityLabel: string; style: object }) {
+function useBreathingMotion() {
   const motion = React.useRef(new Animated.Value(0)).current;
-
   React.useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(motion, { toValue: 1, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(motion, { toValue: 0, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
+    let reduced = true;
+    let disposed = false;
+    let loop: Animated.CompositeAnimation | undefined;
+    const update = () => {
+      loop?.stop();
+      motion.setValue(0);
+      if (disposed || reduced || AppState.currentState !== 'active') return;
+      loop = Animated.loop(Animated.sequence([
+        Animated.timing(motion, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(motion, { toValue: 0, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]));
+      loop.start();
+    };
+    const preference = AccessibilityInfo.addEventListener('reduceMotionChanged', value => { reduced = value; update(); });
+    const activity = AppState.addEventListener('change', update);
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (!disposed) { reduced = value; update(); } });
+    return () => { disposed = true; loop?.stop(); preference.remove(); activity.remove(); };
   }, [motion]);
-
-  return (
-    <Animated.Image
-      accessibilityLabel={accessibilityLabel}
-      source={source}
-      resizeMode="contain"
-      style={[
-        style,
-        {
-          transform: [
-            { scale: motion.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] }) },
-            { translateY: motion.interpolate({ inputRange: [0, 1], outputRange: [0, 3] }) },
-          ],
-        },
-      ]}
-    />
-  );
+  return motion;
 }
 
-// --- Onboarding Screen 2: Inform ---
-
-export function InformOnboardingScreen({ onNext, onBack }: Controls) {
+function OnboardingScreen({ index, source, imageLabel, title, description, onNext, onBack, onSkip }: OnboardingProps) {
+  const insets = useSafeAreaInsets();
+  const { height, width, fontScale } = useWindowDimensions();
+  const compact = height < 720;
+  const heroHeight = Math.max(320, Math.min(height * 0.58, 620)) + CURVE_OFFSET;
+  const availableImageHeight = Math.max(220, heroHeight - insets.top - 64);
+  const asset = Image.resolveAssetSource(source);
+  const imageWidth = Math.min(width * 1.12, 460, availableImageHeight * asset.width / asset.height);
+  const imageHeight = imageWidth * asset.height / asset.width;
+  const motion = useBreathingMotion();
   return (
-    <View style={styles.screen}>
-      <Pressable onPress={onBack} style={styles.backIconButton}>
-        <Ionicons name="arrow-back" size={22} color={THEME.navy} />
-      </Pressable>
-
-      <View style={styles.illustrationArea}>
-        <MotionImage source={require('../../../assets/img/parent.png')} accessibilityLabel="Two students ready for their school day" style={styles.informPhoto} />
+    <ScrollView style={styles.screen} contentContainerStyle={{ minHeight: height, flexGrow: 1 }} bounces={false} showsVerticalScrollIndicator={false}>
+      <View style={[styles.hero, { height: heroHeight }]}>
+        <View pointerEvents="none" style={styles.halo} />
+        <View style={[styles.topBar, { top: insets.top + 10 }]}>
+          <View style={styles.headerSide}>{onBack && <Pressable accessibilityRole="button" accessibilityLabel="Previous introduction" onPress={onBack} style={styles.backButton}><Svg width={22} height={22} viewBox="0 0 24 24" fill="none"><Path d="m14 6-6 6 6 6M8 12h12" stroke={BRAND.white} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg></Pressable>}</View>
+          <Image source={require('../../../assets/img/logo.png')} accessibilityLabel="Edlink — Innovating paperless learning" resizeMode="contain" style={styles.brandLogo} />
+          <View style={[styles.headerSide, styles.headerRight]}>{onSkip && <Pressable accessibilityRole="button" onPress={onSkip} hitSlop={8} style={styles.skipButton}><Text numberOfLines={1} style={styles.skipText}>Skip</Text></Pressable>}</View>
+        </View>
+        <Animated.Image source={source} accessibilityLabel={imageLabel} resizeMode="contain" style={[styles.heroImage, { width: imageWidth, height: imageHeight, transform: [{ scale: motion.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] }) }, { translateY: motion.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }] }]} />
+        <View pointerEvents="none" style={[styles.floatingIcon, styles.leftArtwork]}><OnboardingIllustration name={index === 0 ? 'learning' : index === 1 ? 'connection' : 'growth'} /></View>
+        <View pointerEvents="none" style={[styles.floatingIcon, styles.rightArtwork]}><OnboardingIllustration name="orbit" size={50} /></View>
+        <View pointerEvents="none" style={styles.goldDot} />
       </View>
-
       <View style={styles.sheet}>
-        <Text style={styles.title}>Stay informed{'\n'}every school day</Text>
-        <Text style={styles.lead}>
-          Check your child's attendance, class announcements, and timetables at a glance.
-        </Text>
-        <View style={styles.footerRow}>
-          <Dots active={1} />
-          <PrimaryButton label="Next" onPress={onNext} />
+        <Svg pointerEvents="none" width={width} height={56} viewBox="0 0 400 56" preserveAspectRatio="none" style={styles.curve}><Path d="M0 48 Q200 -40 400 48 L400 56 L0 56 Z" fill={BRAND.white} /></Svg>
+        <View style={[styles.sheetContent, { paddingBottom: Math.max(insets.bottom + 16, 28), paddingTop: compact ? 12 : 20 }]}>
+        <View style={styles.copy}>
+          <Text accessibilityRole="header" style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+        </View>
+        <View accessible accessibilityLabel={`Introduction ${index + 1} of 3`} style={styles.dots}>
+          {[0, 1, 2].map(dot => <View key={dot} style={[styles.dot, dot === index && styles.activeDot]} />)}
+        </View>
+        <View style={styles.buttonArea}>
+        <Pressable accessibilityRole="button" onPress={onNext} style={({ pressed }) => [styles.nextButton, { marginTop: fontScale > 1.3 || compact ? 22 : 30 }, pressed && styles.pressed]}>
+          <Text style={styles.nextText}>{index === 2 ? 'Get started' : 'Next'}</Text>
+        </Pressable>
+        </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
-// --- Onboarding Screen 3: Progress ---
-
-export function ProgressOnboardingScreen({ onNext, onBack }: Controls) {
-  return (
-    <View style={styles.screen}>
-      <Pressable onPress={onBack} style={styles.backIconButton}>
-        <Ionicons name="arrow-back" size={22} color={THEME.navy} />
-      </Pressable>
-
-      <View style={styles.illustrationArea}>
-        <MotionImage source={require('../../../assets/img/onboad1.png')} accessibilityLabel="Student holding a laptop and school books" style={styles.progressPhoto} />
-      </View>
-
-      <View style={styles.sheet}>
-        <Text style={styles.title}>Follow learning{'\n'}& academic growth</Text>
-        <Text style={styles.lead}>
-          View results, report cards, and homework feedback easily in real time.
-        </Text>
-        <View style={styles.singleActionFooter}>
-          <Dots active={2} />
-          <PrimaryButton label="Get Started" onPress={onNext} isYellow />
-        </View>
-      </View>
-    </View>
-  );
+export function ConnectOnboardingScreen(props: Controls) {
+  return <OnboardingScreen {...props} index={0} source={require('../../../assets/img/onboad.png')} imageLabel="Smiling student holding school books" title={'Your school day,\nall in one place'} description="Connect with your school. Stay close to every moment of learning." />;
 }
 
-// --- Styles ---
+export function InformOnboardingScreen(props: Controls) {
+  return <OnboardingScreen {...props} index={1} source={require('../../../assets/img/parent.png')} imageLabel="Students ready for their school day" title={'A little closer,\nevery school day'} description="Attendance, announcements and timetables. Everything you need to stay in the loop." />;
+}
 
-const { width } = Dimensions.get('window');
+export function ProgressOnboardingScreen(props: Controls) {
+  return <OnboardingScreen {...props} index={2} source={require('../../../assets/img/book.png')} imageLabel="Student holding a laptop and school books" title={'Every step forward,\nworth celebrating'} description="Follow homework, results and report cards as learning turns into progress." />;
+}
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: THEME.background,
-    paddingTop: 50,
-  },
-  skipButton: {
-    position: 'absolute',
-    top: 54,
-    right: 24,
-    zIndex: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: THEME.navy,
-  },
-  skipText: {
-    fontFamily: THEME.fontSemiBold,
-    fontSize: 13,
-    color: THEME.yellow,
-  },
-  backIconButton: {
-    position: 'absolute',
-    top: 54,
-    left: 24,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: THEME.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: THEME.navy,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  illustrationArea: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  heroPhoto: {
-    position: 'absolute',
-    bottom: -42,
-    width: width * 1.24,
-    height: '122%',
-  },
-  informPhoto: {
-    position: 'absolute',
-    bottom: -46,
-    width: width * 1.2,
-    height: '120%',
-  },
-  progressPhoto: {
-    position: 'absolute',
-    bottom: -48,
-    width: width * 1.38,
-    height: '138%',
-  },
-  mockPhone: {
-    width: width * 0.65,
-    padding: 20,
-    borderRadius: 24,
-    backgroundColor: THEME.surface,
-    transform: [{ rotate: '-5deg' }],
-    shadowColor: THEME.navy,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  phoneHeader: {
-    fontFamily: THEME.fontBold,
-    fontSize: 11,
-    color: THEME.navy,
-    marginBottom: 14,
-    letterSpacing: 0.5,
-  },
-  metricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  metricLabel: {
-    fontFamily: THEME.fontMedium,
-    fontSize: 13,
-    color: THEME.textDark,
-  },
-  metricValue: {
-    fontFamily: THEME.fontBold,
-    fontSize: 12,
-    color: THEME.textMuted,
-  },
-  floatingNotification: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 18,
-    backgroundColor: THEME.surface,
-    shadowColor: THEME.navy,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  bellIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: THEME.yellow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skeletonBox: {
-    gap: 6,
-  },
-  skeletonLineLong: {
-    width: 80,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E2E8F0',
-  },
-  skeletonLineShort: {
-    width: 50,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#F1F5F9',
-  },
-  progressCard: {
-    width: '100%',
-    padding: 24,
-    borderRadius: 28,
-    backgroundColor: THEME.navyCard,
-    shadowColor: THEME.navy,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 6,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  progressCardTitle: {
-    fontFamily: THEME.fontBold,
-    fontSize: 12,
-    color: THEME.yellow,
-    letterSpacing: 0.8,
-  },
-  checkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  checkText: {
-    fontFamily: THEME.fontRegular,
-    fontSize: 13,
-    color: '#E2E8F0',
-  },
-  chartSparkline: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-    marginTop: 20,
-    height: 60,
-  },
-  bar: {
-    width: 12,
-    borderRadius: 6,
-    backgroundColor: '#334155',
-  },
-  trendIcon: {
-    marginLeft: 'auto',
-    marginBottom: 10,
-  },
-  sheet: {
-    zIndex: 2,
-    backgroundColor: THEME.navy,
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    paddingHorizontal: 28,
-    paddingTop: 32,
-    borderRadius:  20,
-    paddingBottom: 40,
-  },
-  title: {
-    fontFamily: THEME.fontBold,
-    fontSize: 28,
-    lineHeight: 35,
-    fontWeight: '900',
-    letterSpacing: -0.45,
-    color: THEME.yellow,
-    textAlign: 'center',
-  },
-  lead: {
-    fontFamily: THEME.fontRegular,
-    fontSize: 14,
-    lineHeight: 22,
-    color: THEME.textMuted,
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 28,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  singleActionFooter: {
-    gap: 20,
-  },
-  dots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#CBD5E1',
-  },
-  dotActive: {
-    width: 28,
-    backgroundColor: THEME.yellow,
-  },
-  primaryButton: {
-    height: 54,
-    paddingHorizontal: 28,
-    borderRadius: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  navyBtn: {
-    backgroundColor: THEME.yellow,
-  },
-  yellowBtn: {
-    backgroundColor: THEME.yellow,
-    width: '100%',
-  },
-  pressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.98 }],
-  },
-  primaryButtonText: {
-    fontFamily: THEME.fontSemiBold,
-    fontSize: 16,
-    fontWeight: '900',
-    letterSpacing: 0.15,
-  },
-  navyBtnText: {
-    color: 'navy',
-  },
-  yellowBtnText: {
-    color: THEME.navy,
-  },
+  screen: { flex: 1, backgroundColor: BRAND.navy },
+  hero: { flexShrink: 0, alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
+  topBar: { position: 'absolute', left: 24, right: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 3 },
+  headerSide: { width: 64 },
+  headerRight: { alignItems: 'flex-end' },
+  brandLogo: { width: 148, height: 46 },
+  backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: '#FFFFFF14' },
+  skipButton: { minWidth: 56, minHeight: 44, paddingHorizontal: 8, justifyContent: 'center', alignItems: 'center' },
+  skipText: { color: BRAND.white, fontSize: 12, fontWeight: '500' },
+  halo: { position: 'absolute', width: 320, height: 320, borderRadius: 160, backgroundColor: '#EFB00012', bottom: 0 },
+  heroImage: { marginBottom: -22 },
+  floatingIcon: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
+  leftArtwork: { left: 22, top: '35%', transform: [{ rotate: '-17deg' }] },
+  rightArtwork: { right: 20, top: '53%', transform: [{ rotate: '16deg' }] },
+  goldDot: { position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: BRAND.gold, right: 42, top: '29%' },
+  sheet: { flexGrow: 1, backgroundColor: BRAND.white, width: '100%' },
+  sheetContent: { flexGrow: 1, paddingHorizontal: 28, alignItems: 'center' },
+  buttonArea: { width: '100%', alignItems: 'center', marginTop: 'auto' },
+  curve: { position: 'absolute', top: -55, left: 0, right: 0 },
+  copy: { maxWidth: 380, width: '100%', alignItems: 'center' },
+  title: { color: BRAND.navy, fontSize: 27, lineHeight: 34, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center' },
+  titleCompact: { fontSize: 24, lineHeight: 30 },
+  description: { color: BRAND.muted, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 10, maxWidth: 310 },
+  dots: { flexDirection: 'row', gap: 6, marginTop: 24, alignItems: 'center' },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#DDE0E6' },
+  activeDot: { backgroundColor: BRAND.gold, width: 7, height: 7, borderRadius: 4 },
+  nextButton: { width: '100%', maxWidth: 420, minHeight: 52, paddingVertical: 14, borderRadius: 999, backgroundColor: BRAND.navy, alignItems: 'center', justifyContent: 'center' },
+  nextText: { color: BRAND.gold, fontSize: 14, fontWeight: '600' },
+  pressed: { opacity: 0.85 },
 });

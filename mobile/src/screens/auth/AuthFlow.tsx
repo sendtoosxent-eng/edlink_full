@@ -66,7 +66,7 @@ export function AuthFlow({ onSignIn, onVerifyOtp, onBiometricSignIn, biometricAv
   else if (schoolIdentity) content = <PasswordRecoveryScreen school={schoolIdentity} initialEmail={email} error={error} busy={busy} onBack={() => { clear(); goTo('login', -1); }} onRequest={requestReset} onReset={resetPassword} />;
   else content = <SchoolScreen school={school} error={error} busy={busy} onChange={setSchool} onBack={() => goTo('role', -1)} onContinue={() => void continueToLogin()} />;
 
-  return <SafeAreaView edges={[]} style={styles.safe}><StatusBar style="dark" />
+  return <SafeAreaView edges={[]} style={styles.safe}><StatusBar style={step !== 'splash' ? "light" : "dark"} />
     <Animated.View style={[styles.flex, { opacity, transform: [{ translateX }] }]}>
       {content}
     </Animated.View>

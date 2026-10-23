@@ -1,3 +1,4 @@
+export type AccountPreview = { name: string; role: Role; avatar_url: string | null; phone?: string | null; staff_number?: string | null };
 export type Role = 'teacher' | 'student' | 'parent';
 export type SchoolIdentity = { number: string; name: string; logo_url?: string | null; is_demo: boolean };
 export type User = { id: number; name: string; email: string; phone?: string | null; role: Role; avatar_url?: string | null; school: { id: number; number: string; name: string }; permissions: string[] };
@@ -10,6 +11,7 @@ export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
 export type AttendanceRow = { student: Pick<Student, 'id' | 'name' | 'admission_no' | 'photo_url'>; status: AttendanceStatus };
 export type AttendanceRecord = { id: number; attendance_date: string; status: AttendanceStatus; session_key: string };
 export type Dashboard = {
+  current_term?: { name: string; year: number; is_open: boolean } | null;
   date: string; student: Student | null; teacher_workspace?: TeacherWorkspace | null;
   today_timetable: Array<Lesson>;
   next_lesson?: Lesson | null;
@@ -32,7 +34,8 @@ export type TeacherWorkspace = {
   class_teacher_classes: Array<{ id: number; name: string }>;
   subject_assignments: Array<{ school_class_id: number; class_name: string; subject_id: number; subject_name: string }>;
   tools: Array<{ id: string; label: string; group: string; native: string | null; path: string }>;
-  pending_attendance?: Array<{ school_class_id: number; subject_id: number | null; attendance_type: 'daily' | 'subject'; session_key?: string; label: string }>;
+  pending_results?: Array<{ paper_id: number; exam_name: string; class_name: string; stream_name?: string | null; subject_name: string }>;
+  pending_attendance?: Array<{ remaining?: number; school_class_id: number; subject_id: number | null; attendance_type: 'daily' | 'subject'; session_key?: string; label: string }>;
 };
 
-export type Lesson = { id: number; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; starts_at_iso?: string; ends_at_iso?: string; class_name?: string | null; stream_name?: string | null };
+export type Lesson = { id: number; absence_reported_at?: string | null; subject?: string | null; label?: string | null; starts_at: string; ends_at: string; starts_at_iso?: string; ends_at_iso?: string; class_name?: string | null; stream_name?: string | null };

@@ -9,7 +9,7 @@ import { Text, TextInput } from '../../components/Typography';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { AppState, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -143,8 +143,9 @@ type MarkSheet = { paper: Paper; status: string; students: Array<{ student: { id
 
 
 
-export function TeacherMarksScreen({ token, onBack, readOnly = false }: { token: string; onBack: () => void; readOnly?: boolean }) {
+export function TeacherMarksScreen({ token, onBack, readOnly = false, initialPaperId }: { initialPaperId?: number; token: string; onBack: () => void; readOnly?: boolean }) {
 
+  const openedPaper = useRef<number | undefined>(undefined);
   const [papers, setPapers] = useState<Paper[]>([]);
 
   const [sheet, setSheet] = useState<MarkSheet>();
@@ -184,6 +185,12 @@ export function TeacherMarksScreen({ token, onBack, readOnly = false }: { token:
     } catch (e) { setError(message(e)); } finally { setBusy(false); }
 
   };
+
+  useEffect(() => {
+    if (!initialPaperId || openedPaper.current === initialPaperId) return;
+    const paper = papers.find(item => item.id === initialPaperId);
+    if (paper) { openedPaper.current = initialPaperId; void select(paper); }
+  }, [papers, initialPaperId]);
 
   const save = async (submit: boolean) => {
 

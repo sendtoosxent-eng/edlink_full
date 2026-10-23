@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Pressable, StyleSheet, Animated, LayoutChangeEvent, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadows } from '../theme/index';
+import { colors, radius } from '../theme/index';
 import type { AppTab } from '../screens/app/DashboardScreens';
 
 interface TabBarProps {
@@ -15,6 +15,7 @@ interface TabBarProps {
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_CONFIG: Record<AppTab, { label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName }> = {
+  settings: { label: 'Settings', activeIcon: 'settings', inactiveIcon: 'settings-outline' },
   teacher_communications: { label: 'Communications', activeIcon: 'chatbubbles', inactiveIcon: 'chatbubbles-outline' },
   daily_attendance: { label: 'Daily register', activeIcon: 'checkbox', inactiveIcon: 'checkbox-outline' },
   subject_attendance: { label: 'Subject register', activeIcon: 'book', inactiveIcon: 'book-outline' },
@@ -46,7 +47,7 @@ export function BottomTabBar({ tabs, activeTab, onSelect }: TabBarProps) {
   const { width } = useWindowDimensions();
   const compact = width < 380;
   const [containerWidth, setContainerWidth] = useState(0);
-  
+
   const activeIndex = tabs.indexOf(activeTab);
   const slideAnim = useRef(new Animated.Value(activeIndex < 0 ? 0 : activeIndex)).current;
 
@@ -151,6 +152,7 @@ function TabButton({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       style={styles.tabItem}
       hitSlop={6}
@@ -159,7 +161,7 @@ function TabButton({
         <Ionicons
           name={iconName}
           size={compact ? 19 : 21}
-          color={isActive ? colors.primary : colors.accent}
+          color={isActive ? colors.surface : colors.textMuted}
         />
         <Text numberOfLines={1} style={[styles.labelText, compact && styles.labelCompact, isActive ? styles.labelActive : styles.labelInactive]}>
           {label}
@@ -171,25 +173,27 @@ function TabButton({
 
 const styles = StyleSheet.create({
   outerContainer: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingHorizontal: 10,
     paddingTop: 8,
   },
   floatingBar: {
     flexDirection: 'row',
     height: 66,
-    backgroundColor: colors.primary, // Edlink dark navy background
+    backgroundColor: colors.surface,
     borderRadius: radius.lg ?? 24,
     paddingHorizontal: 8,
     alignItems: 'center',
     position: 'relative',
-    ...shadows.card,
+
   },
   activeIndicator: {
     position: 'absolute',
     left: 11,
     height: 52,
-    backgroundColor: colors.accent, // Highlight pill color
+    backgroundColor: colors.primary,
     borderRadius: radius.md ?? 16,
   },
   tabItem: {
@@ -213,11 +217,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   labelActive: {
-    color: colors.primary,
+    color: colors.surface,
     fontWeight: '800',
   },
   labelInactive: {
-    color: '#efb000',
+    color: colors.textMuted,
     fontWeight: '600',
   },
 });

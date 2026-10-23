@@ -44,7 +44,7 @@ export { ErrorScreen as ErrorState } from './ErrorScreen';
 const styles = StyleSheet.create({
   button: {
     minHeight: 52,
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   statValue: {
-    color: colors.accent,
+    color: colors.primary,
     fontWeight: '900',
     fontSize: 24,
   },

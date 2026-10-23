@@ -27,6 +27,7 @@ import type { Assignment, AttendanceRecord, AttendanceRow, AttendanceStatus, Aut
 import { colors, radius } from './src/theme';
 import { ParentDashboardScreen, StudentDashboardScreen, TeacherDashboardScreen, type AppTab } from './src/screens/app/DashboardScreens';
 import { BottomTabBar } from './src/components/Navigation';
+import { SettingsScreen } from './src/screens/app/SettingsScreen';
 import { ProfileScreen } from './src/screens/app/ProfileScreen';
 import { PageIntro as ScreenHeader } from './src/components/PageIntro';
 import { PaymentsScreen } from './src/screens/app/PaymentsScreen';
@@ -97,8 +98,10 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   const tabs: Tab[] = user.role === 'teacher' ? ['home', 'attendance', 'homework', 'more'] : user.role === 'student' ? ['home', 'homework', 'results', 'more'] : ['home', 'attendance', 'results', 'homework', 'payments', 'more'];
   const [tab, setTab] = useState<Tab>('home'); const [activeRoot, setActiveRoot] = useState<Tab>('home'); const [children, setChildren] = useState<Student[]>([]); const [studentId, setStudentId] = useState<number>();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [marksPaperId, setMarksPaperId] = useState<number>();
   const [registerTarget, setRegisterTarget] = useState<RegisterTarget>();
-  const navigate = (next: Tab) => { setRegisterTarget(undefined); setTab(next); };
+  const navigate = (next: Tab) => { setRegisterTarget(undefined); setMarksPaperId(undefined); setTab(next); };
+  const openMarks = (paperId: number) => { setMarksPaperId(paperId); setTab('add_marks'); };
   const openRegister = (target: RegisterTarget) => { setRegisterTarget(target); setTab(target.attendance_type === 'daily' ? 'daily_attendance' : 'subject_attendance'); };
   const clearUnreadNotifications = useCallback(() => setUnreadNotifications(0), []);
   useEffect(() => { if (tabs.includes(tab)) setActiveRoot(tab); }, [tab]);
@@ -114,7 +117,7 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
       {user.role === 'teacher' && tab === 'teacher_communications' && <NativeModuleScreen token={token} tool="communications.index" onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'class_students' && <TeacherDirectoryScreen token={token} onBack={() => setTab('class_access')} />}
       {user.role === 'teacher' && tab === 'teacher_schedule' && <TeacherScheduleScreen token={token} onBack={() => setTab('teaching_access')} />}
-      {tab === 'home' && <Home token={token} user={user} studentId={studentId} navigate={navigate} openRegister={openRegister} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
+      {tab === 'home' && <Home openMarks={openMarks} token={token} user={user} studentId={studentId} navigate={navigate} openRegister={openRegister} onSignOut={onSignOut} unreadNotifications={unreadNotifications} />}
       {tab === 'attendance' && user.role !== 'teacher' && <Attendance token={token} user={user} studentId={studentId} />}
       {tab === 'homework' && user.role === 'teacher' && <TeacherHomeworkScreen token={token} />}
       {user.role === 'student' && tab === 'student_schedule' && <TeacherScheduleScreen token={token} backLabel="Dashboard" onBack={() => setTab('home')} />}
@@ -123,10 +126,11 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
       {tab === 'homework' && user.role === 'parent' && <Homework token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'results' && <Results token={token} user={user} studentId={studentId} isParent={user.role === 'parent'} />}
       {tab === 'payments' && <PaymentsScreen token={token} studentId={studentId} isParent={user.role === 'parent'} />}
+      {tab === 'settings' && <SettingsScreen user={user} navigate={navigate} onBack={() => setTab('home')} onSignOut={onSignOut} />}
       {tab === 'more' && <ProfileScreen onUserUpdated={onUserUpdated} token={token} user={user} studentId={studentId} onSignOut={onSignOut} navigate={setTab} />}
       {tab === 'notifications' && <NotificationsScreen token={token} studentId={studentId} onRead={clearUnreadNotifications} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'leave' && <LeaveRequestScreen token={token} onBack={() => setTab('home')} />}
-      {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen token={token} onBack={() => setTab('home')} />}
+      {user.role === 'teacher' && tab === 'add_marks' && <TeacherMarksScreen initialPaperId={marksPaperId} token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'view_marks' && <TeacherMarksScreen token={token} readOnly onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'teacher_results' && <NativeReportsScreen token={token} onBack={() => setTab('home')} />}
       {user.role === 'teacher' && tab === 'add_homework' && <AddHomeworkScreen token={token} onBack={() => setTab('homework')} />}
@@ -136,7 +140,7 @@ function AuthenticatedApp({ token, user, onSignOut, onUserUpdated }: { token: st
   </SafeAreaView>;
 }
 
-function Home({ token, user, studentId, navigate, openRegister, onSignOut, unreadNotifications }: { token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; openRegister: (target: RegisterTarget) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
+function Home({ openMarks, token, user, studentId, navigate, openRegister, onSignOut, unreadNotifications }: { openMarks: (paperId: number) => void; token: string; user: User; studentId?: number; navigate: (tab: Tab) => void; openRegister: (target: RegisterTarget) => void; onSignOut: () => Promise<void>; unreadNotifications: number }) {
   const [data, setData] = useState<Dashboard>(); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = useCallback(async () => { if (user.role === 'parent' && !studentId) { setLoading(false); return; } setLoading(true); try { setData((await api.get<Dashboard>(`/dashboard${studentId ? `?student_id=${studentId}` : ''}`, token)).data); setError(''); } catch (e) { setError(messageFor(e)); } finally { setLoading(false); } }, [studentId, token, user.role]);
   useEffect(() => { void load(); }, [load]);
@@ -146,7 +150,11 @@ function Home({ token, user, studentId, navigate, openRegister, onSignOut, unrea
   const teacherTotal = data.analytics?.stats.attendance_records ?? (present + (data.analytics?.absent_series ?? []).reduce((sum, value) => sum + value, 0));
   const denominator = user.role === 'teacher' ? teacherTotal : total;
   const rate = denominator ? Math.round(present / denominator * 100) : null;
-  const props = { data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson, unreadNotifications }, attendanceRate: rate, navigate, openRegister, refreshing: loading, onRefresh: load };
+  const reportAbsence = async (lessonId: number) => {
+    const response = await api.post<{ reported_at: string; message: string }>(`/teacher/lessons/${lessonId}/absence`, token, {});
+    setData(current => current ? { ...current, today_timetable: current.today_timetable.map(lesson => lesson.id === lessonId ? { ...lesson, absence_reported_at: response.data.reported_at } : lesson) } : current);
+  };
+  const props = { openMarks, onReportAbsence: reportAbsence, data, user: { ...user, onSignOut, navigate, nextLesson: data.next_lesson, unreadNotifications }, attendanceRate: rate, navigate, openRegister, refreshing: loading, onRefresh: load };
   if (user.role === 'teacher') return <TeacherDashboardScreen {...props} />;
   if (user.role === 'parent') return <ParentDashboardScreen {...props} />;
   return <StudentDashboardScreen {...props} />;
