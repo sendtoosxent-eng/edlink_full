@@ -1,0 +1,290 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		04EE80F590FE9D358005DBA5 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB41B345C8CFA367CBEAFB77 /* Schedule.swift */; };
+		15424032B5917B0A6F9837FC /* AttendanceHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667CFFEE09C864A65B89DA04 /* AttendanceHistory.swift */; };
+		164F706CD0BB4D217738A9E9 /* Marks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8D94D527A851EE4B516F3F /* Marks.swift */; };
+		182EA626E1D63B975B4BF427 /* Design.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9050A49F210EE381C91CCFE /* Design.swift */; };
+		327D94EAC74E1D0DB32BBE12 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB5BC23A4066DE266A572462 /* Core.swift */; };
+		3365EFDF88BE531224C729BC /* Auth.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1BE7FA3818CA0EE0235EFE8 /* Auth.swift */; };
+		3F510CD90739298DE7068F88 /* Ionicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96249513EB5CAE2296AA22A3 /* Ionicon.swift */; };
+		49921D9426091E9AFE82F205 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149C6F6BC102ECE3E091542F /* Workspace.swift */; };
+		49BDE2AAB7184B911EEB2C2C /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = FFE688A5014306635CD935F7 /* Fonts */; };
+		4B9D2FB79C8601C56D4274D2 /* Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6E0F6A8D5673A96FE05358 /* Calendar.swift */; };
+		4D41DD372D8E0FAD9BCA5A62 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 26B2A637F7DC4079D5AB78A5 /* PrivacyInfo.xcprivacy */; };
+		52A947BD216916D1570DC7FA /* School.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B1D99B12D9DE8D27E08148 /* School.swift */; };
+		59E8A65ED0234BD0A16A2D3D /* Reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3773535947452B7009F8C9 /* Reports.swift */; };
+		74F498C477D121C8B19B3854 /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E450F355124B2542B7E388 /* Navigation.swift */; };
+		804FB012B230D1B0E7022A22 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6427B187419D80EB86FDDB6 /* Attendance.swift */; };
+		8D9117457A4764AFA7651EE3 /* DesignPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C66BF7CCD6CA967CBEE55F /* DesignPreview.swift */; };
+		993A6F0DC816349E9715E5C7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 28AAD1477D5182D66D4B03B3 /* Assets.xcassets */; };
+		A249DDA19BB41A53BB8F2494 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4411227784337DBB3AE28994 /* App.swift */; };
+		A52B28A5577B5DB1C845E9D7 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75838F70B64AE5A632B5110C /* Onboarding.swift */; };
+		AACB7F2EC3C93EA62E2939F8 /* Homework.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12AA8C9CC200F5CD07760003 /* Homework.swift */; };
+		C2F4E00B7C47EC80F13A684E /* Privacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C268FE5CAD9169535347D5B3 /* Privacy.swift */; };
+		CD1C8693DACB04057BA80066 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A46307E964ECD6343939A8 /* Profile.swift */; };
+		EF62B786B670B3A170ADDF2C /* Dashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34AB739550B1DE8136C32715 /* Dashboard.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		12AA8C9CC200F5CD07760003 /* Homework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Homework.swift; sourceTree = "<group>"; };
+		149C6F6BC102ECE3E091542F /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
+		1A8D94D527A851EE4B516F3F /* Marks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marks.swift; sourceTree = "<group>"; };
+		26B2A637F7DC4079D5AB78A5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		28AAD1477D5182D66D4B03B3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		34AB739550B1DE8136C32715 /* Dashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dashboard.swift; sourceTree = "<group>"; };
+		38A007151ABE87CC01A5B6E9 /* Edlink.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Edlink.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4411227784337DBB3AE28994 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		50C66BF7CCD6CA967CBEE55F /* DesignPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignPreview.swift; sourceTree = "<group>"; };
+		667CFFEE09C864A65B89DA04 /* AttendanceHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceHistory.swift; sourceTree = "<group>"; };
+		6F6E0F6A8D5673A96FE05358 /* Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calendar.swift; sourceTree = "<group>"; };
+		75838F70B64AE5A632B5110C /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
+		8D3773535947452B7009F8C9 /* Reports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reports.swift; sourceTree = "<group>"; };
+		94E450F355124B2542B7E388 /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
+		96249513EB5CAE2296AA22A3 /* Ionicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ionicon.swift; sourceTree = "<group>"; };
+		C1BE7FA3818CA0EE0235EFE8 /* Auth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth.swift; sourceTree = "<group>"; };
+		C268FE5CAD9169535347D5B3 /* Privacy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Privacy.swift; sourceTree = "<group>"; };
+		C3A46307E964ECD6343939A8 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		CB41B345C8CFA367CBEAFB77 /* Schedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule.swift; sourceTree = "<group>"; };
+		D4B1D99B12D9DE8D27E08148 /* School.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = School.swift; sourceTree = "<group>"; };
+		D9050A49F210EE381C91CCFE /* Design.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Design.swift; sourceTree = "<group>"; };
+		EB5BC23A4066DE266A572462 /* Core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core.swift; sourceTree = "<group>"; };
+		F6427B187419D80EB86FDDB6 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
+		FFE688A5014306635CD935F7 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7561BFB015D8F536760CB671 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3A2A88DEEFF3D1D23E496597 /* Edlink */ = {
+			isa = PBXGroup;
+			children = (
+				4411227784337DBB3AE28994 /* App.swift */,
+				F6427B187419D80EB86FDDB6 /* Attendance.swift */,
+				667CFFEE09C864A65B89DA04 /* AttendanceHistory.swift */,
+				C1BE7FA3818CA0EE0235EFE8 /* Auth.swift */,
+				6F6E0F6A8D5673A96FE05358 /* Calendar.swift */,
+				EB5BC23A4066DE266A572462 /* Core.swift */,
+				34AB739550B1DE8136C32715 /* Dashboard.swift */,
+				D9050A49F210EE381C91CCFE /* Design.swift */,
+				50C66BF7CCD6CA967CBEE55F /* DesignPreview.swift */,
+				12AA8C9CC200F5CD07760003 /* Homework.swift */,
+				96249513EB5CAE2296AA22A3 /* Ionicon.swift */,
+				1A8D94D527A851EE4B516F3F /* Marks.swift */,
+				94E450F355124B2542B7E388 /* Navigation.swift */,
+				75838F70B64AE5A632B5110C /* Onboarding.swift */,
+				C268FE5CAD9169535347D5B3 /* Privacy.swift */,
+				C3A46307E964ECD6343939A8 /* Profile.swift */,
+				8D3773535947452B7009F8C9 /* Reports.swift */,
+				CB41B345C8CFA367CBEAFB77 /* Schedule.swift */,
+				D4B1D99B12D9DE8D27E08148 /* School.swift */,
+				149C6F6BC102ECE3E091542F /* Workspace.swift */,
+				28AAD1477D5182D66D4B03B3 /* Assets.xcassets */,
+				26B2A637F7DC4079D5AB78A5 /* PrivacyInfo.xcprivacy */,
+				FFE688A5014306635CD935F7 /* Fonts */,
+			);
+			path = Edlink;
+			sourceTree = "<group>";
+		};
+		B28B7AF69320201D1CF206EB = {
+			isa = PBXGroup;
+			children = (
+				3A2A88DEEFF3D1D23E496597 /* Edlink */,
+				FBDC4F23F93125BBEEAE800C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FBDC4F23F93125BBEEAE800C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				38A007151ABE87CC01A5B6E9 /* Edlink.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0E8A3AD980EC179856012B7E /* Edlink */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 651ECA092BE81738918D8CDB /* Build configuration list for PBXNativeTarget "Edlink" */;
+			buildPhases = (
+				BCE16DD0260827ECF338C787 /* Sources */,
+				7561BFB015D8F536760CB671 /* Frameworks */,
+				0189424A5A60FED329FA868E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Edlink;
+			productName = Edlink;
+			productReference = 38A007151ABE87CC01A5B6E9 /* Edlink.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		98F54143AB4E86B28C3AFEE0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1620;
+			};
+			buildConfigurationList = F8C70E4123C9AE82C42562CC /* Build configuration list for PBXProject "Edlink" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B28B7AF69320201D1CF206EB;
+			productRefGroup = FBDC4F23F93125BBEEAE800C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0E8A3AD980EC179856012B7E /* Edlink */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0189424A5A60FED329FA868E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				993A6F0DC816349E9715E5C7 /* Assets.xcassets in Resources */,
+				4D41DD372D8E0FAD9BCA5A62 /* PrivacyInfo.xcprivacy in Resources */,
+				49BDE2AAB7184B911EEB2C2C /* Fonts in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BCE16DD0260827ECF338C787 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A249DDA19BB41A53BB8F2494 /* App.swift in Sources */,
+				804FB012B230D1B0E7022A22 /* Attendance.swift in Sources */,
+				15424032B5917B0A6F9837FC /* AttendanceHistory.swift in Sources */,
+				3365EFDF88BE531224C729BC /* Auth.swift in Sources */,
+				4B9D2FB79C8601C56D4274D2 /* Calendar.swift in Sources */,
+				327D94EAC74E1D0DB32BBE12 /* Core.swift in Sources */,
+				EF62B786B670B3A170ADDF2C /* Dashboard.swift in Sources */,
+				182EA626E1D63B975B4BF427 /* Design.swift in Sources */,
+				8D9117457A4764AFA7651EE3 /* DesignPreview.swift in Sources */,
+				AACB7F2EC3C93EA62E2939F8 /* Homework.swift in Sources */,
+				3F510CD90739298DE7068F88 /* Ionicon.swift in Sources */,
+				164F706CD0BB4D217738A9E9 /* Marks.swift in Sources */,
+				74F498C477D121C8B19B3854 /* Navigation.swift in Sources */,
+				A52B28A5577B5DB1C845E9D7 /* Onboarding.swift in Sources */,
+				C2F4E00B7C47EC80F13A684E /* Privacy.swift in Sources */,
+				CD1C8693DACB04057BA80066 /* Profile.swift in Sources */,
+				59E8A65ED0234BD0A16A2D3D /* Reports.swift in Sources */,
+				04EE80F590FE9D358005DBA5 /* Schedule.swift in Sources */,
+				52A947BD216916D1570DC7FA /* School.swift in Sources */,
+				49921D9426091E9AFE82F205 /* Workspace.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		639A7CA24D39909E713B47F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4TNS5CGZ7N;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Edlink/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = space.edlink.native;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7082CC0B6FC1282FCEABD07A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4TNS5CGZ7N;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Edlink/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = space.edlink.native;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		89E1FD6268CC0F221A2BE178 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E6DE6C99132752C914FEF632 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		651ECA092BE81738918D8CDB /* Build configuration list for PBXNativeTarget "Edlink" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7082CC0B6FC1282FCEABD07A /* Debug */,
+				639A7CA24D39909E713B47F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F8C70E4123C9AE82C42562CC /* Build configuration list for PBXProject "Edlink" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89E1FD6268CC0F221A2BE178 /* Debug */,
+				E6DE6C99132752C914FEF632 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 98F54143AB4E86B28C3AFEE0 /* Project object */;
+}

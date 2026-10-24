@@ -2,7 +2,8 @@
 
 Edlink is a multi-school platform for academic administration, attendance,
 finance, communications, reporting, and parent/student access. The repository
-contains a Laravel web/API application and an Expo mobile application.
+contains a Laravel web/API application, an Expo mobile application, and a native
+SwiftUI iOS application.
 
 ## Product areas
 
@@ -55,6 +56,11 @@ npm run ios
 Set the API base URL from the app's environment or development configuration as
 appropriate for the target device. Never embed production credentials in a
 mobile build.
+
+For the native Swift iOS app, open `ios-native/Edlink.xcodeproj` in Xcode,
+select the **Edlink** scheme and an iPhone simulator, then run. See the
+[native iOS guide](ios-native/README.md) for supported workflows, configuration,
+checks, and remaining release work.
 
 ## Quality checks
 

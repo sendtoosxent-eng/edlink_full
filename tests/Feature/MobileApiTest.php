@@ -12,7 +12,9 @@ use App\Models\HomeworkSubmission;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\SchoolSetting;
+use App\Models\Stream;
 use App\Models\Student;
+use App\Models\StudentCategory;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
@@ -21,6 +23,7 @@ use App\Notifications\QueuedVerifyEmail;
 use App\Services\StudentActivityNotifier;
 use App\Support\DesignationPermissions;
 use App\Support\MobileTeacherWorkspace;
+use App\Support\SubjectAttendanceRegisters;
 use Database\Seeders\EdlTeachCurrentTermDemoSeeder;
 use Database\Seeders\EdlTeachHomeworkDemoSeeder;
 use Database\Seeders\EdlTeachTimetableDemoSeeder;
@@ -310,7 +313,7 @@ it('shares filtered web attendance summaries and a real Excel workbook with teac
     $data = mobileFixture();
     $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
     $data['teacher']->designation->update(['permissions' => ['attendance.reports', 'attendance.subject']]);
-    $category = \App\Models\StudentCategory::create(['school_id' => $data['school']->id, 'name' => 'Boarder']);
+    $category = StudentCategory::create(['school_id' => $data['school']->id, 'name' => 'Boarder']);
     $data['student']->update(['gender' => 'female', 'student_category_id' => $category->id]);
     foreach ([$data['student'], $data['foreign']] as $student) {
         AttendanceRecord::create(['school_id' => $student->school_id, 'term_id' => $data['term']->id, 'student_id' => $student->id, 'school_class_id' => $student->school_class_id, 'attendance_date' => today(), 'session_key' => 'daily', 'status' => 'late', 'recorded_by' => $data['teacher']->id]);
@@ -323,12 +326,14 @@ it('shares filtered web attendance summaries and a real Excel workbook with teac
     $path = tempnam(sys_get_temp_dir(), 'attendance-test-');
     try {
         file_put_contents($path, $response->streamedContent());
-        $zip = new \ZipArchive;
+        $zip = new ZipArchive;
         expect($zip->open($path))->toBeTrue();
         $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
         expect($sheet)->toContain('Boarder', 'Girls Late', 'Grand total', 'Category grand total')->not->toContain('Foreign Learner');
         $zip->close();
-    } finally { unlink($path); }
+    } finally {
+        unlink($path);
+    }
     Sanctum::actingAs($data['parent'], ['mobile']);
     $this->getJson('/api/v1/teacher/attendance-summary'.$query)->assertForbidden();
     $this->getJson('/api/v1/teacher/attendance-summary/excel'.$query)->assertForbidden();
@@ -557,8 +562,8 @@ it('shares mobile lesson registers with web and keeps repeated lessons separate'
     ]));
     $registers = $this->getJson('/api/v1/attendance/registers?attendance_date='.today()->toDateString())
         ->assertOk()->assertJsonCount(2, 'data.registers')->json('data.registers');
-    $webKeys = \App\Support\SubjectAttendanceRegisters::forUser($data['teacher'])
-        ->map(fn ($slot) => \App\Support\SubjectAttendanceRegisters::sessionKey($slot))->all();
+    $webKeys = SubjectAttendanceRegisters::forUser($data['teacher'])
+        ->map(fn ($slot) => SubjectAttendanceRegisters::sessionKey($slot))->all();
     expect(array_column($registers, 'session_key'))->toBe($webKeys);
     $base = ['school_class_id' => $data['class']->id, 'subject_id' => $data['subject']->id, 'attendance_date' => today()->toDateString()];
     foreach ($registers as $index => $register) {
@@ -574,7 +579,7 @@ it('shares mobile lesson registers with web and keeps repeated lessons separate'
 
 it('returns assigned homework subjects and their class streams', function () {
     $data = mobileFixture();
-    $stream = \App\Models\Stream::create(['school_id' => $data['school']->id, 'school_class_id' => $data['class']->id, 'name' => 'East']);
+    $stream = Stream::create(['school_id' => $data['school']->id, 'school_class_id' => $data['class']->id, 'name' => 'East']);
     Sanctum::actingAs($data['teacher'], ['mobile']);
     $this->getJson('/api/v1/teaching-assignments')->assertOk()->assertJsonFragment(['subject_id' => $data['subject']->id, 'attendance_type' => 'subject']);
     $this->getJson('/api/v1/teaching-assignments')->assertOk()->assertJsonFragment(['id' => $stream->id, 'name' => 'East']);
@@ -583,9 +588,9 @@ it('returns assigned homework subjects and their class streams', function () {
 it('filters mobile daily registers by stream and persists stream metadata', function () {
     $data = mobileFixture();
     $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
-    $stream = \App\Models\Stream::create(['school_id' => $data['school']->id, 'school_class_id' => $data['class']->id, 'name' => 'East']);
+    $stream = Stream::create(['school_id' => $data['school']->id, 'school_class_id' => $data['class']->id, 'name' => 'East']);
     $data['student']->update(['stream_id' => $stream->id, 'term_id' => $data['term']->id]);
-    $category = \App\Models\StudentCategory::create(['school_id' => $data['school']->id, 'name' => 'Day']);
+    $category = StudentCategory::create(['school_id' => $data['school']->id, 'name' => 'Day']);
     $data['student']->enrolments()->create(['school_id' => $data['school']->id, 'term_id' => $data['term']->id, 'school_class_id' => $data['class']->id, 'stream_id' => $stream->id, 'student_category_id' => $category->id, 'enrolled_at' => today(), 'status' => 'active']);
     Sanctum::actingAs($data['teacher'], ['mobile']);
     $base = ['school_class_id' => $data['class']->id, 'stream_id' => $stream->id, 'attendance_date' => today()->toDateString(), 'session_key' => 'daily'];
@@ -598,7 +603,6 @@ it('filters mobile daily registers by stream and persists stream metadata', func
     $this->get('/api/v1/attendance/performance/csv?'.$query)->assertOk()->assertDownload();
     $this->getJson('/api/v1/attendance/performance?'.http_build_query(['school_class_id' => $data['foreign']->school_class_id, 'from' => today()->toDateString(), 'to' => today()->toDateString()]))->assertForbidden();
 });
-
 
 it('includes the current term and open status on every role dashboard', function () {
     $data = mobileFixture();
@@ -613,4 +617,24 @@ it('includes the current term and open status on every role dashboard', function
     $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonPath('data.current_term.is_open', false);
     $data['term']->update(['is_current' => false]);
     $this->getJson('/api/v1/dashboard')->assertOk()->assertJsonPath('data.current_term', null);
+});
+
+it('round trips learner identity fields through the native profile editor', function () {
+    $data = mobileFixture();
+    $data['class']->update(['class_teacher_user_id' => $data['teacher']->id]);
+    $data['teacher']->designation->update(['permissions' => ['students.manage', 'students.view']]);
+    $data['student']->update(['lin' => 'LIN123456', 'admission_date' => '2026-01-20', 'date_of_birth' => '2012-05-06']);
+    Sanctum::actingAs($data['teacher'], ['mobile']);
+
+    $profile = $this->getJson('/api/v1/teacher/students/'.$data['student']->id)
+        ->assertOk()
+        ->assertJsonPath('data.can_edit', true)
+        ->assertJsonPath('data.student.lin', 'LIN123456')
+        ->assertJsonPath('data.student.admission_date', '2026-01-20')
+        ->assertJsonPath('data.student.date_of_birth', '2012-05-06')
+        ->json('data.student');
+    $profile['name'] = 'Updated learner name';
+    $this->postJson('/api/v1/teacher/students/'.$data['student']->id, $profile)->assertOk();
+    expect($data['student']->fresh()->lin)->toBe('LIN123456');
+    expect($data['student']->fresh()->admission_date->toDateString())->toBe('2026-01-20');
 });

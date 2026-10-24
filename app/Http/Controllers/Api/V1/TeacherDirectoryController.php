@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\PersonProfileController;
 use App\Models\Student;
+use App\Services\PublicImageStorage;
 use App\Support\TeacherAcademicScope;
 use Illuminate\Http\Request;
 
@@ -12,20 +14,23 @@ class TeacherDirectoryController extends ApiController
     {
         $user = $request->user();
         abort_unless(TeacherAcademicScope::isTeacher($user) && TeacherAcademicScope::canViewStudentDirectory($user), 403);
+
         return TeacherAcademicScope::scopeStudents(Student::where('school_id', $user->school_id), $user, $user->school->currentTerm()?->id)->findOrFail($id);
     }
 
     public function show(Request $request, int $student)
     {
         $student = $this->student($request, $student);
-        $fields = ['name', 'admission_no', 'date_of_birth', 'gender', 'nationality', 'religion', 'blood_group', 'home_address', 'medical_notes'];
-        return $this->ok(['student' => collect($fields)->mapWithKeys(fn ($field) => [$field => $field === 'date_of_birth' ? $student->date_of_birth?->toDateString() : $student->{$field}]), 'photo_url' => $student->photoUrl(), 'can_edit' => $request->user()->hasPermission('students.manage')]);
+        $fields = ['name', 'admission_no', 'lin', 'admission_date', 'date_of_birth', 'gender', 'nationality', 'religion', 'blood_group', 'home_address', 'medical_notes'];
+
+        return $this->ok(['student' => collect($fields)->mapWithKeys(fn ($field) => [$field => in_array($field, ['date_of_birth', 'admission_date'], true) ? $student->{$field}?->toDateString() : $student->{$field}]), 'photo_url' => $student->photoUrl(), 'can_edit' => $request->user()->hasPermission('students.manage')]);
     }
 
     public function update(Request $request, int $student)
     {
         $student = $this->student($request, $student);
-        app(\App\Http\Controllers\PersonProfileController::class)->updateStudent($request, $student, app(\App\Services\PublicImageStorage::class));
+        app(PersonProfileController::class)->updateStudent($request, $student, app(PublicImageStorage::class));
+
         return $this->ok(['saved' => true]);
     }
 
