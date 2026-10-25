@@ -165,6 +165,7 @@ class PersonProfileController extends Controller
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             ...($staff ? [
                 ...StaffUploadService::rules(),
+                ...\App\Support\StaffProfileFields::rules(),
                 'location' => ['nullable', 'string', 'max:500'],
                 'joined_at' => ['nullable', 'date'],
                 'contract_type' => ['nullable', Rule::in(['permanent', 'contract', 'part_time', 'volunteer'])],

@@ -31,7 +31,7 @@ final class StaffRegistrationService
         ?UploadedFile $photo = null,
         array $qualificationDocuments = [],
     ): User {
-        if ($subjectAssignments !== [] && ! $term) {
+        if (($subjectAssignments !== [] || $classTeacherClassId) && ! $term) {
             throw ValidationException::withMessages([
                 'teaching_assignments' => 'Open a current term before assigning teaching responsibilities.',
             ]);

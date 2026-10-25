@@ -10,11 +10,15 @@ use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
 use App\Notifications\QueuedVerifyEmail;
+use App\Services\StaffRegistrationService;
 use Illuminate\Contracts\Notifications\Dispatcher;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Livewire\Volt\Volt;
@@ -294,44 +298,112 @@ it('does not allow an unauthorized staff member to open registration', function 
 
 it('saves registration photos qualifications NIN location and bank details into the staff profile', function () {
     Notification::fake();
-    \Illuminate\Support\Facades\Storage::fake('public');
-    \Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('public');
+    Storage::fake('local');
     $data = staffRegistrationFixture();
     completeStaffRegistration($data)
-        ->set('photo', \Illuminate\Http\UploadedFile::fake()->image('teacher.jpg'))
-        ->set('qualification_documents', [\Illuminate\Http\UploadedFile::fake()->create('degree.pdf', 50, 'application/pdf'), \Illuminate\Http\UploadedFile::fake()->create('transcript.pdf', 25, 'application/pdf')])
+        ->set('photo', UploadedFile::fake()->image('teacher.jpg'))
+        ->set('qualification_documents', [UploadedFile::fake()->create('degree.pdf', 50, 'application/pdf'), UploadedFile::fake()->create('transcript.pdf', 25, 'application/pdf')])
         ->set('national_id', 'NIN-STAFF-001')->set('location', 'Ntinda, Kampala')
+        ->set('title', 'Sir')->set('date_of_birth', '1990-05-12')->set('gender', 'Male')->set('nationality', 'Ugandan')
+        ->set('teaching_license_number', 'TL-STAFF-001')->set('academic_qualifications', 'Bachelor of Education in Mathematics')
+        ->set('qualification_institution', 'Teacher Training University')->set('qualification_year', '2015')
         ->set('bank_name', 'Staff Bank')->set('bank_account_name', 'New Staff Member')->set('bank_account_number', '00123456789')
         ->call('register')->assertHasNoErrors();
     $staff = User::where('email', 'new.staff@example.test')->firstOrFail();
     expect($staff->location)->toBe('Ntinda, Kampala')->and($staff->national_id)->toBe('NIN-STAFF-001')->and($staff->bank_account_number)->toBe('00123456789');
-    \Illuminate\Support\Facades\Storage::disk('public')->assertExists($staff->avatar_path);
+    expect($staff->title)->toBe('Sir')->and($staff->date_of_birth->toDateString())->toBe('1990-05-12')
+        ->and($staff->gender)->toBe('Male')->and($staff->nationality)->toBe('Ugandan')
+        ->and($staff->teaching_license_number)->toBe('TL-STAFF-001')
+        ->and($staff->academic_qualifications)->toBe('Bachelor of Education in Mathematics')
+        ->and($staff->qualification_institution)->toBe('Teacher Training University')->and($staff->qualification_year)->toBe(2015);
+    Storage::disk('public')->assertExists($staff->avatar_path);
     expect($staff->staffDocuments)->toHaveCount(2);
     foreach ($staff->staffDocuments as $document) {
-        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($document->path);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($document->path);
+        Storage::disk('local')->assertExists($document->path);
+        Storage::disk('public')->assertMissing($document->path);
     }
     $this->actingAs($data['admin'])->get(route('staff.profile', $staff))->assertOk()->assertSee('Ntinda, Kampala')->assertSee('NIN-STAFF-001')->assertSee('00123456789')->assertSee('degree.pdf')->assertSee($staff->avatarUrl());
+    $this->get(route('staff.profile', $staff))->assertSee('Sir New Staff Member')->assertSee('TL-STAFF-001')
+        ->assertSee('Bachelor of Education in Mathematics')->assertSee('Teacher Training University');
     $this->get(route('staff.documents.download', [$staff, $staff->staffDocuments->first()]))->assertOk()->assertDownload('degree.pdf');
 });
 
 it('rejects unsupported qualification files before creating a staff account', function () {
     Notification::fake();
     $data = staffRegistrationFixture();
-    completeStaffRegistration($data)->set('qualification_documents', [\Illuminate\Http\UploadedFile::fake()->create('program.exe', 10, 'application/octet-stream')])->call('register')->assertHasErrors(['qualification_documents.0']);
+    completeStaffRegistration($data)->set('qualification_documents', [UploadedFile::fake()->create('program.exe', 10, 'application/octet-stream')])->call('register')->assertHasErrors(['qualification_documents.0']);
     expect(User::where('email', 'new.staff@example.test')->exists())->toBeFalse();
 });
 
 it('cleans up staged staff files when registration cannot commit', function () {
-    \Illuminate\Support\Facades\Storage::fake('public');
-    \Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('public');
+    Storage::fake('local');
     $data = staffRegistrationFixture();
     $this->actingAs($data['admin']);
-    expect(fn () => app(\App\Services\StaffRegistrationService::class)->register(
+    expect(fn () => app(StaffRegistrationService::class)->register(
         $data['school'], ['name' => 'Duplicate', 'email' => $data['admin']->email, 'password' => 'Password123!', 'role' => 'teacher'],
-        $data['term'], null, [], \Illuminate\Http\UploadedFile::fake()->image('portrait.jpg'),
-        [\Illuminate\Http\UploadedFile::fake()->create('qualification.pdf', 10, 'application/pdf')],
-    ))->toThrow(\Illuminate\Database\QueryException::class);
-    expect(\Illuminate\Support\Facades\Storage::disk('public')->allFiles('avatars'))->toBe([])
-        ->and(\Illuminate\Support\Facades\Storage::disk('local')->allFiles('staff-documents'))->toBe([]);
+        $data['term'], null, [], UploadedFile::fake()->image('portrait.jpg'),
+        [UploadedFile::fake()->create('qualification.pdf', 10, 'application/pdf')],
+    ))->toThrow(QueryException::class);
+    expect(Storage::disk('public')->allFiles('avatars'))->toBe([])
+        ->and(Storage::disk('local')->allFiles('staff-documents'))->toBe([]);
+});
+
+it('keeps a bursar designation while adding teaching access from subject allocations', function () {
+    Notification::fake();
+    $data = staffRegistrationFixture();
+    Livewire::actingAs($data['admin'])->test(StaffRegister::class);
+    $designation = Designation::where('school_id', $data['school']->id)->where('default_key', 'bursar')->firstOrFail();
+    completeStaffRegistration($data, $designation)->set('has_teaching_duties', true)
+        ->set('is_class_teacher', false)->call('register')->assertHasNoErrors();
+    $staff = User::where('email', 'new.staff@example.test')->firstOrFail();
+    expect($staff->designation_id)->toBe($designation->id)->and($staff->role)->toBe('bursar')
+        ->and($staff->hasPermission('finance.payments'))->toBeTrue()
+        ->and($staff->hasPermission('attendance.subject'))->toBeTrue()
+        ->and($staff->hasPermission('exams.marks'))->toBeTrue();
+    expect(DB::table('staff_subjects')->where('user_id', $staff->id)->count())->toBe(3);
+    expect($data['classA']->fresh()->class_teacher_user_id)->toBeNull();
+});
+
+it('allows a department head to teach a class without mandatory subject allocations or optional details', function () {
+    Notification::fake();
+    $data = staffRegistrationFixture();
+    Livewire::actingAs($data['admin'])->test(StaffRegister::class);
+    $designation = Designation::where('school_id', $data['school']->id)->where('default_key', 'head_of_department')->firstOrFail();
+    completeStaffRegistration($data, $designation)->set('has_teaching_duties', true)
+        ->set('teaching_assignments', [])->set('base_salary', '')
+        ->call('register')->assertHasNoErrors();
+    $staff = User::where('email', 'new.staff@example.test')->firstOrFail();
+    expect($staff->designation_id)->toBe($designation->id)->and($staff->role)->toBe('academic_admin')
+        ->and($staff->title)->toBeNull()->and($staff->national_id)->toBeNull()
+        ->and($staff->teaching_license_number)->toBeNull()->and($staff->academic_qualifications)->toBeNull()
+        ->and($staff->base_salary)->toBe('0.00')->and($staff->hasPermission('attendance.daily'))->toBeTrue();
+    expect($data['classA']->fresh()->class_teacher_user_id)->toBe($staff->id);
+    expect(DB::table('staff_subjects')->where('user_id', $staff->id)->count())->toBe(0);
+    $this->actingAs($data['admin'])->get(route('staff.profile', $staff))->assertOk()
+        ->assertSee('Head of Department')->assertSee('Class Teacher')->assertSee('P5 A');
+});
+
+it('clears teaching mappings when registration is changed to non teaching', function () {
+    Notification::fake();
+    $data = staffRegistrationFixture(withTerm: false);
+    Livewire::actingAs($data['admin'])->test(StaffRegister::class);
+    $designation = Designation::where('school_id', $data['school']->id)->where('default_key', 'head_of_subject')->firstOrFail();
+    completeStaffRegistration($data, $designation)->set('has_teaching_duties', true)
+        ->set('has_teaching_duties', false)->call('register')->assertHasNoErrors();
+    $staff = User::where('email', 'new.staff@example.test')->firstOrFail();
+    expect($staff->designation_id)->toBe($designation->id)
+        ->and($data['classA']->fresh()->class_teacher_user_id)->toBeNull();
+    expect(DB::table('staff_subjects')->where('user_id', $staff->id)->count())->toBe(0);
+});
+
+it('rejects invalid optional professional details and incomplete teaching allocations', function () {
+    $data = staffRegistrationFixture();
+    completeStaffRegistration($data)->set('date_of_birth', now()->addDay()->toDateString())
+        ->set('qualification_year', (string) (now()->year + 1))->call('register')
+        ->assertHasErrors(['date_of_birth', 'qualification_year']);
+    completeStaffRegistration($data)->set('teaching_assignments', [['class_id' => '', 'subject_ids' => [(string) $data['math']->id]]])
+        ->call('register')->assertHasErrors(['teaching_assignments']);
+    $this->assertDatabaseMissing('users', ['email' => 'new.staff@example.test']);
 });

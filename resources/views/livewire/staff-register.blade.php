@@ -69,7 +69,34 @@
                         <p class="mt-0.5 text-xs text-slate-500">The provided email and initial password will serve as primary system credentials.</p>
                     </header>
                     <div class="grid gap-5 p-6 sm:grid-cols-2">
-                        <label class="sm:col-span-2">
+                        <div class="sm:col-span-2 flex flex-wrap items-center gap-5 rounded-2xl bg-slate-50 p-4">
+                            <label for="staff-photo-input" class="group relative flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 border-white bg-amber-100 text-3xl font-bold text-amber-800 shadow-sm ring-2 ring-amber-300 focus-within:ring-4">
+                                @if ($photo && ! $errors->has('photo'))
+                                    <img src="{{ $photo->temporaryUrl() }}" alt="Staff photo preview" class="h-full w-full object-cover">
+                                @else
+                                    <svg aria-hidden="true" class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM5 21v-2a7 7 0 0114 0v2"/></svg>
+                                @endif
+                                <input id="staff-photo-input" wire:model="photo" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only">
+                                <span class="absolute inset-x-0 bottom-0 bg-slate-900/75 py-1 text-center text-[10px] font-bold text-white">{{ $photo ? 'Change photo' : 'Add photo' }}</span>
+                            </label>
+                            <div class="min-w-0 flex-1 text-xs">
+                                <p class="font-bold text-slate-800">Staff photograph <span class="font-normal text-slate-500">(optional)</span></p>
+                                <p class="mt-1 text-slate-500">Click the circle to choose a photo. JPG, PNG or WebP, up to 4 MB.</p>
+                                <p class="mt-1 text-slate-500">Used on the staff profile and ID card.</p>
+                                <span wire:loading wire:target="photo" class="mt-1 text-amber-700">Uploading photograph...</span>
+                                @if ($photo)<button type="button" wire:click="$set('photo', null)" class="mt-2 block font-semibold text-rose-600">Remove photo</button>@endif
+                                @error('photo')<p class="mt-1 text-rose-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                        <label>
+                            <span class="mb-1.5 block text-xs font-semibold text-slate-700">Title <span class="font-normal text-slate-400">(optional)</span></span>
+                            <select wire:model="title" autocomplete="honorific-prefix" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm">
+                                <option value="">Choose a title</option>
+                                @foreach (\App\Support\StaffProfileFields::TITLES as $option)<option value="{{ $option }}">{{ $option }}</option>@endforeach
+                            </select>
+                            @error('title')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                        </label>
+                        <label>
                             <span class="mb-1.5 block text-xs font-semibold text-slate-700">Full Name <b class="text-rose-500">*</b></span>
                             <input wire:model="name" autocomplete="name" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20" placeholder="e.g. Sarah Nakato">
                             @error('name') <span class="mt-1 block text-xs font-medium text-rose-600">{{ $message }}</span> @enderror
@@ -88,7 +115,6 @@
                         </label>
                         
                         <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-700">Home address / location</span><input wire:model="location" maxlength="500" placeholder="District, town and residential address" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm">@error('location')<span class="mt-1 block text-xs text-rose-600">{{ $message }}</span>@enderror</label>
-                        <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-700">Profile photograph</span><input wire:model="photo" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-sm"><span class="mt-1 block text-xs text-slate-500">JPG, PNG or WebP, up to 4 MB. This photo will appear on the staff profile and ID card.</span><span wire:loading wire:target="photo" class="mt-1 block text-xs text-amber-700">Uploading photograph...</span>@error('photo')<span class="mt-1 block text-xs text-rose-600">{{ $message }}</span>@enderror</label>
                         <label>
                             <span class="mb-1.5 block text-xs font-semibold text-slate-700">Temporary Password <b class="text-rose-500">*</b></span>
                             <input wire:model="password" type="password" autocomplete="new-password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
@@ -111,17 +137,6 @@
                         <p class="mt-0.5 text-xs text-slate-500">Assign a designation to apply its access rights automatically. Set the staff member's salary separately.</p>
                     </header>
                     <div class="grid gap-5 p-6 sm:grid-cols-2">
-                        <label>
-                            <span class="mb-1.5 block text-xs font-semibold text-slate-700">Account Type <b class="text-rose-500">*</b></span>
-                            <select wire:model.live="role" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
-                                <option value="teacher">Teacher</option>
-                                <option value="bursar">Finance / Bursar</option>
-                                <option value="academic_admin">School leadership / Academics</option>
-                                <option value="registrar">Registrar</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                        </label>
-                        
                         <label>
                             <span class="mb-1.5 block text-xs font-semibold text-slate-700">Designation @if($role !== 'admin')<b class="text-rose-500">*</b>@endif</span>
                             <select wire:model.live="designation_id" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
@@ -146,12 +161,13 @@
                         </label>
                         
                         <label>
-                            <span class="mb-1.5 block text-xs font-semibold text-slate-700">Monthly Base Salary <b class="text-rose-500">*</b></span>
+                            <span class="mb-1.5 block text-xs font-semibold text-slate-700">Monthly Base Salary <span class="font-normal text-slate-400">(optional)</span></span>
                             <div class="relative">
                                 <span class="absolute left-3.5 top-2.5 text-xs font-black text-slate-400">UGX</span>
                                 <input wire:model="base_salary" type="number" min="0" step="0.01" class="w-full rounded-xl border-slate-200 bg-slate-50/50 pl-14 pr-3.5 py-2.5 text-sm font-bold text-slate-900 transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
                             </div>
                             @error('base_salary') <span class="mt-1 block text-xs font-medium text-rose-600">{{ $message }}</span> @enderror
+                            <span class="mt-1 block text-[11px] text-slate-500">Leave blank or enter 0 if salary has not been agreed yet.</span>
                         </label>
                         
                         <label>
@@ -178,13 +194,16 @@
                             @error('probation_ends_at') <span class="mt-1 block text-xs font-medium text-rose-600">{{ $message }}</span> @enderror
                         </label>
 
-                        @if ($role !== 'teacher' && $role !== 'admin')
-                            <label class="sm:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-indigo-200/80 bg-indigo-50/50 p-4 transition hover:bg-indigo-50">
-                                <input wire:model.live="has_teaching_duties" type="checkbox" class="mt-0.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500">
-                                <div>
-                                    <strong class="block text-xs font-bold text-indigo-950">This staff member also teaches</strong>
-                                    <span class="mt-0.5 block text-[11px] text-indigo-700 leading-snug">Enable if administrative staff like a DOS or Bursar will be assigned to subject teaching duties.</span>
-                                </div>
+                        @if (in_array($selectedDesignation?->default_key, ['class_teacher', 'subject_teacher'], true))
+                            <p class="sm:col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900">Teaching duties are included in this designation. Assign their class or subjects in the next step.</p>
+                        @else
+                            <label class="sm:col-span-2 rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+                                <span class="mb-2 block text-xs font-bold text-indigo-950">Will this staff member teach?</span>
+                                <select wire:model.live="has_teaching_duties" class="w-full rounded-xl border-indigo-200 bg-white px-3.5 py-2.5 text-sm">
+                                    <option value="0">No — designation duties only</option>
+                                    <option value="1">Yes — assign a class or subjects</option>
+                                </select>
+                                <span class="mt-2 block text-[11px] text-indigo-800">Their designation stays the same. Class and subject assignments add the appropriate teaching access automatically.</span>
                             </label>
                         @endif
 
@@ -228,7 +247,7 @@
                             <!-- Class Teacher Assignment Card -->
                             <div class="rounded-2xl border border-slate-200/80 bg-slate-50/30 p-4 space-y-3">
                                 <label class="flex cursor-pointer items-start gap-3">
-                                    <input wire:model.live="is_class_teacher" type="checkbox" class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400">
+                                    <input wire:model.live="is_class_teacher" type="checkbox" @disabled($selectedDesignation?->default_key === 'class_teacher') class="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400">
                                     <div>
                                         <strong class="block text-xs font-bold text-slate-900">Assign as Primary Class Teacher</strong>
                                         <span class="mt-0.5 block text-[11px] text-slate-500">Grants full supervisory authority for attendance and report card processing for a single class.</span>
@@ -256,7 +275,7 @@
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <h3 class="text-xs font-bold text-slate-900">Class & Subject Allocations</h3>
-                                        <p class="text-[11px] text-slate-500">Map specific subjects taught across different class levels.</p>
+                                        <p class="text-[11px] text-slate-500">Choose subjects for each class. These are optional when a primary class teacher responsibility is assigned above.</p>
                                     </div>
                                     <button type="button" wire:click="addTeachingAssignment" class="inline-flex w-fit items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-95">
                                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -308,7 +327,9 @@
                             </div>
                         @endif
 
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><label class="block text-xs font-bold text-slate-700">Academic qualifications and supporting documents<input wire:model="qualification_documents" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" class="mt-2 block w-full rounded-xl border border-dashed border-slate-300 bg-white p-3 text-sm"></label><p class="mt-2 text-xs text-slate-500">Upload up to 5 certificates, transcripts or other qualifications, 10 MB each. Documents remain private to authorized staff managers.</p><span wire:loading wire:target="qualification_documents" class="text-xs text-amber-700">Uploading documents...</span>@foreach($qualification_documents as $document)<p class="mt-2 text-xs text-slate-700">{{ $document->getClientOriginalName() }}</p>@endforeach</div>
+                        @include('partials.staff-registration-details')
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><label class="block text-xs font-bold text-slate-700">Qualification documents (optional)<input wire:model="qualification_documents" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" class="mt-2 block w-full rounded-xl border border-dashed border-slate-300 bg-white p-3 text-sm"></label><p class="mt-2 text-xs text-slate-500">Upload up to 5 certificates, transcripts or other qualifications, 10 MB each. Documents remain private to authorized staff managers.</p><span wire:loading wire:target="qualification_documents" class="text-xs text-amber-700">Uploading documents...</span>@foreach($qualification_documents as $document)<p class="mt-2 text-xs text-slate-700">{{ $document->getClientOriginalName() }}</p>@endforeach</div>
                         <!-- HR & Emergency Info Section -->
                         <div class="rounded-2xl border border-slate-200/80 bg-slate-50/30 p-4 space-y-4">
                             <div>
@@ -372,8 +393,8 @@
                         <dd class="truncate font-semibold text-slate-900">{{ $job_title ?: '—' }}</dd>
                     </div>
                     <div class="flex justify-between gap-2">
-                        <dt class="text-slate-500">Role Type</dt>
-                        <dd class="font-semibold capitalize text-slate-900">{{ str_replace('_', ' ', $role) }}</dd>
+                        <dt class="text-slate-500">Designation</dt>
+                        <dd class="font-semibold capitalize text-slate-900">{{ $selectedDesignation?->name ?: 'Not selected' }}</dd>
                     </div>
                     <div class="flex justify-between gap-2">
                         <dt class="text-slate-500">Base Salary</dt>
@@ -401,10 +422,10 @@
                     Post-Registration Execution
                 </h3>
                 <ol class="mt-3 list-decimal space-y-2 pl-4 text-[11px] leading-relaxed text-indigo-900/90">
-                    <li>Database commit stores system privileges and credentials atomically.</li>
-                    <li>Account activation & verification link dispatched to provided email.</li>
-                    <li>Dashboard controls dynamically map according to selected permissions.</li>
-                    <li>Salary entries automatically register for active payroll processing.</li>
+                    <li>Personal details and qualifications are saved to the staff profile.</li>
+                    <li>A verification link is sent to the staff member’s email.</li>
+                    <li>Their designation provides the selected access rights.</li>
+                    <li>Teaching assignments and salary details are available from their profile.</li>
                 </ol>
             </section>
         </aside>

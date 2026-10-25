@@ -8,7 +8,8 @@ use App\Models\Subject;
 use App\Services\DefaultDesignationService;
 use App\Services\StaffRegistrationService;
 use App\Services\StaffUploadService;
-use Livewire\WithFileUploads;
+use App\Support\DesignationPermissions;
+use App\Support\StaffProfileFields;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -16,6 +17,7 @@ use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Throwable;
 
 #[Layout('layouts.app')]
@@ -29,6 +31,22 @@ class StaffRegister extends Component
 
     public string $location = '';
 
+    public string $title = '';
+
+    public string $date_of_birth = '';
+
+    public string $gender = '';
+
+    public string $nationality = '';
+
+    public string $teaching_license_number = '';
+
+    public string $academic_qualifications = '';
+
+    public string $qualification_institution = '';
+
+    public string $qualification_year = '';
+
     public int $step = 1;
 
     public string $name = '';
@@ -41,9 +59,9 @@ class StaffRegister extends Component
 
     public string $password_confirmation = '';
 
-    public string $job_title = 'Teacher';
+    public string $job_title = '';
 
-    public string $role = 'teacher';
+    public string $role = 'registrar';
 
     public string $designation_id = '';
 
@@ -71,7 +89,7 @@ class StaffRegister extends Component
 
     public bool $admin_confirmation = false;
 
-    public bool $has_teaching_duties = true;
+    public bool $has_teaching_duties = false;
 
     public bool $is_class_teacher = false;
 
@@ -122,6 +140,11 @@ class StaffRegister extends Component
         }
     }
 
+    public function updatedPhoto(): void
+    {
+        $this->validateOnly('photo', StaffUploadService::rules());
+    }
+
     public function updatedDesignationId(string $designationId): void
     {
         $designation = Designation::where('school_id', Auth::user()->school_id)->find($designationId);
@@ -129,12 +152,13 @@ class StaffRegister extends Component
             return;
         }
 
-        if ($this->job_title === '' || in_array($this->job_title, ['Teacher', 'Bursar', 'DOS'], true)) {
+        if ($this->job_title === '' || in_array($this->job_title, ['Teacher', 'DOS', ...array_keys(DesignationPermissions::defaults())], true)) {
             $this->job_title = $designation->name;
         }
 
-        if ($role = $designation->accountRole()) {
-            $this->role = $role;
+        $role = $designation->accountRole() ?? 'registrar';
+        $this->role = $role;
+        if ($designation->accountRole()) {
             $this->has_teaching_duties = $role === 'teacher';
             $this->is_class_teacher = $designation->default_key === 'class_teacher';
             if (! $this->has_teaching_duties) {
@@ -145,7 +169,7 @@ class StaffRegister extends Component
 
     public function updatedHasTeachingDuties(bool $hasTeachingDuties): void
     {
-        if (! $hasTeachingDuties && $this->role !== 'teacher') {
+        if (! $hasTeachingDuties) {
             $this->clearTeachingAssignments();
         }
     }
@@ -195,7 +219,13 @@ class StaffRegister extends Component
     {
         abort_unless(Auth::user()->hasPermission('staff.manage'), 403);
         $this->normalizeIdentity();
-        $this->has_teaching_duties = $this->role === 'teacher' || $this->has_teaching_duties;
+        $selectedDesignation = Designation::where('school_id', Auth::user()->school_id)->find($this->designation_id);
+        if (in_array($selectedDesignation?->default_key, ['class_teacher', 'subject_teacher'], true)) {
+            $this->has_teaching_duties = true;
+        }
+        if ($selectedDesignation?->default_key === 'class_teacher') {
+            $this->is_class_teacher = true;
+        }
 
         $this->validate([
             ...$this->identityRules(),
@@ -227,8 +257,8 @@ class StaffRegister extends Component
             return;
         }
 
-        if ($this->has_teaching_duties && $subjectAssignments === []) {
-            $this->addError('teaching_assignments', 'Assign at least one subject and class to teaching staff.');
+        if ($this->has_teaching_duties && $subjectAssignments === [] && ! $classTeacherClassId) {
+            $this->addError('teaching_assignments', 'Assign a class teacher responsibility or at least one subject and class.');
 
             return;
         }
@@ -238,6 +268,7 @@ class StaffRegister extends Component
                 $school,
                 [
                     'designation_id' => $designation?->id,
+                    ...collect(array_keys(StaffProfileFields::rules()))->mapWithKeys(fn ($field) => [$field => trim($this->$field) !== '' ? trim($this->$field) : null])->all(),
                     'name' => $this->name,
                     'email' => $this->email,
                     'phone' => $this->phone ?: null,
@@ -245,7 +276,7 @@ class StaffRegister extends Component
                     'job_title' => $this->job_title,
                     'role' => $this->role,
                     'joined_at' => $this->joined_at,
-                    'base_salary' => $this->base_salary,
+                    'base_salary' => $this->base_salary !== '' ? $this->base_salary : 0,
                     'employment_status' => $this->employment_status,
                     'contract_type' => $this->contract_type,
                     'probation_ends_at' => $this->probation_ends_at ?: null,
@@ -296,6 +327,7 @@ class StaffRegister extends Component
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'title' => StaffProfileFields::rules()['title'],
             'email' => ['required', 'email:filter', 'max:255', $this->schoolEmailRule()],
             'phone' => ['nullable', 'string', 'max:30'],
             'location' => ['nullable', 'string', 'max:500'],
@@ -307,11 +339,12 @@ class StaffRegister extends Component
     private function employmentRules(): array
     {
         return [
+            ...StaffProfileFields::rules(),
             'job_title' => ['required', 'string', 'max:100'],
             'role' => ['required', Rule::in(['teacher', 'bursar', 'registrar', 'academic_admin', 'admin'])],
             'designation_id' => ['required_unless:role,admin', 'nullable', 'integer'],
             'joined_at' => ['required', 'date'],
-            'base_salary' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
+            'base_salary' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'employment_status' => ['required', Rule::in(['active', 'inactive'])],
             'contract_type' => ['required', Rule::in(['permanent', 'contract', 'part_time', 'volunteer'])],
             'probation_ends_at' => ['nullable', 'date', 'after_or_equal:joined_at'],
@@ -354,6 +387,13 @@ class StaffRegister extends Component
         }
 
         $schoolId = Auth::user()->school_id;
+        foreach ($this->teaching_assignments as $assignment) {
+            if ((! empty($assignment['class_id'])) !== (! empty($assignment['subject_ids']))) {
+                throw ValidationException::withMessages([
+                    'teaching_assignments' => 'Choose both a class and its subjects for each allocation, or remove the empty allocation.',
+                ]);
+            }
+        }
         $pairs = collect($this->teaching_assignments)
             ->flatMap(function (array $assignment): array {
                 $classId = (int) ($assignment['class_id'] ?? 0);
@@ -470,6 +510,7 @@ class StaffRegister extends Component
                 ->get(),
             'subjects' => Subject::where('school_id', $school->id)->orderBy('name')->get(),
             'currentTerm' => $school->currentTerm(),
+            'selectedDesignation' => Designation::where('school_id', $school->id)->find($this->designation_id),
             'pageTitle' => 'Register Staff',
         ]);
     }
