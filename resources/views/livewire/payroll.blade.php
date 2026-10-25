@@ -33,21 +33,49 @@
     @endif
 
     <!-- Controls Bar -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <div class="w-full sm:w-64">
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Payroll Period</label>
+    <div class="grid grid-cols-1 items-end gap-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm lg:grid-cols-[14rem_minmax(0,1fr)]">
+        <div class="min-w-0" x-data="{
+            period: $wire.entangle('period').live,
+            open: false,
+            year: Number(@js(substr($period, 0, 4))),
+            months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            choose(index) {
+                this.period = this.year + '-' + String(index + 1).padStart(2, '0');
+                this.open = false;
+                this.$refs.trigger.focus();
+            }
+        }" @keydown.escape.stop.prevent="open = false; $refs.trigger.focus()" @click.outside="open = false">
+            <label id="payroll-period-label" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Payroll Period</label>
             <div class="relative">
-                <input wire:model.live="period" 
-                       type="month" 
-                       class="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3.5 pr-10 text-sm text-slate-800 font-medium placeholder-slate-400 transition-all duration-200 ease-in-out hover:bg-white focus:bg-white focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10">
+                <button type="button" x-ref="trigger" @click="open = !open; year = Number(period.slice(0, 4))"
+                        aria-labelledby="payroll-period-label payroll-period-value" :aria-expanded="open" aria-controls="payroll-month-picker"
+                        class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-800 hover:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/10">
+                    <span id="payroll-period-value" x-text="months[Number(period.slice(5, 7)) - 1] + ' ' + period.slice(0, 4)"></span>
+                    <svg aria-hidden="true" class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                </button>
+                <div id="payroll-month-picker" x-cloak x-show="open" class="absolute left-0 z-30 mt-2 w-72 max-w-[calc(100vw-4rem)] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                    <div class="mb-3 flex items-center justify-between">
+                        <button type="button" @click="year = Math.max(1, year - 1)" aria-label="Previous year" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&lsaquo;</button>
+                        <span x-text="year" aria-live="polite" class="text-sm font-semibold text-slate-800"></span>
+                        <button type="button" @click="year = Math.min(9999, year + 1)" aria-label="Next year" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&rsaquo;</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1">
+                        <template x-for="(month, index) in months" :key="month">
+                            <button type="button" @click="choose(index)" x-text="month.slice(0, 3)" :aria-label="month + ' ' + year"
+                                    :aria-pressed="period === year + '-' + String(index + 1).padStart(2, '0')"
+                                    :class="period === year + '-' + String(index + 1).padStart(2, '0') ? 'bg-amber-100 text-amber-900' : 'text-slate-600 hover:bg-slate-100'"
+                                    class="rounded-lg px-2 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"></button>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div class="flex-1">
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Search Staff</label>
+        <div class="w-full min-w-0">
+            <label for="payroll-staff-search" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Search Staff</label>
             <div class="relative">
-                <input wire:model.live="search" 
-                       type="text" 
+                <input id="payroll-staff-search" wire:model.live.debounce.300ms="search"
+                       type="search"
                        placeholder="Search by name, staff number, or job title..." 
                        class="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm text-slate-800 placeholder-slate-400 transition-all duration-200 ease-in-out hover:bg-white focus:bg-white focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/10">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
