@@ -65,6 +65,20 @@ permission to the entire project.
 
 ## Cron jobs
 
+Payroll rollover requires `php artisan migrate --force` to create the monthly
+salary balance table. The existing daily `edlink:payroll-reminders` task at 09:00
+creates reminders for administrators and bursars, including earlier unpaid months.
+Opening payroll also updates monthly balances, so missed scheduler runs do not
+lose salary months. Reminders require the scheduler cron entry below.
+
+Initial balances start at the staff member's joining month (account creation
+month if no joining date exists). Existing posted salary and advance payments
+reduce their assigned month's balance; pending payments do not. Historical
+monthly salary amounts use an existing posted payment's salary snapshot when
+available, otherwise the current base salary. Check joining dates, salary history,
+and historical payments before relying on backfilled arrears. Once saved, a
+month's salary amount is preserved when the staff member's base salary changes.
+
 Replace the account path below with the absolute path shown by Hostinger. Add
 these cron entries in hPanel:
 

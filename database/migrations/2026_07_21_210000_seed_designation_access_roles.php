@@ -22,7 +22,7 @@ return new class extends Migration
 
             DB::table('users')->where('school_id', $school->id)->whereNull('designation_id')->where('role', 'teacher')->update(['designation_id' => $ids['Subject Teacher']]);
             DB::table('users')->where('school_id', $school->id)->whereNull('designation_id')->where('role', 'bursar')->update(['designation_id' => $ids['Bursar']]);
-            DB::table('users')->where('school_id', $school->id)->whereNull('designation_id')->where('role', 'academic_admin')->update(['designation_id' => $ids['DOS']]);
+            DB::table('users')->where('school_id', $school->id)->whereNull('designation_id')->where('role', 'academic_admin')->update(['designation_id' => $ids['Dean of Studies'] ?? $ids['DOS']]);
         });
     }
 

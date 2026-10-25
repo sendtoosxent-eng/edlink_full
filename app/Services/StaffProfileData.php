@@ -56,11 +56,14 @@ class StaffProfileData
         $salaryPaid = (float) $posted->where('payment_type', 'salary')->sum('amount');
         $advances = (float) $posted->where('payment_type', 'advance')->sum('amount');
         $snapshot = $period !== now()->format('Y-m') ? $posted->first(fn ($run) => $run->salary_snapshot !== null)?->salary_snapshot : null;
-        $salaryBasis = (float) ($snapshot ?? $staff->base_salary);
+        $balance = $canViewPayroll ? app(PayrollBalanceService::class)->summary($staff, $period) : null;
+        $salaryBasis = (float) ($balance['salary'] ?? $snapshot ?? $staff->base_salary);
         $remaining = max(0, $salaryBasis - $salaryPaid - $advances);
+        $arrears = (float) ($balance['arrears'] ?? 0);
+        $totalOutstanding = (float) ($balance['total_outstanding'] ?? 0);
         $pending = (float) $payrollRuns->filter(fn ($run) => $run->ledgerEntry?->status === 'pending')->sum('amount');
 
         return compact('staff', 'documents', 'terms', 'term', 'period', 'canEdit', 'canViewPayroll', 'canViewAttendance', 'canViewLeave', 'currency',
-            'classRoles', 'assignments', 'timetable', 'attendance', 'counts', 'attendanceRate', 'leaves', 'payrollRuns', 'salaryPaid', 'advances', 'snapshot', 'salaryBasis', 'remaining', 'pending');
+            'classRoles', 'assignments', 'timetable', 'attendance', 'counts', 'attendanceRate', 'leaves', 'payrollRuns', 'salaryPaid', 'advances', 'snapshot', 'salaryBasis', 'remaining', 'pending', 'arrears', 'totalOutstanding');
     }
 }

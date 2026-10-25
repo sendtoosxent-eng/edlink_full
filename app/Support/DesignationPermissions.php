@@ -31,11 +31,56 @@ class DesignationPermissions
 
     public static function defaults(): array
     {
-        return [
+        $defaults = [
             'Class Teacher' => ['attendance.daily', 'attendance.reports', 'academics.events', 'exams.marks', 'exams.results', 'parents.communications', 'reports.view'],
             'Subject Teacher' => ['attendance.subject', 'academics.subjects', 'academics.timetable', 'exams.marks', 'exams.results', 'reports.view'],
             'Bursar' => ['students.view', 'finance.payments', 'finance.adjustments', 'finance.expenses', 'finance.ledger', 'finance.reports', 'staff.payroll', 'reports.view', 'accounting.dashboard.view', 'accounting.accounts.view', 'accounting.journals.create', 'accounting.journals.submit', 'accounting.ledger.view', 'accounting.reports.view', 'accounting.assets.view', 'accounting.assets.manage', 'accounting.assets.depreciate', 'accounting.reconciliations.manage'],
-            'DOS' => ['students.view', 'students.manage', 'attendance.daily', 'attendance.subject', 'attendance.reports', 'academics.classes', 'academics.subjects', 'academics.timetable', 'academics.events', 'academics.promotions', 'exams.setup', 'exams.marks', 'exams.results', 'staff.directory', 'staff.attendance', 'reports.view'],
+            'Dean of Studies' => ['students.view', 'students.manage', 'attendance.daily', 'attendance.subject', 'attendance.reports', 'academics.classes', 'academics.subjects', 'academics.timetable', 'academics.events', 'academics.promotions', 'exams.setup', 'exams.marks', 'exams.results', 'staff.directory', 'staff.attendance', 'reports.view'],
         ];
+
+        $all = self::all();
+
+        return [
+            'Super Administrator' => $all,
+            'Administrator' => array_values(array_diff($all, [
+                'accounting.journals.approve', 'accounting.journals.post', 'accounting.journals.reverse',
+                'accounting.periods.reopen', 'accounting.opening_balances.manage',
+            ])),
+            'Head Teacher' => array_values(array_unique([
+                ...$defaults['Dean of Studies'], 'staff.manage', 'staff.leaves', 'staff.payroll',
+                'parents.manage', 'parents.communications', 'finance.reports', 'accounting.reports.view',
+            ])),
+            ...$defaults,
+            'Head of Department' => ['students.view', 'attendance.reports', 'academics.subjects', 'academics.timetable', 'academics.events', 'exams.setup', 'exams.marks', 'exams.results', 'staff.directory', 'parents.communications', 'reports.view'],
+            'Head of Subject' => ['students.view', 'attendance.reports', 'academics.subjects', 'academics.timetable', 'exams.marks', 'exams.results', 'reports.view'],
+        ];
+    }
+
+    public static function all(): array
+    {
+        return array_merge(...array_map(fn ($group) => array_keys($group['rights']), array_values(self::groups())));
+    }
+
+    public static function definitions(): array
+    {
+        $metadata = [
+            'super_administrator' => ['Super Administrator', 'academic_admin', 'Full school access, including accounting approvals and controls.'],
+            'administrator' => ['Administrator', 'academic_admin', 'School administration, staff access, operations and finance preparation.'],
+            'head_teacher' => ['Head Teacher', 'academic_admin', 'School leadership, academics, staff, payroll and reporting.'],
+            'class_teacher' => ['Class Teacher', 'teacher', 'Class attendance, results, communication and teaching reports.'],
+            'subject_teacher' => ['Subject Teacher', 'teacher', 'Subject teaching, attendance, marks and teaching reports.'],
+            'bursar' => ['Bursar', 'bursar', 'Payments, expenses, payroll, accounting preparation and reconciliation.'],
+            'dean_of_studies' => ['Dean of Studies', 'academic_admin', 'Admissions, academic planning, examinations and staff attendance.'],
+            'head_of_department' => ['Head of Department', 'academic_admin', 'Academic coordination, examinations, staff directory and reports.'],
+            'head_of_subject' => ['Head of Subject', 'academic_admin', 'Subject coordination, marks, results and academic reports.'],
+        ];
+
+        $permissions = self::defaults();
+        $definitions = [];
+        foreach ($metadata as $key => [$name, $role, $description]) {
+            $definitions[$key] = compact('name', 'role', 'description') + ['permissions' => $permissions[$name]];
+        }
+
+        return $definitions;
     }
 }

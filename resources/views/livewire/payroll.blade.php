@@ -103,6 +103,7 @@
                             <th class="px-6 py-3.5">Title</th>
                             <th class="px-6 py-3.5">Salary</th>
                             <th class="px-6 py-3.5">Balance outstanding ({{ $period }})</th>
+                            <th class="px-6 py-3.5">Total owed through {{ $period }}</th>
                             <th class="px-6 py-3.5 text-right">Action</th>
                         </tr>
                     </thead>
@@ -136,6 +137,10 @@
                                         <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-700 ring-1 ring-rose-600/20">Not Paid</span>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="font-semibold text-rose-700">UGX {{ number_format($memberSummary['total_outstanding'] ?? 0) }}</span>
+                                    <span class="block text-xs text-slate-500">Arrears: UGX {{ number_format($memberSummary['arrears'] ?? 0) }}</span>
+                                </td>
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
                                     <button wire:click="selectStaff({{ $member->id }})" 
                                             class="rounded-xl px-4 py-2 text-xs font-bold transition shadow-sm
@@ -148,7 +153,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
                                     <svg class="mx-auto h-8 w-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                     No staff records found for this criteria.
                                 </td>
@@ -191,8 +196,21 @@
                                 <span class="font-mono font-bold text-slate-800 text-xs sm:text-sm">UGX {{ number_format($summary['advances']) }}</span>
                             </div>
                             <div class="rounded-2xl bg-emerald-50/80 p-3 border border-emerald-100">
-                                <span class="block text-xs font-bold uppercase tracking-wider text-emerald-600">Remaining</span>
+                                <span class="block text-xs font-bold uppercase tracking-wider text-emerald-600">Remaining ({{ $period }})</span>
                                 <span class="font-mono font-bold text-emerald-700 text-xs sm:text-sm">UGX {{ number_format($summary['remaining']) }}</span>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($summary)
+                        <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                            <span class="block text-xs font-bold uppercase tracking-wider text-amber-800">Total owed through {{ $period }}</span>
+                            <span class="font-mono font-bold text-amber-900">UGX {{ number_format($summary['total_outstanding']) }}</span>
+                            <p class="mt-1 text-xs text-amber-800">Includes UGX {{ number_format($summary['arrears']) }} from earlier months. Choose a month below to clear its balance.</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach ($summary['unpaid_periods'] as $unpaidPeriod => $unpaidAmount)
+                                    <button type="button" wire:click="$set('period', '{{ $unpaidPeriod }}')" class="rounded-lg border border-amber-200 bg-white px-2 py-1 text-xs font-medium text-amber-900">{{ $unpaidPeriod }}: UGX {{ number_format($unpaidAmount) }}</button>
+                                @endforeach
                             </div>
                         </div>
                     @endif

@@ -108,7 +108,7 @@
                 <section>
                     <header class="border-b border-slate-100 bg-slate-50/60 px-6 py-4">
                         <h2 class="text-sm font-bold text-slate-900">Employment & Administrative Settings</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">System designations drive module visibility, permissions, and salary structures.</p>
+                        <p class="mt-0.5 text-xs text-slate-500">Assign a designation to apply its access rights automatically. Set the staff member's salary separately.</p>
                     </header>
                     <div class="grid gap-5 p-6 sm:grid-cols-2">
                         <label>
@@ -116,7 +116,7 @@
                             <select wire:model.live="role" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
                                 <option value="teacher">Teacher</option>
                                 <option value="bursar">Finance / Bursar</option>
-                                <option value="academic_admin">Director of Studies</option>
+                                <option value="academic_admin">School leadership / Academics</option>
                                 <option value="registrar">Registrar</option>
                                 <option value="admin">Administrator</option>
                             </select>
@@ -124,8 +124,8 @@
                         
                         <label>
                             <span class="mb-1.5 block text-xs font-semibold text-slate-700">Designation @if($role !== 'admin')<b class="text-rose-500">*</b>@endif</span>
-                            <select wire:model.live="designation_id" @disabled($role === 'admin') class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60">
-                                <option value="">{{ $role === 'admin' ? 'Administrator uses unrestricted access' : 'Choose a designation' }}</option>
+                            <select wire:model.live="designation_id" class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium transition focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400/20">
+                                <option value="">Choose a designation</option>
                                 @foreach ($designations as $designation)
                                     <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                                 @endforeach

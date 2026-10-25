@@ -103,21 +103,21 @@ class StaffRegister extends Component
             return;
         }
 
-        $defaultDesignationName = match ($role) {
-            'teacher' => 'Subject Teacher',
-            'bursar' => 'Bursar',
-            'academic_admin' => 'DOS',
+        $defaultDesignationKey = match ($role) {
+            'teacher' => 'subject_teacher',
+            'bursar' => 'bursar',
+            'academic_admin' => 'dean_of_studies',
             default => null,
         };
 
-        if ($defaultDesignationName) {
+        if ($defaultDesignationKey) {
             $designation = Designation::where('school_id', Auth::user()->school_id)
-                ->where('name', $defaultDesignationName)
+                ->where('default_key', $defaultDesignationKey)
                 ->first();
             $this->designation_id = (string) ($designation?->id ?? '');
 
             if ($this->job_title === '' || in_array($this->job_title, ['Teacher', 'Bursar', 'DOS'], true)) {
-                $this->job_title = $defaultDesignationName;
+                $this->job_title = $designation?->name ?? $this->job_title;
             }
         }
     }
@@ -133,20 +133,13 @@ class StaffRegister extends Component
             $this->job_title = $designation->name;
         }
 
-        $designationName = strtolower($designation->name);
-
-        if (str_contains($designationName, 'teacher')) {
-            $this->role = 'teacher';
-            $this->has_teaching_duties = true;
-            $this->is_class_teacher = str_contains($designationName, 'class teacher');
-        } elseif ($designationName === 'bursar') {
-            $this->role = 'bursar';
-            $this->has_teaching_duties = false;
-            $this->clearTeachingAssignments();
-        } elseif ($designationName === 'dos') {
-            $this->role = 'academic_admin';
-            $this->has_teaching_duties = false;
-            $this->clearTeachingAssignments();
+        if ($role = $designation->accountRole()) {
+            $this->role = $role;
+            $this->has_teaching_duties = $role === 'teacher';
+            $this->is_class_teacher = $designation->default_key === 'class_teacher';
+            if (! $this->has_teaching_duties) {
+                $this->clearTeachingAssignments();
+            }
         }
     }
 
@@ -334,7 +327,7 @@ class StaffRegister extends Component
 
     private function validateDesignation(): ?Designation
     {
-        if ($this->role === 'admin') {
+        if ($this->role === 'admin' && $this->designation_id === '') {
             return null;
         }
 
@@ -342,6 +335,11 @@ class StaffRegister extends Component
         if (! $designation) {
             throw ValidationException::withMessages([
                 'designation_id' => 'Choose a designation created for this school.',
+            ]);
+        }
+        if (! $designation->canBeAssignedBy(Auth::user())) {
+            throw ValidationException::withMessages([
+                'designation_id' => 'Manage designations and access permission is required to assign this designation.',
             ]);
         }
 

@@ -25,7 +25,8 @@ final class TeacherAcademicScope
     public static function isTeacher(User $user): bool
     {
         return $user->role === 'teacher'
-            || str_contains(strtolower((string) $user->designation?->name), 'teacher')
+            || in_array($user->designation?->default_key, ['class_teacher', 'subject_teacher'], true)
+            || (! $user->designation?->default_key && str_contains(strtolower((string) $user->designation?->name), 'teacher'))
             || self::classIds($user)->isNotEmpty()
             || self::subjectAssignments($user, $user->school?->currentTerm()?->id)->isNotEmpty();
     }

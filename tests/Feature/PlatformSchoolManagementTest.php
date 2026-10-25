@@ -182,6 +182,7 @@ it('creates a school and its first administrator together', function () {
         ]);
 
     $school = School::where('name', 'New Trial Academy')->firstOrFail();
+    expect(\App\Models\Designation::where('school_id', $school->id)->whereNotNull('default_key')->count())->toBe(9);
     $response->assertRedirect(route('platform.schools.show', $school));
 
     $this->assertDatabaseHas('schools', [

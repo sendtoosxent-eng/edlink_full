@@ -9,7 +9,7 @@
                     Staff Designations
                 </h1>
                 <p class="text-sm text-slate-400 mt-2 leading-relaxed">
-                    Define role titles, set module permissions, and standardize access levels across all assigned staff.
+                    Assign a default designation to give staff its access rights, or create and edit designations for your school.
                 </p>
             </div>
         </div>
@@ -133,6 +133,9 @@
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="px-6 py-4">
                                     <p class="font-bold text-slate-900">{{ $designation->name }}</p>
+                                    @if ($designation->default_key)
+                                        <span class="mt-1 inline-block rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">Default · Editable</span>
+                                    @endif
                                     @if ($designation->description)
                                         <p class="text-xs text-slate-400 font-normal mt-0.5 max-w-xs line-clamp-1" title="{{ $designation->description }}">
                                             {{ $designation->description }}
@@ -153,12 +156,22 @@
 
                                     @if ($permissionLabels->isNotEmpty())
                                         <div class="flex flex-wrap gap-1.5">
-                                            @foreach ($permissionLabels as $label)
+                                            @foreach ($permissionLabels->take(4) as $label)
                                                 <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
                                                     {{ $label }}
                                                 </span>
                                             @endforeach
                                         </div>
+                                        @if ($permissionLabels->count() > 4)
+                                            <details class="mt-2 text-xs text-slate-600">
+                                                <summary class="cursor-pointer font-semibold">View {{ $permissionLabels->count() - 4 }} more permissions</summary>
+                                                <ul class="mt-2 space-y-1">
+                                                    @foreach ($permissionLabels->slice(4) as $label)
+                                                        <li>{{ $label }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </details>
+                                        @endif
                                     @else
                                         <span class="text-xs text-slate-400 font-normal italic">No access rights assigned</span>
                                     @endif
@@ -174,9 +187,11 @@
                                         <button wire:click="edit({{ $designation->id }})" class="text-xs font-bold text-slate-700 hover:text-amber-600 transition">
                                             Edit
                                         </button>
-                                        <button wire:click="delete({{ $designation->id }})" wire:confirm="Remove this designation?" class="text-xs font-bold text-rose-600 hover:text-rose-800 transition">
-                                            Delete
-                                        </button>
+                                        @unless ($designation->default_key)
+                                            <button wire:click="delete({{ $designation->id }})" wire:confirm="Remove this designation?" class="text-xs font-bold text-rose-600 hover:text-rose-800 transition">
+                                                Delete
+                                            </button>
+                                        @endunless
                                     </div>
                                 </td>
                             </tr>

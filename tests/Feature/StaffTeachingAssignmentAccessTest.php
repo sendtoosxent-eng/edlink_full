@@ -6,6 +6,8 @@ use App\Models\Designation;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\StudentCategory;
+use App\Models\StudentEnrolment;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
@@ -23,6 +25,15 @@ function mappedTeacherFixture(): array
     $classB = SchoolClass::create(['school_id' => $school->id, 'name' => 'Class B', 'education_stage' => 'primary', 'sort_order' => 2]);
     $studentA = Student::create(['school_id' => $school->id, 'school_class_id' => $classA->id, 'name' => 'Learner Class A', 'admission_no' => 'A-1', 'status' => 'active']);
     $studentB = Student::create(['school_id' => $school->id, 'school_class_id' => $classB->id, 'name' => 'Learner Class B', 'admission_no' => 'B-1', 'status' => 'active']);
+    $category = StudentCategory::create(['school_id' => $school->id, 'name' => 'Day']);
+    foreach ([$studentA, $studentB] as $student) {
+        $student->update(['term_id' => $term->id, 'student_category_id' => $category->id]);
+        StudentEnrolment::create([
+            'school_id' => $school->id, 'student_id' => $student->id, 'term_id' => $term->id,
+            'school_class_id' => $student->school_class_id, 'student_category_id' => $category->id,
+            'base_fee_amount' => 0, 'status' => 'active', 'enrolled_at' => today(),
+        ]);
+    }
     $math = Subject::create(['school_id' => $school->id, 'name' => 'Mathematics', 'code' => 'MATH']);
     $designation = Designation::create(['school_id' => $school->id, 'name' => 'Senior Teacher', 'permissions' => []]);
     $teacher = User::factory()->create(['school_id' => $school->id, 'designation_id' => $designation->id, 'role' => 'teacher', 'employment_status' => 'active']);
@@ -85,6 +96,7 @@ it('lets a subject teacher record attendance from mappings without a timetable s
         ->assertSee('Learner Class B')
         ->assertDontSee('Learner Class A')
         ->set('statuses.'.$data['studentB']->id, 'late')
+        ->set('notes.'.$data['studentB']->id, '10')
         ->call('save')
         ->assertHasNoErrors();
 

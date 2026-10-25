@@ -78,7 +78,7 @@ it('creates standard designations before staff onboarding begins', function () {
     Livewire::actingAs($data['admin'])->test(StaffRegister::class)->assertOk();
 
     expect(Designation::where('school_id', $data['school']->id)->pluck('name')->all())
-        ->toContain('Bursar', 'DOS', 'Subject Teacher', 'Class Teacher');
+        ->toContain('Super Administrator', 'Administrator', 'Head Teacher', 'Class Teacher', 'Subject Teacher', 'Bursar', 'Dean of Studies', 'Head of Department', 'Head of Subject');
 });
 
 it('keeps standard account types and designations in sync', function () {

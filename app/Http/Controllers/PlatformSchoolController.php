@@ -74,6 +74,7 @@ class PlatformSchoolController extends Controller
 
         $school = DB::transaction(function () use ($schoolData, $validated, $request): School {
             $school = School::create($schoolData);
+            app(\App\Services\DefaultDesignationService::class)->ensureFor($school);
             $administrator = User::create([
                 'school_id' => $school->id,
                 'name' => $validated['admin_name'],

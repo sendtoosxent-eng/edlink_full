@@ -6,7 +6,6 @@ use App\Models\FinancialAccount;
 use App\Models\PayrollRun;
 use App\Models\SchoolSetting;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -124,7 +123,7 @@ class Payroll extends Component
             return;
         }
 
-        DB::transaction(function () use ($school, $term, $staff): void {
+        DB::transaction(function () use ($school, $term, $staff, $summary): void {
             $run = PayrollRun::create([
                 'school_id' => $school->id,
                 'financial_account_id' => $this->financialAccountId,
@@ -132,7 +131,7 @@ class Payroll extends Component
                 'period' => $this->period,
                 'user_id' => $staff->id,
                 'payment_type' => $this->paymentType,
-                'salary_snapshot' => $staff->base_salary,
+                'salary_snapshot' => $summary['salary'],
                 'amount' => $this->amount,
                 'method' => $this->method,
                 'transaction_id' => $this->method === 'mobile_money' ? trim($this->transactionId) : null,
@@ -166,32 +165,9 @@ class Payroll extends Component
             ->orderBy('name');
     }
 
-    protected function runsFor(User $staff, ?string $period = null): Collection
-    {
-        return PayrollRun::posted()->where('school_id', Auth::user()->school_id)
-            ->where('user_id', $staff->id)
-            ->when($period, fn ($query) => $query->where('period', $period))
-            ->latest('paid_at')
-            ->get();
-    }
-
     protected function summaryFor(User $staff): array
     {
-        $runs = $this->runsFor($staff, $this->period);
-        $salary = (float) $staff->base_salary;
-        $advances = (float) $runs->where('payment_type', 'advance')->sum('amount');
-        $salaryPaid = (float) $runs->where('payment_type', 'salary')->sum('amount');
-        $salaryOutstanding = max(0, $salary - $advances - $salaryPaid);
-
-        return [
-            'salary' => $salary,
-            'advances' => $advances,
-            'received' => $advances + $salaryPaid,
-            'remaining' => max(0, $salary - $advances - $salaryPaid),
-            'salary_paid' => $salaryPaid,
-            'salary_outstanding' => $salaryOutstanding,
-            'salary_status' => $salaryOutstanding <= 0 ? 'paid' : ($advances + $salaryPaid > 0 ? 'partial' : 'unpaid'),
-        ];
+        return app(\App\Services\PayrollBalanceService::class)->summary($staff, $this->period);
     }
 
     protected function setSuggestedAmount(): void

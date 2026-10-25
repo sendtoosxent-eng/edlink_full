@@ -72,6 +72,7 @@ class StaffManagement extends Component
     public function mount(): void
     {
         $this->joined_at = now()->toDateString();
+        app(\App\Services\DefaultDesignationService::class)->ensureFor(Auth::user()->school);
     }
 
     public function add(): void
@@ -83,7 +84,7 @@ class StaffManagement extends Component
             'email' => ['required', 'email', Rule::unique('users', 'email')->where('school_id', $school->id)],
             'phone' => ['nullable', 'string', 'max:30'],
             'job_title' => ['required', 'string', 'max:100'],
-            'role' => ['required', 'in:teacher,bursar,admin'],
+            'role' => ['required', 'in:teacher,bursar,admin,academic_admin,registrar'],
             'base_salary' => ['required', 'numeric', 'min:0'],
             'joined_at' => ['required', 'date'],
             'password' => ['required', 'string', 'min:8'],
@@ -96,13 +97,20 @@ class StaffManagement extends Component
 
                 return;
             }
-            if ($this->designationId && ! Designation::where('school_id', $school->id)->whereKey($this->designationId)->exists()) {
+            $designation = $this->designationId ? Designation::where('school_id', $school->id)->find($this->designationId) : null;
+            if ($this->designationId && ! $designation) {
                 $this->addError('designationId', 'Choose a designation created for this school.');
 
                 return;
             }
-            $staff = DB::transaction(function () use ($school): User {
-                $staff = User::create(['school_id' => $school->id, 'designation_id' => $this->designationId ?: null, 'name' => $this->name, 'email' => $this->email, 'phone' => $this->phone ?: null, 'job_title' => $this->job_title, 'role' => $this->role, 'base_salary' => $this->base_salary, 'employment_status' => 'active', 'joined_at' => $this->joined_at, 'password' => Hash::make($this->password)]);
+            if ($designation && ! $designation->canBeAssignedBy(Auth::user())) {
+                $this->addError('designationId', 'Manage designations and access permission is required to assign this designation.');
+
+                return;
+            }
+            $role = $this->role === 'admin' ? 'admin' : ($designation?->accountRole() ?? $this->role);
+            $staff = DB::transaction(function () use ($school, $role): User {
+                $staff = User::create(['school_id' => $school->id, 'designation_id' => $this->designationId ?: null, 'name' => $this->name, 'email' => $this->email, 'phone' => $this->phone ?: null, 'job_title' => $this->job_title, 'role' => $role, 'base_salary' => $this->base_salary, 'employment_status' => 'active', 'joined_at' => $this->joined_at, 'password' => Hash::make($this->password)]);
                 $staff->update(['staff_number' => app(StaffNumberGenerator::class)->generate($school, $staff)]);
                 $this->syncSchoolAccess($staff, $school);
 
@@ -183,7 +191,17 @@ class StaffManagement extends Component
 
             return;
         }
-        $staff->update(['designation_id' => $designationId ?: null]);
+        $designation = $designationId !== '' ? Designation::where('school_id', Auth::user()->school_id)->findOrFail($designationId) : null;
+        if ($designation && ! $designation->canBeAssignedBy(Auth::user())) {
+            session()->flash('error', 'Manage designations and access permission is required to assign this designation.');
+
+            return;
+        }
+        $data = ['designation_id' => $designation?->id];
+        if ($designation?->accountRole() && ! in_array($staff->role, ['admin', 'superadmin'], true)) {
+            $data['role'] = $designation->accountRole();
+        }
+        $staff->update($data);
         $this->syncSchoolAccess($staff->fresh(), Auth::user()->school);
         session()->flash('status', $staff->name.' designation updated.');
     }
@@ -262,12 +280,19 @@ class StaffManagement extends Component
             return;
         }
 
-        if ($this->editDesignationId !== '' && ! Designation::where('school_id', Auth::user()->school_id)->whereKey($this->editDesignationId)->exists()) {
+        $designation = $this->editDesignationId !== '' ? Designation::where('school_id', $school->id)->find($this->editDesignationId) : null;
+        if ($this->editDesignationId !== '' && ! $designation) {
             $this->addError('editDesignationId', 'Choose a designation created for this school.');
 
             return;
         }
-        if ($staff->id === Auth::id() && ($this->editRole !== $staff->role || $this->editEmploymentStatus !== 'active')) {
+        if ($designation && ! $designation->canBeAssignedBy(Auth::user())) {
+            $this->addError('editDesignationId', 'Manage designations and access permission is required to assign this designation.');
+
+            return;
+        }
+        $role = $this->editRole === 'admin' ? 'admin' : ($designation?->accountRole() ?? $this->editRole);
+        if ($staff->id === Auth::id() && ($role !== $staff->role || $this->editEmploymentStatus !== 'active')) {
             $this->addError('editRole', 'You cannot change your own account role or deactivate your own account.');
 
             return;
@@ -277,7 +302,7 @@ class StaffManagement extends Component
         $data = [
             'name' => trim($this->editName), 'email' => strtolower(trim($this->editEmail)),
             'phone' => trim($this->editPhone) ?: null, 'job_title' => trim($this->editJobTitle),
-            'role' => $this->editRole, 'designation_id' => $this->editDesignationId ?: null,
+            'role' => $role, 'designation_id' => $this->editDesignationId ?: null,
             'base_salary' => $this->editBaseSalary, 'joined_at' => $this->editJoinedAt ?: null,
             'employment_status' => $this->editEmploymentStatus,
         ];

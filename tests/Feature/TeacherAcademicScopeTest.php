@@ -8,6 +8,8 @@ use App\Models\ExamPaper;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\StudentCategory;
+use App\Models\StudentEnrolment;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
@@ -30,6 +32,15 @@ function scopedTeacherFixture(): array
     $classA->update(['class_teacher_user_id' => $classTeacher->id]);
     $studentA = Student::create(['school_id' => $school->id, 'school_class_id' => $classA->id, 'name' => 'Learner A', 'admission_no' => 'A-1', 'status' => 'active']);
     $studentB = Student::create(['school_id' => $school->id, 'school_class_id' => $classB->id, 'name' => 'Learner B', 'admission_no' => 'B-1', 'status' => 'active']);
+    $category = StudentCategory::create(['school_id' => $school->id, 'name' => 'Day']);
+    foreach ([$studentA, $studentB] as $student) {
+        $student->update(['term_id' => $term->id, 'student_category_id' => $category->id]);
+        StudentEnrolment::create([
+            'school_id' => $school->id, 'student_id' => $student->id, 'term_id' => $term->id,
+            'school_class_id' => $student->school_class_id, 'student_category_id' => $category->id,
+            'base_fee_amount' => 0, 'status' => 'active', 'enrolled_at' => today(),
+        ]);
+    }
     $math = Subject::create(['school_id' => $school->id, 'name' => 'Mathematics', 'code' => 'MATH']);
     $english = Subject::create(['school_id' => $school->id, 'name' => 'English', 'code' => 'ENG']);
     $exam = Exam::create(['school_id' => $school->id, 'term_id' => $term->id, 'school_class_id' => $classA->id, 'name' => 'Midterm']);
