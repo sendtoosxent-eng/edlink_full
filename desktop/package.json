@@ -1,0 +1,46 @@
+{
+  "name": "edlink-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Edlink school management desktop application",
+  "author": "osxent",
+  "license": "UNLICENSED",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/policy.test.cjs",
+    "build:windows": "electron-builder --win nsis --x64 --publish never"
+  },
+  "build": {
+    "appId": "space.edlink.desktop",
+    "productName": "Edlink",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "policy.cjs",
+      "connection.html",
+      "settings.html",
+      "settings-preload.cjs",
+      "settings.js"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "Edlink-Setup-${version}-${arch}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  }
+}

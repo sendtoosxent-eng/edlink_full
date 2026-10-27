@@ -264,7 +264,7 @@
             <h3 class="font-black text-slate-900">Landing-page assets</h3>
             <p class="mt-1 text-xs text-slate-500">Upload JPG, PNG or WebP files up to 4 MB. Each preview identifies exactly where the image appears. Existing images remain unless replaced.</p>
             <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach(['nav_logo'=>'Header · navigation logo','hero_image'=>'Hero · main image','product_image'=>'Product tour · system screenshot','feature_image'=>'Features · module image','about_image'=>'About · team or school image','footer_logo'=>'Footer · brand logo'] as $key=>$label)
+                @foreach(['nav_logo'=>'Header · navigation logo','hero_image'=>'Hero · main image','product_image'=>'Product tour · system screenshot','feature_image'=>'Features · module image','about_image'=>'About · team or school image','footer_logo'=>'Footer · brand logo','desktop_image'=>'Desktop app · device mockup'] as $key=>$label)
                     <label class="rounded-xl border border-dashed border-slate-300 p-4 text-xs font-bold text-slate-600">
                         <span>{{ $label }}</span>
                         <img src="{{ \App\Models\LandingPageSetting::assetUrl($landing,$key) }}" class="my-3 h-24 w-full rounded-lg bg-slate-100 object-contain" alt="{{ $label }} preview">

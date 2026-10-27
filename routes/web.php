@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountingExportController;
 use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\DatabaseBackupController;
+use App\Http\Controllers\DesktopDownloadController;
 use App\Http\Controllers\GraduationCertificateController;
 use App\Http\Controllers\GroupDashboardController;
 use App\Http\Controllers\LandingAssetController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\OfflineWorkspaceController;
 use App\Http\Controllers\PersonProfileController;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\PlatformLandingPageController;
+use App\Http\Controllers\PlatformNotificationController;
 use App\Http\Controllers\PlatformOperationsController;
 use App\Http\Controllers\PlatformSchoolController;
 use App\Http\Controllers\PlatformSchoolGroupController;
@@ -86,6 +88,7 @@ use App\Models\Student;
 use App\Models\StudentEnrolment;
 use App\Models\StudentFeeAdjustment;
 use App\Services\StudentSubjectSelectionService;
+use App\Support\NotificationVisibility;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -147,8 +150,8 @@ Route::prefix('platform')->name('platform.')->group(function () {
             Route::patch('support/{contactMessage}/status', [PlatformSupportController::class, 'toggleStatus'])->name('support.status');
         });
         Route::middleware('platform.role:platform_owner')->group(function () {
-            Route::get('notifications', [\App\Http\Controllers\PlatformNotificationController::class, 'index'])->name('notifications.index');
-            Route::patch('notifications/{notification}/read', [\App\Http\Controllers\PlatformNotificationController::class, 'read'])->name('notifications.read');
+            Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('notifications.index');
+            Route::patch('notifications/{notification}/read', [PlatformNotificationController::class, 'read'])->name('notifications.read');
             Route::get('administrators', [PlatformOperationsController::class, 'administrators'])->name('administrators');
             Route::post('administrators', [PlatformOperationsController::class, 'storeAdministrator'])->name('administrators.store');
             Route::patch('administrators/{platformAdmin}', [PlatformOperationsController::class, 'updateAdministrator'])->name('administrators.update');
@@ -156,6 +159,7 @@ Route::prefix('platform')->name('platform.')->group(function () {
     });
 });
 Route::get('/', LandingPageController::class)->name('home');
+Route::get('downloads/edlink-windows', DesktopDownloadController::class)->name('downloads.windows');
 Route::get('media/landing/{key}', LandingAssetController::class)->name('media.landing');
 Route::get('profile-photo/{type}/{person}', ProfilePhotoController::class)
     ->middleware('signed')->whereIn('type', ['student', 'user', 'school'])->whereNumber('person')->name('profile-photo.show');
@@ -266,7 +270,7 @@ Route::get('dashboard', function () {
         $dashboardReminders->push(['icon' => 'L', 'text' => ucfirst($school->license_plan).' licence renewal', 'due' => $school->license_expires_at->diffForHumans()]);
     }
     $dashboardReminders = $dashboardReminders->take(8)->values();
-    $notifications = $school ? \App\Support\NotificationVisibility::forUser(auth()->user())->latest()->limit(6)->get(['title', 'message', 'type', 'created_at']) : collect();
+    $notifications = $school ? NotificationVisibility::forUser(auth()->user())->latest()->limit(6)->get(['title', 'message', 'type', 'created_at']) : collect();
 
     return view('dashboard', [
         'school' => $school,

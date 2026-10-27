@@ -1,0 +1,84 @@
+# Edlink Windows desktop (internal)
+
+The desktop app and web app use the same hosted Laravel application, accounts,
+permissions and cloud records. No PHP server or school database is bundled.
+The default address is https://edlink.space/login. The Edlink menu can select an
+HTTPS school subdomain of edlink.space. Arbitrary external servers are rejected.
+
+## Packaging
+
+From `desktop`, run `npm ci`, `npm test` and `npm run build:windows`.
+The NSIS installer is written to `desktop/dist/` and creates Start menu and
+desktop shortcuts. Windows x64 is the initial target. The GitHub Actions
+Windows desktop installer workflow builds on a Windows runner and retains the
+installer as an artifact; it does not publish a release or deploy the server.
+
+## Landing-page download
+
+The public `/downloads/edlink-windows` endpoint downloads the active Windows
+release registered in `desktop_releases`. The database stores version, private
+file path, filename, byte size, SHA-256 checksum, publication date and active
+status. The binary is streamed from private server storage, rather than held
+as a large database blob. No login is needed to download the installer.
+
+After deploying the migration and application changes, upload the built `.exe`
+to the server and register it from the application directory:
+
+```sh
+php artisan migrate --force
+php artisan edlink:publish-desktop /path/to/Edlink-Setup-1.0.0-x64.exe 1.0.0
+```
+
+The command copies the installer to private `desktop-releases/` storage before
+publishing its database record. Preserve that storage across deployments; the
+binary is not committed to Git. The card shows a download only when an active,
+already-published record has an available file. To retire a release, set its
+`is_active` column to false. Register newer installers with their own version.
+Release records are global platform data, not attached to individual schools.
+
+The device mockup lives at `public/img/edlink-desktop-mockup.png` and can be
+replaced through Website Content Management's Desktop app image field. It is
+an illustrative product mockup, not a capture of customer records. Its source
+and generation prompt are documented in `docs/desktop-mockup.md`.
+
+This initial build is unsigned. Windows may display an unknown-publisher
+warning. Production distribution needs a Windows code-signing certificate and
+the signing configuration enabled in electron-builder. There is no automatic
+updater in this first version; distribute replacement installers for updates,
+including Electron security fixes. Hosted Edlink UI changes appear without an
+installer update.
+
+## Local data
+
+The dedicated persistent Electron profile retains cookies and browser storage
+under the user's Windows application data directory. The hosted `/offline/`
+workspace uses its existing PIN-derived encrypted IndexedDB vault. Cloud data
+is authoritative; offline support is limited to downloaded daily attendance and
+draft marks. Sign in, open the offline workspace and download the required
+records while connected before relying on offline access. Each school origin
+has separate browser storage. The normal web browser has a separate profile:
+downloads prepared in a browser do not automatically appear in the desktop app.
+
+Use Edlink → Offline workspace even when the login cannot load. The cached
+service worker serves the workspace after its first successful preparation.
+Unlock and keep the workspace open to sync when reconnected. The existing
+conflict review, term checks and permission checks apply. No sync runs when
+the app is closed or the vault is locked. Removing app data loses unsynced edits;
+sync first. Logout does not delete the encrypted vault; lock it on shared
+computers and use Remove device data when finished with a device.
+
+## Security and release verification
+
+Remote pages have no preload or Node access. Context isolation, renderer
+sandboxing and web security remain enabled. Permissions are denied by default,
+navigation stays on the chosen school origin, and external HTTPS popup links
+require confirmation before opening the system browser. Certificate errors
+are not bypassed. The settings bridge exists only in the local settings window
+and validates its calling frame.
+
+Before release on Windows, check installation/uninstallation, school login,
+logout/relaunch, school subdomains, receipt/report printing and file downloads.
+Prepare offline records, disconnect, close/reopen, unlock, edit and reconnect;
+confirm server records and try a concurrent edit from the web browser. Also
+check expired sessions, wrong PIN and switching school addresses. Automated
+policy/storage tests do not replace this Windows acceptance check.

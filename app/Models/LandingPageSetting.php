@@ -9,7 +9,7 @@ class LandingPageSetting extends Model
 {
     protected $fillable = ['key', 'value'];
 
-    public const ASSET_KEYS = ['nav_logo', 'hero_image', 'product_image', 'feature_image', 'about_image', 'footer_logo'];
+    public const ASSET_KEYS = ['nav_logo', 'hero_image', 'product_image', 'feature_image', 'about_image', 'footer_logo', 'desktop_image'];
 
     public const DEFAULTS = [
         'site_title' => 'Edlink — Run your school from one dashboard',
@@ -31,6 +31,7 @@ class LandingPageSetting extends Model
         'phone' => '+256 763 316 839', 'whatsapp' => '256763316839', 'support_email' => 'support@edlink.space',
         'facebook_url' => '', 'instagram_url' => '', 'x_url' => '', 'linkedin_url' => '', 'youtube_url' => '', 'tiktok_url' => '',
         'footer_text' => 'Edlink. Built by Spotnet Technologies.',
+        'desktop_image' => 'img/edlink-desktop-mockup.png',
         'nav_logo' => 'img/logoneg.png', 'hero_image' => 'img/girl.png', 'product_image' => 'img/gradebook.png', 'feature_image' => 'img/gradebook.png', 'about_image' => 'img/teacher-explaining.png', 'footer_logo' => 'img/logo.png',
     ];
 

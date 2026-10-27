@@ -1,0 +1,1 @@
+const input=document.querySelector('input');window.school.get().then(value=>input.value=value);document.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();const result=await window.school.set(input.value);if(!result.ok)document.querySelector('#error').textContent=result.error;});

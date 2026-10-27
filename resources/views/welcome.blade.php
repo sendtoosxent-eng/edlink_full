@@ -121,6 +121,7 @@
 
 			<nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
 				<a href="#features" class="hover:text-yellow-500 transition-colors">Features</a>
+				<a href="#desktop" class="hover:text-yellow-500 transition-colors">Desktop app</a>
 				<a href="#pricing" class="hover:text-yellow-500 transition-colors">Pricing</a>
 				<a href="#about" class="hover:text-yellow-500 transition-colors">About</a>
 				<a href="#contact" class="hover:text-yellow-500 transition-colors">Contact</a>
@@ -156,6 +157,7 @@
 		</div>
 		<div x-show="open" x-cloak x-transition class="md:hidden px-4 sm:px-6 pb-5 flex flex-col gap-1 text-sm font-medium border-t border-gray-100 dark:border-white/10 pt-3 bg-white/95 dark:bg-ink/95">
 			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#features" @click="open=false">Features</a>
+			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#desktop" @click="open=false">Desktop app</a>
 			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#pricing" @click="open=false">Pricing</a>
 			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#about" @click="open=false">About</a>
 			<a class="rounded-xl px-3 py-2.5 hover:bg-yellow-50 dark:hover:bg-white/5" href="#contact" @click="open=false">Contact</a>
@@ -435,6 +437,8 @@
 		</div>
 	</section>
 
+
+    @include('partials.desktop-download')
 
     <!-- ============ MOBILE APP ============ -->
 <section class="mobile-section py-24 max-w-7xl mx-auto px-4 sm:px-6">
