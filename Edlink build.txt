@@ -233,3 +233,5 @@ EDLINK_ROOT_DOMAIN=edlink.space
 ```
 
 You must also configure wildcard DNS, hosting, and SSL for `*.edlink.space` in Hostinger. After that one-time configuration, every subdomain entered through Platform onboarding will work automatically.
+
+https://github.com/morluto/rea.git

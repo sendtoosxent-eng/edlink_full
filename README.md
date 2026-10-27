@@ -1,111 +1,37 @@
 # Edlink School Management System
 
-Edlink is a multi-school platform for academic administration, attendance,
-finance, communications, reporting, and parent/student access. The repository
-contains a Laravel web/API application, an Expo mobile application, and a native
-SwiftUI iOS application.
+Edlink is a proprietary school management platform that brings academic administration, school finances, communication, and daily operations into one place. It supports multiple schools with separate records and role-based access for administrators, staff, students, and parents across web and mobile applications.
 
-## Product areas
+## What Edlink does
 
-- School and licence administration with tenant isolation
-- Staff, student, parent, class, subject, and timetable management
-- Attendance, homework, examinations, report cards, and PDF exports
-- Fee ledgers, receipts, adjustments, approvals, and finance reporting
-- Announcements, email/SMS workflows, audit trails, and support tickets
-- Role-aware mobile dashboards with secure token storage and biometric unlock
-- Verified local backups with optional required off-site object-storage copies
-- Health monitoring with in-app and external webhook alerts
+### School administration
 
-## Requirements
+Edlink manages school profiles, staff, students, parents, classes, subjects, and timetables. Multi-school administration keeps each school's information separate while supporting oversight across schools and branches.
 
-- PHP 8.3 (the lock file is resolved for PHP 8.3.35)
-- Composer 2
-- Node.js 22 and npm
-- SQLite for local development or MySQL for production
-- `mysqldump` for production database backups
-- Xcode/iOS Simulator or Android Studio for native mobile development
+### Teaching and learning
 
-## Local setup
+The platform supports attendance tracking, homework, examinations, report cards, and academic reporting. Printable reports, student ID cards, and graduation certificates help schools manage essential academic records.
 
-```sh
-cp .env.example .env
-composer install
-php artisan key:generate
-php artisan migrate --seed
-npm install
-npm run build
-php artisan serve
-```
+### Finance and accounting
 
-Start the queue worker and scheduler in separate terminals when testing queued
-communications, exports, reminders, backups, or monitoring:
+Edlink helps schools track fees, payments, receipts, adjustments, and approvals. Financial reporting, accounting exports, and payroll reminders support the management of school finances.
 
-```sh
-php artisan queue:work --tries=3
-php artisan schedule:work
-```
+### Communication and support
 
-For the mobile app:
+Announcements, email and SMS workflows, and support tickets connect schools with their communities. Parent and student access keeps families connected to relevant school information.
 
-```sh
-cd mobile
-npm ci
-npm run ios
-```
+### Web and mobile access
 
-Set the API base URL from the app's environment or development configuration as
-appropriate for the target device. Never embed production credentials in a
-mobile build.
+Role-aware dashboards give users access to information relevant to their responsibilities. Edlink includes web, Android, and iOS experiences, with secure token storage and biometric unlock in the mobile application.
 
-For the native Swift iOS app, open `ios-native/Edlink.xcodeproj` in Xcode,
-select the **Edlink** scheme and an iPhone simulator, then run. See the
-[native iOS guide](ios-native/README.md) for supported workflows, configuration,
-checks, and remaining release work.
+### Records and operational oversight
 
-## Quality checks
+Audit trails, verified backups, and health monitoring help schools maintain records and oversee platform operations.
 
-```sh
-composer validate --strict
-composer audit --locked
-php -d memory_limit=768M artisan test
-./vendor/bin/pint --test path/to/changed.php
-npm run build
+## Ownership
 
-cd mobile
-npx expo install --check
-npx tsc --noEmit
-npm audit --omit=dev --audit-level=critical
-```
+Edlink is proprietary software and is not an open-source project. This repository does not grant permission to use, copy, modify, or distribute the software. Third-party components remain subject to their respective licences.
 
-The GitHub Actions workflow runs these checks for pushes and pull requests and
-applies Pint incrementally to PHP files changed by that push or pull request.
-High-severity advisories in transitive Expo build tooling must be reviewed when
-Expo publishes compatible fixes; never use `npm audit fix --force` if it
-downgrades the supported Expo SDK.
+## Permanent contributor
 
-## Production operations
-
-- Follow [the Hostinger deployment guide](docs/hostinger-deployment.md).
-- Complete [the school release and compliance checklist](docs/compliance/release-checklist.md)
-  before onboarding real learners or staff.
-- Configure `BACKUP_OFFSITE_REQUIRED=true`, an S3-compatible disk, and an
-  external monitoring webhook in production.
-- Keep `APP_DEBUG=false`, use HTTPS, run the queue continuously, and run the
-  scheduler every minute.
-- Rehearse a database restore into an isolated database before every major
-  release and at least quarterly.
-
-## Security reporting
-
-Do not open public issues containing learner data, credentials, or security
-details. Report suspected vulnerabilities and privacy incidents to the address
-configured by `LEGAL_CONTACT_EMAIL`. Rotate any exposed secret immediately and
-record the response in the incident register.
-
-## Data protection and licensing
-
-Deployments handling school and learner records must be reviewed against the
-applicable privacy, child-protection, education, tax, and records-retention laws.
-The included policy pages and checklist are operational starting points, not
-legal advice. Confirm software ownership and distribution terms before a sale;
-third-party packages retain their own licences.
+**[osxent](https://github.com/sendtoosxent-eng)** — Permanent contributor to Edlink.
