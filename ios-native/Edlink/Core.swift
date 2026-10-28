@@ -2,6 +2,27 @@ import Foundation
 import Security
 import SwiftUI
 
+enum AppVersion {
+    static func isNewer(_ candidate: String, than current: String) -> Bool {
+        func components(_ value: String) -> [Int]? {
+            let parts = value.split(separator: ".", omittingEmptySubsequences: false)
+            guard !parts.isEmpty, parts.count <= 4 else { return nil }
+            let numbers = parts.compactMap { part -> Int? in
+                guard !part.isEmpty, part.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+                return Int(part)
+            }
+            return numbers.count == parts.count ? numbers : nil
+        }
+        guard let next = components(candidate), let installed = components(current) else { return false }
+        for index in 0..<max(next.count, installed.count) {
+            let left = index < next.count ? next[index] : 0
+            let right = index < installed.count ? installed[index] : 0
+            if left != right { return left > right }
+        }
+        return false
+    }
+}
+
 // The teacher tools API intentionally returns server-defined forms and fields.
 // A lossless JSON value keeps those permission-dependent schemas intact.
 indirect enum JSON: Codable, Hashable, Identifiable {

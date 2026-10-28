@@ -1,6 +1,6 @@
 # Edlink over-the-air updates
 
-The mobile project includes SDK-compatible `expo-updates`, fingerprint runtime compatibility, and separate preview/production build channels. It checks for updates at launch without delaying startup; a downloaded update is applied on a later cold start. It does not interrupt a lesson, payment screen, or homework submission to reload.
+The mobile project includes SDK-compatible `expo-updates`, fingerprint runtime compatibility, and separate preview/production build channels. It checks for updates at launch without delaying startup and checks again while active every four hours, with a shorter retry after offline failures; a downloaded update is applied on a later cold start. A dismissible update notice also offers an optional restart after saving work. It does not interrupt a lesson, payment screen, or homework submission to reload.
 
 ## Linked Expo project
 
@@ -40,7 +40,7 @@ For the Play Store build:
 npm run build:production
 ```
 
-Upload the resulting AAB through the normal Play Store release process. The profiles currently provide Android commands; iOS additionally needs an Apple bundle identifier and signing setup.
+Upload the resulting AAB through the normal Play Store release process. For iOS use `npm run build:preview:ios` or `npm run build:production:ios` with the configured `com.edlink.school` bundle identifier and the Apple signing account.
 
 ## Publish a compatible app change
 
@@ -59,3 +59,20 @@ Publishing is explicit: a Git push or Laravel deployment does not publish an OTA
 If a published update has a problem, run `npx eas-cli@latest update:republish` and select the previous working update and intended channel. If no compatible prior update exists, use `npx eas-cli@latest update:roll-back-to-embedded` for the affected channel/runtime. Check the selections before publishing the rollback.
 
 References: https://docs.expo.dev/eas-update/getting-started/ and https://docs.expo.dev/eas-update/runtime-versions/
+
+## GitHub publication
+
+The Publish mobile update workflow runs on demand with preview or production
+as the target. Add an `EXPO_TOKEN` GitHub secret for the owning Expo account.
+The job runs the TypeScript check before publishing both Android and iOS bundles.
+Use preview first. GitHub environments can require approval for production.
+It never publishes from pull requests or deploys an unreviewed change simply
+because it was pushed.
+
+Native binary updates are separate from EAS bundles. Android and iOS stores
+update the existing installation; the operating system and user control
+whether that occurs automatically. An APK installed outside Google Play can
+receive EAS bundles, but its native binary cannot silently replace itself:
+install a newer APK over it using the same package ID/signing key and a higher
+version code. Never tell users to uninstall to update. Keep signing keys safe.
+The separate `ios-native` Swift app uses App Store updates rather than EAS.

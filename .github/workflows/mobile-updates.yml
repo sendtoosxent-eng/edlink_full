@@ -1,0 +1,48 @@
+name: Publish mobile update
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Mobile update channel
+        type: choice
+        options: [preview, production]
+        default: preview
+      message:
+        description: Release note
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-update-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.channel }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - name: Publish compatible Android and iOS bundles
+        env:
+          UPDATE_CHANNEL: ${{ inputs.channel }}
+          UPDATE_MESSAGE: ${{ inputs.message }}
+        run: eas update --platform all --channel "$UPDATE_CHANNEL" --environment "$UPDATE_CHANNEL" --message "$UPDATE_MESSAGE" --non-interactive

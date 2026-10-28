@@ -58,7 +58,8 @@
     "updates": {
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/f35e35a0-b8bb-48a9-90ec-ed078f75c1da"
+      "url": "https://u.expo.dev/f35e35a0-b8bb-48a9-90ec-ed078f75c1da",
+      "enabled": true
     },
     "extra": {
       "eas": {

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 class DesktopRelease extends Model
 {
-    protected $fillable = ['platform', 'version', 'path', 'filename', 'size', 'sha256', 'published_at', 'is_active'];
+    protected $fillable = ['platform', 'version', 'path', 'filename', 'size', 'sha256', 'sha512', 'published_at', 'is_active'];
 
     protected function casts(): array
     {

@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     void writes.current.catch(() => {});
   };
   const isDark = (preference === 'system' ? system : preference) === 'dark';
-  useEffect(() => { Appearance.setColorScheme(preference === 'system' ? null : preference); }, [preference]);
+  useEffect(() => { Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference); }, [preference]);
   return <ThemeContext.Provider value={{ preference, isDark, setPreference }}>{children}</ThemeContext.Provider>;
 }
 export const useAppTheme = () => useContext(ThemeContext);

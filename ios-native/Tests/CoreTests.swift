@@ -17,6 +17,14 @@ final class MockTransport: URLProtocol {
     override func stopLoading() {}
 }
 final class CoreTests: XCTestCase {
+    func testStoreVersionsCompareNumericallyAndRejectInvalidValues() {
+        XCTAssertTrue(AppVersion.isNewer("1.10.0", than: "1.9.9"))
+        XCTAssertTrue(AppVersion.isNewer("2.0", than: "1.99.0"))
+        XCTAssertFalse(AppVersion.isNewer("1.0.0", than: "1.0"))
+        XCTAssertFalse(AppVersion.isNewer("0.9.0", than: "1.0.0"))
+        XCTAssertFalse(AppVersion.isNewer("1.beta", than: "1.0"))
+        XCTAssertFalse(AppVersion.isNewer("1..2", than: "1.0"))
+    }
     func testEnvelopesPreservePaginationNullsAndConflictVersion() throws {
         let response = try JSONDecoder().decode(Envelope.self, from: Data(#"{"data":{"data":[{"id":42,"score":null,"active":true}],"last_page":3},"meta":{"version":"2026-10-24T09:00:00Z"}}"#.utf8))
         XCTAssertEqual(response.data.rows.first?["id"].text, "42")

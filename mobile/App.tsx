@@ -1,4 +1,5 @@
 import { ThemeProvider, useAppTheme, useThemedStyles } from './src/theme/ThemeProvider';
+import { AppUpdates } from './src/components/AppUpdates';
 import type { ReactNode } from 'react';
 import { StudentPhoto } from './src/components/StudentPhoto';
 import { EdlinkAlert as Alert, EdlinkAlertHost } from './src/components/EdlinkAlert';
@@ -120,7 +121,7 @@ function AppContent() {
   return (
     <SafeAreaProvider><KeyboardProvider statusBarTranslucent navigationBarTranslucent><StatusBar style={isDark ? "light" : "dark"} />
       {booting || (!fontsLoaded && !fontError) ? <BrandLoader /> : bootError ? <SafeAreaView style={styles.safe}><ErrorState message={bootError.message} status={bootError.status} retry={restoreSession} backLabel="Back to sign in" onBack={bootError.status === 403 ? () => { void returnToSignIn(); } : undefined} /></SafeAreaView> : !session ? <AuthFlow onSignIn={signIn} onVerifyOtp={verifyOtp} onBiometricSignIn={unlockWithBiometrics} biometricAvailable={biometricAvailable && !!lockedToken} messageFor={messageFor} /> : <AuthenticatedApp {...session} onSignOut={signOut} onUserUpdated={user => setSession(current => current ? { ...current, user } : current)} />}
-    <EdlinkAlertHost /></KeyboardProvider></SafeAreaProvider>
+    <AppUpdates /><EdlinkAlertHost /></KeyboardProvider></SafeAreaProvider>
   );
 }
 

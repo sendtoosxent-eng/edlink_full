@@ -1,6 +1,6 @@
 {
   "name": "edlink-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Edlink school management desktop application",
   "author": "osxent",
@@ -8,8 +8,9 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/policy.test.cjs",
-    "build:windows": "electron-builder --win nsis --x64 --publish never"
+    "test": "node --test test/policy.test.cjs test/updates.test.cjs",
+    "build:windows": "electron-builder --win nsis --x64 --publish never",
+    "build:windows:signed": "electron-builder --win nsis --x64 --publish never --config.win.signAndEditExecutable=true --config.forceCodeSigning=true"
   },
   "build": {
     "appId": "space.edlink.desktop",
@@ -24,7 +25,8 @@
       "connection.html",
       "settings.html",
       "settings-preload.cjs",
-      "settings.js"
+      "settings.js",
+      "updates.cjs"
     ],
     "win": {
       "target": "nsis",
@@ -37,10 +39,17 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "artifactName": "Edlink-Setup-${version}-${arch}.${ext}"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://edlink.space/updates/windows/"
     }
   },
   "devDependencies": {
     "electron": "45.0.0",
     "electron-builder": "26.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
   }
 }

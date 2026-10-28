@@ -17,7 +17,7 @@ installer as an artifact; it does not publish a release or deploy the server.
 
 The public `/downloads/edlink-windows` endpoint downloads the active Windows
 release registered in `desktop_releases`. The database stores version, private
-file path, filename, byte size, SHA-256 checksum, publication date and active
+file path, filename, byte size, SHA-256 and SHA-512 checksums, publication date and active
 status. The binary is streamed from private server storage, rather than held
 as a large database blob. No login is needed to download the installer.
 
@@ -26,7 +26,7 @@ to the server and register it from the application directory:
 
 ```sh
 php artisan migrate --force
-php artisan edlink:publish-desktop /path/to/Edlink-Setup-1.0.0-x64.exe 1.0.0
+php artisan edlink:publish-desktop /path/to/Edlink-Setup-1.0.1-x64.exe 1.0.1
 ```
 
 The command copies the installer to private `desktop-releases/` storage before
@@ -41,12 +41,39 @@ replaced through Website Content Management's Desktop app image field. It is
 an illustrative product mockup, not a capture of customer records. Its source
 and generation prompt are documented in `docs/desktop-mockup.md`.
 
-This initial build is unsigned. Windows may display an unknown-publisher
-warning. Production distribution needs a Windows code-signing certificate and
-the signing configuration enabled in electron-builder. There is no automatic
-updater in this first version; distribute replacement installers for updates,
-including Electron security fixes. Hosted Edlink UI changes appear without an
-installer update.
+## Automatic program updates (1.0.1 onward)
+
+The installed Windows app checks `https://edlink.space/updates/windows/` after
+launch and every four hours while open, downloads newer stable versions and
+installs them when the user closes Edlink. An optional Restart now action asks
+the user to save/sync first. No forced restart occurs during school work. The
+Check for updates menu can retry manually. Offline failures leave the installed
+version usable. School-address settings cannot change the update server.
+
+The server generates `latest.yml` from the release database. Publishing a new
+installer with `edlink:publish-desktop` calculates the updater's SHA-512 hash and
+enables its feed entry. Installer URLs contain the SHA-256 digest and version,
+so a subsequent release cannot change an in-progress download. Range requests
+support resuming. Differential downloads are disabled; full installers are used.
+The updater retains normal hash/signature verification and refuses downgrades.
+Every changed installer must have a higher app version. The publication command
+rejects replacing an existing version with a different binary.
+
+Version 1.0.0 had no updater. An existing 1.0.0 installation must first run the
+1.0.1 installer over it once; no uninstall is required. Use update-enabled
+installers for the initial school rollout. Keep old release files available
+while clients may still be downloading them.
+
+Unsigned test builds display an unknown-publisher warning. For signed production
+builds set `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` securely, then run
+`npm run build:windows:signed`. This requires signing to succeed and lets
+Electron derive the publisher identity for subsequent update verification.
+The Windows workflow uses this signed build when the certificate secret is
+configured, otherwise producing an unsigned test artifact. No certificate or
+password belongs in Git. Signed Windows-to-Windows upgrade verification is a
+release check; mock tests cannot verify the real installer lifecycle.
+
+Hosted Edlink UI changes appear on reload without a program update.
 
 ## Local data
 

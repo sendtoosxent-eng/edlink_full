@@ -60,8 +60,12 @@ it('registers a real file with its checksum and rejects invalid installers', fun
         $this->artisan('edlink:publish-desktop', ['file' => $file, 'version' => '1.2.0'])->assertSuccessful();
         $release = DesktopRelease::firstOrFail();
         expect($release->sha256)->toBe(hash_file('sha256', $file));
+        expect($release->sha512)->toBe(base64_encode(hash_file('sha512', $file, true)));
         expect($release->size)->toBe(filesize($file));
         Storage::disk('local')->assertExists($release->path);
+        file_put_contents($file, 'MZ different installer');
+        $this->artisan('edlink:publish-desktop', ['file' => $file, 'version' => '1.2.0'])->assertFailed();
+        expect($release->fresh()->sha256)->toBe(hash('sha256', 'MZ-test-installer'));
         $this->artisan('edlink:publish-desktop', ['file' => $file, 'version' => '../bad'])->assertFailed();
         file_put_contents($file, 'not an executable');
         $this->artisan('edlink:publish-desktop', ['file' => $file, 'version' => '2.0.0'])->assertFailed();

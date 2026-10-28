@@ -30,10 +30,22 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
       - run: npm test
-      - run: npm run build:windows
+      - name: Build Windows installer
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if ($env:WIN_CSC_LINK) {
+            npm run build:windows:signed
+          } else {
+            npm run build:windows
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: Edlink-Windows-installer
-          path: desktop/dist/*.exe
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.yml
+            desktop/dist/*.blockmap
           if-no-files-found: error
           retention-days: 14

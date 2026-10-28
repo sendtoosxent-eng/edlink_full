@@ -35,6 +35,13 @@ class PublishDesktopRelease extends Command
         }
         rewind($stream);
         $checksum = hash_file('sha256', $file);
+        $existing = DesktopRelease::where('platform', 'windows-x64')->where('version', $version)->first();
+        if ($existing && $existing->sha256 !== $checksum) {
+            fclose($stream);
+            $this->error('This version already identifies a different installer. Increment the app version before publishing.');
+
+            return self::FAILURE;
+        }
         $filename = 'Edlink-Setup-'.$version.'-x64.exe';
         $path = 'desktop-releases/'.$checksum.'/'.$filename;
         try {
@@ -48,7 +55,8 @@ class PublishDesktopRelease extends Command
         }
         DesktopRelease::updateOrCreate(['platform' => 'windows-x64', 'version' => $version], [
             'path' => $path, 'filename' => $filename, 'size' => filesize($file),
-            'sha256' => $checksum, 'published_at' => now(), 'is_active' => true,
+            'sha256' => $checksum, 'sha512' => base64_encode(hash_file('sha512', $file, true)),
+            'published_at' => $existing?->published_at ?? now(), 'is_active' => true,
         ]);
         $this->info('Windows '.$version.' is registered. Download: '.url('/downloads/edlink-windows'));
 

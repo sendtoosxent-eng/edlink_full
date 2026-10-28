@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { DEFAULT_ORIGIN, schoolOrigin, sameOrigin } = require('./policy.cjs');
+const { startUpdates } = require('./updates.cjs');
 
 let mainWindow;
 let settingsWindow;
@@ -50,6 +51,9 @@ else {
       webPreferences: { partition: 'persist:edlink', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true }
     });
     const contents = mainWindow.webContents;
+    const updates = process.platform === 'win32' && app.isPackaged
+      ? startUpdates({ app, dialog, window: mainWindow, updater: require('electron-updater').autoUpdater })
+      : { check: () => dialog.showMessageBox(mainWindow, { message: 'Automatic updates are available in the installed Windows app.', buttons: ['OK'] }) };
     contents.setWindowOpenHandler(({ url }) => {
       if (sameOrigin(url, origin)) {
         // Keep reports and printable pages inside the secured app window.
@@ -76,6 +80,7 @@ else {
         { label: 'School login', click: () => openPage('/login') },
         { label: 'Offline workspace', accelerator: 'CmdOrCtrl+Shift+O', click: () => openPage('/offline/') },
         { label: 'School address…', click: showSettings },
+        { label: 'Check for updates', click: () => { void updates.check(true); } },
         { type: 'separator' }, { role: 'quit' }
       ] },
       { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },

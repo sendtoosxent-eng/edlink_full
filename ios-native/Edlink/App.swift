@@ -5,11 +5,17 @@ import SwiftUI
     @Environment(\.scenePhase) private var phase
     @AppStorage("edlink.requireUnlock") private var requireUnlock = false
     @AppStorage("edlink.appearance") private var appearance = "light"
+    @StateObject private var appUpdates = StoreUpdates()
     var body: some Scene {
         WindowGroup {
             appContent.environmentObject(session).font(Brand.font(14)).tint(Brand.ink).task { await session.restore() }
+            .task { await appUpdates.check() }
+            .safeAreaInset(edge: .top, spacing: 0) { if let release = appUpdates.release { StoreUpdateBanner(release: release) } }
             .onReceive(NotificationCenter.default.publisher(for: .edlinkSessionExpired).receive(on: RunLoop.main)) { notice in if let expiredToken = notice.object as? String, expiredToken == session.token { session.clear() } }
-            .onChange(of: phase) { _, value in if value == .background && requireUnlock && session.token != nil { session.locked = true } }
+            .onChange(of: phase) { _, value in
+                if value == .background && requireUnlock && session.token != nil { session.locked = true }
+                if value == .active { Task { await appUpdates.check() } }
+            }
             .overlay { if phase != .active && session.token != nil { Brand.background.ignoresSafeArea().overlay { BrandMark() } } }
         }
     }
@@ -36,6 +42,50 @@ import SwiftUI
         }
     }
 
+}
+
+@MainActor final class StoreUpdates: ObservableObject {
+    struct Release: Decodable { let version: String; let trackId: Int; let bundleId: String }
+    private struct Lookup: Decodable { let results: [Release] }
+    @Published var release: Release?
+    private var lastCheck = Date.distantPast
+    private var checking = false
+    func check() async {
+        #if !DEBUG
+        guard !checking, Date().timeIntervalSince(lastCheck) > 6 * 60 * 60,
+              let bundle = Bundle.main.bundleIdentifier,
+              let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
+        checking = true
+        lastCheck = Date()
+        defer { checking = false }
+        var url = URLComponents(string: "https://itunes.apple.com/lookup")!
+        let country = Locale.current.region?.identifier.lowercased() ?? "ug"
+        url.queryItems = [URLQueryItem(name: "bundleId", value: bundle), URLQueryItem(name: "country", value: country)]
+        do {
+            let request = URLRequest(url: url.url!, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+            let (data, response) = try await API.secureTransport.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return }
+            let results = try JSONDecoder().decode(Lookup.self, from: data).results
+            release = results.first { $0.bundleId == bundle && $0.trackId > 0 && AppVersion.isNewer($0.version, than: version) }
+        } catch {
+            // No network or no published listing must never block school work.
+            lastCheck = Date().addingTimeInterval(-6 * 60 * 60 + 5 * 60)
+        }
+        #endif
+    }
+}
+
+private struct StoreUpdateBanner: View {
+    let release: StoreUpdates.Release
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("Edlink \(release.version) is available.").font(.footnote).foregroundStyle(.white)
+            Spacer()
+            Link("Update", destination: URL(string: "https://apps.apple.com/app/id\(release.trackId)")!)
+                .font(.footnote.bold()).foregroundStyle(.yellow).padding(.vertical, 12)
+        }
+        .padding(.horizontal, 16).background(Color(red: 0.145, green: 0.149, blue: 0.255))
+    }
 }
 struct ResourceView: View {
     @EnvironmentObject private var session: Session

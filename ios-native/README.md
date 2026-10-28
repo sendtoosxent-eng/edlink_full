@@ -18,6 +18,20 @@ App Transport Security. Sign in with an active school's number and a verified
 teacher, student, or parent account. Server permissions and term restrictions
 continue to apply.
 
+## Updates
+
+Release builds check Apple's public App Store listing at launch and on return
+to the foreground, at most every six hours. A newer version shows an Update
+link; missing listings and offline failures do not block the app. Only the
+bundle identifier is sent to Apple, never school credentials or records.
+The native app does not download executable code from the Edlink server.
+App Store automatic updates are controlled by iOS and the user's settings;
+TestFlight builds use TestFlight's update mechanism. Both replace the existing
+installation without an uninstall. The listing must use `space.edlink.native`
+unless the application's bundle identifier is deliberately changed before its
+first distribution. The separate Expo iOS app uses `com.edlink.school` and EAS
+for compatible JavaScript updates; do not interchange their update channels.
+
 ## Implemented flows
 
 - School verification, role selection, password sign-in, email OTP/resend,

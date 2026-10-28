@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountingExportController;
 use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\DesktopDownloadController;
+use App\Http\Controllers\DesktopUpdateController;
 use App\Http\Controllers\GraduationCertificateController;
 use App\Http\Controllers\GroupDashboardController;
 use App\Http\Controllers\LandingAssetController;
@@ -160,6 +161,9 @@ Route::prefix('platform')->name('platform.')->group(function () {
 });
 Route::get('/', LandingPageController::class)->name('home');
 Route::get('downloads/edlink-windows', DesktopDownloadController::class)->name('downloads.windows');
+Route::get('updates/windows/latest.yml', [DesktopUpdateController::class, 'manifest'])->name('updates.windows.manifest');
+Route::get('updates/windows/files/{checksum}/{filename}', [DesktopUpdateController::class, 'download'])
+    ->where('checksum', '[a-f0-9]{64}')->where('filename', 'Edlink-Setup-[a-zA-Z0-9._-]+-x64\.exe')->name('updates.windows.file');
 Route::get('media/landing/{key}', LandingAssetController::class)->name('media.landing');
 Route::get('profile-photo/{type}/{person}', ProfilePhotoController::class)
     ->middleware('signed')->whereIn('type', ['student', 'user', 'school'])->whereNumber('person')->name('profile-photo.show');
