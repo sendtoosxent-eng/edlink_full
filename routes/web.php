@@ -164,6 +164,13 @@ Route::prefix('platform')->name('platform.')->group(function () {
         });
     });
 });
+// Compatibility for previously rendered /public/* URLs. Shared hosting may
+// strip the physical public directory from the request path.
+foreach (['consent' => '20,1', 'visit' => '90,1', 'enquiry' => '5,1'] as $action => $limit) {
+    $method = $action === 'enquiry' ? 'enquire' : $action;
+    Route::post($action, [\App\Http\Controllers\PublicEngagementController::class, $method])->middleware('throttle:'.$limit);
+    Route::post('public/'.$action, [\App\Http\Controllers\PublicEngagementController::class, $method])->middleware('throttle:'.$limit);
+}
 Route::post('website/consent', [\App\Http\Controllers\PublicEngagementController::class, 'consent'])->middleware('throttle:20,1')->name('public.consent');
 Route::post('website/visit', [\App\Http\Controllers\PublicEngagementController::class, 'visit'])->middleware('throttle:90,1')->name('public.visit');
 Route::post('website/enquiry', [\App\Http\Controllers\PublicEngagementController::class, 'enquire'])->middleware('throttle:5,1')->name('public.enquiry');
