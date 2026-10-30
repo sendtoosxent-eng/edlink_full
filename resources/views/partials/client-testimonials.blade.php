@@ -1,14 +1,13 @@
 <section id="testimonials" class="section lavender testimonials-section" aria-labelledby="testimonials-heading">
     <div class="container testimonials-layout">
         <div class="testimonials-preview">
-            <p class="sample-reviews-label">{{ $landing['testimonials_sample_testimonials_fictional_names'] }}</p>
             <div class="testimonial-cards">
                 @foreach([
-                    [$landing['testimonials_sarah_namusoke'], $landing['testimonials_school_administrator'], $landing['testimonials_one_place_for_learner_records_staff_details_and_clas'], 'avatar-sarah'],
-                    [$landing['testimonials_daniel_okello'], $landing['testimonials_teacher'], $landing['testimonials_keeping_attendance_marks_and_homework_together_would'], 'avatar-daniel'],
-                    [$landing['testimonials_brian_kato'], $landing['testimonials_bursar'], $landing['testimonials_a_clear_view_of_payments_receipts_and_balances_is_ex'], 'avatar-brian'],
-                    [$landing['testimonials_grace_nankunda'], $landing['testimonials_parent'], $landing['testimonials_following_results_fee_balances_and_school_notices_fr'], 'avatar-grace'],
-                ] as [$name, $role, $quote, $avatar])
+                    [$landing['head_teacher_records_benefit'], 'avatar-sarah'],
+                    [$landing['head_teacher_teaching_benefit'], 'avatar-daniel'],
+                    [$landing['head_teacher_finance_benefit'], 'avatar-brian'],
+                    [$landing['head_teacher_parent_benefit'], 'avatar-grace'],
+                ] as [$benefit, $avatar])
                     <figure class="testimonial-card {{ in_array($loop->index, [1, 2], true) ? 'testimonial-purple' : '' }}">
                         @if(filled($landing['testimonial_portrait_'.($loop->index + 1)] ?? ''))
                             <img class="testimonial-portrait" src="{{ \App\Models\LandingPageSetting::assetUrl($landing, 'testimonial_portrait_'.($loop->index + 1)) }}" alt="" width="57" height="57" loading="lazy">
@@ -16,9 +15,9 @@
                             <span class="memoji-avatar {{ $avatar }}" aria-hidden="true"></span>
                         @endif
                         <div class="testimonial-body">
-                            <div class="quote-decoration" aria-hidden="true">@include('partials.landing-icon', ['name' =>'quote'])<span></span></div>
-                            <blockquote><p>{{ $quote }}</p></blockquote>
-                            <figcaption><strong>{{ $name }}</strong><span>{{ $role }} {{ $landing['testimonials_sample'] }}</span></figcaption>
+                            <div class="quote-decoration" aria-hidden="true">@include('partials.landing-icon', ['name' => 'school-care'])<span></span></div>
+                            <p class="head-teacher-benefit">{{ $benefit }}</p>
+                            <figcaption><strong>{{ $landing['head_teacher_role_label'] }}</strong><span>{{ $landing['head_teacher_school_label'] }}</span></figcaption>
                             <span class="review-signature-line" aria-hidden="true"></span>
                         </div>
                     </figure>
@@ -26,7 +25,7 @@
             </div>
         </div>
         <div class="testimonials-copy">
-            <span class="eyebrow">{{ $landing['testimonials_client_testimonials'] }}</span>
+            <span class="eyebrow">{{ $landing['head_teacher_section_label'] }}</span>
             <h2 id="testimonials-heading">{{ $landing['testimonials_school_stories'] }}<br>{{ $landing['testimonials_human_connections'] }}</h2>
             <p>{{ $landing['testimonials_designed_for_the_people_keeping_schools_moving_from'] }}</p>
             <div class="testimonial-stats" aria-label="Edlink product at a glance">

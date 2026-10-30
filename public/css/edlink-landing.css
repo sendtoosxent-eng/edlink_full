@@ -172,3 +172,5 @@
 .hero-ctas .hero-login:hover{background:var(--brand-navy);border-color:var(--brand-navy);color:var(--brand-gold)}
 .dark .hero-ctas .hero-login{background:transparent;border:2px solid var(--brand-gold);color:var(--brand-gold);box-shadow:none}
 .dark .hero-ctas .hero-login:hover{background:var(--brand-gold);color:var(--brand-navy)}
+.head-teacher-benefit{font-size:11px;line-height:1.85;color:var(--muted)}.testimonial-purple .head-teacher-benefit{color:#e4e5ee}
+@media(max-width:600px){.head-teacher-benefit{font-size:10px;line-height:1.9}}

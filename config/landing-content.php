@@ -2,6 +2,14 @@
 
 return [
     'fields' => [
+        'head_teacher_role_label' => ['default' => 'Head teacher', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Role label'],
+        'head_teacher_school_label' => ['default' => 'Primary school', 'group' => 'testimonials', 'type' => 'text', 'label' => 'School type label'],
+        'head_teacher_section_label' => ['default' => 'Built for head teachers', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Section label'],
+        'head_teacher_records_benefit' => ['default' => 'Keep admissions, learner records, staff details and class lists together in one school workspace.', 'group' => 'testimonials', 'type' => 'text', 'label' => 'School records benefit'],
+        'head_teacher_teaching_benefit' => ['default' => 'Follow attendance, marks and homework across your primary school, with access shaped around each staff member’s role.', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Teaching benefit'],
+        'head_teacher_finance_benefit' => ['default' => 'Track school fee payments, receipts and outstanding balances for a clearer view of school finances.', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Finance benefit'],
+        'head_teacher_parent_benefit' => ['default' => 'Keep families connected to school notices, results and fee balances through their parent workspace.', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Parent communication benefit'],
+
         'hero_login_label' => ['default' => 'Log in to your school', 'group' => 'hero', 'type' => 'text', 'label' => 'Hero login button label'],
         'hero_login_link' => ['default' => '/login', 'group' => 'hero', 'type' => 'link', 'label' => 'Hero login button link'],
         'pricing_custom_price' => [
