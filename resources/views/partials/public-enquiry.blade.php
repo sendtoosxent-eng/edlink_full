@@ -2,12 +2,29 @@
     $engagementSettings = $landing ?? \App\Models\LandingPageSetting::values();
     $isDemoHelp = ($engagementSource ?? 'landing') === 'demo_setup';
 @endphp
+@if($isDemoHelp)
 <details class="edlink-enquiry">
     <summary>{{ $isDemoHelp ? $engagementSettings['public_demo_help_title'] : $engagementSettings['public_callback_title'] }}</summary>
     <div class="edlink-enquiry-body">
         <p>{{ $engagementSettings['public_support_description'] }}</p>
         <div class="edlink-support-links"><a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$engagementSettings['whatsapp']) }}" target="_blank" rel="noopener noreferrer">WhatsApp our team ↗</a><a href="mailto:{{ $engagementSettings['support_email'] }}">{{ $engagementSettings['support_email'] }}</a></div>
         <p>{{ $engagementSettings['public_callback_description'] }}</p>
+@else
+<section class="edlink-support-panel" aria-labelledby="school-support-title">
+    <div class="edlink-support-copy">
+        <span class="support-eyebrow">{{ $engagementSettings['public_support_eyebrow'] }}</span>
+        <div class="support-book" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><path d="M40 22C29 15 18 16 10 20v40c10-4 20-3 30 3 10-6 20-7 30-3V20c-8-4-19-5-30 2Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M40 23v39M18 30c5-1 10 0 15 2m-15 8c5-1 10 0 15 2m14-10c5-2 10-3 15-2m-15 12c5-2 10-3 15-2" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div>
+        <h2 id="school-support-title">{{ $engagementSettings['public_callback_title'] }}</h2>
+        <p>{{ $engagementSettings['public_support_description'] }}</p>
+        <div class="support-contact-options">
+            <a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$engagementSettings['whatsapp']) }}" target="_blank" rel="noopener noreferrer"><span class="support-contact-icon">@include('partials.landing-icon', ['name'=>'whatsapp'])</span><span><small>{{ $engagementSettings['public_whatsapp_label'] }}</small><strong>+{{ preg_replace('/[^0-9]/','',$engagementSettings['whatsapp']) }}</strong></span><span aria-hidden="true">↗</span></a>
+            <a href="mailto:{{ $engagementSettings['support_email'] }}"><span class="support-contact-icon" aria-hidden="true">@</span><span><small>{{ $engagementSettings['public_email_label'] }}</small><strong>{{ $engagementSettings['support_email'] }}</strong></span><span aria-hidden="true">↗</span></a>
+        </div>
+    </div>
+    <div class="edlink-support-form">
+        <span class="support-form-label">{{ $engagementSettings['public_callback_form_label'] }}</span>
+        <p>{{ $engagementSettings['public_callback_description'] }}</p>
+@endif
         <form method="POST" action="{{ route('public.enquiry') }}" data-public-enquiry data-no-loader>
             @csrf
             <input type="hidden" name="source" value="{{ $isDemoHelp ? 'demo_setup' : 'landing' }}"><input type="hidden" name="purpose" value="{{ $isDemoHelp ? 'demo_help' : 'callback' }}">
@@ -18,4 +35,8 @@
             <button type="submit" class="engagement-submit">Ask the team to contact me →</button><p class="engagement-status" data-enquiry-status role="status" aria-live="polite"></p>
         </form>
     </div>
+@if($isDemoHelp)
 </details>
+@else
+</section>
+@endif

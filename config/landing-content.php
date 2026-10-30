@@ -2,6 +2,11 @@
 
 return [
     'fields' => [
+        'public_support_eyebrow' => ['default' => 'Let’s get your school started', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Support eyebrow'],
+        'public_whatsapp_label' => ['default' => 'Chat on WhatsApp', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'WhatsApp option label'],
+        'public_email_label' => ['default' => 'Email our support team', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Email option label'],
+        'public_callback_form_label' => ['default' => 'Let us reach out to you', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Callback form heading'],
+
         'public_demo_help_title' => ['default' => 'Stuck anywhere? Contact our support team', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Demo support heading'],
         'public_callback_title' => ['default' => 'Want help getting your school started?', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Landing callback heading'],
         'public_support_description' => ['default' => 'Chat with our Edlink support team on WhatsApp or email us for help.', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Support description'],
