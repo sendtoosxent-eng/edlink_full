@@ -39,3 +39,10 @@ Artisan::command('edlink:dispatch-whatsapp-pending', function () {
     });
 })->purpose('Queue previously confirmed WhatsApp deliveries awaiting a queue connection');
 Schedule::command('edlink:dispatch-whatsapp-pending')->everyMinute()->withoutOverlapping();
+
+Artisan::command('edlink:prune-public-visitors', function () {
+    if (! Schema::hasTable('public_visitors')) return;
+    \App\Models\PublicVisit::where('created_at', '<', now()->subDays(30))->delete();
+    \App\Models\PublicVisitor::where('last_seen_at', '<', now()->subDays(30))->delete();
+})->purpose('Remove optional public visitor analytics older than 30 days');
+Schedule::command('edlink:prune-public-visitors')->daily()->withoutOverlapping();

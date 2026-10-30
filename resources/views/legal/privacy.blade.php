@@ -29,6 +29,7 @@
 	</style>
 @include('partials.ui-styles')
 @include('partials.page-skeleton-head')
+@include('partials.public-engagement-head')
 </head>
 <body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300">
 @include('partials.page-skeleton')
@@ -161,7 +162,15 @@
 					<p>We may use cookies, session storage, local storage, and similar technologies to keep you signed in, remember preferences, maintain security, and understand how the Service is used. You can control some of these technologies through your browser settings, but disabling them may affect functionality.</p>
 				</section>
 
-				<section id="p12">
+				<section id="public-website-visitors">
+<h2 class="text-xl font-bold text-darken dark:text-white mb-3">Public website visitors and requests for help</h2>
+<p>Essential cookies support sessions, security and your privacy preference. Optional visitor analytics start only after you accept analytics. We store an encrypted IP address, browser information, referral hostname and visits to the landing, login and registration pages. We do not store page query strings or use cookies to discover your name, email or phone number. IP addresses are network addresses and do not establish a physical address.</p>
+<p class="mt-3">Privacy preferences and a random visitor identifier are saved for up to 180 days. Analytics records are removed after 30 days through our scheduled retention task. Choose “Essential only” in Privacy preferences to stop analytics and delete the visitor history associated with this browser. Hosting and security logs may be processed separately to operate and protect the service.</p>
+<p class="mt-3">If you submit a help or callback form, we store the contact and school details you choose to provide, your request, selected contact method and follow-up permission. With analytics accepted, that request can be linked to your visitor history. You can request help without accepting analytics. Only authorized platform staff can view enquiries; IP addresses are restricted to the platform owner and operations administrators.</p>
+<p class="mt-3">Follow-up permission covers your request, rather than unrelated marketing. Contact our support team to withdraw permission or request deletion of your enquiry. We retain enquiries while needed to handle requests and related support obligations.</p>
+</section>
+
+<section id="p12">
 					<h2 class="text-xl font-bold text-darken dark:text-white mb-3">12. Changes and Contact</h2>
 					<p>We may update this Privacy Policy from time to time. If we make material changes, we will post the updated version on this page or otherwise provide notice as required by law. Continued use of the Service after the updated policy becomes effective means you accept it.</p>
 					<p class="mt-3">Questions, privacy requests, or suspected data breaches can be sent to <a href="mailto:{{ config('edlink.legal.contact_email') }}" class="text-yellow-600 dark:text-yellow-400 font-medium">{{ config('edlink.legal.contact_email') }}</a>.</p>
@@ -182,6 +191,7 @@
 		</div>
 	</footer>
 
+@include('partials.public-consent')
 </body>
 	<script type="module" src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"></script>
 </html>

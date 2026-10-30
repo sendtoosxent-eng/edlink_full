@@ -2,6 +2,11 @@
 
 return [
     'fields' => [
+        'public_demo_help_title' => ['default' => 'Stuck anywhere? Contact our support team', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Demo support heading'],
+        'public_callback_title' => ['default' => 'Want help getting your school started?', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Landing callback heading'],
+        'public_support_description' => ['default' => 'Chat with our Edlink support team on WhatsApp or email us for help.', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Support description'],
+        'public_callback_description' => ['default' => 'Or leave your number or email below and we will reach out soon using your preferred contact method.', 'group' => 'public_enquiries', 'type' => 'text', 'label' => 'Callback description'],
+
         'head_teacher_role_label' => ['default' => 'Head teacher', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Role label'],
         'head_teacher_school_label' => ['default' => 'Primary school', 'group' => 'testimonials', 'type' => 'text', 'label' => 'School type label'],
         'head_teacher_section_label' => ['default' => 'Built for head teachers', 'group' => 'testimonials', 'type' => 'text', 'label' => 'Section label'],

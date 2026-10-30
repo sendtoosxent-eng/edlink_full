@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="{{ asset('css/edlink-login.css') }}?v={{ filemtime(public_path('css/edlink-login.css')) }}">
 @include('partials.page-skeleton-head')
     <link rel="stylesheet" href="{{ asset('css/edlink-avatars.css') }}?v={{ filemtime(public_path('css/edlink-avatars.css')) }}">
+@if(request()->routeIs('register','login'))
+@include('partials.public-engagement-head')
+@endif
 </head>
 <body class="school-auth-page {{ request()->routeIs('register') ? 'school-registration-page' : '' }}">
 @include('partials.page-skeleton')
@@ -42,5 +45,8 @@
         </section>
     </main>
     @livewireScripts
+@if(request()->routeIs('register','login'))
+@include('partials.public-consent')
+@endif
 </body>
 </html>

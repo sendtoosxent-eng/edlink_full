@@ -145,6 +145,10 @@ Route::prefix('platform')->name('platform.')->group(function () {
             Route::get('settings', [PlatformOperationsController::class, 'settings'])->name('settings');
             Route::put('settings', [PlatformOperationsController::class, 'updateSettings'])->name('settings.update');
         });
+        Route::middleware('platform.role:platform_owner,operations_admin,support_admin')->group(function () {
+            Route::get('engagement', [\App\Http\Controllers\PlatformEngagementController::class, 'index'])->name('engagement.index');
+            Route::patch('engagement/{enquiry}', [\App\Http\Controllers\PlatformEngagementController::class, 'update'])->name('engagement.update');
+        });
         Route::middleware('platform.role:platform_owner,support_admin')->group(function () {
             Route::get('support', [PlatformSupportController::class, 'index'])->name('support.index');
             Route::get('support/{contactMessage}', [PlatformSupportController::class, 'show'])->name('support.show');
@@ -160,6 +164,9 @@ Route::prefix('platform')->name('platform.')->group(function () {
         });
     });
 });
+Route::post('public/consent', [\App\Http\Controllers\PublicEngagementController::class, 'consent'])->middleware('throttle:20,1')->name('public.consent');
+Route::post('public/visit', [\App\Http\Controllers\PublicEngagementController::class, 'visit'])->middleware('throttle:90,1')->name('public.visit');
+Route::post('public/enquiry', [\App\Http\Controllers\PublicEngagementController::class, 'enquire'])->middleware('throttle:5,1')->name('public.enquiry');
 Route::get('/', LandingPageController::class)->name('home');
 Route::get('downloads/edlink-windows', DesktopDownloadController::class)->name('downloads.windows');
 Route::get('updates/windows/latest.yml', [DesktopUpdateController::class, 'manifest'])->name('updates.windows.manifest');

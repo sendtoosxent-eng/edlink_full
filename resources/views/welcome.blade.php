@@ -14,6 +14,7 @@
     <script src="{{ asset('js/edlink-landing.js') }}?v={{ filemtime(public_path('js/edlink-landing.js')) }}" defer></script>
 @include('partials.page-skeleton-head')
     <link rel="stylesheet" href="{{ asset('css/edlink-avatars.css') }}?v={{ filemtime(public_path('css/edlink-avatars.css')) }}">
+@include('partials.public-engagement-head')
 </head>
 <body>
 @include('partials.page-skeleton')
@@ -226,6 +227,7 @@
             </div>
         </div>
     </section>
+<section class="public-enquiry-section" id="contact-support"><div>@include('partials.public-enquiry', ['engagementSource' => 'landing'])</div></section>
 </main>
 <footer class="site-footer">
     <div class="container">
@@ -242,5 +244,6 @@
     </div>
 </footer>
 <a class="support-float whatsapp-float" href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $landing['whatsapp']) }}" target="_blank" rel="noopener noreferrer" aria-label="Chat with Edlink on WhatsApp">@include('partials.landing-icon', ['name' =>'whatsapp'])</a>
+@include('partials.public-consent')
 </body>
 </html>

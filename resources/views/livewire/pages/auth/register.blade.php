@@ -281,4 +281,5 @@ new #[Layout('layouts.guest-school-login')] class extends Component
     @endif
     </div>
     <p class="registration-login">Already have an account? <a href="{{ route('login') }}" wire:navigate>Log in to Edlink</a></p>
+    @include('partials.public-enquiry', ['engagementSource' => 'demo_setup'])
 </div>
