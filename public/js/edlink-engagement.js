@@ -6,7 +6,13 @@
     async function post(url, body) {
         const response = await fetch(url, {method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrf()},body:JSON.stringify(body)});
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Unable to submit. Please refresh the page or use our WhatsApp/email support links.');
+        if (!response.ok) {
+            const fallback = response.status === 419 ? 'Your session expired. Refresh this page and try again.'
+                : response.status === 429 ? 'Too many requests. Please wait a minute and try again.'
+                : response.status === 404 ? 'This website endpoint is unavailable. Please contact Edlink support.'
+                : 'Unable to submit (HTTP '+response.status+'). Please refresh the page or use our WhatsApp/email support links.';
+            throw new Error(Object.values(data.errors || {}).flat().join(' ') || (response.status < 500 ? data.message : '') || fallback);
+        }
         return data;
     }
     async function record() {

@@ -164,9 +164,9 @@ Route::prefix('platform')->name('platform.')->group(function () {
         });
     });
 });
-Route::post('public/consent', [\App\Http\Controllers\PublicEngagementController::class, 'consent'])->middleware('throttle:20,1')->name('public.consent');
-Route::post('public/visit', [\App\Http\Controllers\PublicEngagementController::class, 'visit'])->middleware('throttle:90,1')->name('public.visit');
-Route::post('public/enquiry', [\App\Http\Controllers\PublicEngagementController::class, 'enquire'])->middleware('throttle:5,1')->name('public.enquiry');
+Route::post('website/consent', [\App\Http\Controllers\PublicEngagementController::class, 'consent'])->middleware('throttle:20,1')->name('public.consent');
+Route::post('website/visit', [\App\Http\Controllers\PublicEngagementController::class, 'visit'])->middleware('throttle:90,1')->name('public.visit');
+Route::post('website/enquiry', [\App\Http\Controllers\PublicEngagementController::class, 'enquire'])->middleware('throttle:5,1')->name('public.enquiry');
 Route::get('/', LandingPageController::class)->name('home');
 Route::get('downloads/edlink-windows', DesktopDownloadController::class)->name('downloads.windows');
 Route::get('updates/windows/latest.yml', [DesktopUpdateController::class, 'manifest'])->name('updates.windows.manifest');
