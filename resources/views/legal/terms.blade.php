@@ -28,8 +28,10 @@
 		.prose-legal h2 { scroll-margin-top: 6rem; }
 	</style>
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="antialiased bg-white dark:bg-ink text-gray-700 dark:text-gray-300 transition-colors duration-300">
+@include('partials.page-skeleton')
 
 	<div class="fixed top-0 inset-x-0 z-40 glass bg-white/70 dark:bg-ink/70 border-b border-gray-100 dark:border-white/10">
 		<div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">

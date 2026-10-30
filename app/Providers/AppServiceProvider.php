@@ -2,22 +2,20 @@
 
 namespace App\Providers;
 
-use App\Support\NotificationVisibility;
-
-use App\Livewire\FeeAdjustments;
+use App\Http\Controllers\Api\V1\MobileDataController;
 use App\Http\Controllers\PersonProfileController;
 use App\Http\Controllers\ProfilePhotoController;
-use App\Http\Controllers\Api\V1\MobileDataController;
 use App\Http\Middleware\EnsureMobileAccess;
+use App\Livewire\FeeAdjustments;
+use App\Support\NotificationVisibility;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
@@ -29,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('school-whatsapp', fn ($job) => Limit::perMinute(30)->by('whatsapp-school-'.$job->schoolId));
         Livewire::setUpdateRoute(function ($handle) {
             return Route::post('edlink-livewire/update', $handle)
                 ->middleware(['web', 'branch.context', 'active.user'])
@@ -111,8 +110,8 @@ class AppServiceProvider extends ServiceProvider
                 $query = NotificationVisibility::forUser($user, 'notifications')
                     ->when(Schema::hasTable('school_notification_reads'), function ($query) use ($user): void {
                         $query->leftJoin('school_notification_reads as reads', function ($join) use ($user): void {
-                        $join->on('reads.school_notification_id', '=', 'notifications.id')
-                            ->where('reads.user_id', $user->id);
+                            $join->on('reads.school_notification_id', '=', 'notifications.id')
+                                ->where('reads.user_id', $user->id);
                         });
                     })
                     ->where('notifications.school_id', $user->school_id)

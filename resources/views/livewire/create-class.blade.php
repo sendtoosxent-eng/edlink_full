@@ -69,7 +69,7 @@
 
                     <button type="submit" wire:loading.attr="disabled" wire:target="addClass"
                         class="w-full inline-flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow focus:outline-none disabled:opacity-60 cursor-pointer">
-                        <span wire:loading wire:target="addClass" class="animate-spin"><x-edlink-loader size="16" /></span>
+                        <span wire:loading wire:target="addClass" ><x-edlink-loader size="16" /></span>
                         <span>Create Class</span>
                     </button>
                 </form>
@@ -103,7 +103,7 @@
 
                     <button type="submit" wire:loading.attr="disabled" wire:target="addStream"
                         class="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 active:bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow focus:outline-none disabled:opacity-60 cursor-pointer">
-                        <span wire:loading wire:target="addStream" class="animate-spin"><x-edlink-loader size="16" /></span>
+                        <span wire:loading wire:target="addStream" ><x-edlink-loader size="16" /></span>
                         <span>Attach Stream</span>
                     </button>
                 </form>

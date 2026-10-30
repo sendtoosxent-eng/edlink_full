@@ -19,8 +19,11 @@
     </script>
     @livewireStyles
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="font-sans bg-gray-50 min-h-screen">
+@include('partials.page-skeleton')
+
 
     <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <a href="{{ url('/') }}" class="inline-flex items-center space-x-2">

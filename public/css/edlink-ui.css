@@ -36,3 +36,27 @@ select:focus, textarea:focus {
 }
 input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: #eab308; }
 :where(input, select, textarea):disabled { cursor: not-allowed; opacity: .65; }
+
+/* Comfortable application density at normal browser zoom. Public/auth pages keep their own scale. */
+html:has(body.mobile-shell-page){font-size:14px}
+body.mobile-shell-page{font-size:14px;line-height:1.5}
+body.mobile-shell-page #app-main,body.mobile-shell-page .portal-main{min-width:0;max-width:100%}
+body.mobile-shell-page main,body.mobile-shell-page main .grid>*,body.mobile-shell-page .mobile-shell-header>*{min-width:0}
+body.mobile-shell-page main img,body.mobile-shell-page main canvas{max-width:100%}
+body.mobile-shell-page main .overflow-x-auto{max-width:100%;overscroll-behavior-x:contain}
+body.mobile-shell-page .mobile-shell-header{gap:12px;padding:10px 24px}
+body.mobile-shell-page .mobile-shell-header input[type=search],body.mobile-shell-page .mobile-shell-header input[placeholder^="Search"]{width:clamp(140px,15vw,225px);min-height:34px}
+body.mobile-shell-page #app-main>main,body.mobile-shell-page .portal-main>main{padding:24px 24px 62px}
+body.mobile-shell-page #app-sidebar nav,body.mobile-shell-page .portal-sidebar nav{padding-top:16px;padding-bottom:16px}
+@media(min-width:1024px){
+    body.mobile-shell-page #app-sidebar .nav-link,body.mobile-shell-page #app-sidebar .nav-group-btn,body.mobile-shell-page .portal-sidebar .nav-link,body.mobile-shell-page .portal-sidebar .nav-group-btn{padding-top:9px;padding-bottom:9px}
+    body.mobile-shell-page #app-main>main>.mb-8,body.mobile-shell-page .portal-main>main>.mb-8{margin-bottom:20px}
+    body.mobile-shell-page #app-main>main .gap-6{gap:18px}
+    body.mobile-shell-page #app-main>main .p-8{padding:24px}
+}
+@media(min-width:1024px) and (max-width:1366px){body.mobile-shell-page .mobile-shell-header{flex-wrap:wrap;row-gap:8px}body.mobile-shell-page .mobile-shell-header input[placeholder^="Search"]{width:160px}}
+@media(max-width:1023px){
+    body.mobile-shell-page .mobile-shell-header{padding:10px 16px;flex-wrap:wrap}
+    body.mobile-shell-page #app-main>main,body.mobile-shell-page .portal-main>main{padding:18px 16px 62px}
+    body.mobile-shell-page input,body.mobile-shell-page select,body.mobile-shell-page textarea{font-size:16px}
+}

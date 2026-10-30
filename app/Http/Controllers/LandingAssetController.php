@@ -10,7 +10,7 @@ class LandingAssetController extends Controller
 {
     public function __invoke(string $key): StreamedResponse
     {
-        abort_unless(in_array($key, LandingPageSetting::ASSET_KEYS, true), 404);
+        abort_unless(in_array($key, LandingPageSetting::assetKeys(), true), 404);
         $path = LandingPageSetting::where('key', $key)->value('value');
         abort_unless($path && str_starts_with($path, 'landing-page/') && Storage::disk('public')->exists($path), 404);
 

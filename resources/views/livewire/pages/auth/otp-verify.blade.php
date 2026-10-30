@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.guest-split')] class extends Component
+new #[Layout('layouts.guest-school-login')] class extends Component
 {
     public string $code = '';
 
@@ -25,6 +25,7 @@ new #[Layout('layouts.guest-split')] class extends Component
         $key = 'otp-verify|'.(int) session('otp_pending_user_id').'|'.request()->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $this->addError('code', 'Too many attempts. Try again in '.RateLimiter::availableIn($key).' seconds.');
+
             return;
         }
 
@@ -48,11 +49,13 @@ new #[Layout('layouts.guest-split')] class extends Component
         if (! $user || ! $user->canLogin()) {
             session()->forget(['otp_pending_user_id', 'otp_remember']);
             $this->addError('code', 'This account is inactive or linked only to inactive learners. Please contact your school administrator.');
+
             return;
         }
         if (! $user || ! $user->otpIsValid($this->code)) {
             RateLimiter::hit($key, 60);
             $this->addError('code', 'That code is invalid or has expired.');
+
             return;
         }
 
@@ -81,6 +84,7 @@ new #[Layout('layouts.guest-split')] class extends Component
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $this->addError('code', 'Please wait '.RateLimiter::availableIn($key).' seconds before requesting another code.');
+
             return;
         }
 
@@ -93,29 +97,27 @@ new #[Layout('layouts.guest-split')] class extends Component
     }
 }; ?>
 
-<div>
-    <h1 class="text-2xl font-semibold text-darken mb-1">Verify it's you</h1>
-    <p class="text-gray-500 text-sm mb-6">We noticed a login from a new device or location. Enter the 6-digit code we emailed you.</p>
+<div class="school-login otp-verification">
+    <p class="login-eyebrow">Account verification</p>
+    <h1>Verify it’s you</h1>
+    <p>Enter the 6-digit code we emailed you to securely continue to your school workspace.</p>
 
-    @if (session('status'))
-        <p class="text-sm text-green-600 mb-4">{{ session('status') }}</p>
+    @if(session('status'))
+        <div class="recovery-status" role="status">{{ session('status') }}</div>
     @endif
 
-    <form wire:submit="verify" class="space-y-5">
+    <form wire:submit="verify" class="space-y-4">
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Verification code</label>
-            <input type="text" inputmode="numeric" maxlength="6" wire:model="code" required autofocus
-                class="w-full border border-gray-300 rounded-lg px-4 py-3 text-center text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-yellow-400">
-            @error('code') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            <label for="login-otp-code" class="block">Verification code</label>
+            <input id="login-otp-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" wire:model="code" required autofocus placeholder="000000" class="otp-code-input" @error('code') aria-invalid="true" aria-describedby="otp-code-error" @enderror>
+            @error('code')<span id="otp-code-error" class="mt-1 block text-xs text-red-600" role="alert">{{ $message }}</span>@enderror
         </div>
-
-        <button type="submit"
-            class="w-full bg-yellow-500 text-darken font-semibold py-3 rounded-full hover:bg-yellow-400 transition">
-            Verify &amp; continue
+        <button type="submit" wire:loading.attr="disabled" wire:target="verify,resend" class="flex w-full items-center justify-between gap-2">
+            <span wire:loading.remove wire:target="verify">Verify &amp; continue</span><span wire:loading wire:target="verify">Verifying…</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>
         </button>
     </form>
 
-    <button wire:click="resend" class="w-full text-center text-sm text-gray-500 underline mt-4">
-        Resend code
-    </button>
+    <div class="otp-resend-row"><span>Didn’t receive a code?</span><button type="button" wire:click="resend" wire:loading.attr="disabled" wire:target="resend,verify"><span wire:loading.remove wire:target="resend">Resend code</span><span wire:loading wire:target="resend">Sending…</span></button></div>
+    <p>Need to use another account? <a href="{{ route('login') }}" wire:navigate>Back to login</a></p>
 </div>

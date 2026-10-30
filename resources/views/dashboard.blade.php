@@ -27,7 +27,7 @@
         [x-cloak]{display:none!important;}
         html, body { overflow-x: hidden; max-width: 100vw; }
 
-        :root { --sidebar-w: 288px; }
+        :root { --sidebar-w: 248px; }
 
         #app-sidebar { width: var(--sidebar-w); transition: width .2s ease; }
 
@@ -82,11 +82,12 @@
     @include('partials.sidebar-tree-styles')
     @livewireStyles
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
       x-data="{ mobileNavOpen: false }"
-      x-init="$watch('$store.ui.collapsed', v => document.documentElement.style.setProperty('--sidebar-w', v ? '80px' : '288px'));
-               document.documentElement.style.setProperty('--sidebar-w', $store.ui.collapsed ? '80px' : '288px');">
+      x-init="$watch('$store.ui.collapsed', v => document.documentElement.style.setProperty('--sidebar-w', v ? '80px' : '248px'));
+               document.documentElement.style.setProperty('--sidebar-w', $store.ui.collapsed ? '80px' : '248px');">
 @include('partials.global-loader')
     <!-- Mobile top bar -->
     <div class="mobile-shell-bar lg:hidden fixed top-0 inset-x-0 bg-darken text-white flex items-center justify-between px-4 py-3 z-30">

@@ -19,6 +19,7 @@
     </script>
     @livewireStyles
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="font-sans">
     @include('partials.global-loader')

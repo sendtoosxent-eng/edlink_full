@@ -36,6 +36,7 @@
     </style>
     @livewireStyles
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="min-h-screen bg-white font-sans text-slate-800">
 @include('partials.global-loader')

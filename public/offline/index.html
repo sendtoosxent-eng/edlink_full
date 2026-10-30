@@ -8,8 +8,13 @@
   <link rel="stylesheet" href="./workspace.css">
   <script type="module" src="./workspace.js"></script>
   <link rel="stylesheet" href="../css/edlink-ui.css">
+  <link rel="stylesheet" href="../css/edlink-skeleton.css">
+  <script>document.documentElement.classList.add('edlink-page-loading');setTimeout(function(){document.documentElement.classList.remove('edlink-page-loading');},10000);</script>
+  <script src="../js/edlink-skeleton.js" defer></script>
 </head>
 <body>
+  <div class="edlink-page-skeleton skeleton-offline" aria-hidden="true"><div class="sk-workspace"><div class="sk-toolbar"><div class="sk-block sk-heading"></div><div class="sk-block sk-avatar"></div></div><div class="sk-dashboard-content"><div class="sk-block sk-heading"></div><div class="sk-block sk-line sk-short"></div><div class="sk-table"><div class="sk-block sk-table-row"></div><div class="sk-block sk-table-row"></div><div class="sk-block sk-table-row"></div></div></div></div></div>
+  <div class="edlink-loading-status" role="status"><span class="edlink-skeleton-sr">Loading offline workspace…</span></div>
   <header><a href="/dashboard" class="brand">Edlink<span>School workspace</span></a><a href="/dashboard">Back to Edlink</a></header>
   <main>
     <div class="heading"><div><p class="eyebrow">WORK FROM ANYWHERE</p><h1>Offline workspace</h1><p>Prepare your registers online. Keep working when the connection drops.</p></div><span id="connection" class="badge">Checking connection…</span></div>

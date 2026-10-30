@@ -1,2 +1,2 @@
-{{-- Global Edlink loader: image, spinning ring and Livewire/navigation hooks. --}}
-<x-edlink-loader :fullscreen="true" title="Edlink" subtitle="Processing request..." />
+{{-- Shared page skeleton; inline action buttons retain their own loading state. --}}
+@include('partials.page-skeleton')

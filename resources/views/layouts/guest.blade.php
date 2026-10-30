@@ -31,6 +31,7 @@
     </style>
     @livewireStyles
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="font-sans bg-gray-50 min-h-screen min-h-[100svh] flex items-start justify-center px-4 py-6 sm:items-center sm:py-10">
 @include('partials.global-loader')

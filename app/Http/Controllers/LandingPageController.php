@@ -8,6 +8,7 @@ use App\Models\School;
 use App\Support\SchoolSubdomain;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -26,6 +27,6 @@ class LandingPageController extends Controller
             $desktopRelease = null;
         }
 
-        return view('welcome', ['landing' => LandingPageSetting::values(), 'desktopRelease' => $desktopRelease]);
+        return view('welcome', ['landing' => LandingPageSetting::values(), 'desktopRelease' => $desktopRelease, 'registeredSchoolCount' => Schema::hasTable('schools') ? School::where('is_demo', false)->count() : 0]);
     }
 }

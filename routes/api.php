@@ -2,9 +2,14 @@
 
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\MobileDataController;
 use App\Http\Controllers\Api\V1\HomeworkController;
+use App\Http\Controllers\Api\V1\LessonAbsenceController;
 use App\Http\Controllers\Api\V1\MarksController;
+use App\Http\Controllers\Api\V1\MobileDataController;
+use App\Http\Controllers\Api\V1\NativeTeacherToolsController;
+use App\Http\Controllers\Api\V1\TeacherDirectoryController;
+use App\Http\Controllers\Api\V1\TeacherReportsController;
+use App\Http\Controllers\WhatsappWebhookController;
 use App\Http\Middleware\EnsureMobileAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +25,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:10,1');
         Route::post('auth/logout', [AuthController::class, 'logout']);
-        Route::post('teacher/lessons/{lesson}/absence', \App\Http\Controllers\Api\V1\LessonAbsenceController::class)->whereNumber('lesson')->middleware('throttle:10,1');
+        Route::post('teacher/lessons/{lesson}/absence', LessonAbsenceController::class)->whereNumber('lesson')->middleware('throttle:10,1');
         Route::get('dashboard', [MobileDataController::class, 'dashboard']);
         Route::get('timetable', [MobileDataController::class, 'timetable']);
         Route::get('events', [MobileDataController::class, 'events']);
@@ -34,16 +39,16 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('activities', [MobileDataController::class, 'activities']);
         Route::get('leave-requests', [MobileDataController::class, 'leaveRequests'])->name('api.mobile.leave.index');
         Route::post('leave-requests', [MobileDataController::class, 'storeLeaveRequest'])->name('api.mobile.leave.store');
-        Route::get('teacher/tools/{tool}', [\App\Http\Controllers\Api\V1\NativeTeacherToolsController::class, 'show']);
-        Route::post('teacher/tools/{tool}', [\App\Http\Controllers\Api\V1\NativeTeacherToolsController::class, 'save']);
-        Route::get('teacher/exams', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'exams']);
-        Route::get('teacher/exams/{exam}', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'show']);
-        Route::get('teacher/attendance-report', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'attendance']);
-        Route::get('teacher/attendance-summary', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'attendanceSummary']);
-        Route::get('teacher/attendance-summary/excel', [\App\Http\Controllers\Api\V1\TeacherReportsController::class, 'attendanceExcel']);
-        Route::get('teacher/students/{student}', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'show']);
-        Route::post('teacher/students/{student}', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'update']);
-        Route::get('teacher/students', [\App\Http\Controllers\Api\V1\TeacherDirectoryController::class, 'index']);
+        Route::get('teacher/tools/{tool}', [NativeTeacherToolsController::class, 'show']);
+        Route::post('teacher/tools/{tool}', [NativeTeacherToolsController::class, 'save']);
+        Route::get('teacher/exams', [TeacherReportsController::class, 'exams']);
+        Route::get('teacher/exams/{exam}', [TeacherReportsController::class, 'show']);
+        Route::get('teacher/attendance-report', [TeacherReportsController::class, 'attendance']);
+        Route::get('teacher/attendance-summary', [TeacherReportsController::class, 'attendanceSummary']);
+        Route::get('teacher/attendance-summary/excel', [TeacherReportsController::class, 'attendanceExcel']);
+        Route::get('teacher/students/{student}', [TeacherDirectoryController::class, 'show']);
+        Route::post('teacher/students/{student}', [TeacherDirectoryController::class, 'update']);
+        Route::get('teacher/students', [TeacherDirectoryController::class, 'index']);
         Route::get('teaching-assignments', [MobileDataController::class, 'teachingAssignments']);
         Route::get('attendance/performance', [AttendanceController::class, 'performance']);
         Route::get('attendance/performance/csv', [AttendanceController::class, 'performance'])->name('api.mobile.attendance.performance.csv');
@@ -63,3 +68,5 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('exam-papers/{paper}/submit', [MarksController::class, 'submit']);
     });
 });
+
+Route::match(['get', 'post'], 'whatsapp/webhook/{key}', WhatsappWebhookController::class)->whereUuid('key')->middleware('throttle:240,1')->name('whatsapp.webhook');

@@ -79,7 +79,7 @@
 
                 <button type="submit" wire:loading.attr="disabled" wire:target="addSubject"
                     class="w-full inline-flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow focus:outline-none disabled:opacity-60 cursor-pointer">
-                    <span wire:loading wire:target="addSubject" class="animate-spin"><x-edlink-loader size="16" /></span>
+                    <span wire:loading wire:target="addSubject" ><x-edlink-loader size="16" /></span>
                     <span>Save Subject</span>
                 </button>
             </form>
@@ -140,7 +140,7 @@
 
                 <button type="submit" wire:loading.attr="disabled" wire:target="assign"
                     class="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 active:bg-black text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow focus:outline-none disabled:opacity-60 cursor-pointer">
-                    <span wire:loading wire:target="assign" class="animate-spin"><x-edlink-loader size="16" /></span>
+                    <span wire:loading wire:target="assign" ><x-edlink-loader size="16" /></span>
                     <span>Assign for Term</span>
                 </button>
             </form>

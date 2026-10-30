@@ -1,4 +1,5 @@
-<div class="space-y-6" x-data="{tab:'profile'}">
+<div class="space-y-6" x-data="{tab:'{{ request()->query('tab') === 'communication' ? 'communication' : 'profile' }}'}">
+
     <!-- HEADER -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 text-white shadow-sm">
         <div>
@@ -397,12 +398,21 @@
             </div>
         </section>
 
+    </form>
+    <section x-show="tab==='communication'" x-cloak class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        @if(\Illuminate\Support\Facades\Schema::hasTable('school_whatsapp_configurations'))
+            @livewire('whatsapp-settings', ['embedded' => true], key('school-whatsapp-settings-'.auth()->user()->school_id))
+        @else
+            <h2 class="font-bold">WhatsApp Business connection</h2><p class="mt-2 text-sm text-slate-500">WhatsApp setup will be available after the database update is applied.</p>
+        @endif
+    </section>
+
         <!-- BOTTOM SAVE BAR -->
         <div class="flex items-center justify-end bg-slate-800 border border-slate-200 p-4 rounded-2xl shadow-sm">
-            <button type="submit" class="review-control inline-flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs px-6 py-2.5 rounded-xl transition shadow-sm">
+            <button type="submit" form="settings-form" class="review-control inline-flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs px-6 py-2.5 rounded-xl transition shadow-sm">
                 <i class="fa fa-save text-[11px]"></i>
                 <span>Save all settings</span>
             </button>
         </div>
-    </form>
+
 </div>

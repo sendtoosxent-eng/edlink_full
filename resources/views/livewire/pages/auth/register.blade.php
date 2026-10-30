@@ -17,26 +17,35 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.guest-blank')] class extends Component
+new #[Layout('layouts.guest-school-login')] class extends Component
 {
     public int $step = 1;
 
     // Step 1 — school + admin
     public string $school_name = '';
+
     public string $school_type = 'primary';
+
     public string $name = '';
+
     public string $email = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
     // Step 2 — class + stream
     public string $class_name = '';
+
     public string $stream_name = '';
 
     // Step 3 — team member
     public string $staff_name = '';
+
     public string $staff_email = '';
+
     public string $staff_role = 'teacher'; // teacher | bursar
+
     public string $staff_password = '';
 
     public function goToStep2(): void
@@ -53,6 +62,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
 
         if ($this->emailHasActiveDemoClaim()) {
             $this->addError('email', 'This email has already used a free demo. Please log in, or contact us to upgrade.');
+
             return;
         }
 
@@ -87,6 +97,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
         $rateKey = 'demo-registration|'.request()->ip();
         if (RateLimiter::tooManyAttempts($rateKey, 3)) {
             $this->addError('email', 'Too many demo registrations from this connection. Please try again later.');
+
             return;
         }
         $this->email = Str::lower(trim($this->email));
@@ -105,6 +116,7 @@ new #[Layout('layouts.guest-blank')] class extends Component
         if ($this->emailHasActiveDemoClaim()) {
             $this->step = 1;
             $this->addError('email', 'This email has already used a free demo. Please log in, or contact us to upgrade.');
+
             return;
         }
 
@@ -214,231 +226,59 @@ new #[Layout('layouts.guest-blank')] class extends Component
     }
 }; ?>
 
-<div class="min-h-screen flex font-sans bg-slate-50 text-slate-900">
-    
-    <!-- Left Panel Graphic Layout Area -->
-    <div class="hidden lg:flex lg:w-5/12 bg-[#252641] flex-col justify-between p-12 relative overflow-hidden">
-        <div>
-            <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
-    <img src="{{ asset('img/logo.png') }}" alt="Edlink logo" class="w-[180px] h-auto">
-</a>
-        </div>
+<div class="school-registration">
+    <div class="registration-progress-label"><span>Your new school workspace</span><strong>Step {{ $step }} of 3</strong></div>
+    <ol class="registration-steps" aria-label="Registration progress">
+        @foreach([1 => ['School & account', 'Your details'], 2 => ['Classes & streams', 'School setup'], 3 => ['Your team', 'Ready to launch']] as $number => [$label, $caption])
+            <li class="{{ $step === $number ? 'is-current' : ($step > $number ? 'is-complete' : '') }}" @if($step === $number) aria-current="step" @endif>
+                <span class="registration-step-number" aria-hidden="true">@if($step > $number)<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 4 4L19 6"/></svg>@else{{ $number }}@endif</span>
+                <span class="registration-step-label">{{ $label }}<small>{{ $caption }}</small></span>
+                <span class="registration-sr">{{ $step > $number ? 'Completed' : ($step === $number ? 'Current step' : 'Upcoming') }}</span>
+            </li>
+        @endforeach
+    </ol>
 
-        <!-- Center Stage Image Vector with Entry Transitions -->
-        <div class="relative z-10 my-auto flex flex-col items-center text-center space-y-8" 
-             wire:key="display-image-{{ $step }}"
-             x-transition:enter="transition ease-out duration-500"
-             x-transition:enter-start="opacity-0 translate-y-4"
-             x-transition:enter-end="opacity-100 translate-y-0">
-            
-            <img src="{{ asset('img/' . $this->sideImage) }}" alt="Onboarding graphic" class="max-h-[400px] w-auto object-contain drop-shadow-2xl transition-all duration-500 transform hover:scale-105">
-            
-            <div class="max-w-xs space-y-2">
-                <h3 class="text-white font-bold text-lg tracking-tight">
-                    @if($step === 1) Complete registration profile @endif
-                    @if($step === 2) Organize student classes @endif
-                    @if($step === 3) Link your team nodes @endif
-                </h3>
-                <p class="text-slate-300 text-xs leading-relaxed">
-                    Set up your institution options seamlessly. Change configurations anytime directly from the admin panel dashboard.
-                </p>
-            </div>
-        </div>
-
-       
-        
-        <!-- Background Ornaments -->
-        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-2xl"></div>
-        <div class="absolute bottom-0 left-0 w-80 h-80 bg-yellow-400/5 rounded-full -ml-30 -mb-30 blur-3xl"></div>
+    <div class="registration-heading" aria-live="polite">
+        <span class="registration-demo-badge">Free 10-day demo</span>
+        <h1>{{ match ($step) { 1 => 'Bring your school together.', 2 => 'Make room for learning.', 3 => 'Better with your team.' } }}</h1>
+        <p>{{ match ($step) { 1 => 'Start with your school and administrator account.', 2 => 'Set up your first stream. You can add more from your dashboard.', 3 => 'Add a teacher or bursar, or invite your team later.' } }}</p>
     </div>
 
-    <!-- Right Side Direct Input Form Engine -->
-    <div class="w-full lg:w-7/12 flex flex-col justify-between p-6 sm:p-16 md:p-24 bg-white relative overflow-hidden">
-        
-        <!-- Navigation Breadcrumbs Top Header -->
-        <div class="flex items-center justify-between border-b border-slate-100 pb-6">
-            <div class="flex items-center gap-6">
-                <span class="text-xs font-bold uppercase tracking-wider {{ $step === 1 ? 'text-[#252641] border-b-2 border-yellow-500 pb-1' : 'text-slate-400' }}">01. Profile</span>
-                <span class="text-xs font-bold uppercase tracking-wider {{ $step === 2 ? 'text-[#252641] border-b-2 border-yellow-500 pb-1' : 'text-slate-400' }}">02. Class Structure</span>
-                <span class="text-xs font-bold uppercase tracking-wider {{ $step === 3 ? 'text-[#252641] border-b-2 border-yellow-500 pb-1' : 'text-slate-400' }}">03. Collaboration</span>
-            </div>
-            
-            <span class="text-xs font-bold text-slate-400 hidden sm:inline">Demo Mode</span>
-        </div>
+    @if($errors->any())<div class="registration-errors" role="alert"><strong>Please check your details.</strong>@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
-        <!-- Main Form Wrapper Box with Animated Transition Entry -->
-        <div class="my-auto py-12 max-w-xl w-full mx-auto" 
-             wire:key="step-form-{{ $step }}"
-             x-transition:enter="transition ease-out duration-400 delay-100"
-             x-transition:enter-start="opacity-0 scale-[0.98] translate-x-4"
-             x-transition:enter-end="opacity-100 scale-100 translate-x-0">
-            
-            {{-- STEP 1: Main Register Interface Form Fields --}}
-            @if ($step === 1)
-                <div class="mb-8">
-                    <h1 class="text-3xl font-extrabold text-[#252641] tracking-tight">Create your demo workspace</h1>
-                    <p class="text-sm text-slate-500 mt-1">Fill out the basic info blocks below to unlock full standard system access.</p>
-                </div>
-
-                <form wire:submit="goToStep2" class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Official School Name</label>
-                        <input type="text" wire:model="school_name" required autofocus placeholder="e.g. St Monica ss"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('school_name') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">School Type</label>
-                        <select wire:model.live="school_type" required class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
-                            <option value="primary">Primary school</option>
-                            <option value="secondary">Secondary school</option>
-                            <option value="kindergarten">Kindergarten</option>
-                        </select>
-                        <p class="mt-1 text-xs text-slate-500">This is selected once and determines standard classes, grading profiles, and reports.</p>
-                        @error('school_type') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Your Full Name</label>
-                        <input type="text" wire:model="name" required placeholder="Musis osxent"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('name') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Address</label>
-                        <input type="email" wire:model="email" required placeholder="you@school.com"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('email') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
-                            <input type="password" wire:model="password" required placeholder="••••••••"
-                                class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                            @error('password') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Confirm Password</label>
-                            <input type="password" wire:model="password_confirmation" required placeholder="••••••••"
-                                class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        </div>
-                    </div>
-
-                    <div class="pt-4">
-                        <button type="submit" class="w-full bg-[#252641] hover:bg-[#32345a] text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-[0.99]">
-                            Continue &rarr;
-                        </button>
-                    </div>
-                </form>
-
-                <p class="text-sm text-slate-500 mt-8">
-                    Already registered? <a href="{{ route('login') }}" wire:navigate class="text-[#252641] font-bold hover:underline">Log in to your dashboard</a>
-                </p>
+    <div wire:key="registration-step-{{ $step }}">
+    @if($step === 1)
+        <form wire:submit="goToStep2" class="registration-form">
+            <div class="registration-field registration-wide"><label for="register-school-name">School name</label><input id="register-school-name" name="school_name" wire:model="school_name" type="text" required autofocus autocomplete="organization" maxlength="255" placeholder="e.g. St Monica Primary School"></div>
+            <div class="registration-field"><label for="register-school-type">School type</label><select id="register-school-type" name="school_type" wire:model.live="school_type" required><option value="primary">Primary school</option><option value="secondary">Secondary school</option><option value="kindergarten">Kindergarten</option></select></div>
+            <div class="registration-field"><label for="register-name">Your full name</label><input id="register-name" name="name" wire:model="name" type="text" required autocomplete="name" maxlength="255" placeholder="e.g. Sarah Namubiru"></div>
+            <div class="registration-field registration-wide"><label for="register-email">Your email address</label><input id="register-email" name="email" wire:model="email" type="email" required autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="255" placeholder="you@school.com"></div>
+            <div class="registration-field"><label for="register-password">Password</label><input id="register-password" name="password" wire:model="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div>
+            <div class="registration-field"><label for="register-password-confirmation">Confirm password</label><input id="register-password-confirmation" name="password_confirmation" wire:model="password_confirmation" type="password" required minlength="8" autocomplete="new-password" placeholder="Repeat your password"></div>
+            <p class="registration-hint registration-wide">Your school type determines its standard classes, grading and reports.</p>
+            <button type="submit" class="registration-primary registration-wide" wire:loading.attr="disabled" wire:target="goToStep2"><span wire:loading.remove wire:target="goToStep2">Continue to school setup</span><span wire:loading wire:target="goToStep2">Checking details…</span><span aria-hidden="true">→</span></button>
+        </form>
+    @elseif($step === 2)
+        <form wire:submit="goToStep3" class="registration-form">
+            @if($school_type === 'kindergarten')
+                <div class="registration-field registration-wide"><label for="register-class-name">First class name</label><input id="register-class-name" name="class_name" wire:model="class_name" required autofocus maxlength="255" placeholder="e.g. Baby Class"></div>
+            @else
+                <div class="registration-notice registration-wide"><strong>Your standard classes are included.</strong><p>{{ $school_type === 'primary' ? 'Primary 1–7' : 'Senior 1–6' }} will be created automatically and protected from deletion.</p></div>
             @endif
-
-            {{-- STEP 2: Structural Inputs Setup --}}
-            @if ($step === 2)
-                <div class="mb-8">
-                    <h1 class="text-3xl font-extrabold text-[#252641] tracking-tight">Setup classes & streams</h1>
-                    <p class="text-sm text-slate-500 mt-1">Specify your entry level academic blocks. Edlink will pre-fill mock students inside this choice.</p>
-                </div>
-
-                <form wire:submit="goToStep3" class="space-y-6">
-                    @if ($school_type === 'kindergarten')
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Class Name</label>
-                        <input type="text" wire:model="class_name" required autofocus placeholder="e.g. Primary 5, or Senior 1"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('class_name') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-                    @else
-                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ $school_type === 'primary' ? 'Primary 1–7' : 'Senior 1–6' }} will be created automatically and protected from deletion.</div>
-                    @endif
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Stream Name</label>
-                        <input type="text" wire:model="stream_name" required placeholder="e.g. Blue, North, Stream A"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('stream_name') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="flex items-center gap-4 pt-4">
-                        <button type="button" wire:click="back" class="w-1/3 border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition active:scale-[0.99]">
-                            Back
-                        </button>
-                        <button type="submit" class="w-2/3 bg-[#252641] hover:bg-[#32345a] text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-[0.99]">
-                            Continue
-                        </button>
-                    </div>
-                </form>
-            @endif
-
-            {{-- STEP 3: Staff Assignment Field Elements --}}
-            @if ($step === 3)
-                <div class="mb-8">
-                    <h1 class="text-3xl font-extrabold text-[#252641] tracking-tight">Onboard a staff member</h1>
-                    <p class="text-sm text-slate-500 mt-1">Add a teacher or financial bursar node to preview full platform collaborative workflows.</p>
-                </div>
-
-                <form wire:submit="finish" class="space-y-5">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Staff Full Name</label>
-                            <input type="text" wire:model="staff_name" autofocus placeholder="Sarah Namubiru"
-                                class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                            @error('staff_name') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Assigned System Role</label>
-                            <select wire:model="staff_role" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
-                                <option value="teacher">Teacher / Instructor</option>
-                                <option value="bursar">Bursar / Accountant</option>
-                            </select>
-                            @error('staff_role') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Staff Email Address</label>
-                        <input type="email" wire:model="staff_email" placeholder="sarah@school.com"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('staff_email') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Temporary Login Password</label>
-                        <input type="password" wire:model="staff_password" placeholder="••••••••"
-                            class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder:text-slate-300">
-                        @error('staff_password') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="flex items-center gap-4 pt-4">
-                        <button type="button" wire:click="back" class="w-1/3 border border-slate-200 text-slate-600 font-bold py-3.5 rounded-lg hover:bg-slate-50 transition active:scale-[0.99]">
-                            Back
-                        </button>
-                        <button type="submit" class="w-2/3 bg-yellow-400 hover:bg-yellow-500 text-[#252641] font-black py-3.5 rounded-lg transition shadow-md active:scale-[0.99]">
-                            Launch Workspace &rarr;
-                        </button>
-                    </div>
-                </form>
-
-                <button wire:click="skipStaffAndFinish" class="w-full text-center text-xs font-bold text-slate-400 tracking-wider uppercase hover:text-red-500 transition mt-6 block">
-                    Skip this configuration step
-                </button>
-            @endif
-
-        </div>
- <div class="text-[11px] text-slate-400 font-medium">
-            &copy; {{ now()->year }} Edlink Systems &bull; Spotnet Technologies.
-        </div>
-        <!-- Mobile Layout Footer Area -->
-        {{-- <div class="border-t border-slate-100 pt-6 text-[11px] text-slate-400 flex items-center justify-between lg:hidden">
-            <span>&copy; {{ now()->year }} Edlink Systems.</span>
-            <span>Powered by Spotnet Technologies.</span>
-        </div> --}}
-
+            <div class="registration-field registration-wide"><label for="register-stream-name">First stream name</label><input id="register-stream-name" name="stream_name" wire:model="stream_name" type="text" required maxlength="255" placeholder="e.g. Blue, North or Stream A"></div>
+            <p class="registration-hint registration-wide">We’ll include a few sample learners so you can explore the workspace.</p>
+            <div class="registration-actions registration-wide"><button type="button" wire:click="back" class="registration-secondary" wire:loading.attr="disabled">← Back</button><button type="submit" class="registration-primary" wire:loading.attr="disabled" wire:target="goToStep3,back"><span wire:loading.remove wire:target="goToStep3">Continue to your team</span><span wire:loading wire:target="goToStep3">Saving details…</span><span aria-hidden="true">→</span></button></div>
+        </form>
+    @else
+        <form wire:submit="finish" class="registration-form">
+            <div class="registration-field"><label for="register-staff-name">Team member’s name</label><input id="register-staff-name" name="staff_name" wire:model="staff_name" type="text" autofocus maxlength="255" placeholder="e.g. Daniel Okello"></div>
+            <div class="registration-field"><label for="register-staff-role">Their role</label><select id="register-staff-role" name="staff_role" wire:model="staff_role"><option value="teacher">Teacher</option><option value="bursar">Bursar</option></select></div>
+            <div class="registration-field registration-wide"><label for="register-staff-email">Their email address</label><input id="register-staff-email" name="staff_email" wire:model="staff_email" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="255" placeholder="daniel@school.com"></div>
+            <div class="registration-field registration-wide"><label for="register-staff-password">Temporary password</label><input id="register-staff-password" name="staff_password" wire:model="staff_password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div>
+            <div class="registration-actions registration-wide"><button type="button" wire:click="back" class="registration-secondary" wire:loading.attr="disabled">← Back</button><button type="submit" class="registration-primary" wire:loading.attr="disabled" wire:target="finish,skipStaffAndFinish,back"><span wire:loading.remove wire:target="finish">Launch workspace</span><span wire:loading wire:target="finish">Creating workspace…</span><span aria-hidden="true">→</span></button></div>
+        </form>
+        <button type="button" wire:click="skipStaffAndFinish" wire:loading.attr="disabled" wire:target="finish,skipStaffAndFinish,back" class="registration-skip"><span wire:loading.remove wire:target="skipStaffAndFinish">Skip for now — add my team later</span><span wire:loading wire:target="skipStaffAndFinish">Creating workspace…</span></button>
+    @endif
     </div>
+    <p class="registration-login">Already have an account? <a href="{{ route('login') }}" wire:navigate>Log in to Edlink</a></p>
 </div>

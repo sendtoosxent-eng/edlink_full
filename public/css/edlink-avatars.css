@@ -1,0 +1,10 @@
+/* One consistent family of circular school-role portraits. */
+.trial-portrait{display:block;position:relative;flex-shrink:0;width:68px;height:68px;overflow:hidden;border:3px solid #fff;border-radius:50%;background:#fff9e8;box-shadow:0 3px 12px #25264118}
+.trial-portrait>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.trial-memoji{display:block;width:100%;height:100%;background-image:url('/img/edlink-trial-memoji.png');background-repeat:no-repeat;background-size:500% 200%;background-position:var(--avatar-x) var(--avatar-y)}
+.role-card>.trial-portrait{margin-bottom:15px;transition:transform .2s,border-color .2s}
+.role-card:hover>.trial-portrait{transform:translateY(-2px);border-color:#facc15}
+.school-type-portrait{width:60px;height:60px;border:2px solid #fff;box-shadow:0 2px 9px #25264112}
+.school-type-choice:hover .trial-portrait{border-color:#facc15}
+@media(max-width:600px){.role-card>.trial-portrait{width:61px;height:61px}.school-type-portrait{width:54px;height:54px}}
+@media(prefers-reduced-motion:reduce){.role-card>.trial-portrait{transition:none}.role-card:hover>.trial-portrait{transform:none}}

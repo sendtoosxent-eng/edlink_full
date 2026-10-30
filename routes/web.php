@@ -74,6 +74,7 @@ use App\Livewire\SubjectAttendance;
 use App\Livewire\Subjects;
 use App\Livewire\TermManagement;
 use App\Livewire\Timetable;
+use App\Livewire\WhatsappAnnouncements;
 use App\Models\Arrears;
 use App\Models\AttendanceRecord;
 use App\Models\CashPoolEntry;
@@ -426,6 +427,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('academics/timetable', Timetable::class)->name('timetable.index');
     Route::get('academics/events', Events::class)->name('events.index');
     Route::get('parents/communications', Communications::class)->name('communications.index');
+    Route::get('parents/communications/whatsapp', WhatsappAnnouncements::class)->name('communications.whatsapp');
+    Route::get('settings/whatsapp', fn () => redirect()->route('settings.index', ['tab' => 'communication']))->name('settings.whatsapp');
     Route::get('reports/student-term-report/{student}/{exam}', StudentTermReport::class)->name('reports.student-term-report.show');
     Route::get('reports/student-term-report', StudentTermReport::class)->name('reports.student-term-report');
     Route::get('reports/settings', ReportSettings::class)->name('reports.settings');

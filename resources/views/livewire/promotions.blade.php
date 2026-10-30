@@ -110,7 +110,7 @@
             <div>
                 <button wire:click="loadLearners" wire:loading.attr="disabled"
                     class="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white text-sm font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none disabled:opacity-60 cursor-pointer h-[42px]">
-                    <span wire:loading wire:target="loadLearners" class="animate-spin"><x-edlink-loader size="16" /></span>
+                    <span wire:loading wire:target="loadLearners" ><x-edlink-loader size="16" /></span>
                     <svg wire:loading.remove wire:target="loadLearners" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
@@ -237,7 +237,7 @@
                     wire:loading.attr="disabled"
                     wire:target="commit"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-extrabold text-sm px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none disabled:opacity-60 cursor-pointer shrink-0">
-                    <span wire:loading wire:target="commit" class="animate-spin"><x-edlink-loader size="16" /></span>
+                    <span wire:loading wire:target="commit" ><x-edlink-loader size="16" /></span>
                     <svg wire:loading.remove wire:target="commit" class="w-4 h-4 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>

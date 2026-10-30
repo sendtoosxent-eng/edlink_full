@@ -7,8 +7,11 @@
 <script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={theme:{extend:{fontFamily:{sans:['Poppins','sans-serif']},colors:{edlink:'#facc15',ink:'#0f172a'}}}}</script>
 <style>body{font-family:Poppins,sans-serif}.grid-pattern{background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px}</style>
 @include('partials.ui-styles')
+@include('partials.page-skeleton-head')
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
+@include('partials.page-skeleton')
+
 <div class="grid min-h-screen lg:grid-cols-[1.05fr_.95fr]">
 <aside class="grid-pattern relative hidden overflow-hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
 <div class="absolute -left-32 top-20 h-80 w-80 rounded-full bg-yellow-400/10 blur-3xl"></div><div class="absolute -bottom-36 right-0 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl"></div>
