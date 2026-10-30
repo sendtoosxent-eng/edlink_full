@@ -39,6 +39,19 @@
         if (event.target.matches('[data-public-enquiry] [name="contact_method"]')) updateRequired(event.target.form);
     });
     document.addEventListener('click',async event=>{
+        const openSupport = event.target.closest?.('[data-support-open]');
+        if (openSupport) {
+            const dialog = document.getElementById(openSupport.getAttribute('aria-controls'));
+            if (dialog && !dialog.open) dialog.showModal();
+            return;
+        }
+        const closeSupport = event.target.closest?.('[data-support-close]');
+        if (closeSupport) { closeSupport.closest('dialog')?.close(); return; }
+        if (event.target.matches?.('.edlink-support-dialog')) {
+            const bounds = event.target.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.target.close();
+            return;
+        }
         const preferences=event.target.closest?.('[data-privacy-preferences]');
         const root=container();
         if (preferences && root) { root.querySelector('[data-cookie-banner]').hidden=false; preferences.setAttribute('aria-expanded','true'); return; }

@@ -3,8 +3,9 @@
     $isDemoHelp = ($engagementSource ?? 'landing') === 'demo_setup';
 @endphp
 @if($isDemoHelp)
-<details class="edlink-enquiry">
-    <summary>{{ $isDemoHelp ? $engagementSettings['public_demo_help_title'] : $engagementSettings['public_callback_title'] }}</summary>
+<button type="button" class="edlink-help-trigger" data-support-open aria-haspopup="dialog" aria-controls="demo-support-dialog">{{ $engagementSettings['public_demo_help_title'] }} <span aria-hidden="true">↗</span></button>
+<dialog id="demo-support-dialog" class="edlink-support-dialog" aria-labelledby="demo-support-heading" wire:ignore.self>
+    <div class="support-dialog-heading"><h2 id="demo-support-heading">{{ $engagementSettings['public_demo_help_title'] }}</h2><button type="button" class="support-dialog-close" data-support-close aria-label="Close support form">×</button></div>
     <div class="edlink-enquiry-body">
         <p>{{ $engagementSettings['public_support_description'] }}</p>
         <div class="edlink-support-links"><a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$engagementSettings['whatsapp']) }}" target="_blank" rel="noopener noreferrer">WhatsApp our team ↗</a><a href="mailto:{{ $engagementSettings['support_email'] }}">{{ $engagementSettings['support_email'] }}</a></div>
@@ -36,7 +37,7 @@
         </form>
     </div>
 @if($isDemoHelp)
-</details>
+</dialog>
 @else
 </section>
 @endif

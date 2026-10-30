@@ -33,3 +33,20 @@
 .dark .edlink-support-form .engagement-submit{background:#facc15;color:#252641;border-color:#facc15}
 @media(max-width:850px){.edlink-support-panel{grid-template-columns:1fr}.edlink-support-copy{padding:34px}.edlink-support-copy h2{max-width:500px}.support-book{margin:24px 0}.support-contact-options{grid-template-columns:1fr 1fr}.edlink-support-form{padding:34px}}
 @media(max-width:600px){.public-enquiry-section{padding:0 18px 65px}.edlink-support-panel{border-radius:20px}.edlink-support-copy,.edlink-support-form{padding:26px 22px}.edlink-support-copy h2{font-size:29px}.support-contact-options{grid-template-columns:1fr}.edlink-support-form .engagement-fields input,.edlink-support-form .engagement-fields select,.edlink-support-form .engagement-fields textarea{font-size:16px}}
+
+.edlink-help-trigger{display:flex;justify-content:space-between;align-items:center;gap:14px;width:100%;margin-top:24px;padding:16px 18px;text-align:left;border:1px solid #e3e7ed;border-radius:14px;background:#fff;color:#252641;font:600 12px/1.7 Poppins,Arial,sans-serif;cursor:pointer}
+.edlink-help-trigger:hover{border-color:#eab308;background:#fffbeb}
+.edlink-help-trigger>span{color:#252641;font-size:18px}
+.edlink-support-dialog{box-sizing:border-box;width:min(610px,calc(100% - 32px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid #e3e7ed;border-radius:20px;background:#fff;color:#252641;box-shadow:0 24px 90px #0004;overflow-y:auto;font-family:Poppins,Arial,sans-serif;text-align:left}
+.edlink-support-dialog:not([open]){display:none}
+.edlink-support-dialog::backdrop{background:#17182bb8;backdrop-filter:blur(5px)}
+.support-dialog-heading{display:flex;align-items:center;gap:18px;justify-content:space-between;padding:22px 22px 12px}
+.support-dialog-heading h2{font-size:19px;line-height:1.5;margin:0;font-weight:700;letter-spacing:-.4px}
+.support-dialog-close{display:grid;place-items:center;flex-shrink:0;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:#f1f5f9;color:#252641;font-size:25px;cursor:pointer}
+.edlink-support-dialog .edlink-enquiry-body{padding:0 22px 22px}
+.edlink-support-dialog .engagement-submit{width:100%}
+.edlink-help-trigger:focus-visible,.support-dialog-close:focus-visible{outline:3px solid #eab308;outline-offset:3px}
+body:has(.edlink-support-dialog[open]){overflow:hidden}
+.dark .edlink-support-dialog,.dark .edlink-help-trigger{background:#202137;color:#fff;border-color:#414357}
+.dark .edlink-help-trigger>span{color:#facc15}
+@media(max-width:600px){.edlink-support-dialog{max-height:calc(100dvh - 24px)}.support-dialog-heading{padding:18px 18px 10px}.support-dialog-heading h2{font-size:17px}.edlink-support-dialog .edlink-enquiry-body{padding:0 18px 18px}}
