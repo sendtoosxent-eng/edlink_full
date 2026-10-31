@@ -102,6 +102,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasModuleAccess(string $module): bool
     {
+        if ($module === 'messages') {
+            return true;
+        }
         if ($this->isSuperadmin() || $this->role === 'admin') {
             return true;
         }

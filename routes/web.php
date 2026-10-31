@@ -49,6 +49,7 @@ use App\Livewire\Homework;
 use App\Livewire\Leaves;
 use App\Livewire\Licensing;
 use App\Livewire\MarksEntry;
+use App\Livewire\Messages;
 use App\Livewire\MyResults;
 use App\Livewire\NotificationCenter;
 use App\Livewire\ParentRegister;
@@ -335,6 +336,7 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::get('offline-data/download', [OfflineWorkspaceController::class, 'download'])->name('offline.download');
     Route::post('offline-data/sync', [OfflineWorkspaceController::class, 'sync'])->middleware('throttle:60,1')->name('offline.sync');
     Route::get('notifications', NotificationCenter::class)->name('notifications.index');
+    Route::get('messages', Messages::class)->name('messages.index');
     Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
     Volt::route('profile', 'pages.profile')->name('profile');

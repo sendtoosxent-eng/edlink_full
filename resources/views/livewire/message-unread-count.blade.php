@@ -1,0 +1,1 @@
+<span wire:poll.10s.visible class="inline-flex">@if($count)<span class="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900" aria-label="{{ $count }} unread messages">{{ $count > 99 ? '99+' : $count }}</span>@endif</span>

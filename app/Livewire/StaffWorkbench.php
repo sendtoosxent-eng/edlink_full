@@ -31,6 +31,7 @@ class StaffWorkbench extends Component
         $isTeacherWorkspace = ! $isFinanceWorkspace && TeacherAcademicScope::isTeacher($user);
 
         $moduleDefinitions = [
+            'messages' => ['Messages', 'messages.index'],
             'students' => ['Students & admissions', match (true) {
                 $user->hasPermission('students.manage') => 'students.register',
                 $user->hasPermission('students.view') => 'students.index',
