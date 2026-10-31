@@ -60,3 +60,14 @@ body.mobile-shell-page #app-sidebar nav,body.mobile-shell-page .portal-sidebar n
     body.mobile-shell-page #app-main>main,body.mobile-shell-page .portal-main>main{padding:18px 16px 62px}
     body.mobile-shell-page input,body.mobile-shell-page select,body.mobile-shell-page textarea{font-size:16px}
 }
+
+/* Keep the messaging workspace within the viewport; only its lists scroll. */
+body.mobile-shell-page.messages-page{height:100dvh;min-height:0;overflow:hidden}
+body.mobile-shell-page.messages-page #app-main{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.mobile-shell-page.messages-page #app-main>main{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden;padding:16px}
+body.mobile-shell-page.messages-page .messages-workspace{min-height:0;min-width:0}
+body.mobile-shell-page.messages-page #chat-body{min-height:44px;max-height:96px;resize:none}
+@media(max-width:767px){
+    body.mobile-shell-page.messages-page #app-main>main{padding:10px}
+    body.mobile-shell-page.messages-page .messages-workspace>header{padding:12px}
+}

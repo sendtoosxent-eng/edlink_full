@@ -82,7 +82,7 @@
 @include('partials.ui-styles')
 @include('partials.page-skeleton-head')
 </head>
-<body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden"
+<body class="mobile-shell-page font-sans bg-gray-50 min-h-screen flex overflow-x-hidden {{ request()->routeIs('messages.index') ? 'messages-page' : '' }}"
       x-data="{ mobileNavOpen: false }"
       x-init="$watch('$store.ui.collapsed', v => document.documentElement.style.setProperty('--sidebar-w', v ? '80px' : '248px'));
                document.documentElement.style.setProperty('--sidebar-w', $store.ui.collapsed ? '80px' : '248px');">
@@ -224,7 +224,11 @@
                         :class="[$store.ui.collapsed ? 'justify-center' : 'justify-between', open === '{{ $key }}' && !$store.ui.collapsed && !{{ $isGroupActive ? 'true' : 'false' }} && 'bg-yellow-500/10 text-yellow-400']">
 
                         <span class="flex items-center space-x-3" :class="$store.ui.collapsed && 'space-x-0'">
+                            @if($key === 'parents')
+                                <x-heroicon-o-chat-bubble-left-right class="h-5 w-5 flex-shrink-0" />
+                            @else
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $group['icon'] }}" /></svg>
+                            @endif
                             <span x-show="!$store.ui.collapsed" x-cloak>{{ $group['label'] }}</span>
                         </span>
                         <svg x-show="!$store.ui.collapsed" x-cloak class="w-4 h-4 transition-transform" :class="open === '{{ $key }}' && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>

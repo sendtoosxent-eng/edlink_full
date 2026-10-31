@@ -1,18 +1,13 @@
-<div wire:poll.2s.visible class="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-5">
-    <header class="relative shrink-0 overflow-hidden rounded-2xl p-6 text-white shadow-lg ring-2 ring-yellow-400/20 lg:p-8" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
-        <div class="relative z-10 flex flex-wrap items-center justify-between gap-5">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Messages</p>
-                <h1 class="mt-2 text-2xl font-bold tracking-tight text-amber-300">Welcome back, {{ explode(' ', $user->name)[0] }} &#128075;</h1>
-                <p class="mt-2 text-sm leading-relaxed text-slate-400">Stay connected with people at {{ $user->school->name }}.</p>
-                <p class="mt-3 text-xs font-medium text-yellow-400">{{ now()->format('l, d F Y · h:i A') }} · School conversations</p>
+<div wire:poll.2s.visible class="messages-workspace flex min-h-0 w-full flex-1 flex-col gap-3">
+    <header class="relative shrink-0 overflow-hidden rounded-2xl p-4 text-white shadow-lg ring-2 ring-yellow-400/20" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl font-bold tracking-tight text-amber-300">Messages</h1>
+                <p class="mt-1 text-sm leading-relaxed text-slate-400">Private conversations with people at {{ $user->school->name }}.</p>
             </div>
-            <div class="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-3">
-                @php($myPhoto = $user->avatarUrl())
-                <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-100 font-semibold text-amber-800">
-                    @if($myPhoto)<img src="{{ $myPhoto }}" alt="{{ $user->name }}" width="48" height="48" class="h-full w-full object-cover">@else{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}@endif
-                </span>
-                <div><p class="text-sm font-semibold">{{ $user->name }}</p><span class="mt-1 inline-flex items-center gap-2 text-xs text-slate-300" wire:offline.class="hidden"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Auto updates · every 2 seconds</span><span wire:offline class="mt-1 block text-xs text-amber-300">You’re offline. Reconnect to chat.</span></div>
+            <div class="shrink-0 text-right">
+                <span class="inline-flex items-center gap-2 text-xs text-slate-300" wire:offline.class="hidden"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Auto updates · every 2 seconds</span>
+                <span wire:offline class="block text-xs text-amber-300">You’re offline. Reconnect to chat.</span>
             </div>
         </div>
         <div class="pointer-events-none absolute -bottom-10 -right-6 h-40 w-40 rounded-full bg-yellow-400/10"></div>
