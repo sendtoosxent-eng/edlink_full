@@ -1,11 +1,25 @@
-<div wire:poll.2s.visible class="mx-auto max-w-7xl space-y-5">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div><p class="text-xs font-bold uppercase tracking-widest text-amber-600">School conversations</p><h1 class="mt-1 text-2xl font-bold text-slate-900">Messages</h1><p class="mt-1 text-sm text-slate-500">Connect with people in {{ $user->school->name }}.</p></div>
-        <span class="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-2 text-xs text-slate-600" wire:offline.class="hidden"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Auto updates · every 2 seconds</span>
-        <span wire:offline class="text-sm text-amber-700">You’re offline. Reconnect to send and receive messages.</span>
-    </div>
+<div wire:poll.2s.visible class="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-5">
+    <header class="relative shrink-0 overflow-hidden rounded-2xl p-6 text-white shadow-lg ring-2 ring-yellow-400/20 lg:p-8" style="background: linear-gradient(135deg, #252641 0%, #3a3d6b 100%);">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-5">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Messages</p>
+                <h1 class="mt-2 text-2xl font-bold tracking-tight text-amber-300">Welcome back, {{ explode(' ', $user->name)[0] }} &#128075;</h1>
+                <p class="mt-2 text-sm leading-relaxed text-slate-400">Stay connected with people at {{ $user->school->name }}.</p>
+                <p class="mt-3 text-xs font-medium text-yellow-400">{{ now()->format('l, d F Y · h:i A') }} · School conversations</p>
+            </div>
+            <div class="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-3">
+                @php($myPhoto = $user->avatarUrl())
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-100 font-semibold text-amber-800">
+                    @if($myPhoto)<img src="{{ $myPhoto }}" alt="{{ $user->name }}" width="48" height="48" class="h-full w-full object-cover">@else{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}@endif
+                </span>
+                <div><p class="text-sm font-semibold">{{ $user->name }}</p><span class="mt-1 inline-flex items-center gap-2 text-xs text-slate-300" wire:offline.class="hidden"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Auto updates · every 2 seconds</span><span wire:offline class="mt-1 block text-xs text-amber-300">You’re offline. Reconnect to chat.</span></div>
+            </div>
+        </div>
+        <div class="pointer-events-none absolute -bottom-10 -right-6 h-40 w-40 rounded-full bg-yellow-400/10"></div>
+        <div class="pointer-events-none absolute -top-10 right-16 h-24 w-24 rounded-full bg-yellow-400/10"></div>
+    </header>
 
-    <div class="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:grid-cols-[280px_minmax(0,1fr)]" style="height: min(740px, calc(100dvh - 220px)); min-height: 460px;">
+    <div class="grid min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:grid-cols-[280px_minmax(0,1fr)]">
         <aside class="min-h-0 flex-col border-r border-slate-100 {{ $peer ? 'hidden md:flex' : 'flex' }}">
             <div class="border-b border-slate-100 p-4">
                 <h2 class="font-semibold text-slate-900">Your school</h2>
@@ -16,7 +30,8 @@
             <div class="min-h-0 flex-1 overflow-y-auto p-2">
                 @forelse($contacts as $contact)
                     <button type="button" wire:key="contact-{{ $contact->id }}" wire:click="openConversation({{ $contact->id }})" class="mb-1 flex w-full items-center gap-3 rounded-xl p-3 text-left transition hover:bg-amber-50 {{ $peerId === $contact->id ? 'bg-amber-50 ring-1 ring-inset ring-amber-200' : '' }}">
-                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-semibold text-slate-600">{{ mb_strtoupper(mb_substr($contact->name, 0, 1)) }}</span>
+                        @php($contactPhoto = $contact->avatarUrl())
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 font-semibold text-slate-600">@if($contactPhoto)<img src="{{ $contactPhoto }}" alt="{{ $contact->name }}" width="40" height="40" loading="lazy" class="h-full w-full object-cover">@else{{ mb_strtoupper(mb_substr($contact->name, 0, 1)) }}@endif</span>
                         <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-slate-800">{{ $contact->name }}</span><span class="block text-xs capitalize text-slate-400">{{ str_replace('_', ' ', $contact->role) }}</span></span>
                         @if($contact->unread_count)<span class="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-bold text-slate-900" aria-label="{{ $contact->unread_count }} unread messages">{{ $contact->unread_count }}</span>@endif
                     </button>
@@ -39,7 +54,8 @@
                 x-on:chat-sent.window="$nextTick(() => { $refs.thread.scrollTop = $refs.thread.scrollHeight; nearBottom = true })">
                 <header class="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
                     <button type="button" wire:click="closeConversation" class="rounded-lg border px-2 py-1 text-sm md:hidden" aria-label="Back to conversations">←</button>
-                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 font-semibold text-amber-800">{{ mb_strtoupper(mb_substr($peer->name, 0, 1)) }}</span>
+                    @php($peerPhoto = $peer->avatarUrl())
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-100 font-semibold text-amber-800">@if($peerPhoto)<img src="{{ $peerPhoto }}" alt="{{ $peer->name }}" width="40" height="40" class="h-full w-full object-cover">@else{{ mb_strtoupper(mb_substr($peer->name, 0, 1)) }}@endif</span>
                     <div><h2 class="text-sm font-bold text-slate-900">{{ $peer->name }}</h2><p class="text-xs capitalize text-slate-400">{{ str_replace('_', ' ', $peer->role) }} · Private conversation</p></div>
                 </header>
                 <div x-ref="thread" x-on:scroll="nearBottom = $el.scrollHeight - $el.scrollTop - $el.clientHeight < 100" class="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 p-4 sm:p-6" aria-label="Conversation messages" role="log" aria-live="polite" aria-relevant="additions">

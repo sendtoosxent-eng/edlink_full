@@ -302,10 +302,10 @@
     <div x-cloak x-show="mobileNavOpen" @click="mobileNavOpen = false" class="fixed inset-0 bg-black/40 z-30 lg:hidden transition-opacity"></div>
 
     <!-- Main Content Wrapper -->
-    <div id="app-main" class="mobile-shell-main flex-1 pt-14 lg:pt-0">
+    <div id="app-main" class="mobile-shell-main flex-1 pt-14 lg:pt-0 {{ request()->routeIs('messages.index') ? 'flex h-dvh min-w-0 flex-col overflow-hidden' : '' }}">
 
         <!-- Top Header Navigation Bar -->
-        <header class="mobile-shell-header bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-sm">
+        <header class="mobile-shell-header bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-10 py-3 flex shrink-0 items-center justify-between gap-3 sticky top-0 z-20 shadow-sm">
             <div class="flex items-center space-x-4 min-w-0">
                 <button @click="$store.ui.toggle()" class="hidden lg:flex w-9 h-9 rounded-lg border border-gray-200 items-center justify-center text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -413,7 +413,7 @@
         </header>
 
         <!-- Main Slot Blade View Grid Area Layout -->
-        <main class="p-6 lg:p-10" data-review-mode="{{ auth()->user()?->school?->isReviewModeFor(auth()->user()) ? 'true' : 'false' }}">
+        <main class="p-6 lg:p-10 {{ request()->routeIs('messages.index') ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : '' }}" data-review-mode="{{ auth()->user()?->school?->isReviewModeFor(auth()->user()) ? 'true' : 'false' }}">
             @if (auth()->user()?->school?->reviewTermFor(auth()->user()))
                 <div class="mb-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
                     <span class="rounded-lg bg-amber-400 px-2 py-1 font-bold uppercase tracking-wide">Review mode</span>
