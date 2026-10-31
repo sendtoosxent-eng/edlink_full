@@ -3,8 +3,11 @@
 use App\Models\LandingPageSetting;
 use App\Models\PlatformAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
+
+beforeEach(fn () => Storage::fake('local'));
 
 it('describes Android and enables its download only for a configured HTTPS address', function () {
     $this->get(route('home'))->assertOk()->assertSee('Edlink for Android')

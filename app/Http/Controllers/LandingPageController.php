@@ -27,6 +27,6 @@ class LandingPageController extends Controller
             $desktopRelease = null;
         }
 
-        return view('welcome', ['landing' => LandingPageSetting::values(), 'desktopRelease' => $desktopRelease, 'registeredSchoolCount' => Schema::hasTable('schools') ? School::where('is_demo', false)->count() : 0]);
+        return view('welcome', ['landing' => LandingPageSetting::values(), 'desktopRelease' => $desktopRelease, 'androidAvailable' => Storage::disk('local')->exists(AndroidDownloadController::PATH), 'registeredSchoolCount' => Schema::hasTable('schools') ? School::where('is_demo', false)->count() : 0]);
     }
 }

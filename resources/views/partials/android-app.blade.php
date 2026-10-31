@@ -19,9 +19,13 @@
                     @php
                         $downloadUrl = $landing[$key] ?? '';
                         $available = filter_var($downloadUrl, FILTER_VALIDATE_URL) && str_starts_with($downloadUrl, 'https://');
+                        if ($key === 'android_download_url' && ($androidAvailable ?? false)) {
+                            $downloadUrl = route('downloads.android');
+                            $available = true;
+                        }
                     @endphp
                     @if($available)
-                        <a class="button white android-download" href="{{ $downloadUrl }}" @if($key !== 'android_download_url') target="_blank" rel="noopener noreferrer" @endif>@include('partials.landing-icon', ['name' => $icon]) {{ $label }}</a>
+                        <a class="button white android-download" href="{{ $downloadUrl }}" @if($key === 'android_download_url') download="Edlink.apk" @else target="_blank" rel="noopener noreferrer" @endif>@include('partials.landing-icon', ['name' => $icon]) {{ $label }}</a>
                     @else
                         <button class="button white android-download" type="button" disabled>@include('partials.landing-icon', ['name' => $icon]) {{ $label }}</button>
                     @endif

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingExportController;
+use App\Http\Controllers\AndroidDownloadController;
 use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\DesktopDownloadController;
@@ -176,6 +177,7 @@ Route::post('website/visit', [\App\Http\Controllers\PublicEngagementController::
 Route::post('website/enquiry', [\App\Http\Controllers\PublicEngagementController::class, 'enquire'])->middleware('throttle:5,1')->name('public.enquiry');
 Route::get('/', LandingPageController::class)->name('home');
 Route::get('downloads/edlink-windows', DesktopDownloadController::class)->name('downloads.windows');
+Route::get('downloads/edlink-android', AndroidDownloadController::class)->name('downloads.android');
 Route::get('updates/windows/latest.yml', [DesktopUpdateController::class, 'manifest'])->name('updates.windows.manifest');
 Route::get('updates/windows/files/{checksum}/{filename}', [DesktopUpdateController::class, 'download'])
     ->where('checksum', '[a-f0-9]{64}')->where('filename', 'Edlink-Setup-[a-zA-Z0-9._-]+-x64\.exe')->name('updates.windows.file');
