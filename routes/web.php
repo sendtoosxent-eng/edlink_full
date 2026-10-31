@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountingExportController;
 use App\Http\Controllers\AndroidDownloadController;
 use App\Http\Controllers\BranchContextController;
+use App\Http\Controllers\ChatAttachmentController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\DesktopDownloadController;
 use App\Http\Controllers\DesktopUpdateController;
@@ -337,6 +338,8 @@ Route::middleware(['auth', 'verified', 'branch.context', 'active.user', 'designa
     Route::post('offline-data/sync', [OfflineWorkspaceController::class, 'sync'])->middleware('throttle:60,1')->name('offline.sync');
     Route::get('notifications', NotificationCenter::class)->name('notifications.index');
     Route::get('messages', Messages::class)->name('messages.index');
+    Route::get('messages/{message}/attachments/{attachment}', ChatAttachmentController::class)
+        ->whereNumber('message')->whereNumber('attachment')->name('messages.attachments');
     Route::put('branch-context', [BranchContextController::class, 'update'])->name('branch-context.update');
     Route::get('group-dashboard', GroupDashboardController::class)->name('group-dashboard');
     Volt::route('profile', 'pages.profile')->name('profile');

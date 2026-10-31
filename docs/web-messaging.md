@@ -5,7 +5,7 @@ workbench modules and in the dashboard user profile dropdown. All active,
 verified school accounts can use it, independently of announcement permissions.
 The mobile application and its API are unchanged.
 
-This first version supports private one-to-one text conversations, name search,
+This version supports private one-to-one conversations with text, images and documents, name search,
 unread counts, sent/read receipts and older message loading. The newest 50
 messages load initially; users can load up to 500 recent messages. The contact
 list shows up to 50 matching accounts, with recent conversations first.
@@ -47,7 +47,19 @@ and limited to 30 sends per user per minute. A unique send token prevents
 duplicate messages on retries. Read receipts acknowledge only the incoming
 messages included in the open conversation response.
 
-Group chats, attachments, typing indicators, blocking/reporting, video lessons
+The composer accepts up to five attachments per message, up to 10 MB each.
+Supported formats are JPEG, PNG, WebP, GIF, PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX,
+TXT and CSV. Files can be sent with or without a text caption. Images have draft
+and conversation previews; documents are downloaded as attachments. Upload
+types and sizes are validated on the server. Files are stored privately under
+`storage/app/private/chat-attachments/{school_id}` and must be backed up with the
+database. Only an active sender or recipient in the same school can download or
+preview an attachment. Preserve this directory across deployments. Run the new
+attachment migration before deploying the updated composer.
+To allow five 10 MB uploads in one selection, configure PHP with
+`upload_max_filesize` of at least `10M` and `post_max_size` of at least `64M`.
+
+Group chats, typing indicators, blocking/reporting, video lessons
 and mobile chat are outside this first version. Messages are stored in the
 school database; they are not end-to-end encrypted.
 

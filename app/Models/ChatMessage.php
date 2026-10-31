@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class ChatMessage extends Model
 {
-    protected $fillable = ['school_id', 'sender_id', 'recipient_id', 'body', 'client_token'];
+    protected $fillable = ['school_id', 'sender_id', 'recipient_id', 'body', 'client_token', 'attachments'];
 
     protected function casts(): array
     {
-        return ['read_at' => 'datetime'];
+        return ['read_at' => 'datetime', 'attachments' => 'array'];
     }
 
     public function scopeBetween(Builder $query, int $schoolId, int $userId, int $peerId): Builder

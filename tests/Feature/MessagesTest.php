@@ -7,7 +7,9 @@ use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
@@ -68,7 +70,7 @@ it('hides other users conversations and rejects cross-school or self recipients'
 
 it('validates messages and escapes HTML', function () {
     $chat = Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id);
-    $chat->set('body', '   ')->call('send')->assertHasErrors(['body' => 'required']);
+    $chat->set('body', '   ')->call('send')->assertHasErrors(['body' => 'required_without']);
     $chat->set('body', str_repeat('x', 5001))->call('send')->assertHasErrors(['body' => 'max']);
     $chat->set('body', '<script>alert(1)</script>')->call('send')->assertHasNoErrors()
         ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)->assertDontSee('<script>alert(1)</script>', false);
@@ -160,4 +162,89 @@ it('rejects an account whose school licence expires after opening chat', functio
     $this->school->update(['license_status' => 'expired']);
     $chat->call('send')->assertForbidden();
     expect(ChatMessage::count())->toBe(0);
+});
+
+it('sends images and documents together without requiring a caption', function () {
+    Storage::fake('local');
+    $chat = Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id)
+        ->set('uploads', [UploadedFile::fake()->create('lesson.pdf', 50, 'application/pdf')])->assertHasNoErrors()
+        ->set('uploads', [UploadedFile::fake()->image('diagram.png')])->assertHasNoErrors()
+        ->call('send')->assertHasNoErrors()->assertSet('attachments', [])->assertSet('uploads', [])
+        ->assertSee('lesson.pdf')->assertSee('diagram.png')->assertSee('Send message');
+    $message = ChatMessage::firstOrFail();
+    expect($message->body)->toBe('')->and($message->attachments)->toHaveCount(2);
+    foreach ($message->attachments as $file) {
+        Storage::disk('local')->assertExists($file['path']);
+        expect($file['path'])->toStartWith('chat-attachments/'.$this->school->id.'/');
+    }
+});
+
+it('limits attachment type, size and count on the server', function () {
+    Storage::fake('local');
+    $chat = Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id);
+    $chat->set('uploads', [UploadedFile::fake()->create('script.html', 10, 'text/html')])->assertHasErrors('uploads.0');
+    $chat->set('uploads', [UploadedFile::fake()->create('large.pdf', 10241, 'application/pdf')])->assertHasErrors('uploads.0');
+    $chat->set('uploads', array_map(fn ($i) => UploadedFile::fake()->create('file'.$i.'.pdf', 1, 'application/pdf'), range(1, 6)))
+        ->assertHasErrors('uploads');
+    $chat->set('attachments', [UploadedFile::fake()->create('bad.exe', 10, 'application/x-msdownload')])
+        ->call('send')->assertHasErrors('attachments.0');
+    expect(ChatMessage::count())->toBe(0);
+    expect(Storage::disk('local')->allFiles('chat-attachments'))->toBe([]);
+});
+
+it('serves private downloads and safe image previews only to conversation participants', function () {
+    Storage::fake('local');
+    Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id)
+        ->set('uploads', [UploadedFile::fake()->image('photo.png'), UploadedFile::fake()->create('notes.pdf', 1, 'application/pdf')])
+        ->call('send')->assertHasNoErrors();
+    $message = ChatMessage::firstOrFail();
+    $url = route('messages.attachments', ['message' => $message->id, 'attachment' => 0]);
+    $this->actingAs($this->recipient)->get($url)->assertOk()->assertDownload('photo.png')
+        ->assertHeader('X-Content-Type-Options', 'nosniff');
+    $this->get($url.'?preview=1')->assertOk()->assertHeader('Content-Type', 'image/png');
+    $this->get(route('messages.attachments', ['message' => $message->id, 'attachment' => 1, 'preview' => 1]))->assertNotFound();
+    $this->get(route('messages.attachments', ['message' => $message->id, 'attachment' => 99]))->assertNotFound();
+    $unrelated = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
+    $this->actingAs($unrelated)->get($url)->assertNotFound();
+    $otherSchool = School::create(['name' => 'Foreign School', 'slug' => 'foreign-chat-school', 'license_status' => 'active']);
+    $outsider = User::factory()->create(['school_id' => $otherSchool->id, 'role' => 'admin']);
+    $this->actingAs($outsider)->get($url)->assertNotFound();
+    $this->actingAs($this->sender);
+    Storage::disk('local')->delete($message->attachments[0]['path']);
+    $this->get($url)->assertNotFound();
+});
+
+it('removes draft attachments and clears them when changing conversations', function () {
+    Storage::fake('local');
+    $chat = Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id)
+        ->set('uploads', [UploadedFile::fake()->create('first.pdf', 1, 'application/pdf'), UploadedFile::fake()->image('second.png')])
+        ->call('removeAttachment', 0)->assertDontSee('first.pdf')->assertSee('second.png')
+        ->call('closeConversation')->assertSet('attachments', []);
+    expect(ChatMessage::count())->toBe(0);
+    expect(Storage::disk('local')->allFiles('chat-attachments'))->toBe([]);
+});
+
+it('cleans up new files if saving the message fails', function () {
+    Storage::fake('local');
+    $chat = Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id)
+        ->set('body', 'Keep this draft')->set('uploads', [UploadedFile::fake()->image('draft.png')]);
+    ChatMessage::creating(fn () => throw new RuntimeException('Simulated database failure'));
+    try {
+        $chat->call('send')->assertHasErrors('attachments')->assertSet('body', 'Keep this draft');
+        expect(ChatMessage::count())->toBe(0);
+        expect(Storage::disk('local')->allFiles('chat-attachments'))->toBe([]);
+    } finally {
+        ChatMessage::flushEventListeners();
+    }
+});
+
+it('cleans up duplicate file copies when a send is retried', function () {
+    Storage::fake('local');
+    $chat = Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id)
+        ->set('uploads', [UploadedFile::fake()->image('draft.png')]);
+    ChatMessage::create(['school_id' => $this->school->id, 'sender_id' => $this->sender->id,
+        'recipient_id' => $this->recipient->id, 'body' => 'Already sent', 'client_token' => $chat->get('clientToken')]);
+    $chat->call('send')->assertHasNoErrors();
+    expect(ChatMessage::count())->toBe(1);
+    expect(Storage::disk('local')->allFiles('chat-attachments'))->toBe([]);
 });

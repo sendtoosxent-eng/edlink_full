@@ -6,14 +6,25 @@ use App\Models\ChatMessage;
 use App\Models\User;
 use App\Support\ChatAccess;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]
 class Messages extends Component
 {
+    use WithFileUploads;
+
+    public array $attachments = [];
+
+    public array $uploads = [];
+
+    #[Locked]
+    public int $uploadRevision = 0;
+
     #[Locked]
     public int $schoolId;
 
@@ -55,6 +66,7 @@ class Messages extends Component
         ChatAccess::contacts($user)->findOrFail($userId);
         $this->peerId = $userId;
         $this->body = '';
+        $this->clearAttachments();
         $this->messageLimit = 50;
         $this->clientToken = (string) Str::uuid();
         $this->resetValidation();
@@ -64,6 +76,49 @@ class Messages extends Component
     {
         $this->peerId = null;
         $this->body = '';
+        $this->clearAttachments();
+    }
+
+    private function attachmentRules(): array
+    {
+        return [
+            'attachments' => ['array', 'max:5'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,jpg,jpeg,png,webp,gif',
+                'extensions:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,jpg,jpeg,png,webp,gif'],
+        ];
+    }
+
+    public function updatedUploads(): void
+    {
+        $this->actor();
+        $this->resetValidation();
+        $this->validate(collect($this->attachmentRules())->mapWithKeys(fn ($rules, $key) => [str_replace('attachments', 'uploads', $key) => $rules])->all());
+        if (count($this->attachments) + count($this->uploads) > 5) {
+            $this->uploads = [];
+            $this->uploadRevision++;
+            $this->addError('attachments', 'You can attach up to 5 files per message.');
+
+            return;
+        }
+        $this->attachments = array_merge($this->attachments, $this->uploads);
+        $this->uploads = [];
+        $this->uploadRevision++;
+        $this->validate($this->attachmentRules());
+    }
+
+    public function removeAttachment(int $index): void
+    {
+        $this->actor();
+        unset($this->attachments[$index]);
+        $this->attachments = array_values($this->attachments);
+        $this->resetValidation();
+    }
+
+    private function clearAttachments(): void
+    {
+        $this->attachments = [];
+        $this->uploads = [];
+        $this->uploadRevision++;
     }
 
     public function loadOlder(): void
@@ -77,7 +132,7 @@ class Messages extends Component
         $user = $this->actor();
         $peer = $this->peer($user);
         $this->body = trim($this->body);
-        $this->validate(['body' => ['required', 'string', 'max:5000']]);
+        $this->validate(['body' => ['required_without:attachments', 'string', 'max:5000']] + $this->attachmentRules());
         $key = 'chat-send:'.$user->id;
         if (RateLimiter::tooManyAttempts($key, 30)) {
             $this->addError('body', 'Please wait a moment before sending more messages.');
@@ -85,10 +140,38 @@ class Messages extends Component
             return;
         }
         RateLimiter::hit($key, 60);
-        ChatMessage::firstOrCreate(['sender_id' => $user->id, 'client_token' => $this->clientToken], [
-            'school_id' => $this->schoolId, 'recipient_id' => $peer->id, 'body' => $this->body,
-        ]);
+        $files = [];
+        try {
+            foreach ($this->attachments as $attachment) {
+                $path = 'chat-attachments/'.$this->schoolId.'/'.Str::uuid().'.'.strtolower($attachment->getClientOriginalExtension());
+                $files[] = ['path' => $path, 'name' => mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', basename(str_replace('\\', '/', $attachment->getClientOriginalName()))), 0, 200),
+                    'mime' => $attachment->getMimeType(), 'size' => $attachment->getSize()];
+                $stream = $attachment->readStream();
+                try {
+                    $stored = Storage::disk('local')->put($path, $stream);
+                } finally {
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+                throw_unless($stored, \RuntimeException::class, 'The attachment could not be stored. Please try again.');
+            }
+            $message = ChatMessage::firstOrCreate(['sender_id' => $user->id, 'client_token' => $this->clientToken], [
+                'school_id' => $this->schoolId, 'recipient_id' => $peer->id, 'body' => $this->body, 'attachments' => $files ?: null,
+            ]);
+            if (! $message->wasRecentlyCreated) {
+                Storage::disk('local')->delete(array_column($files, 'path'));
+            }
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete(array_column($files, 'path'));
+            report($exception);
+            $this->addError('attachments', 'Your message could not be sent. Please try again.');
+
+            return;
+        }
         $this->body = '';
+        $this->clearAttachments();
+        $this->resetValidation();
         $this->clientToken = (string) Str::uuid();
         $this->dispatch('chat-sent');
     }
