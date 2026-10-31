@@ -2,7 +2,7 @@
 
 Messages is available at `/messages`, in the sidebar module list, in staff
 workbench modules and in the dashboard user profile dropdown. All active,
-verified school accounts can use it, independently of announcement permissions.
+verified school accounts can read it, independently of announcement permissions.
 The mobile application and its API are unchanged.
 
 This version supports private one-to-one conversations with text, images and documents, name search,
@@ -40,7 +40,16 @@ reload Messages to continue in the new school. Users with access to multiple
 branches appear in the contact directory for their authorized branches.
 Inactive accounts and parents/students without active linked learners are
 excluded. This version allows any eligible account to contact another eligible
-account in the same school, including student-to-student conversations.
+account in the same school, including student-to-student conversations, when
+their account type is allowed to send.
+
+In **Settings → Communication → Messages access**, school managers can turn
+student and parent sending on or off independently. Both start enabled to
+preserve existing behavior. Use **Save all settings** to apply changes. Staff
+can always send messages. Disabled students or parents can still receive and
+read messages and download attachments, but cannot send text or upload files.
+The rules apply immediately, including to conversations already open in another
+tab, and are enforced on the server. Settings apply only to the current school.
 
 Messages are plain text, escaped when rendered, limited to 5,000 characters,
 and limited to 30 sends per user per minute. A unique send token prevents

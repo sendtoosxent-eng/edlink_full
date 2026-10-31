@@ -79,6 +79,7 @@
                         <div class="flex h-full flex-col items-center justify-center text-center"><p class="font-semibold text-slate-700">Start a conversation with {{ $peer->name }}</p><p class="mt-2 text-sm text-slate-400">Send your first message below.</p></div>
                     @endforelse
                 </div>
+                @if($sendAllowed)
                 <form wire:submit="send" class="chat-composer shrink-0 border-t border-slate-100 bg-white p-3 sm:p-4">
                     @if($attachments)
                         <div class="mb-3 flex max-h-28 gap-2 overflow-auto pb-1">
@@ -113,6 +114,11 @@
                     @foreach($errors->get('attachments.*') as $fileErrors)@foreach($fileErrors as $error)<p class="mt-2 text-sm text-red-600" role="alert">{{ $error }}</p>@endforeach @endforeach
                     <p class="mt-2 text-[11px] text-slate-400">Up to 5 files · 10 MB each · Images, PDF, Office documents, TXT or CSV</p>
                 </form>
+                @else
+                    <div class="shrink-0 border-t border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900" role="status">
+                        Your school has turned off {{ $user->role === 'parent' ? 'parent' : 'student' }} messaging. You can still read and receive messages, but cannot send messages or attachments.
+                    </div>
+                @endif
             </section>
         @else
             <section class="hidden flex-col items-center justify-center bg-slate-50 p-8 text-center md:flex">

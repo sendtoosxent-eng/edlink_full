@@ -286,7 +286,25 @@
         <section x-show="tab==='communication'" class="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1.5 before:bg-yellow-400" style="display: none;">
             <div class="mb-5 pb-4 border-b border-slate-100">
                 <h2 class="text-sm font-bold text-slate-900">Communication</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Controls parent notices and future email/SMS integration.</p>
+                <p class="text-xs text-slate-500 mt-0.5">Manage school messaging, parent notices and email/SMS integration.</p>
+            </div>
+            <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h3 class="text-sm font-bold text-slate-900">Messages access</h3>
+                <p class="mt-1 text-xs text-slate-500">Control who can send messages and attachments. Staff-to-staff messaging is always allowed. When turned off, students or parents can still read and receive messages.</p>
+                <div class="mt-4 grid gap-3 md:grid-cols-2">
+                    @foreach(['student_messaging_enabled' => 'Allow students to send messages', 'parent_messaging_enabled' => 'Allow parents to send messages'] as $key => $label)
+                        <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4">
+                            <span class="text-xs font-semibold text-slate-700">{{ $label }}</span>
+                            <span class="relative inline-flex shrink-0" x-data="{ value: $wire.entangle('settings.{{ $key }}') }">
+                                <input type="checkbox" role="switch" :checked="value === 'enabled'" x-on:change="value = $el.checked ? 'enabled' : 'disabled'" @checked(($settings[$key] ?? 'enabled') === 'enabled') class="peer sr-only" aria-label="{{ $label }}">
+                                <span class="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-amber-400 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-500 peer-focus-visible:ring-offset-2"></span>
+                                <span class="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span>
+                            </span>
+                        </label>
+                        @error('settings.'.$key)<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    @endforeach
+                </div>
+                <p class="mt-3 text-[11px] text-slate-400">Save settings to apply these changes. Messaging starts enabled for both groups.</p>
             </div>
             <div class="grid gap-5 md:grid-cols-2">
                 <div>

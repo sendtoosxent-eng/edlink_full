@@ -2,10 +2,13 @@
 
 use App\Livewire\Messages;
 use App\Livewire\MessageUnreadCount;
+use App\Livewire\SchoolSettingsV2;
 use App\Models\ChatMessage;
 use App\Models\School;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\ChatAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\RateLimiter;
@@ -247,4 +250,53 @@ it('cleans up duplicate file copies when a send is retried', function () {
     $chat->call('send')->assertHasNoErrors();
     expect(ChatMessage::count())->toBe(1);
     expect(Storage::disk('local')->allFiles('chat-attachments'))->toBe([]);
+});
+
+it('lets school managers save independent messaging switches and rejects invalid values', function () {
+    $admin = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
+    $settings = Livewire::actingAs($admin)->test(SchoolSettingsV2::class)
+        ->assertSet('settings.student_messaging_enabled', 'enabled')->assertSet('settings.parent_messaging_enabled', 'enabled')
+        ->assertSee('Allow students to send messages')->assertSee('Allow parents to send messages')
+        ->set('settings.student_messaging_enabled', 'disabled')->set('settings.parent_messaging_enabled', 'enabled')
+        ->call('save')->assertHasNoErrors();
+    expect(SchoolSetting::getValue($this->school->id, 'student_messaging_enabled'))->toBe('disabled');
+    expect(SchoolSetting::getValue($this->school->id, 'parent_messaging_enabled'))->toBe('enabled');
+    Livewire::actingAs($admin)->test(SchoolSettingsV2::class)->assertSet('settings.student_messaging_enabled', 'disabled');
+    $settings->set('settings.parent_messaging_enabled', 'invalid')->call('save')->assertHasErrors('settings.parent_messaging_enabled');
+    Livewire::actingAs($this->sender)->test(SchoolSettingsV2::class)->assertForbidden();
+});
+
+it('blocks sending immediately for disabled portal roles but keeps receiving and history', function (string $role) {
+    Storage::fake('local');
+    $learner = Student::create(['school_id' => $this->school->id, 'name' => 'Messaging Learner', 'admission_no' => 'MSG-1', 'status' => 'active']);
+    $portalUser = User::factory()->create(['school_id' => $this->school->id, 'role' => $role]);
+    $portalUser->portalStudents()->attach($learner->id, ['school_id' => $this->school->id, 'relationship' => 'learner']);
+    $chat = Livewire::actingAs($portalUser)->test(Messages::class)->call('openConversation', $this->sender->id)
+        ->set('body', 'Draft from before the switch')->set('uploads', [UploadedFile::fake()->image('draft.png')]);
+    SchoolSetting::setValue($this->school->id, $role.'_messaging_enabled', 'disabled');
+    $chat->call('send')->assertHasErrors('body')->assertSee('Your school has turned off '.$role.' messaging')->assertDontSee('id="chat-body"', false);
+    expect(ChatMessage::count())->toBe(0);
+    expect(Storage::disk('local')->allFiles('chat-attachments'))->toBe([]);
+    Livewire::actingAs($portalUser)->test(Messages::class)->call('openConversation', $this->sender->id)
+        ->set('uploads', [UploadedFile::fake()->image('blocked.png')])->assertForbidden();
+    Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $portalUser->id)
+        ->set('body', 'You can still receive this')->call('send')->assertHasNoErrors();
+    Livewire::actingAs($portalUser)->test(Messages::class)->call('openConversation', $this->sender->id)
+        ->assertSee('You can still receive this')->assertDontSee('id="chat-body"', false);
+    $this->actingAs($portalUser);
+    SchoolSetting::setValue($this->school->id, $role.'_messaging_enabled', 'enabled');
+    $chat->call('send')->assertHasNoErrors()->assertSee('Draft from before the switch');
+})->with(['student', 'parent']);
+
+it('keeps staff messaging enabled and isolates switches by school', function () {
+    SchoolSetting::setValue($this->school->id, 'student_messaging_enabled', 'disabled');
+    SchoolSetting::setValue($this->school->id, 'parent_messaging_enabled', 'disabled');
+    Livewire::actingAs($this->sender)->test(Messages::class)->call('openConversation', $this->recipient->id)
+        ->set('body', 'Staff chat is always available')->call('send')->assertHasNoErrors();
+    $otherSchool = School::create(['name' => 'Independent School', 'slug' => 'independent-school', 'license_status' => 'active']);
+    $student = User::factory()->create(['school_id' => $otherSchool->id, 'role' => 'student']);
+    expect(ChatAccess::canSend($student))->toBeTrue();
+    $parent = User::factory()->create(['school_id' => $this->school->id, 'role' => 'parent']);
+    SchoolSetting::setValue($this->school->id, 'student_messaging_enabled', 'enabled');
+    expect(ChatAccess::canSend($parent))->toBeFalse();
 });

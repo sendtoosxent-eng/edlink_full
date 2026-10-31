@@ -90,7 +90,7 @@ class Messages extends Component
 
     public function updatedUploads(): void
     {
-        $this->actor();
+        abort_unless(ChatAccess::canSend($this->actor()), 403);
         $this->resetValidation();
         $this->validate(collect($this->attachmentRules())->mapWithKeys(fn ($rules, $key) => [str_replace('attachments', 'uploads', $key) => $rules])->all());
         if (count($this->attachments) + count($this->uploads) > 5) {
@@ -130,6 +130,11 @@ class Messages extends Component
     public function send(): void
     {
         $user = $this->actor();
+        if (! ChatAccess::canSend($user)) {
+            $this->addError('body', 'Your school has turned off messaging for your account type. You can still read and receive messages.');
+
+            return;
+        }
         $peer = $this->peer($user);
         $this->body = trim($this->body);
         $this->validate(['body' => ['required_without:attachments', 'string', 'max:5000']] + $this->attachmentRules());
@@ -179,6 +184,7 @@ class Messages extends Component
     public function render()
     {
         $user = $this->actor();
+        $sendAllowed = ChatAccess::canSend($user);
         $contacts = ChatAccess::contacts($user)
             ->when(trim($this->search) !== '', fn ($q) => $q->where('name', 'like', '%'.mb_substr(trim($this->search), 0, 100).'%'))
             ->addSelect(['last_message_id' => ChatMessage::query()->select('id')
@@ -208,6 +214,6 @@ class Messages extends Component
             $contacts->where('id', $peer->id)->each(fn ($contact) => $contact->unread_count = $remainingUnread);
         }
 
-        return view('livewire.messages', compact('contacts', 'peer', 'messages', 'hasOlder', 'user'))->title('Messages');
+        return view('livewire.messages', compact('contacts', 'peer', 'messages', 'hasOlder', 'user', 'sendAllowed'))->title('Messages');
     }
 }

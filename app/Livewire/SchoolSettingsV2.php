@@ -11,10 +11,15 @@ use Livewire\Attributes\Layout;
 #[Layout('layouts.app')]
 class SchoolSettingsV2 extends SchoolSettings
 {
+    protected array $messagingKeys = ['student_messaging_enabled', 'parent_messaging_enabled'];
+
     public function mount(): void
     {
         $this->authorizeManagement();
         parent::mount();
+        foreach ($this->messagingKeys as $key) {
+            $this->settings[$key] = SchoolSetting::getValue(Auth::user()->school_id, $key, 'enabled');
+        }
         $defaults = [
             'academic_year_rule' => 'Three terms per academic year',
             'promotion_rule' => 'automatic_average',
@@ -52,6 +57,8 @@ class SchoolSettingsV2 extends SchoolSettings
         $this->authorizeManagement();
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'settings.student_messaging_enabled' => ['required', 'in:enabled,disabled'],
+            'settings.parent_messaging_enabled' => ['required', 'in:enabled,disabled'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:500'],
@@ -85,7 +92,7 @@ class SchoolSettingsV2 extends SchoolSettings
             $images->deleteReplacement($oldBadge, $newBadge);
         }
 
-        foreach ($this->keys as $key) {
+        foreach ([...$this->keys, ...$this->messagingKeys] as $key) {
             SchoolSetting::updateOrCreate(['school_id' => $school->id, 'key' => $key], ['value' => $this->settings[$key] ?? null]);
         }
 

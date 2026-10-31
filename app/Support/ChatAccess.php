@@ -2,11 +2,23 @@
 
 namespace App\Support;
 
+use App\Models\SchoolSetting;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
 class ChatAccess
 {
+    public static function canSend(User $user): bool
+    {
+        $key = match ($user->role) {
+            'student' => 'student_messaging_enabled',
+            'parent' => 'parent_messaging_enabled',
+            default => null,
+        };
+
+        return $key === null || SchoolSetting::getValue($user->school_id, $key, 'enabled') === 'enabled';
+    }
+
     public static function actor(): User
     {
         $user = auth()->user()?->fresh();
